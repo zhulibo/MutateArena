@@ -57,8 +57,6 @@ protected:
 
 	UPROPERTY()
 	float BaseWalkSpeed = 600.f;
-	UPROPERTY()
-	float AimWalkSpeed = 450.f;
 
 	FVector HitTarget;
 	void TraceUnderCrosshair(FHitResult& TraceHitResult);
@@ -116,12 +114,12 @@ protected:
 	// 瞄准
 	UPROPERTY()
 	bool bIsAiming = false;
-	void SetAiming(bool bNewAimingState);
+	void SetAiming(bool TempBIsAiming);
 	UFUNCTION(Server, Reliable)
-	void ServerSetAiming(bool bNewAimingState);
+	void ServerSetAiming(bool TempBIsAiming);
 	UFUNCTION(NetMulticast, Reliable)
-	void MulticastSetAiming(bool bNewAimingState);
-	void LocalSetAiming(bool bNewAimingState);
+	void MulticastSetAiming(bool TempBIsAiming);
+	void LocalSetAiming(bool TempBIsAiming);
 
 	// 射击
 	bool bCanFire = true;

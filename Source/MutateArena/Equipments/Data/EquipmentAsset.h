@@ -27,5 +27,11 @@ public:
 	UMetaSoundSource* ImpactSound_Metal;
 	UPROPERTY(EditAnywhere, Category = "ImpactSound")
 	UMetaSoundSource* ImpactSound_Wood;
-	
+
+	// 武器镜子
+	UPROPERTY(EditAnywhere, Category = "Scope")
+	UTextureRenderTarget2D* RT_Scope;
+	UPROPERTY(EditAnywhere, Category = "Scope")
+	UMaterialParameterCollection* MPC_Scope;
+
 };

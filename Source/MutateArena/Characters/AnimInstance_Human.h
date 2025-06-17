@@ -14,9 +14,6 @@ class MUTATEARENA_API UAnimInstance_Human : public UAnimInstance
 public:
 	UAnimInstance_Human();
 
-	UPROPERTY(BlueprintReadOnly)
-	EEquipmentName EquipmentName; // used for equipment idle animation
-
 protected:
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 
@@ -33,6 +30,8 @@ protected:
 	bool bIsCrouched;
 	UPROPERTY(BlueprintReadOnly)
 	bool bIsAiming;
+	UPROPERTY(BlueprintReadOnly)
+	EEquipmentName EquipmentName;
 	UPROPERTY(BlueprintReadOnly)
 	float AimYaw;
 	UPROPERTY(BlueprintReadOnly)

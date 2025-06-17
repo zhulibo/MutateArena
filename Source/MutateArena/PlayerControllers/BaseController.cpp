@@ -185,7 +185,7 @@ void ABaseController::HandleMatchHasEnded()
 
 void ABaseController::HandleLeavingMap()
 {
-	if (!HasAuthority() && IsLocalController())
+	if (IsLocalController() && !HasAuthority())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("HandleLeavingMap ------------------------------------------"));
 		ClientTravel(MAP_MENU, ETravelType::TRAVEL_Absolute);

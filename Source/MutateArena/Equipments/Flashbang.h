@@ -17,8 +17,6 @@ public:
 protected:
 	UPROPERTY()
 	class ABaseGameState* BaseGameState;
-	UPROPERTY()
-	class UAssetSubsystem* AssetSubsystem;
 
 	UPROPERTY(EditAnywhere)
 	class UNiagaraSystem* ExplodeEffect;

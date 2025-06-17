@@ -16,6 +16,7 @@
 #include "MutateArena/UI/TextChat/TextChat.h"
 #include "MutateArena/Utils/LibraryCommon.h"
 #include "GameFramework/PlayerStart.h"
+#include "MutateArena/System/DevSetting.h"
 #include "Online/SchemaTypes.h"
 
 #define LOCTEXT_NAMESPACE "ABaseMode"
@@ -72,6 +73,13 @@ void ABaseMode::Logout(AController* Exiting)
 		}
 	}
 
+	if (GetWorld()->WorldType == EWorldType::PIE)
+	{
+		if (GetDefault<UDevSetting>()->bUseMutationSettings)
+		{
+			if (GetDefault<UDevSetting>()->bKeepInMap) return;
+		}
+	}
 	// 所有客户端退出后，再让服务端退出。
 	if (MatchState == MatchState::LeavingMap && GetWorld()->GetNumPlayerControllers() == 2)
 	{
@@ -87,7 +95,14 @@ void ABaseMode::Logout(AController* Exiting)
 void ABaseMode::HandleLeavingMap()
 {
 	Super::HandleLeavingMap();
-
+	
+	if (GetWorld()->WorldType == EWorldType::PIE)
+	{
+		if (GetDefault<UDevSetting>()->bUseMutationSettings)
+		{
+			if (GetDefault<UDevSetting>()->bKeepInMap) return;
+		}
+	}
 	// 游戏结束服务端退出，或ABaseMode::Logout 中服务端退出失败，强制服务端退出。
 	FTimerHandle TimerHandle;
 	FTimerDelegate TimerDelegate;

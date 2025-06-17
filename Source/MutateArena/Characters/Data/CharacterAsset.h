@@ -45,7 +45,7 @@ public:
 
 	// 闪光弹
 	UPROPERTY(EditAnywhere, Category = "Flashbang")
-	UTextureRenderTarget2D* RenderTarget;
+	UTextureRenderTarget2D* RT_Flashbang;
 	UPROPERTY(EditAnywhere, Category = "Flashbang")
 	UMaterialInterface* MI_Flashbang;
 	UPROPERTY(EditAnywhere, Category = "Flashbang")

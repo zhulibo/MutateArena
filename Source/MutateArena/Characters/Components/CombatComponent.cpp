@@ -405,13 +405,6 @@ void UCombatComponent::UseEquipment(AEquipment* Equipment)
 
 	AttachToRightHand(Equipment);
 
-	// 记录装备名字，以便动画蓝图应用不同的idle animation
-	if (HumanAnimInstance == nullptr) HumanAnimInstance = Cast<UAnimInstance_Human>(HumanCharacter->GetMesh()->GetAnimInstance());
-	if (HumanAnimInstance)
-	{
-		HumanAnimInstance->EquipmentName = Equipment->GetEquipmentName();
-	}
-
 	// 更新子弹
 	if (BaseController == nullptr) BaseController = Cast<ABaseController>(HumanCharacter->Controller);
 	if (HumanCharacter->IsLocallyControlled() && BaseController)
@@ -459,44 +452,78 @@ void UCombatComponent::AttachToHand(AEquipment* Equipment, FString SocketNameSuf
 	}
 }
 
-void UCombatComponent::SetAiming(bool bNewAimingState)
+void UCombatComponent::SetAiming(bool TempBIsAiming)
 {
-	LocalSetAiming(bNewAimingState);
-	ServerSetAiming(bNewAimingState);
+	LocalSetAiming(TempBIsAiming);
+	ServerSetAiming(TempBIsAiming);
 }
 
-void UCombatComponent::ServerSetAiming_Implementation(bool bNewAimingState)
+void UCombatComponent::ServerSetAiming_Implementation(bool TempBIsAiming)
 {
-	MulticastSetAiming(bNewAimingState);
+	MulticastSetAiming(TempBIsAiming);
 }
 
-void UCombatComponent::MulticastSetAiming_Implementation(bool bNewAimingState)
+void UCombatComponent::MulticastSetAiming_Implementation(bool TempBIsAiming)
 {
 	if (HumanCharacter && !HumanCharacter->IsLocallyControlled())
 	{
-		LocalSetAiming(bNewAimingState);
+		LocalSetAiming(TempBIsAiming);
 	}
 }
 
-void UCombatComponent::LocalSetAiming(bool bNewAimingState)
+void UCombatComponent::LocalSetAiming(bool TempBIsAiming)
 {
-	if (GetCurEquipment() == nullptr) return;
+	if (HumanAnimInstance == nullptr) HumanAnimInstance = Cast<UAnimInstance_Human>(HumanCharacter->GetMesh()->GetAnimInstance());
+	if (HumanCharacter == nullptr || GetUsingWeapon() == nullptr || HumanAnimInstance == nullptr) return;
 
-	bIsAiming = bNewAimingState;
+	bIsAiming = TempBIsAiming;
 
-	if (HumanCharacter)
+	// 移速
+	float MoveSpeedMul = bIsAiming ? GetUsingWeapon()->GetAimMoveSpeedMul() : GetUsingWeapon()->GetMoveSpeedMul();
+	HumanCharacter->GetCharacterMovement()->MaxWalkSpeed = BaseWalkSpeed * MoveSpeedMul;
+
+	// 瞄准镜（只在本地瞄准）
+	if (GetUsingWeapon()->GetbHasScope() && HumanCharacter->IsLocallyControlled() && GetUsingWeapon()->GetOwner() == HumanCharacter)
 	{
-		float Speed;
+		// 打开画中画
+		GetUsingWeapon()->SetScopeActive(bIsAiming);
+
+		// 蒙太奇已取消勾选bEnableAutoBlendOut，无论正向或反向播放到末尾，Montage_IsActive返回ture
+		// 开镜
 		if (bIsAiming)
 		{
-			Speed = AimWalkSpeed * GetCurEquipment()->GetMoveSpeedMul();
+			if (!HumanAnimInstance->Montage_IsActive(GetUsingWeapon()->ADSMontage_C))
+			{
+				HumanAnimInstance->Montage_Play(GetUsingWeapon()->ADSMontage_C, 1.f);
+			}
+			else
+			{
+				HumanAnimInstance->Montage_Resume(GetUsingWeapon()->ADSMontage_C);
+				HumanAnimInstance->Montage_SetPlayRate(GetUsingWeapon()->ADSMontage_C, 1.f);
+			}
 		}
+		// 关镜
 		else
 		{
-			Speed = BaseWalkSpeed * GetCurEquipment()->GetMoveSpeedMul();
+			if (!HumanAnimInstance->Montage_IsActive(GetUsingWeapon()->ADSMontage_C))
+			{
+				// 不知道为什么此处反向播放ADSMontage_C无效
+				// HumanAnimInstance->Montage_Play(GetUsingWeapon()->ADSMontage_C, -1.f);
+				// 只能把动画反转了
+				HumanAnimInstance->Montage_Play(GetUsingWeapon()->ADSReverseMontage_C, 1.f);
+			}
+			else
+			{
+				HumanAnimInstance->Montage_Resume(GetUsingWeapon()->ADSMontage_C);
+				HumanAnimInstance->Montage_SetPlayRate(GetUsingWeapon()->ADSMontage_C, -1.f);
+			}
 		}
 
-		HumanCharacter->GetCharacterMovement()->MaxWalkSpeed = Speed;
+		// 武器动画其实没有动，不需要做开关镜处理（甚至不需要播放这个动画）
+		if (GetUsingWeapon()->GetEquipmentAnimInstance())
+		{
+			GetUsingWeapon()->GetEquipmentAnimInstance()->Montage_Play(GetUsingWeapon()->ADSMontage_E);
+		}
 	}
 }
 
@@ -611,11 +638,34 @@ void UCombatComponent::LocalFire(const FVector_NetQuantize& TraceHitTarget, floa
 
 void UCombatComponent::PlayFireMontage()
 {
-	if (HumanCharacter == nullptr) return;
-	if (HumanAnimInstance == nullptr) HumanAnimInstance = Cast<UAnimInstance_Human>(HumanCharacter->GetMesh()->GetAnimInstance());
-	if (HumanAnimInstance && GetUsingWeapon())
+	if (HumanCharacter == nullptr || GetUsingWeapon() == nullptr) return;
+
+	// 本地开火区分瞄准状态
+	if (bIsAiming && GetUsingWeapon()->GetbHasScope() && HumanCharacter->IsLocallyControlled() && GetUsingWeapon()->GetOwner() == HumanCharacter)
 	{
-		HumanAnimInstance->Montage_Play(GetUsingWeapon()->FireMontage_C);
+		if (HumanAnimInstance == nullptr) HumanAnimInstance = Cast<UAnimInstance_Human>(HumanCharacter->GetMesh()->GetAnimInstance());
+		if (HumanAnimInstance)
+		{
+			HumanAnimInstance->Montage_Play(GetUsingWeapon()->FireADSMontage_C);
+		}
+
+		if (GetUsingWeapon()->GetEquipmentAnimInstance())
+		{
+			GetUsingWeapon()->GetEquipmentAnimInstance()->Montage_Play(GetUsingWeapon()->FireADSMontage_E);
+		}
+	}
+	else
+	{
+		if (HumanAnimInstance == nullptr) HumanAnimInstance = Cast<UAnimInstance_Human>(HumanCharacter->GetMesh()->GetAnimInstance());
+		if (HumanAnimInstance)
+		{
+			HumanAnimInstance->Montage_Play(GetUsingWeapon()->FireMontage_C);
+		}
+
+		if (GetUsingWeapon()->GetEquipmentAnimInstance())
+		{
+			GetUsingWeapon()->GetEquipmentAnimInstance()->Montage_Play(GetUsingWeapon()->FireMontage_E);
+		}
 	}
 }
 

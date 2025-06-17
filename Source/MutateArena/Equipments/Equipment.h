@@ -51,6 +51,9 @@ protected:
 
 	UPROPERTY()
 	UAnimInstance_Equipment* EquipmentAnimInstance;
+	
+	UPROPERTY()
+	class UAssetSubsystem* AssetSubsystem;
 
 	UFUNCTION()
 	virtual void OnAreaSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,

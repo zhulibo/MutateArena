@@ -213,7 +213,7 @@ void AHumanCharacter::ServerSpawnEquipments_Implementation(EEquipmentName Primar
 		ThrowingName = FName(ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(GetDefault<UDevSetting>()->ThrowingEquipment)));
 	}
 #endif
-	
+
 	if (PrimaryName.IsValid()) {
 		FDataRegistryId DataRegistryId(DR_EQUIPMENT_MAIN, PrimaryName);
 		if (const FEquipmentMain* EquipmentMain = UDataRegistrySubsystem::Get()->GetCachedItem<FEquipmentMain>(DataRegistryId))

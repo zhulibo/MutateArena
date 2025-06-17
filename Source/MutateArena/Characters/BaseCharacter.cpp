@@ -48,7 +48,7 @@ ABaseCharacter::ABaseCharacter()
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 
-	SceneCapture = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("SceneCaptureComponent"));
+	SceneCapture = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("SceneCapture"));
 	SceneCapture->SetupAttachment(Camera);
 	SceneCapture->CaptureSource = ESceneCaptureSource::SCS_FinalColorHDR;
 	SceneCapture->bCaptureEveryFrame = false;
@@ -197,7 +197,7 @@ void ABaseCharacter::OnControllerReady()
 		{
 			if (SceneCapture)
 			{
-				SceneCapture->TextureTarget = AssetSubsystem->CharacterAsset->RenderTarget;
+				SceneCapture->TextureTarget = AssetSubsystem->CharacterAsset->RT_Flashbang;
 			}
 
 			FlashbangMID = UMaterialInstanceDynamic::Create(AssetSubsystem->CharacterAsset->MI_Flashbang, this);
@@ -346,7 +346,10 @@ void ABaseCharacter::InitAbilityActorInfo()
 	if (BasePlayerState)
 	{
 		AbilitySystemComponent = Cast<UMAAbilitySystemComponent>(BasePlayerState->GetAbilitySystemComponent());
-		AbilitySystemComponent->InitAbilityActorInfo(BasePlayerState, this);
+		if (AbilitySystemComponent)
+		{
+			AbilitySystemComponent->InitAbilityActorInfo(BasePlayerState, this);
+		}
 		AttributeSetBase = BasePlayerState->GetAttributeSetBase();
 	}
 }

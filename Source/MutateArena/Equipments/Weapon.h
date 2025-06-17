@@ -16,6 +16,10 @@ public:
 	UAnimMontage* FireMontage_C;
 	UPROPERTY(EditAnywhere)
 	UAnimMontage* FireMontage_E;
+	UPROPERTY(EditAnywhere)
+	UAnimMontage* FireADSMontage_C;
+	UPROPERTY(EditAnywhere)
+	UAnimMontage* FireADSMontage_E;
 	virtual void Fire(const FVector& HitTarget, float RecoilVert, float RecoilHor);
 
 	UPROPERTY(EditAnywhere)
@@ -24,6 +28,13 @@ public:
 	UAnimMontage* ReloadMontage_E;
 	virtual void SetAmmo(int32 AmmoNum);
 	virtual void SetCarriedAmmo(int32 AmmoNum);
+
+	UPROPERTY(EditAnywhere)
+	UAnimMontage* ADSMontage_C;
+	UPROPERTY(EditAnywhere)
+	UAnimMontage* ADSMontage_E;
+	UPROPERTY(EditAnywhere)
+	UAnimMontage* ADSReverseMontage_C;
 
 	// 后坐力范围
 	UPROPERTY()
@@ -60,6 +71,8 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastFullAmmo();
 
+	void SetScopeActive(bool bIsActive);
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -67,11 +80,21 @@ protected:
 	const USkeletalMeshSocket* MuzzleSocket;
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class AShell> ShellClass;
+	
+	UPROPERTY(VisibleAnywhere)
+	USceneCaptureComponent2D* ScopeCapture;
+
+	UPROPERTY(EditAnywhere)
+	bool bHasScope = false;
 
 	UPROPERTY()
 	float AimingFOVMul = 0.9; // 缩放倍数
 	UPROPERTY()
 	float AimSpeed = 30.f;
+	UPROPERTY()
+	float AimMoveSpeedMul = 1.f;
+	UPROPERTY()
+	float ScopeFOV = 1.f;
 
 	UPROPERTY()
 	int32 MaxCarriedAmmo; // 最大携弹量
@@ -102,6 +125,8 @@ protected:
 public:
 	FORCEINLINE float GetAimingFOVMul() const { return AimingFOVMul; }
 	FORCEINLINE float GetAimSpeed() const { return AimSpeed; }
+	FORCEINLINE float GetAimMoveSpeedMul() const { return AimMoveSpeedMul; }
+	FORCEINLINE float GetbHasScope() const { return bHasScope; }
 
 	FORCEINLINE int32 GetAmmo() const { return Ammo; }
 	FORCEINLINE int32 GetMagCapacity() const { return MagCapacity; }
@@ -113,7 +138,7 @@ public:
 
 	FORCEINLINE float GetFireDelay() const { return 60 / FireRate; }
 	FORCEINLINE bool IsAutomatic() const { return bIsAutomatic; }
-	
+
 	FORCEINLINE int32 GetPelletNum() const { return PelletNum; }
 
 };

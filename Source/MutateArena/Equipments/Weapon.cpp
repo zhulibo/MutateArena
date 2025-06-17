@@ -2,7 +2,6 @@
 
 #include "DataRegistryId.h"
 #include "DataRegistrySubsystem.h"
-#include "AnimInstance_Equipment.h"
 #include "MetasoundSource.h"
 #include "MutateArena/Equipments/Data/EquipmentType.h"
 #include "MutateArena/MutateArena.h"
@@ -10,10 +9,13 @@
 #include "MutateArena/PlayerControllers/BaseController.h"
 #include "MutateArena/Utils/LibraryCommon.h"
 #include "Components/AudioComponent.h"
+#include "Components/SceneCaptureComponent2D.h"
 #include "Components/SphereComponent.h"
+#include "Data/EquipmentAsset.h"
 #include "Shells/Shell.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "Kismet/GameplayStatics.h"
+#include "MutateArena/System/AssetSubsystem.h"
 
 AWeapon::AWeapon()
 {
@@ -25,8 +27,24 @@ AWeapon::AWeapon()
 void AWeapon::BeginPlay()
 {
 	Super::BeginPlay();
-
+	
 	InitData();
+
+	if (bHasScope)
+	{
+		if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+		if (AssetSubsystem && AssetSubsystem->EquipmentAsset)
+		{
+			ScopeCapture = NewObject<USceneCaptureComponent2D>(this, TEXT("ScopeCapture"));
+			ScopeCapture->RegisterComponent();
+			ScopeCapture->AttachToComponent(EquipmentMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, TEXT("ScopeSocket"));
+			ScopeCapture->CaptureSource = ESceneCaptureSource::SCS_FinalColorHDR;
+			// ScopeCapture->ShowFlags.SetDynamicShadows(true);
+			ScopeCapture->FOVAngle = ScopeFOV;
+			ScopeCapture->TextureTarget = AssetSubsystem->EquipmentAsset->RT_Scope;
+			ScopeCapture->Deactivate();
+		}
+	}
 }
 
 // 初始化数据
@@ -40,6 +58,8 @@ void AWeapon::InitData()
 		{
 			AimingFOVMul = WeaponData->AimingFOVMul;
 			AimSpeed = WeaponData->AimSpeed;
+			AimMoveSpeedMul = WeaponData->AimMoveSpeedMul;
+			ScopeFOV = WeaponData->ScopeFOV;
 			MaxCarriedAmmo = WeaponData->MaxCarriedAmmo;
 			MagCapacity = WeaponData->MagCapacity;
 			FireRate = WeaponData->FireRate;
@@ -70,13 +90,16 @@ void AWeapon::InitData()
 	}
 }
 
+void AWeapon::SetScopeActive(bool bIsActive)
+{
+	if (ScopeCapture)
+	{
+		ScopeCapture->SetActive(bIsActive);
+	}
+}
+
 void AWeapon::Fire(const FVector& HitTarget, float RecoilVert, float RecoilHor)
 {
-	if (GetEquipmentAnimInstance())
-	{
-		GetEquipmentAnimInstance()->Montage_Play(FireMontage_E);
-	}
-
 	if (ShellClass)
 	{
 		if (const USkeletalMeshSocket* ShellEjectSocket = EquipmentMesh->GetSocketByName(TEXT("ShellEject")))

@@ -43,6 +43,7 @@ void UMultiCultureSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 
 	LOCTEXT("AK47 Cyclone", "AK47 Cyclone");
 	LOCTEXT("MG42", "MG42");
+	LOCTEXT("GM6 Lynx", "GM6 Lynx");
 #undef LOCTEXT_NAMESPACE
 
 	// 需与 EEquipmentType 的值一致

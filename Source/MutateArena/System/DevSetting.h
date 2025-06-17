@@ -44,4 +44,7 @@ public:
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "Equipment", meta=(AllowedClasses="/Script/Engine.World"))
 	EEquipmentName ThrowingEquipment = EEquipmentName::Grenade;
 
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "Dev", meta=(AllowedClasses="/Script/Engine.World"))
+	bool bKeepInMap = true;
+	
 };

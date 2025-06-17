@@ -17,7 +17,7 @@ enum class EEquipmentName : uint8 // 装备名字
 	M60,
 	
 	PKM,
-	
+
 	// 副
 	Glock17,
 	
@@ -39,6 +39,7 @@ enum class EEquipmentName : uint8 // 装备名字
 	// 补给箱
 	AK47_Cyclone,
 	MG42,
+	GM6Lynx,
 
 	None
 };
@@ -144,9 +145,12 @@ struct FWeaponData : public FTableRowBase
 	float AimingFOVMul = 0.9;
 	UPROPERTY(EditAnywhere)
 	float AimSpeed = 30.f;
-
 	UPROPERTY(EditAnywhere)
 	float MoveSpeedMul = 1.f;
+	UPROPERTY(EditAnywhere)
+	float AimMoveSpeedMul = 1.f;
+	UPROPERTY(EditAnywhere)
+	float ScopeFOV = 90.f;
 
 };
 

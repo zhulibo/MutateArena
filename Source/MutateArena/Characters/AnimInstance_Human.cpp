@@ -1,8 +1,11 @@
 #include "AnimInstance_Human.h"
+
 #include "HumanCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Components/CombatComponent.h"
+#include "MutateArena/Equipments/Equipment.h"
+#include "MutateArena/Equipments/Data/EquipmentType.h"
 
 UAnimInstance_Human::UAnimInstance_Human()
 {
@@ -26,6 +29,14 @@ void UAnimInstance_Human::NativeUpdateAnimation(float DeltaSeconds)
 	bIsAccelerating = HumanCharacter->GetCharacterMovement()->GetCurrentAcceleration().Size() > 0.f;
 	bIsCrouched = HumanCharacter->bIsCrouched;
 	bIsAiming = HumanCharacter->GetCombatComponent()->IsAiming();
+	if (HumanCharacter->GetCombatComponent()->GetCurEquipment())
+	{
+		EquipmentName = HumanCharacter->GetCombatComponent()->GetCurEquipment()->GetEquipmentName();
+	}
+	else
+	{
+		EquipmentName = EEquipmentName::None;
+	}
 
 	// 计算瞄准方向与移动方向的偏移量，用于控制脚步朝向
 	FRotator AimRotation = HumanCharacter->GetBaseAimRotation();
