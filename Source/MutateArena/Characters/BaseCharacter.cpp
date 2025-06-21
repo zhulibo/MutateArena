@@ -23,6 +23,7 @@
 #include "MutateArena/Utils/LibraryCommon.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/DecalComponent.h"
 #include "Components/OverheadWidget.h"
 #include "Components/WidgetComponent.h"
 #include "Data/CharacterAsset.h"
@@ -31,6 +32,10 @@
 #include "Interfaces/InteractableTarget.h"
 #include "MutateArena/Effects/BloodCollision.h"
 #include "Components/SceneCaptureComponent2D.h"
+#include "MutateArena/Equipments/Equipment.h"
+#include "MutateArena/GameStates/BaseGameState.h"
+#include "MutateArena/System/Data/CommonAsset.h"
+#include "MutateArena/UI/TextChat/TextChat.h"
 #include "Net/UnrealNetwork.h"
 
 ABaseCharacter::ABaseCharacter()
@@ -157,22 +162,22 @@ void ABaseCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	PollSetMeshCollision();
-
-	CalcAimPitch();
+	PollSetMeshCollisionType();
 
 	PollInit();
+
+	CalcAimPitch();
 }
 
 // 设置碰撞
-void ABaseCharacter::PollSetMeshCollision()
+void ABaseCharacter::PollSetMeshCollisionType()
 {
-	if (!HasInitMeshCollision)
+	if (!bHasSetMeshCollisionType)
 	{
 		if (BasePlayerState == nullptr) BasePlayerState = GetPlayerState<ABasePlayerState>();
-		if (BasePlayerState && BasePlayerState->GetTeam() != ETeam::NoTeam)
+		if (BasePlayerState && BasePlayerState->Team != ETeam::NoTeam)
 		{
-			switch (BasePlayerState->GetTeam())
+			switch (BasePlayerState->Team)
 			{
 			case ETeam::Team1:
 				GetMesh()->SetCollisionObjectType(ECC_TEAM1_MESH);
@@ -182,7 +187,23 @@ void ABaseCharacter::PollSetMeshCollision()
 				break;
 			}
 
-			HasInitMeshCollision = true;
+			bHasSetMeshCollisionType = true;
+		}
+	}
+}
+
+void ABaseCharacter::PollInit()
+{
+	if (IsLocallyControlled() && !bIsControllerReady)
+	{
+		BaseController = Cast<ABaseController>(Controller);
+		if (BaseController)
+		{
+			bIsControllerReady = true;
+
+			OnControllerReady();
+
+			BaseController->ManualReset();
 		}
 	}
 }
@@ -244,22 +265,6 @@ float ABaseCharacter::MappingAimPitch(float TempAimPitch)
 	return TempAimPitch;
 }
 
-void ABaseCharacter::PollInit()
-{
-	if (IsLocallyControlled() && !bIsControllerReady)
-	{
-		BaseController = Cast<ABaseController>(Controller);
-		if (BaseController)
-		{
-			bIsControllerReady = true;
-
-			OnControllerReady();
-
-			BaseController->ManualReset();
-		}
-	}
-}
-
 void ABaseCharacter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
@@ -308,36 +313,6 @@ void ABaseCharacter::Destroyed()
 void ABaseCharacter::OnInputMethodChanged(ECommonInputType TempCommonInputType)
 {
 	UE_LOG(LogTemp, Warning, TEXT("OnInputMethodChanged: %d"), TempCommonInputType);
-}
-
-void ABaseCharacter::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
-	FVector NormalImpulse, const FHitResult& Hit)
-{
-	if (BloodEffect)
-	{
-		// UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::OnHit Location: %s"), *Hit.ImpactPoint.ToString());
-		// UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::OnHit Rotation: %s"), *Hit.ImpactNormal.Rotation().ToString());
-
-		FRotator HitRotation = Hit.ImpactNormal.Rotation();
-		auto BloodEffectComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
-			GetWorld(),
-			BloodEffect,
-			Hit.ImpactPoint,
-			FRotator(-HitRotation.Pitch, HitRotation.Yaw + 180.f, HitRotation.Roll)
-		);
-		if (BloodEffectComponent)
-		{
-			if (AProjectileBullet* ProjectileBullet = Cast<AProjectileBullet>(OtherActor))
-			{
-				float Damage = ProjectileBullet->GetDamage(Hit.Distance);
-				BloodEffectComponent->SetVariableInt(TEXT("Count"), ULibraryCommon::GetBloodParticleCount(Damage));
-			}
-			BloodEffectComponent->SetVariableLinearColor(TEXT("Color"), BloodColor);
-
-			UBloodCollision* CollisionCB = NewObject<UBloodCollision>(this);
-			BloodEffectComponent->SetVariableObject(TEXT("CollisionCB"), CollisionCB);
-		}
-	}
 }
 
 void ABaseCharacter::InitAbilityActorInfo()
@@ -405,45 +380,34 @@ float ABaseCharacter::GetJumpZVelocity()
 	return AttributeSetBase ? AttributeSetBase->GetJumpZVelocity() : 0.f;
 }
 
-void ABaseCharacter::PlayFootLandSound()
+void ABaseCharacter::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	FVector NormalImpulse, const FHitResult& Hit)
 {
-	FHitResult HitResult;
-	FVector Start = GetActorLocation();
-	FVector End = Start - FVector(0.f, 0.f, 100.f);
-
-	FCollisionQueryParams Params;
-	Params.AddIgnoredActor(this);
-	Params.bReturnPhysicalMaterial = true;
-
-	GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECollisionChannel::ECC_Visibility, Params);
-	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-	if (HitResult.bBlockingHit && AssetSubsystem && AssetSubsystem->CharacterAsset)
+	if (BloodEffect)
 	{
-		UMetaSoundSource* Sound = AssetSubsystem->CharacterAsset->FootLandSound_Concrete;
-		switch (UGameplayStatics::GetSurfaceType(HitResult))
+		// UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::OnHit Location: %s"), *Hit.ImpactPoint.ToString());
+		// UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::OnHit Rotation: %s"), *Hit.ImpactNormal.Rotation().ToString());
+
+		FRotator HitRotation = Hit.ImpactNormal.Rotation();
+		auto BloodEffectComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+			GetWorld(),
+			BloodEffect,
+			Hit.ImpactPoint,
+			FRotator(-HitRotation.Pitch, HitRotation.Yaw + 180.f, HitRotation.Roll)
+		);
+		if (BloodEffectComponent)
 		{
-		case EPhysicalSurface::SurfaceType1:
-			Sound = AssetSubsystem->CharacterAsset->FootLandSound_Concrete;
-			break;
-		case EPhysicalSurface::SurfaceType2:
-			Sound = AssetSubsystem->CharacterAsset->FootLandSound_Dirt;
-			break;
-		case EPhysicalSurface::SurfaceType3:
-			Sound = AssetSubsystem->CharacterAsset->FootLandSound_Metal;
-			break;
-		case EPhysicalSurface::SurfaceType4:
-			Sound = AssetSubsystem->CharacterAsset->FootLandSound_Wood;
-			break;
+			if (AProjectileBullet* ProjectileBullet = Cast<AProjectileBullet>(OtherActor))
+			{
+				float Damage = ProjectileBullet->GetDamage(Hit.Distance);
+				BloodEffectComponent->SetVariableInt(TEXT("Count"), ULibraryCommon::GetBloodParticleCount(Damage));
+			}
+			BloodEffectComponent->SetVariableLinearColor(TEXT("Color"), BloodColor);
+
+			UBloodCollision* CollisionCB = NewObject<UBloodCollision>(this);
+			BloodEffectComponent->SetVariableObject(TEXT("CollisionCB"), CollisionCB);
 		}
-		UGameplayStatics::PlaySoundAtLocation(this, Sound, HitResult.Location);
 	}
-}
-
-void ABaseCharacter::FellOutOfWorld(const UDamageType& DmgType)
-{
-	UGameplayStatics::ApplyDamage(this, GetHealth(), BaseController, this, UDamageTypeFall::StaticClass());
-
-	// Super::FellOutOfWorld(DmgType);
 }
 
 void ABaseCharacter::Move(const FInputActionValue& Value)
@@ -516,36 +480,42 @@ void ABaseCharacter::CrouchControllerButtonPressed(const FInputActionValue& Valu
 
 void ABaseCharacter::TraceInteractTarget(FHitResult& OutHit)
 {
-	FVector2D ViewportSize;
-	GEngine->GameViewport->GetViewportSize(ViewportSize);
+	FVector Start = Camera->GetComponentLocation();
+	FVector End = Start + Camera->GetForwardVector() * 160.f;
 
-	FVector2D CrosshairLocation(ViewportSize.X / 2.f, ViewportSize.Y / 2.f);
-	FVector Position;
-	FVector Direction;
-	bool bScreenToWorld = UGameplayStatics::DeprojectScreenToWorld(
-		UGameplayStatics::GetPlayerController(this, 0),
-		CrosshairLocation, Position, Direction
-	);
+	DrawDebugLine(GetWorld(), Start, End, C_YELLOW, true);
 
-	if (bScreenToWorld)
+	FCollisionQueryParams QueryParams;
+	TArray<AActor*> TeamPlayers;
+	if (BaseGameState == nullptr) BaseGameState = GetWorld()->GetGameState<ABaseGameState>();
+	if (BasePlayerState == nullptr) BasePlayerState = GetPlayerState<ABasePlayerState>();
+	if (BaseGameState && BasePlayerState)
 	{
-		FVector Start = Position;
-		FVector End = Position + Direction * 160.f;
+		QueryParams.AddIgnoredActors(BaseGameState->AllEquipments);
 
-		DrawDebugLine(GetWorld(), Start, End, C_YELLOW, true);
-
-		FCollisionQueryParams CollisionQueryParams;
-		CollisionQueryParams.AddIgnoredActor(this);
-		GetWorld()->SweepSingleByChannel(
-			OutHit,
-			Start,
-			End,
-			FQuat::Identity,
-			ECollisionChannel::ECC_Visibility,
-			FCollisionShape::MakeSphere(10.f),
-			CollisionQueryParams
-		);
+		if (BaseGameState)
+		{
+			TArray<ABasePlayerState*> PlayerStates = BaseGameState->GetPlayerStates(BasePlayerState->Team);
+			for (int32 i = 0; i < PlayerStates.Num(); ++i)
+			{
+				if (PlayerStates[i])
+				{
+					TeamPlayers.AddUnique(PlayerStates[i]->GetPawn());
+				}
+			}
+		}
 	}
+	QueryParams.AddIgnoredActors(TeamPlayers);
+	
+	GetWorld()->SweepSingleByChannel(
+		OutHit,
+		Start,
+		End,
+		FQuat::Identity,
+		ECollisionChannel::ECC_Visibility,
+		FCollisionShape::MakeSphere(10.f),
+		QueryParams
+	);
 }
 
 void ABaseCharacter::InteractStarted(const FInputActionValue& Value)
@@ -733,6 +703,49 @@ void ABaseCharacter::TextChat(const FInputActionValue& Value)
 	}
 }
 
+void ABaseCharacter::SetHealth(float TempHealth)
+{
+	if (AttributeSetBase)
+	{
+		AttributeSetBase->SetHealth(TempHealth);
+	}
+}
+
+// 使用RPC通知攻击者立刻响应受伤者血量变化（UAttributeSetBase中的Health同步有点慢）
+void ABaseCharacter::MulticastSetHealth_Implementation(float TempHealth, AController* AttackerController)
+{
+	if (HasAuthority()) return;
+
+	if (AttackerController && AttackerController->IsLocalController())
+	{
+		SetHealth(TempHealth);
+	}
+}
+
+void ABaseCharacter::OnMaxHealthChanged(const FOnAttributeChangeData& Data)
+{
+	if (OverheadWidgetClass == nullptr) OverheadWidgetClass = Cast<UOverheadWidget>(OverheadWidget->GetUserWidgetObject());
+	if (OverheadWidgetClass)
+	{
+		OverheadWidgetClass->OnMaxHealthChange(Data.NewValue);
+	}
+}
+
+void ABaseCharacter::OnHealthChanged(const FOnAttributeChangeData& Data)
+{
+	if (OverheadWidgetClass == nullptr) OverheadWidgetClass = Cast<UOverheadWidget>(OverheadWidget->GetUserWidgetObject());
+	if (OverheadWidgetClass)
+	{
+		OverheadWidgetClass->OnHealthChange(Data.OldValue, Data.NewValue);
+	}
+
+	if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
+	if (BaseController)
+	{
+		BaseController->SetHUDHealth(Data.NewValue);
+	}
+}
+
 // 落地事件（只在本地和服务端执行）
 void ABaseCharacter::Landed(const FHitResult& Hit)
 {
@@ -783,51 +796,136 @@ float ABaseCharacter::CalcFallDamageRate()
 
 void ABaseCharacter::MulticastPlayOuchSound_Implementation(float DamageRate)
 {
-	if (OuchSound)
+	UGameplayStatics::PlaySoundAtLocation(this, OuchSound, GetActorLocation());
+}
+
+void ABaseCharacter::PlayFootLandSound()
+{
+	FHitResult HitResult;
+	FVector Start = GetActorLocation();
+	FVector End = Start - FVector(0.f, 0.f, 100.f);
+
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(this);
+	Params.bReturnPhysicalMaterial = true;
+
+	GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECollisionChannel::ECC_Visibility, Params);
+	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+	if (HitResult.bBlockingHit && AssetSubsystem && AssetSubsystem->CharacterAsset)
 	{
-		UGameplayStatics::PlaySoundAtLocation(this, OuchSound, GetActorLocation());
+		UMetaSoundSource* Sound = AssetSubsystem->CharacterAsset->FootLandSound_Concrete;
+		switch (UGameplayStatics::GetSurfaceType(HitResult))
+		{
+		case EPhysicalSurface::SurfaceType1:
+			Sound = AssetSubsystem->CharacterAsset->FootLandSound_Concrete;
+			break;
+		case EPhysicalSurface::SurfaceType2:
+			Sound = AssetSubsystem->CharacterAsset->FootLandSound_Dirt;
+			break;
+		case EPhysicalSurface::SurfaceType3:
+			Sound = AssetSubsystem->CharacterAsset->FootLandSound_Metal;
+			break;
+		case EPhysicalSurface::SurfaceType4:
+			Sound = AssetSubsystem->CharacterAsset->FootLandSound_Wood;
+			break;
+		}
+		UGameplayStatics::PlaySoundAtLocation(this, Sound, HitResult.Location);
 	}
 }
 
-void ABaseCharacter::SetHealth(float TempHealth)
+void ABaseCharacter::FellOutOfWorld(const UDamageType& DmgType)
 {
-	if (AttributeSetBase)
-	{
-		AttributeSetBase->SetHealth(TempHealth);
-	}
+	UGameplayStatics::ApplyDamage(this, GetHealth(), BaseController, this, UDamageTypeFall::StaticClass());
+
+	// Super::FellOutOfWorld(DmgType);
 }
 
-// 使用RPC通知攻击者立刻响应受伤者血量变化（UAttributeSetBase中的Health同步有点慢）
-void ABaseCharacter::MulticastSetHealth_Implementation(float TempHealth, AController* AttackerController)
+void ABaseCharacter::SendRadio(int32 RadioIndex)
 {
-	if (HasAuthority()) return;
-
-	if (AttackerController && AttackerController->IsLocalController())
-	{
-		SetHealth(TempHealth);
-	}
-}
-
-void ABaseCharacter::OnMaxHealthChanged(const FOnAttributeChangeData& Data)
-{
-	if (OverheadWidgetClass == nullptr) OverheadWidgetClass = Cast<UOverheadWidget>(OverheadWidget->GetUserWidgetObject());
-	if (OverheadWidgetClass)
-	{
-		OverheadWidgetClass->OnMaxHealthChange(Data.NewValue);
-	}
-}
-
-void ABaseCharacter::OnHealthChanged(const FOnAttributeChangeData& Data)
-{
-	if (OverheadWidgetClass == nullptr) OverheadWidgetClass = Cast<UOverheadWidget>(OverheadWidget->GetUserWidgetObject());
-	if (OverheadWidgetClass)
-	{
-		OverheadWidgetClass->OnHealthChange(Data.OldValue, Data.NewValue);
-	}
-
 	if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
-	if (BaseController)
+	if (BasePlayerState == nullptr) BasePlayerState = GetPlayerState<ABasePlayerState>();
+	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+	if (BaseController && BasePlayerState && AssetSubsystem&& AssetSubsystem->CharacterAsset)
 	{
-		BaseController->SetHUDHealth(Data.NewValue);
+		BaseController->ServerSendMsg(
+			EMsgType::Radio,
+			BasePlayerState->Team,
+			BasePlayerState->GetPlayerName(),
+			AssetSubsystem->CharacterAsset->RadioTexts[RadioIndex]
+		);
+	}
+
+	LocalPlayRadioSound(RadioIndex);
+	ServerPlayRadioSound(RadioIndex);
+}
+
+void ABaseCharacter::ServerPlayRadioSound_Implementation(int32 RadioIndex)
+{
+	MulticastPlayRadioSound(RadioIndex);
+}
+
+void ABaseCharacter::MulticastPlayRadioSound_Implementation(int32 RadioIndex)
+{
+	if (IsLocallyControlled())
+	{
+		LocalPlayRadioSound(RadioIndex);
+	}
+}
+
+void ABaseCharacter::LocalPlayRadioSound(int32 RadioIndex)
+{
+	if (RadioSounds.IsValidIndex(RadioIndex))
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, RadioSounds[RadioIndex], GetActorLocation());
+	}
+}
+
+void ABaseCharacter::SprayPaint(int32 RadioIndex)
+{
+	FVector Start = Camera->GetComponentLocation();
+	FVector End = Start + Camera->GetForwardVector() * 300.f;
+
+	DrawDebugLine(GetWorld(), Start, End, C_YELLOW, true);
+
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(this);
+	TArray<AActor*> AllEquipments;
+	UGameplayStatics::GetAllActorsWithTag(GetWorld(), TAG_EQUIPMENT, AllEquipments);
+	QueryParams.AddIgnoredActors(AllEquipments);
+
+	FHitResult OutHit;
+	GetWorld()->SweepSingleByChannel(
+		OutHit,
+		Start,
+		End,
+		FQuat::Identity,
+		ECollisionChannel::ECC_Visibility,
+		FCollisionShape::MakeSphere(5.f),
+		QueryParams
+	);
+	
+	if (OutHit.bBlockingHit)
+	{
+		if (AssetSubsystem == nullptr) AssetSubsystem = GetWorld()->GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+		if (AssetSubsystem && AssetSubsystem->CommonAsset)
+		{
+			auto SprayPaints = AssetSubsystem->CommonAsset->SprayPaints;
+			if (SprayPaints.IsValidIndex(RadioIndex))
+			{
+				FRotator DecalRotation = FRotationMatrix::MakeFromX(OutHit.ImpactNormal).Rotator();
+				DecalRotation.Roll += 90.0f;
+				DecalRotation.Yaw += 180.0f;
+				UGameplayStatics::SpawnDecalAttached(
+					SprayPaints[RadioIndex].Material,
+					FVector(5.f, 100.f, 100.f),
+					OutHit.GetComponent(),
+					OutHit.BoneName,
+					OutHit.ImpactPoint,
+					DecalRotation,
+					EAttachLocation::KeepWorldPosition,
+					0.f
+				);
+			}
+		}
 	}
 }

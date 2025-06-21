@@ -204,6 +204,8 @@ void UServer::OnFindLobbiesComplete(bool bWasSuccessful, const TArray<TSharedRef
 					ModeName = Lobbies[i]->Attributes.Find(LOBBY_MODE_NAME)->GetString();
 					MapName = Lobbies[i]->Attributes.Find(LOBBY_MAP_NAME)->GetString();
 				}
+
+				ServerName = ULibraryCommon::ObfuscatePlayerName(ServerName, this);
 				
 				if (Lobbies[i]->Attributes.Num() > 0)
 				{

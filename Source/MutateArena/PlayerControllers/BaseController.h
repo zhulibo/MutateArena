@@ -9,6 +9,7 @@ enum class EMsgType : uint8;
 enum class ETeam : uint8;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FChangeCrosshairSpread, float Spread);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnCrosshairHidden, bool bIsHidden);
 DECLARE_MULTICAST_DELEGATE_OneParam(FChangeAnnouncement, FText Text);
 DECLARE_MULTICAST_DELEGATE(FOnMatchEnd);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnMatchCountdownChange, int32 CountdownTime);
@@ -23,6 +24,7 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FOnMutantHealthChange, float Health);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnAmmoChange, int32 Ammo);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnCarriedAmmoChange, int32 CarriedAmmo);
 DECLARE_MULTICAST_DELEGATE(FShowTextChat);
+DECLARE_MULTICAST_DELEGATE_FourParams(FSendRadioMsg, EMsgType MsgType, ETeam Team, const FString& PlayerName, const FString& Msg);
 DECLARE_MULTICAST_DELEGATE(FOnInteractStarted);
 DECLARE_MULTICAST_DELEGATE(FOnInteractEnded);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnHUDStateChange, EHUDState HUDState);
@@ -37,10 +39,8 @@ public:
 	UPROPERTY()
 	class UGameLayout* GameLayout;
 
-	void FocusGame();
-	void FocusUI();
-
 	FChangeCrosshairSpread ChangeCrosshairSpread;
+	FOnCrosshairHidden OnCrosshairHidden;
 	FChangeAnnouncement ChangeAnnouncement;
 	FOnMatchEnd OnMatchEnd;
 	FOnMatchCountdownChange OnMatchCountdownChange;
@@ -55,28 +55,11 @@ public:
 	FOnAmmoChange OnAmmoChange;
 	FOnCarriedAmmoChange OnCarriedAmmoChange;
 	FShowTextChat ShowTextChat;
+	FSendRadioMsg SendRadioMsg;
 	FOnInteractStarted OnInteractStarted;
 	FOnInteractEnded OnInteractEnded;
 	FOnHUDStateChange OnHUDStateChange;
 	FOnViewTargetChange OnViewTargetChange;
-
-	virtual void ManualReset();
-
-	// 观战
-	UFUNCTION()
-	void SetPlayerSpectate();
-	UFUNCTION()
-	void SetPlayerPlay();
-	UFUNCTION(Client, Reliable)
-	void ClientHUDStateChanged(EHUDState HUDState);
-
-	virtual void SetHUDHealth(float Health) {}
-
-	virtual void SetHUDAmmo(int32 Ammo);
-	virtual void SetHUDCarriedAmmo(int32 CarriedAmmo);
-
-	UFUNCTION(Server, Reliable)
-	void ServerSendMsg(EMsgType MsgType, ETeam Team, const FString& PlayerName, const FString& Msg = FString());
 	
 protected:
 	virtual void BeginPlay() override;
@@ -101,13 +84,38 @@ protected:
 	TSubclassOf<UGameLayout> GameLayoutClass;
 	void AddGameLayout();
 
+public:
+	void FocusGame();
+	void FocusUI();
+
+	// 观战
+	UFUNCTION()
+	void SetPlayerSpectate();
+	UFUNCTION()
+	void SetPlayerPlay();
+	UFUNCTION(Client, Reliable)
+	void ClientHUDStateChanged(EHUDState HUDState);
+
+protected:
 	void SetHUDWarmupCountdown(int32 CountdownTime);
 
 	virtual void HandleMatchHasStarted();
 	virtual void HandleMatchHasEnded();
 	virtual void HandleLeavingMap();
 
+public:
+	virtual void ManualReset();
+	
+	virtual void SetHUDHealth(float Health) {}
+
+	virtual void SetHUDAmmo(int32 Ammo);
+	virtual void SetHUDCarriedAmmo(int32 CarriedAmmo);
+protected:
 	virtual void InitHUD() {}
 	virtual void SetHUDTime() {}
 
+public:
+	UFUNCTION(Server, Reliable)
+	void ServerSendMsg(EMsgType MsgType, ETeam Team, const FString& PlayerName, const FString& Msg = FString());
+	
 };

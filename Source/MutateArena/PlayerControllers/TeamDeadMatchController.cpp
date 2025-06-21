@@ -34,9 +34,9 @@ void ATeamDeadMatchController::RequestServerMatchInfo_Implementation()
 		ReturnServerMatchInfo(
 			TeamDeadMatchMode->GetMatchState(),
 			TeamDeadMatchMode->LevelStartTime,
-			TeamDeadMatchMode->GetWarmupTime(),
-			TeamDeadMatchMode->GetMatchTime(),
-			TeamDeadMatchMode->GetCooldownTime()
+			TeamDeadMatchMode->WarmupTime,
+			TeamDeadMatchMode->MatchTime,
+			TeamDeadMatchMode->CooldownTime
 		);
 	}
 }

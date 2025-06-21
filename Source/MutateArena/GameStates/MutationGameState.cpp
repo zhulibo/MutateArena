@@ -1,5 +1,6 @@
 #include "MutationGameState.h"
 
+#include "MutateArena/MutateArena.h"
 #include "MutateArena/GameModes/MutationMode.h"
 #include "MutateArena/PlayerControllers/MutationController.h"
 #include "MutateArena/PlayerStates/MutationPlayerState.h"
@@ -9,6 +10,8 @@
 AMutationGameState::AMutationGameState()
 {
 	PrimaryActorTick.bCanEverTick = true;
+
+	Tags.Add(TAG_GAME_STATE_MUTATION);
 }
 
 void AMutationGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -51,24 +54,6 @@ void AMutationGameState::WatchGameState()
 			MutationMode->EndRound();
 		}
 	}
-}
-
-void AMutationGameState::AddToPlayerStates(ABasePlayerState* BasePlayerState, ETeam Team)
-{
-	Super::AddToPlayerStates(BasePlayerState, Team);
-
-	CalcDamageMul();
-
-	SetHUDTeamNum(GetPlayerStates(Team).Num(), Team);
-}
-
-void AMutationGameState::RemoveFromPlayerStates(ABasePlayerState* BasePlayerState, ETeam Team)
-{
-	Super::RemoveFromPlayerStates(BasePlayerState, Team);
-
-	CalcDamageMul();
-
-	SetHUDTeamNum(GetPlayerStates(Team).Num(), Team);
 }
 
 void AMutationGameState::EndRoundIfAllBeKilledByMelee()
@@ -131,6 +116,24 @@ void AMutationGameState::OnRep_DamageMul()
 	{
 		MutationController->SetHUDDamageMul(DamageMul);
 	}
+}
+
+void AMutationGameState::AddToPlayerStates(ABasePlayerState* BasePlayerState, ETeam Team)
+{
+	Super::AddToPlayerStates(BasePlayerState, Team);
+
+	CalcDamageMul();
+
+	SetHUDTeamNum(GetPlayerStates(Team).Num(), Team);
+}
+
+void AMutationGameState::RemoveFromPlayerStates(ABasePlayerState* BasePlayerState, ETeam Team)
+{
+	Super::RemoveFromPlayerStates(BasePlayerState, Team);
+
+	CalcDamageMul();
+
+	SetHUDTeamNum(GetPlayerStates(Team).Num(), Team);
 }
 
 void AMutationGameState::OnRep_Team1PlayerStates()

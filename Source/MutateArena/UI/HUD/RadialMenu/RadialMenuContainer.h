@@ -23,11 +23,11 @@ protected:
 	UCommonTextBlock* TitlePaint;
 
 	UPROPERTY(meta = (BindWidget))
-	class URadialMenu* RadialMenuEquipment;
+	class URadialMenuBase* RadialMenuEquipment;
 	UPROPERTY(meta = (BindWidget))
-	URadialMenu* RadialMenuRadio;
+	URadialMenuBase* RadialMenuRadio;
 	UPROPERTY(meta = (BindWidget))
-	URadialMenu* RadialMenuPaint;
+	URadialMenuBase* RadialMenuPaint;
 
 	void ShowRadialMenu(bool bIsShow);
 
@@ -35,13 +35,13 @@ protected:
 	void ChangeRadialMenu();
 	void SelectRadialMenu(double X, double Y);
 	void CloseRadialMenuInternal();
-	
+
 	void OnTeamChange(ETeam TempTeam);
 	void SetHumanRadialMenuText();
 	void SetMutantRadialMenuText();
 
 	int32 ActiveRadialMenuIndex = 1;
-	URadialMenu* GetActiveRadialMenu();
+	URadialMenuBase* GetActiveRadialMenu();
 
 	void SetSelectedItem();
 

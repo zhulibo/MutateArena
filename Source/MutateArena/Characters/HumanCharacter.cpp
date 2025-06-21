@@ -370,7 +370,7 @@ void AHumanCharacter::FireButtonPressed(const FInputActionValue& Value)
 
 	bCanSwitchLoadout = false;
 
-	switch (CombatComponent->GetCurEquipmentType())
+	switch (CombatComponent->CurEquipmentType)
 	{
 	case EEquipmentType::Primary:
 		CombatComponent->StartFire();
@@ -387,7 +387,7 @@ void AHumanCharacter::FireButtonReleased(const FInputActionValue& Value)
 {
 	if (CombatComponent == nullptr) return;
 
-	switch (CombatComponent->GetCurEquipmentType())
+	switch (CombatComponent->CurEquipmentType)
 	{
 	case EEquipmentType::Primary:
 		CombatComponent->StopFire();
@@ -418,73 +418,6 @@ void AHumanCharacter::DropButtonPressed(const FInputActionValue& Value)
 	}
 }
 
-void AHumanCharacter::OnServerDropEquipment()
-{
-	if (bIsDead || CombatComponent == nullptr) return;
-
-	// 如果脚下有同类型武器直接拾取使用
-	TArray<AActor*> OverlappingActors;
-	GetOverlappingActors(OverlappingActors, AEquipment::StaticClass());
-	for (AActor* OverlappingActor : OverlappingActors)
-	{
-		if (AEquipment* Equipment = Cast<AEquipment>(OverlappingActor))
-		{
-			if (CombatComponent->CurEquipmentType == Equipment->GetEquipmentType())
-			{
-				CombatComponent->MulticastReplaceCurEquipment(Equipment);
-			}
-
-			return;
-		}
-	}
-	
-	// 否则切换至其它装备
-	if (CombatComponent->GetLastEquipment())
-	{
-		CombatComponent->MulticastSwapEquipment2(CombatComponent->LastEquipmentType);
-	}
-	else
-	{
-		CombatComponent->MulticastSwapEquipment2(EEquipmentType::Melee);
-	}
-}
-
-// 装备检测到的重叠装备
-void AHumanCharacter::EquipOverlappingEquipment(AEquipment* Equipment)
-{
-	if (bIsDead || Equipment == nullptr || Equipment->GetOwner() || CombatComponent == nullptr) return;
-	if (CombatComponent->HasEquippedThisTypeEquipment(Equipment->GetEquipmentType())) return;
-	if (CombatComponent->MeleeEquipment) // 排除玩家刚重生还没有装备好武器（近战武器装备后无法丢弃）
-	{
-		CombatComponent->MulticastEquipEquipment2(Equipment);
-	}
-}
-
-// 给予补给箱装备
-void AHumanCharacter::ServerGivePickupEquipment_Implementation(APickupEquipment* PickupEquipment)
-{
-	if (bIsDead || CombatComponent == nullptr || PickupEquipment == nullptr) return;
-
-	AEquipment* Equipment = PickupEquipment->Equipment;
-	if (Equipment == nullptr) return;
-
-	// 丢弃旧装备
-	CombatComponent->MulticastDropEquipment2(Equipment->GetEquipmentType());
-
-	// 装备类型使用中，替换
-	if (CombatComponent->CurEquipmentType == Equipment->GetEquipmentType())
-	{
-		CombatComponent->MulticastReplaceCurEquipment(Equipment);
-	}
-	// 装备类型非使用中，装备
-	else
-	{
-		CombatComponent->MulticastEquipEquipment2(Equipment);
-	}
-
-	PickupEquipment->Destroy();
-}
-
 void AHumanCharacter::SwapPrimaryEquipmentButtonPressed()
 {
 	if (CombatComponent) CombatComponent->SwapEquipment(EEquipmentType::Primary);
@@ -508,6 +441,66 @@ void AHumanCharacter::SwapThrowingEquipmentButtonPressed()
 void AHumanCharacter::SwapLastEquipmentButtonPressed(const FInputActionValue& Value)
 {
 	if (CombatComponent) CombatComponent->SwapEquipment(CombatComponent->LastEquipmentType);
+}
+
+void AHumanCharacter::OnServerDropEquipment()
+{
+	if (bIsDead || CombatComponent == nullptr) return;
+
+	// 如果脚下有同类型武器直接拾取使用
+	TArray<AActor*> OverlappingActors;
+	GetOverlappingActors(OverlappingActors, AEquipment::StaticClass());
+	for (AActor* OverlappingActor : OverlappingActors)
+	{
+		if (AEquipment* Equipment = Cast<AEquipment>(OverlappingActor))
+		{
+			if (CombatComponent->CurEquipmentType == Equipment->EquipmentType)
+			{
+				CombatComponent->MulticastReplaceCurEquipment(Equipment);
+			}
+
+			return;
+		}
+	}
+	
+	// 否则切换至其它装备
+	CombatComponent->MulticastSwapEquipment2(CombatComponent->GetLastEquipment() ? CombatComponent->LastEquipmentType : EEquipmentType::Melee);
+}
+
+// 装备检测到的重叠装备
+void AHumanCharacter::EquipOverlappingEquipment(AEquipment* Equipment)
+{
+	if (bIsDead || Equipment == nullptr || Equipment->GetOwner() || CombatComponent == nullptr) return;
+	if (CombatComponent->HasEquippedThisTypeEquipment(Equipment->EquipmentType)) return;
+	if (CombatComponent->MeleeEquipment) // 排除玩家刚重生还没有装备好武器（近战武器装备后无法丢弃）
+	{
+		CombatComponent->MulticastEquipEquipment2(Equipment);
+	}
+}
+
+// 给予补给箱装备
+void AHumanCharacter::ServerGivePickupEquipment_Implementation(APickupEquipment* PickupEquipment)
+{
+	if (bIsDead || CombatComponent == nullptr || PickupEquipment == nullptr) return;
+
+	AEquipment* Equipment = PickupEquipment->Equipment;
+	if (Equipment == nullptr) return;
+
+	// 丢弃旧装备
+	CombatComponent->MulticastDropEquipment2(Equipment->EquipmentType);
+
+	// 装备类型使用中，替换
+	if (CombatComponent->CurEquipmentType == Equipment->EquipmentType)
+	{
+		CombatComponent->MulticastReplaceCurEquipment(Equipment);
+	}
+	// 装备类型非使用中，装备
+	else
+	{
+		CombatComponent->MulticastEquipEquipment2(Equipment);
+	}
+
+	PickupEquipment->Destroy();
 }
 
 void AHumanCharacter::TrySwitchLoadout()
@@ -649,12 +642,6 @@ void AHumanCharacter::OnRep_bIsImmune()
 	{
 		BasePlayerState->InitOverheadWidget();
 	}
-}
-
-FVector AHumanCharacter::GetHitTarget() const
-{
-	if (CombatComponent) return CombatComponent->HitTarget;
-	return FVector();
 }
 
 #undef LOCTEXT_NAMESPACE

@@ -50,7 +50,8 @@ void UMutationMutant::OnSkillChange(bool bIsShow)
 	SkillBox->SetVisibility(bIsShow ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 }
 
-// TODO 验证通过UI接受事件可行性，将CommonUI与增强输入结合使用。
+// TODO 想要CommonUI配合增强输入来触发这个按键，但是ABaseController::FocusGame后，SkillButton无法被点击，增强输入无法触发这个按键
+// 技能逻辑通过增强输入的BindAction处理了，这个按钮现在只有显示作用，待把技能逻辑移到按钮点击上
 void UMutationMutant::OnSkillButtonClicked()
 {
 	UE_LOG(LogTemp, Warning, TEXT("OnSkillButtonClicked"));

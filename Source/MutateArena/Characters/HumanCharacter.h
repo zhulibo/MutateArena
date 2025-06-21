@@ -17,34 +17,13 @@ class MUTATEARENA_API AHumanCharacter : public ABaseCharacter, public IInteracta
 
 public:
 	AHumanCharacter();
-
-	void EquipOverlappingEquipment(class AEquipment* Equipment);
-
-	UFUNCTION(Server, Reliable)
-	void ServerGivePickupEquipment(class APickupEquipment* PickupEquipment);
-
-	void SwapPrimaryEquipmentButtonPressed();
-	void SwapSecondaryEquipmentButtonPressed();
-	void SwapMeleeEquipmentButtonPressed();
-	void SwapThrowingEquipmentButtonPressed();
-
-	void TrySwitchLoadout();
-	UPROPERTY()
-	bool bCanSwitchLoadout = true;
-
-	void OnServerDropEquipment();
-
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastMutationDead(bool bNeedSpawn);
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastMeleeDead();
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastTeamDeadMatchDead();
-
-	UPROPERTY(ReplicatedUsing = OnRep_bIsImmune)
-	bool bIsImmune = false;
-	UFUNCTION()
-	virtual void OnInteractMutantSuccess(class AMutantCharacter* MutantCharacter) override;
+	
+	UPROPERTY(VisibleAnywhere)
+	class UCombatComponent* CombatComponent;
+	UPROPERTY(VisibleAnywhere)
+	class URecoilComponent* RecoilComponent;
+	UPROPERTY(VisibleAnywhere)
+	class UCrosshairComponent* CrosshairComponent;
 
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -54,13 +33,6 @@ protected:
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void UnPossessed() override;
 	virtual void Destroyed() override;
-
-	UPROPERTY(VisibleAnywhere)
-	class UCombatComponent* CombatComponent;
-	UPROPERTY(VisibleAnywhere)
-	class URecoilComponent* RecoilComponent;
-	UPROPERTY(VisibleAnywhere)
-	class UCrosshairComponent* CrosshairComponent;
 
 	UPROPERTY()
 	class AMutationMode* MutationMode;
@@ -75,13 +47,30 @@ protected:
 	void AimButtonReleased(const FInputActionValue& Value);
 public:
 	void FireButtonPressed(const FInputActionValue& Value);
+
 protected:
 	void FireButtonReleased(const FInputActionValue& Value);
 	void ReloadButtonPressed(const FInputActionValue& Value);
 	void DropButtonPressed(const FInputActionValue& Value);
+public:
+	void SwapPrimaryEquipmentButtonPressed();
+	void SwapSecondaryEquipmentButtonPressed();
+	void SwapMeleeEquipmentButtonPressed();
+	void SwapThrowingEquipmentButtonPressed();
+protected:
 	void SwapLastEquipmentButtonPressed(const FInputActionValue& Value);
 
+public:
+	void OnServerDropEquipment();
+	void EquipOverlappingEquipment(class AEquipment* Equipment);
+	UFUNCTION(Server, Reliable)
+	void ServerGivePickupEquipment(class APickupEquipment* PickupEquipment);
 
+	UPROPERTY()
+	bool bCanSwitchLoadout = true;
+	void TrySwitchLoadout();
+
+protected:
 	virtual void OnControllerReady() override;
 
 	void ApplyLoadout();
@@ -107,20 +96,26 @@ protected:
 	void OnRep_DefaultThrowing();
 
 	UFUNCTION()
-	void HumanReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType,
-		AController* AttackerController, AActor* DamageCauser);
+	void HumanReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* AttackerController, AActor* DamageCauser);
+public:
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastMutationDead(bool bNeedSpawn);
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastMeleeDead();
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastTeamDeadMatchDead();
+protected:
 	void HandleDead();
-	
+
+public:
+	UPROPERTY(ReplicatedUsing = OnRep_bIsImmune)
+	bool bIsImmune = false;
+	UFUNCTION()
+	virtual void OnInteractMutantSuccess(class AMutantCharacter* MutantCharacter) override;
+protected:
 	UFUNCTION(Server, Reliable)
 	void ServerOnImmune(AMutantCharacter* MutantCharacter);
 	UFUNCTION()
 	void OnRep_bIsImmune();
-
-public:
-	FORCEINLINE UCombatComponent* GetCombatComponent() const { return CombatComponent; }
-	FORCEINLINE URecoilComponent* GetRecoilComponent() const { return RecoilComponent; }
-	FORCEINLINE UCrosshairComponent* GetCrosshairComponent() const { return CrosshairComponent; }
-	FVector GetHitTarget() const;
-	FORCEINLINE bool IsImmune() const { return bIsImmune; }
-
+	
 };

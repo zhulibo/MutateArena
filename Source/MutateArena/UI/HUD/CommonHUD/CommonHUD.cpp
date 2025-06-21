@@ -73,7 +73,7 @@ void UCommonHUD::OnAddKillLog(ABasePlayerState* AttackerState, const FText& Caus
 				KillLogLine->AttackerPlayer->SetText(FText::FromString(ULibraryCommon::ObfuscatePlayerName(AttackerState->GetPlayerName(), this)));
 				if (LocalPlayerState)
 				{
-					if (LocalPlayerState->GetTeam() == AttackerState->GetTeam())
+					if (LocalPlayerState->Team == AttackerState->Team)
 					{
 						KillLogLine->AttackerPlayer->SetColorAndOpacity(C_BLUE);
 					}
@@ -93,7 +93,7 @@ void UCommonHUD::OnAddKillLog(ABasePlayerState* AttackerState, const FText& Caus
 				KillLogLine->DamagedPlayer->SetText(FText::FromString(ULibraryCommon::ObfuscatePlayerName(DamagedState->GetPlayerName(), this)));
 				if (LocalPlayerState)
 				{
-					if (LocalPlayerState->GetTeam() == DamagedState->GetTeam())
+					if (LocalPlayerState->Team == DamagedState->Team)
 					{
 						KillLogLine->DamagedPlayer->SetColorAndOpacity(C_BLUE);
 					}

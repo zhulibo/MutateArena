@@ -46,9 +46,9 @@ void URecoilComponent::TickComponent(float DeltaSeconds, ELevelTick TickType, FA
 // 开火后增加后坐力
 void URecoilComponent::IncRecoil()
 {
-	if (HumanCharacter == nullptr || HumanCharacter->GetCombatComponent() == nullptr) return;
+	if (HumanCharacter == nullptr || HumanCharacter->CombatComponent == nullptr) return;
 
-	AWeapon* Weapon = HumanCharacter->GetCombatComponent()->GetUsingWeapon();
+	AWeapon* Weapon = HumanCharacter->CombatComponent->GetUsingWeapon();
 	if (Weapon == nullptr) return;
 
 	// 从总后坐力中减去上次开火未及时应用的后坐力
@@ -74,7 +74,7 @@ void URecoilComponent::IncRecoil()
 	}
 
 	// 首发后座倍率
-	if (HumanCharacter->GetCombatComponent()->IsFirstShot())
+	if (HumanCharacter->CombatComponent->bIsFirstShot)
 	{
 		RecoilVertTarget *= Weapon->FirstShotRecoilMul;
 		RecoilHorTarget *= Weapon->FirstShotRecoilMul;
@@ -137,8 +137,8 @@ void URecoilComponent::PollApplyRecoil(float DeltaSeconds)
 {
 	if (RecoilVertTotal == 0.f && RecoilHorTotal == 0.f) return;
 
-	if (HumanCharacter == nullptr || HumanCharacter->GetCombatComponent() == nullptr) return;
-	AWeapon* Weapon = HumanCharacter->GetCombatComponent()->GetUsingWeapon();
+	if (HumanCharacter == nullptr || HumanCharacter->CombatComponent == nullptr) return;
+	AWeapon* Weapon = HumanCharacter->CombatComponent->GetUsingWeapon();
 	if (Weapon == nullptr) return;
 
 	if (RecoilIncCostTime >= Weapon->RecoilIncTime) return;
@@ -184,8 +184,8 @@ void URecoilComponent::PollRecoverRecoil(float DeltaSeconds)
 {
 	if (RecoilDecCostTime >= RecoilDecTime) return;
 
-	if (HumanCharacter == nullptr || HumanCharacter->GetCombatComponent() == nullptr) return;
-	AWeapon* Weapon = HumanCharacter->GetCombatComponent()->GetUsingWeapon();
+	if (HumanCharacter == nullptr || HumanCharacter->CombatComponent == nullptr) return;
+	AWeapon* Weapon = HumanCharacter->CombatComponent->GetUsingWeapon();
 	if (Weapon == nullptr) return;
 
 	// 累计回复后坐力耗时
@@ -243,7 +243,7 @@ void URecoilComponent::SetRecoilHorDirection(ERecoilHorDirection TempRecoilHorDi
 
 float URecoilComponent::GetCurRecoilVert()
 {
-	if (HumanCharacter && HumanCharacter->GetCombatComponent() && HumanCharacter->GetCombatComponent()->IsAiming())
+	if (HumanCharacter && HumanCharacter->CombatComponent && HumanCharacter->CombatComponent->bIsAiming)
 	{
 		return 0.f;
 	}
@@ -253,7 +253,7 @@ float URecoilComponent::GetCurRecoilVert()
 
 float URecoilComponent::GetCurRecoilHor()
 {
-	if (HumanCharacter && HumanCharacter->GetCombatComponent() && HumanCharacter->GetCombatComponent()->IsAiming())
+	if (HumanCharacter && HumanCharacter->CombatComponent && HumanCharacter->CombatComponent->bIsAiming)
 	{
 		return 0.f;
 	}

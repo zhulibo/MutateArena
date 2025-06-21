@@ -32,5 +32,6 @@ protected:
 	UCanvasPanelSlot* Crosshair_B_Slot;
 	
 	void ChangeCrosshairSpread(float Spread);
+	void OnCrosshairHidden(bool bIsHidden);
 
 };

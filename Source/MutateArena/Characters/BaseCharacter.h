@@ -16,30 +16,20 @@ class MUTATEARENA_API ABaseCharacter : public ACharacter, public IAbilitySystemI
 public:
 	ABaseCharacter();
 
-	bool HasInitMeshCollision = false;
-
-	float MappingAimPitch(float TempAimPitch);
-
-	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
-	class UAttributeSetBase* GetAttributeSetBase();
-	float GetMaxHealth();
-	float GetHealth();
-	float GetDamageReceivedMul();
-	float GetRepelReceivedMul();
-	float GetCharacterLevel();
-	float GetJumpZVelocity();
-
-	void PlayFootLandSound();
-
-	virtual void FellOutOfWorld(const UDamageType& DmgType) override;
-	void SetHealth(float TempHealth);
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastSetHealth(float TempHealth, AController* AttackerController);
-
+	UPROPERTY(VisibleAnywhere)
+	class USpringArmComponent* CameraBoom;
+	UPROPERTY(VisibleAnywhere)
+	class UCameraComponent* Camera;
+	UPROPERTY(VisibleAnywhere)
+	USceneCaptureComponent2D* SceneCapture;
+protected:
 	UPROPERTY()
-	FColor BloodColor;
-	UPROPERTY(EditAnywhere)
-	class UNiagaraSystem* BloodEffect;
+	UMaterialInstanceDynamic* FlashbangMID;
+public:
+	UPROPERTY(VisibleAnywhere)
+	class UWidgetComponent* OverheadWidget;
+	UPROPERTY()
+	class UOverheadWidget* OverheadWidgetClass;
 
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -51,29 +41,49 @@ protected:
 	virtual void OnRep_PlayerState() override;
 	virtual void Destroyed() override;
 
+	UFUNCTION()
+	void OnInputMethodChanged(ECommonInputType TempCommonInputType);
+
+public:
+	bool bHasSetMeshCollisionType = false;
+protected:
+	void PollSetMeshCollisionType();
+
+	void PollInit();
+	bool bIsControllerReady = false;
+	virtual void OnControllerReady();
+
+	UPROPERTY(Replicated)
+	float ControllerPitch;
+public:
+	UPROPERTY()
+	float AimPitch;
+protected:
+	void CalcAimPitch();
+public:
+	float MappingAimPitch(float TempAimPitch);
+
+	// GAS
+protected:
 	UPROPERTY()
 	class UMAAbilitySystemComponent* AbilitySystemComponent;
 	UPROPERTY()
-	UAttributeSetBase* AttributeSetBase;
+	class UAttributeSetBase* AttributeSetBase;
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UGameplayEffect> DefaultAttrEffect;
-
 	void InitAbilityActorInfo();
 	virtual void OnAbilitySystemComponentInit();
+public:
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+	UAttributeSetBase* GetAttributeSetBase();
+	float GetMaxHealth();
+	float GetHealth();
+	float GetDamageReceivedMul();
+	float GetRepelReceivedMul();
+	float GetCharacterLevel();
+	float GetJumpZVelocity();
 
-	UPROPERTY(VisibleAnywhere)
-	class USpringArmComponent* CameraBoom;
-	UPROPERTY(VisibleAnywhere)
-	class UCameraComponent* Camera;
-	UPROPERTY(VisibleAnywhere)
-	USceneCaptureComponent2D* SceneCapture;
-	UPROPERTY()
-	UMaterialInstanceDynamic* FlashbangMID;
-	UPROPERTY(VisibleAnywhere)
-	class UWidgetComponent* OverheadWidget;
-	UPROPERTY()
-	class UOverheadWidget* OverheadWidgetClass;
-
+protected:
 	UPROPERTY()
 	class UAssetSubsystem* AssetSubsystem;
 	UPROPERTY()
@@ -87,26 +97,17 @@ protected:
 	UPROPERTY()
 	class ABaseController* BaseController;
 
-	UFUNCTION()
-	void OnInputMethodChanged(ECommonInputType TempCommonInputType);
-
+public:
+	UPROPERTY()
+	FColor BloodColor;
+	UPROPERTY(EditAnywhere)
+	class UNiagaraSystem* BloodEffect;
+protected:
 	UFUNCTION()
 	virtual void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 		FVector NormalImpulse, const FHitResult& Hit);
 
-	void PollSetMeshCollision();
-
-	void PollInit();
-
-	bool bIsControllerReady = false;
-	virtual void OnControllerReady();
-
-	UPROPERTY(Replicated)
-	float ControllerPitch;
-	UPROPERTY()
-	float AimPitch;
-	void CalcAimPitch();
-
+	// 基础运动
 	virtual void MoveStarted(const struct FInputActionValue& Value) {}
 	void Move(const FInputActionValue& Value);
 	virtual void MoveCompleted(const FInputActionValue& Value) {}
@@ -117,6 +118,10 @@ protected:
 	void CrouchButtonReleased(const FInputActionValue& Value);
 	void CrouchControllerButtonPressed(const FInputActionValue& Value);
 
+	// 交互
+	UPROPERTY()
+	AActor* InteractTarget;
+	void TraceInteractTarget(FHitResult& OutHit);
 	void InteractStarted(const FInputActionValue& Value);
 	void InteractOngoing(const FInputActionValue& Value);
 	void InteractTriggered(const FInputActionValue& Value);
@@ -127,6 +132,7 @@ protected:
 
 	void ScoreboardButtonPressed(const FInputActionValue& Value);
 	void ScoreboardButtonReleased(const FInputActionValue& Value);
+	
 	void PauseMenuButtonPressed(const FInputActionValue& Value);
 
 	void RadialMenuButtonPressed(const FInputActionValue& Value);
@@ -135,28 +141,45 @@ protected:
 	void RadialMenuSelect(const FInputActionValue& Value);
 
 	void TextChat(const FInputActionValue& Value);
-	
+
+	// 血量
+public:
+	bool bIsDead = false;
+	void SetHealth(float TempHealth);
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastSetHealth(float TempHealth, AController* AttackerController);
+protected:
 	void OnMaxHealthChanged(const FOnAttributeChangeData& Data);
 	virtual void OnHealthChanged(const FOnAttributeChangeData& Data);
 
+	// 跌落
 	virtual void Landed(const FHitResult& Hit) override;
 	float CalcFallDamageRate();
 	UPROPERTY(EditAnywhere)
 	class UMetaSoundSource* OuchSound;
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastPlayOuchSound(float DamageRate);
+public:
+	void PlayFootLandSound();
+protected:
+	virtual void FellOutOfWorld(const UDamageType& DmgType) override;
 
-	bool bIsDead = false;
-
-	UPROPERTY()
-	AActor* InteractTarget;
-	void TraceInteractTarget(FHitResult& OutHit);
+	// 无线电
+	UPROPERTY(EditAnywhere)
+	TArray<UMetaSoundSource*> RadioSounds;
+	// 样式：射击游戏中的无线电语音，类似于cs中的无线电
+	// 文本：Storm the front / Good job / Affirmative / Enemy spotted / Keep front line team / Stick together team / Negative / Follow me
+	// 嗓音：Solider 萨达奇比亚 Tank 土卫二 Ghost 带领
+public:
+	void SendRadio(int32 RadioIndex);
+protected:
+	UFUNCTION(Server, Reliable)
+	void ServerPlayRadioSound(int32 RadioIndex);
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastPlayRadioSound(int32 RadioIndex);
+	void LocalPlayRadioSound(int32 RadioIndex);
 
 public:
-	FORCEINLINE UCameraComponent* GetCamera() const { return Camera; }
-	FORCEINLINE USceneCaptureComponent2D* GetSceneCapture() const { return SceneCapture; }
-	FORCEINLINE UWidgetComponent* GetOverheadWidget() const { return OverheadWidget; }
-	FORCEINLINE float GetAimPitch() const { return AimPitch; }
-	FORCEINLINE bool IsDead() const { return bIsDead; }
-
+	void SprayPaint(int32 RadioIndex);
+	
 };

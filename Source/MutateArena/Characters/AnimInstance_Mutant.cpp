@@ -35,7 +35,7 @@ void UAnimInstance_Mutant::NativeUpdateAnimation(float DeltaSeconds)
 	* 人类被感染、开局被选为突变体、突变体切换角色等瞬间切换角色时，需要保持被销毁角色的AimPitch，但新角色生成后头几帧AimPitch为0，角色躯体闪动。
 	* 因为Character中的Controller未就绪，无法获取APawn::GetViewRotation > AController::GetControlRotation。
 	*/
-	AimPitch = MutantCharacter->GetAimPitch();
+	AimPitch = MutantCharacter->AimPitch;
 
 	// HACK 本地死亡时，直接获取GetFirstPlayerController中的GetControlRotation().Pitch
 	if (AimPitch == 0.f)

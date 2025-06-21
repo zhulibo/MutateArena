@@ -315,7 +315,7 @@ void AMutationMode::HumanReceiveDamage(AHumanCharacter* DamagedCharacter, ABaseC
 	if (AttackerState != DamagedState) // 受到跌落伤害时，AttackerController和DamageCauser传的是自己
 	{
 		// 增加攻击者怒气值
-		AttackerState->SetRage(AttackerState->GetRage() + Damage * 10);
+		AttackerState->SetRage(AttackerState->Rage + Damage * 10);
 	}
 
 	// 人类死亡
@@ -359,7 +359,7 @@ void AMutationMode::GetInfect(AHumanCharacter* DamagedCharacter, ABaseController
 	AttackerState->AddKillStreak();
 
 	// 增加攻击者怒气值
-	AttackerState->SetRage(AttackerState->GetRage() + 2000.f);
+	AttackerState->SetRage(AttackerState->Rage + 2000.f);
 
 	// 击杀日志
 	AddKillLog(AttackerState, AttackerCharacter, GetDefault<UDamageTypeMutantInfect>(), DamagedState);
@@ -430,14 +430,14 @@ void AMutationMode::MutantReceiveDamage(AMutantCharacter* DamagedCharacter, ABas
 	}
 
 	// 设置受伤者血量
-	float TakenDamage = Damage * MutationGameState->GetDamageMul() * DamagedState->GetDamageReceivedMul();
+	float TakenDamage = Damage * MutationGameState->DamageMul * DamagedState->GetDamageReceivedMul();
 	TakenDamage = FMath::Clamp(TakenDamage, 0.f, DamagedCharacter->GetHealth());
 	float Health = DamagedCharacter->GetHealth() - TakenDamage;
 	DamagedCharacter->SetHealth(Health);
 	DamagedCharacter->MulticastSetHealth(Health, AttackerController);
 
 	// 增加怒气值
-	DamagedState->SetRage(DamagedState->GetRage() + TakenDamage);
+	DamagedState->SetRage(DamagedState->Rage + TakenDamage);
 
 	// 增加攻击者伤害分数
 	if (AttackerState != DamagedState) // 受到跌落伤害时，AttackerController和DamageCauser传的是自己
@@ -499,7 +499,7 @@ void AMutationMode::SpawnMutantCharacter(AController* Controller, ESpawnMutantRe
 	FString CharacterName;
 	if (ABasePlayerState* BasePlayerState = Cast<ABasePlayerState>(Controller->PlayerState))
 	{
-		CharacterName = ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(BasePlayerState->GetMutantCharacterName()));
+		CharacterName = ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(BasePlayerState->MutantCharacterName));
 	}
 
 	// 获取角色类

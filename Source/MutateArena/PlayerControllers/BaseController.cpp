@@ -1,9 +1,6 @@
 #include "BaseController.h"
 
 #include "MutateArena/MutateArena.h"
-#include "MutateArena/GameStates/MeleeGameState.h"
-#include "MutateArena/GameStates/MutationGameState.h"
-#include "MutateArena/GameStates/TeamDeadMatchGameState.h"
 #include "MutateArena/PlayerStates/TeamType.h"
 #include "MutateArena/System/PlayerSubsystem.h"
 #include "MutateArena/UI/GameLayout.h"
@@ -85,17 +82,18 @@ void ABaseController::AddGameLayout()
 	if (GameLayout)
 	{
 		GameLayout->AddToViewport();
+
 		FocusGame();
 
-		if (Cast<AMutationGameState>(GetWorld()->GetGameState()))
+		if (GetWorld()->GetGameState()->ActorHasTag(TAG_GAME_STATE_MUTATION))
 		{
 			GameLayout->GameStack->AddWidget(GameLayout->MutationContainerClass);
 		}
-		else if (Cast<AMeleeGameState>(GetWorld()->GetGameState()))
+		else if (GetWorld()->GetGameState()->ActorHasTag(TAG_GAME_STATE_MELEE))
 		{
 			GameLayout->GameStack->AddWidget(GameLayout->MeleeContainerClass);
 		}
-		else if (Cast<ATeamDeadMatchGameState>(GetWorld()->GetGameState()))
+		else if (GetWorld()->GetGameState()->ActorHasTag(TAG_GAME_STATE_TDM))
 		{
 			GameLayout->GameStack->AddWidget(GameLayout->TeamDeadMatchContainerClass);
 		}

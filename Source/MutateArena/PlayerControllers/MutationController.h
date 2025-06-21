@@ -22,8 +22,6 @@ class MUTATEARENA_API AMutationController : public ABaseController
 	GENERATED_BODY()
 
 public:
-	void OnMatchStateSet(FName TempMatchState, int32 TempCurrentRound);
-
 	FOnTeamChange OnTeamChange;
 	FOnTeamNumChange OnTeamNumChange;
 	FOnCurRoundChange OnCurRoundChange;
@@ -33,16 +31,6 @@ public:
 	FOnRageChange OnRageChange;
 	FOnDamageMulChange OnDamageMulChange;
 	FOnBeImmune OnBeImmune;
-
-	virtual void InitHUD() override;
-	virtual void SetHUDHealth(float Health) override;
-	void SetHUDTeamNum(int32 TeamNum, ETeam Team);
-	void ShowHUDSkill(bool bIsShow);
-	void SetHUDRage(float UpdateRageUI);
-	void SetHUDDamageMul(float DamageMul);
-
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastPlaySpawnPickupSound();
 	
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -88,12 +76,16 @@ protected:
 	float CooldownTime = 0.f;
 
 	int32 CountdownSeconds = 0;
-
+	
+public:
+	void OnMatchStateSet(FName TempMatchState, int32 TempCurrentRound);
+protected:
 	UFUNCTION()
 	void OnRep_MatchState();
 	UFUNCTION()
 	void HandleMatchStateChange();
 
+	void HandleRoundHasEnded();
 	UFUNCTION()
 	void OnRep_CurrentRound();
 
@@ -101,15 +93,20 @@ protected:
 
 	void InitHumanHUD();
 	void InitMutantHUD();
-
-	float HUDHealth;
-	float HUDMaxHealth;
-	float HUDScore;
-	int32 HUDDefeat;
-
-	void HandleRoundHasEnded();
-
+	
+public:
+	virtual void InitHUD() override;
+	virtual void SetHUDHealth(float Health) override;
+	void SetHUDTeamNum(int32 TeamNum, ETeam Team);
+	void ShowHUDSkill(bool bIsShow);
+	void SetHUDRage(float UpdateRageUI);
+	void SetHUDDamageMul(float DamageMul);
+protected:
 	void SetHUDCurrentRound();
 	void SetHUDTotalRound();
 
+public:
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastPlaySpawnPickupSound();
+	
 };

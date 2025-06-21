@@ -17,28 +17,6 @@ public:
 
 	friend class AHumanCharacter;
 
-	class AEquipment* GetCurEquipment();
-	AEquipment* GetLastEquipment();
-	class AWeapon* GetUsingWeapon(); // 如果正在使用主、副武器，返回正在使用的武器，否则返空。
-
-	void FinishSwap();
-
-	void AttachToRightHand(AEquipment* Equipment);
-	void AttachToLeftHand(AEquipment* Equipment);
-	void AttachToHand(AEquipment* Equipment, FString SocketNameSuffix);
-
-	void ShellReload();
-	void FinishReload();
-
-	void AttackFirstSectionEnd();
-	void SetAttackCollisionEnabled(bool bIsEnabled);
-
-	UFUNCTION(Server, Reliable)
-	void ServerThrowOut();
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastThrowOut();
-	void ThrowOut();
-
 protected:
 	virtual void BeginPlay() override;
 	virtual void TickComponent(float DeltaSeconds, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
@@ -52,19 +30,22 @@ protected:
 	UPROPERTY()
 	class UAssetSubsystem* AssetSubsystem;
 
+public:
 	UPROPERTY()
 	ECombatState CombatState;
 
+protected:
 	UPROPERTY()
 	float BaseWalkSpeed = 600.f;
-
+	
 	FVector HitTarget;
 	void TraceUnderCrosshair(FHitResult& TraceHitResult);
-
+	
 	float DefaultFOV;
 	float CurrentFOV;
 	void InterpFOV(float DeltaSeconds);
 
+public:
 	UPROPERTY()
 	class AWeapon* PrimaryEquipment;
 	UPROPERTY()
@@ -77,7 +58,11 @@ protected:
 	EEquipmentType CurEquipmentType;
 	UPROPERTY()
 	EEquipmentType LastEquipmentType;
-
+	class AEquipment* GetCurEquipment();
+	AEquipment* GetLastEquipment();
+	// 如果正在使用主、副武器，返回正在使用的武器，否则返空。
+	AWeapon* GetUsingWeapon();
+protected:
 	AEquipment* GetEquipmentByType(EEquipmentType EquipmentType);
 	bool HasEquippedThisTypeEquipment(EEquipmentType EquipmentType);
 
@@ -105,25 +90,36 @@ protected:
 	void PreLocalSwapEquipment();
 	void PlaySwapOutMontage(AEquipment* NewEquipment);
 	void PlaySwapInMontage(bool bInterrupted, AEquipment* NewEquipment);
-
+public:
+	void FinishSwap();
+	
+protected:
 	// 使用
 	void UseEquipment(AEquipment* Equipment);
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastReplaceCurEquipment(AEquipment* Equipment);
+public:
+	void AttachToRightHand(AEquipment* Equipment);
+	void AttachToLeftHand(AEquipment* Equipment);
+	void AttachToHand(AEquipment* Equipment, FString SocketNameSuffix);
 
 	// 瞄准
 	UPROPERTY()
 	bool bIsAiming = false;
+protected:
 	void SetAiming(bool TempBIsAiming);
 	UFUNCTION(Server, Reliable)
 	void ServerSetAiming(bool TempBIsAiming);
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastSetAiming(bool TempBIsAiming);
 	void LocalSetAiming(bool TempBIsAiming);
+	void CalcCameraToScopeRotator();
 
 	// 射击
 	bool bCanFire = true;
+public:
 	bool bIsFirstShot = true;
+protected:
 	bool bFireButtonPressed;
 	void StartFire();
 	void StopFire();
@@ -138,17 +134,6 @@ protected:
 	void LocalFire(const FVector_NetQuantize& TraceHitTarget, float RecoilVert, float RecoilHor);
 	void PlayFireMontage();
 
-	float RecoilVertical = 0.f;
-	float RecoilHorizontal = 0.f;
-
-	float RecoilIncCostTime = 0.f;
-	float RecoilDecCostTime = 0.f;
-
-	float RecoilVerticalLastTick = 0.f;
-	float RecoilHorizontalLastTick = 0.f;
-	float RecoilVerticalLastTick2 = 0.f;
-	float RecoilHorizontalLastTick2 = 0.f;
-
 	// 装弹
 	void Reload();
 	UFUNCTION(Server, Reliable)
@@ -158,7 +143,11 @@ protected:
 	void LocalReload();
 	void PlayReloadMontage();
 	void JumpToShotgunEnd();
-
+public:
+	void ShellReload();
+	void FinishReload();
+	
+protected:
 	// 丢弃
 	void DropEquipment(EEquipmentType EquipmentType);
 	UFUNCTION(Server, Reliable)
@@ -182,13 +171,16 @@ protected:
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastMeleeAttack(ECombatState TempCombatState);
 	void LocalMeleeAttack(ECombatState TempCombatState);
-
 	bool bIsCombo = false;
 	UFUNCTION(Server, Reliable)
 	void ServerSetIsCombo(bool TempBIsCombo);
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastSetIsCombo(bool TempBIsCombo);
+public:
+	void AttackFirstSectionEnd();
+	void SetAttackCollisionEnabled(bool bIsEnabled);
 	
+protected:
 	// 投掷
 	void Throw();
 	UFUNCTION(Server, Reliable)
@@ -196,16 +188,11 @@ protected:
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastThrow();
 	void LocalThrow();
-
 public:
-	FORCEINLINE AWeapon* GetPrimaryEquipment() const { return PrimaryEquipment; }
-	FORCEINLINE AWeapon* GetSecondaryEquipment() const { return SecondaryEquipment; }
-	FORCEINLINE AMelee* GetMeleeEquipment() const { return MeleeEquipment; }
-	FORCEINLINE AThrowing* GetThrowingEquipment() const { return ThrowingEquipment; }
-	FORCEINLINE EEquipmentType GetCurEquipmentType() const { return CurEquipmentType; }
-	FORCEINLINE ECombatState GetCombatState() const { return CombatState; }
-	FORCEINLINE bool IsAiming() const { return bIsAiming; }
-	FORCEINLINE bool IsFireButtonPressed() const { return bFireButtonPressed; }
-	FORCEINLINE bool IsFirstShot() const { return bIsFirstShot; }
+	UFUNCTION(Server, Reliable)
+	void ServerThrowOut();
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastThrowOut();
+	void ThrowOut();
 
 };

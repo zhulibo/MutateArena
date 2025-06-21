@@ -91,7 +91,7 @@ void UTextChat::SendMsg()
 		{
 			BaseController->ServerSendMsg(
 				EMsgType::Msg,
-				BasePlayerState->GetTeam(),
+				BasePlayerState->Team,
 				BasePlayerState->GetPlayerName(),
 				Msg
 			);
@@ -124,17 +124,20 @@ void UTextChat::ShowMsg(const EMsgType MsgType, const ETeam Team, const FString&
 	UMsgLineButton* MsgLineButton = CreateWidget<UMsgLineButton>(this, MsgLineButtonClass);
 	if (MsgLineButton == nullptr) return;
 
-	UScrollBoxSlot* NewSlot = Cast<UScrollBoxSlot>(MsgContainer->AddChild(MsgLineButton));
-	if (NewSlot) NewSlot->SetPadding(FMargin(5, 5, 5, 5));
+	if (UScrollBoxSlot* NewSlot = Cast<UScrollBoxSlot>(MsgContainer->AddChild(MsgLineButton)))
+	{
+		NewSlot->SetPadding(FMargin(5, 5, 5, 5));
+	}
 
+	ETeam LocalTeam = ETeam::NoTeam;
 	// PlayerName
 	MsgLineButton->PlayerName->SetText(FText::FromString(ULibraryCommon::ObfuscatePlayerName(PlayerName, this)));
 	if (EOSSubsystem)
 	{
-		ETeam LocalTeam = EOSSubsystem->GetMemberTeam(EOSSubsystem->GetLocalMember());
+		LocalTeam = EOSSubsystem->GetMemberTeam(EOSSubsystem->GetLocalMember());
 		if (LocalTeam != ETeam::NoTeam && Team != ETeam::NoTeam)
 		{
-			if (Team == LocalTeam)
+			if (LocalTeam == Team)
 			{
 				MsgLineButton->PlayerName->SetColorAndOpacity(C_BLUE);
 				MsgLineButton->MsgTime->SetColorAndOpacity(C_BLUE);
@@ -164,7 +167,7 @@ void UTextChat::ShowMsg(const EMsgType MsgType, const ETeam Team, const FString&
 		break;
 	case EMsgType::Radio:
 		MsgLineButton->Msg->SetText(FText::FromString(Msg));
-		MsgLineButton->Msg->SetColorAndOpacity(C_WHITE);
+		MsgLineButton->Msg->SetColorAndOpacity(LocalTeam == Team ? C_BLUE :C_RED);
 		break;
 	case EMsgType::Join:
 		MsgLineButton->Msg->SetText(LOCTEXT("Joined", "Joined"));

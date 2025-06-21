@@ -20,7 +20,7 @@ class MUTATEARENA_API UConfirmScreen : public UCommonActivatableWidget
 	GENERATED_BODY()
 
 public:
-	void Setup(FText TempMsg, FConfirmScreenComplete TempCb);
+	void Setup(FText TempMsg, FConfirmScreenComplete TempCB);
 
 	UPROPERTY(meta = (BindWidget))
 	class UCommonButton* ConfirmButton;
@@ -35,6 +35,6 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<class UCommonTextBlock> Msg;
-	FConfirmScreenComplete Cb;
+	FConfirmScreenComplete CB;
 
 };

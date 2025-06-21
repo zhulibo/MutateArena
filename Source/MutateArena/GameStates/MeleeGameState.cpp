@@ -1,5 +1,6 @@
 #include "MeleeGameState.h"
 
+#include "MutateArena/MutateArena.h"
 #include "MutateArena/GameModes/MeleeMode.h"
 #include "MutateArena/PlayerControllers/MeleeController.h"
 #include "Net/UnrealNetwork.h"
@@ -8,6 +9,8 @@
 AMeleeGameState::AMeleeGameState()
 {
 	PrimaryActorTick.bCanEverTick = true;
+	
+	Tags.Add(TAG_GAME_STATE_MELEE);
 }
 
 void AMeleeGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

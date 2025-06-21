@@ -169,7 +169,7 @@ void ATeamDeadMatchMode::HumanReceiveDamage(AHumanCharacter* DamagedCharacter, A
 			if (TeamDeadMatchGameState == nullptr) TeamDeadMatchGameState = GetGameState<ATeamDeadMatchGameState>();
 			if (TeamDeadMatchGameState)
 			{
-				TeamDeadMatchGameState->AddTeamScore(AttackerState->GetTeam());
+				TeamDeadMatchGameState->AddTeamScore(AttackerState->Team);
 			}
 
 			// 增加攻击者连杀

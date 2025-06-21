@@ -146,50 +146,6 @@ void AMutantCharacter::PossessedBy(AController* NewController)
 	}
 }
 
-bool AMutantCharacter::CanInteract()
-{
-	return bIsDead && !bSuckedDry;
-}
-
-void AMutantCharacter::OnInteract(ABaseCharacter* BaseCharacter)
-{
-	if (IInteractableTarget* Interactor = Cast<IInteractableTarget>(BaseCharacter))
-	{
-		// 交互目标本地立即响应交互事件
-		SetIsSuckedDry(bSuckedDry);
-
-		// 通知交互者交互成功
-		Interactor->OnInteractMutantSuccess(this);
-	}
-}
-
-void AMutantCharacter::OnInteractOnServer()
-{
-	SetIsSuckedDry(true);
-}
-
-void AMutantCharacter::SetIsSuckedDry(bool TempBSuckedDry)
-{
-	bSuckedDry = TempBSuckedDry;
-
-	SetDeadMaterial();
-}
-
-void AMutantCharacter::OnRep_bSuckedDry()
-{
-	SetDeadMaterial();
-}
-
-// 使皮肤变黑
-void AMutantCharacter::SetDeadMaterial()
-{
-	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-	if (AssetSubsystem && AssetSubsystem->CharacterAsset)
-	{
-		GetMesh()->SetOverlayMaterial(AssetSubsystem->CharacterAsset->MI_Overlay_Dead);
-	}
-}
-
 void AMutantCharacter::OnAbilitySystemComponentInit()
 {
 	Super::OnAbilitySystemComponentInit();
@@ -223,6 +179,17 @@ void AMutantCharacter::OnLocalCharacterLevelChanged(const FOnAttributeChangeData
 	{
 		FGameplayTag Tag = FGameplayTag::RequestGameplayTag(TAG_MUTANT_SKILL_CD);
 		MutationController->ShowHUDSkill(AbilitySystemComponent->GetTagCount(Tag) == 0 && Data.NewValue > 2.f);
+	}
+}
+
+void AMutantCharacter::OnHealthChanged(const FOnAttributeChangeData& Data)
+{
+	Super::OnHealthChanged(Data);
+
+	// 血量回满，结束回血技能
+	if (IsLocallyControlled() && Data.NewValue >= GetMaxHealth())
+	{
+		EndRestoreAbility();
 	}
 }
 
@@ -260,17 +227,6 @@ void AMutantCharacter::MoveCompleted(const FInputActionValue& Value)
 	if (GetHealth() < GetMaxHealth())
 	{
 		GetWorldTimerManager().SetTimer(StillTimerHandle, this, &ThisClass::ActivateRestoreAbility, 5.f);
-	}
-}
-
-void AMutantCharacter::OnHealthChanged(const FOnAttributeChangeData& Data)
-{
-	Super::OnHealthChanged(Data);
-
-	// 血量回满，结束回血技能
-	if (IsLocallyControlled() && Data.NewValue >= GetMaxHealth())
-	{
-		EndRestoreAbility();
 	}
 }
 
@@ -502,7 +458,7 @@ void AMutantCharacter::ServerApplyDamage_Implementation(AActor* OtherActor, floa
 	UGameplayStatics::ApplyDamage(OtherActor, Damage, Controller, this, UDamageTypeMutantDamage::StaticClass());
 
 	// 造成感染
-	if (!DamagedCharacter->IsDead() && !DamagedCharacter->IsImmune())
+	if (!DamagedCharacter->bIsDead && !DamagedCharacter->bIsImmune)
 	{
 		ABaseController* DamagedController = Cast<ABaseController>(DamagedCharacter->Controller);
 		if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
@@ -660,6 +616,50 @@ void AMutantCharacter::MulticastRepel_Implementation(FVector ImpulseVector)
 	GetCharacterMovement()->ApplyRootMotionSource(RootMotionSource);
 }
 
+bool AMutantCharacter::CanInteract()
+{
+	return bIsDead && !bSuckedDry;
+}
+
+void AMutantCharacter::OnInteract(ABaseCharacter* BaseCharacter)
+{
+	if (IInteractableTarget* Interactor = Cast<IInteractableTarget>(BaseCharacter))
+	{
+		// 交互目标本地立即响应交互事件
+		SetIsSuckedDry(bSuckedDry);
+
+		// 通知交互者交互成功
+		Interactor->OnInteractMutantSuccess(this);
+	}
+}
+
+void AMutantCharacter::OnInteractOnServer()
+{
+	SetIsSuckedDry(true);
+}
+
+void AMutantCharacter::SetIsSuckedDry(bool TempBSuckedDry)
+{
+	bSuckedDry = TempBSuckedDry;
+
+	SetDeadMaterial();
+}
+
+void AMutantCharacter::OnRep_bSuckedDry()
+{
+	SetDeadMaterial();
+}
+
+// 使皮肤变黑
+void AMutantCharacter::SetDeadMaterial()
+{
+	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+	if (AssetSubsystem && AssetSubsystem->CharacterAsset)
+	{
+		GetMesh()->SetOverlayMaterial(AssetSubsystem->CharacterAsset->MI_Overlay_Dead);
+	}
+}
+
 void AMutantCharacter::OnInteractMutantSuccess(AMutantCharacter* MutantCharacter)
 {
 	ServerOnSuck(MutantCharacter);
@@ -669,7 +669,7 @@ void AMutantCharacter::ServerOnSuck_Implementation(AMutantCharacter* MutantChara
 {
 	if (AMutationPlayerState* MutationPlayerState = GetPlayerState<AMutationPlayerState>())
 	{
-		MutationPlayerState->SetRage(MutationPlayerState->GetRage() + 2000.f);
+		MutationPlayerState->SetRage(MutationPlayerState->Rage + 2000.f);
 	}
 }
 

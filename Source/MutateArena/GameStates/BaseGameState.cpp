@@ -22,7 +22,7 @@ void ABaseGameState::BeginPlay()
 {
 	Super::BeginPlay();
 
-	GetWorld()->GetTimerManager().SetTimer(GetAllEquipmentsTimerHandle, this, &ThisClass::SetAllEquipments, 2.f, true);
+	GetWorld()->GetTimerManager().SetTimer(SetAllEquipmentsTimerHandle, this, &ThisClass::SetAllEquipments, 2.f, true);
 }
 
 void ABaseGameState::OnRep_MatchState()

@@ -51,7 +51,7 @@ void ABaseMode::OnPostLogin(AController* NewPlayer)
 
 	if (ABasePlayerState* BasePlayerState = Cast<ABasePlayerState>(NewPlayer->PlayerState))
 	{
-		BaseGameState->MulticastSendMsg(EMsgType::Join, BasePlayerState->GetTeam(), BasePlayerState->GetPlayerName());
+		BaseGameState->MulticastSendMsg(EMsgType::Join, BasePlayerState->Team, BasePlayerState->GetPlayerName());
 	}
 }
 
@@ -68,7 +68,7 @@ void ABaseMode::Logout(AController* Exiting)
 			if (BaseGameState == nullptr) BaseGameState = GetWorld()->GetGameState<ABaseGameState>();
 			if (BaseGameState)
 			{
-				BaseGameState->MulticastSendMsg(EMsgType::Left, BasePlayerState->GetTeam(), BasePlayerState->GetPlayerName());
+				BaseGameState->MulticastSendMsg(EMsgType::Left, BasePlayerState->Team, BasePlayerState->GetPlayerName());
 			}
 		}
 	}
@@ -126,7 +126,7 @@ void ABaseMode::SpawnHumanCharacter(AController* Controller)
 	ABasePlayerState* BasePlayerState = Cast<ABasePlayerState>(Controller->PlayerState);
 	if (BasePlayerState)
 	{
-		CharacterName = ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(BasePlayerState->GetHumanCharacterName()));
+		CharacterName = ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(BasePlayerState->HumanCharacterName));
 	}
 
 	// 获取角色类
@@ -139,7 +139,7 @@ void ABaseMode::SpawnHumanCharacter(AController* Controller)
 	if (CharacterClass == nullptr) return;
 
 	// 获取出生点
-	AActor* StartSpot = FindCharacterPlayerStart(BasePlayerState->GetTeam());
+	AActor* StartSpot = FindCharacterPlayerStart(BasePlayerState->Team);
 	if (StartSpot == nullptr) return;
 
 	// 生成角色
@@ -226,7 +226,7 @@ void ABaseMode::AddKillLog(ABasePlayerState* AttackerState, AActor* DamageCauser
 		case EDamageCauserType::Equipment:
 			if (AEquipment* CauserEquipment = Cast<AEquipment>(DamageCauser->GetOwner()))
 			{
-				FString EnumValue = ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(CauserEquipment->GetEquipmentName()));
+				FString EnumValue = ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(CauserEquipment->EquipmentName));
 				FDataRegistryId DataRegistryId(DR_EQUIPMENT_MAIN, FName(EnumValue));
 				if (const FEquipmentMain* EquipmentMain = UDataRegistrySubsystem::Get()->GetCachedItem<FEquipmentMain>(DataRegistryId))
 				{
@@ -237,7 +237,7 @@ void ABaseMode::AddKillLog(ABasePlayerState* AttackerState, AActor* DamageCauser
 		case EDamageCauserType::Melee:
 			if (AEquipment* CauserEquipment = Cast<AEquipment>(DamageCauser))
 			{
-				FString EnumValue = ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(CauserEquipment->GetEquipmentName()));
+				FString EnumValue = ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(CauserEquipment->EquipmentName));
 				FDataRegistryId DataRegistryId(DR_EQUIPMENT_MAIN, FName(EnumValue));
 				if (const FEquipmentMain* EquipmentMain = UDataRegistrySubsystem::Get()->GetCachedItem<FEquipmentMain>(DataRegistryId))
 				{

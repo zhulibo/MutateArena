@@ -16,6 +16,7 @@ void UCrosshair::NativeOnInitialized()
 	if (ABaseController* BaseController = Cast<ABaseController>(GetOwningPlayer()))
 	{
 		BaseController->ChangeCrosshairSpread.AddUObject(this, &ThisClass::ChangeCrosshairSpread);
+		BaseController->OnCrosshairHidden.AddUObject(this, &ThisClass::OnCrosshairHidden);
 	}
 }
 
@@ -37,4 +38,9 @@ void UCrosshair::ChangeCrosshairSpread(float Spread)
 	{
 		Crosshair_B_Slot->SetPosition(FVector2D(0.f, Spread));
 	}
+}
+
+void UCrosshair::OnCrosshairHidden(bool bIsHidden)
+{
+	SetVisibility(bIsHidden ? ESlateVisibility::Hidden : ESlateVisibility::Visible);
 }

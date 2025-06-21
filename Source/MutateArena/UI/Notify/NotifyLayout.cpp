@@ -17,8 +17,10 @@ void UNotifyLayout::AddNotify(const FColor DisplayColor, const FText& Msg)
 	UNotifyLineButton* NotifyLineButton = CreateWidget<UNotifyLineButton>(this, NotifyLineButtonClass);
 	if (NotifyLineButton == nullptr) return;
 
-	UVerticalBoxSlot* NewSlot = Cast<UVerticalBoxSlot>(NotifyContainer->AddChild(NotifyLineButton));
-	if (NewSlot) NewSlot->SetPadding(FMargin(0, 5, 0, 5));
+	if (UVerticalBoxSlot* NewSlot = Cast<UVerticalBoxSlot>(NotifyContainer->AddChild(NotifyLineButton)))
+	{
+		NewSlot->SetPadding(FMargin(0, 5, 0, 5));
+	}
 
 	NotifyLineButton->Notify->SetText(Msg);
 	NotifyLineButton->Notify->SetColorAndOpacity(DisplayColor);

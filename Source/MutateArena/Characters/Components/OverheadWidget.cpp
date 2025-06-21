@@ -61,12 +61,12 @@ void UOverheadWidget::NativeConstruct()
 		else
 		{
 			TArray<AActor*> AllPlayers;
-			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABaseCharacter::StaticClass(), AllPlayers);
+			UGameplayStatics::GetAllActorsWithTag(GetWorld(), TAG_CHARACTER_BASE, AllPlayers);
 			for (AActor* Player : AllPlayers)
 			{
 				if (ABaseCharacter* PlayerCharacter = Cast<ABaseCharacter>(Player))
 				{
-					if (UWidgetComponent* OverheadWidget = PlayerCharacter->GetOverheadWidget())
+					if (UWidgetComponent* OverheadWidget = PlayerCharacter->OverheadWidget)
 					{
 						if (UOverheadWidget* OverheadWidgetClass = Cast<UOverheadWidget>(OverheadWidget->GetUserWidgetObject()))
 						{
@@ -100,8 +100,8 @@ void UOverheadWidget::TraceOverheadWidget()
 	if (BaseCharacter && LocalBaseCharacter && BaseCharacter != LocalBaseCharacter)
 	{
 		FHitResult HitResult;
-		FVector Start = LocalBaseCharacter->GetCamera()->GetComponentLocation();
-		FVector End = BaseCharacter->GetCamera()->GetComponentLocation();
+		FVector Start = LocalBaseCharacter->Camera->GetComponentLocation();
+		FVector End = BaseCharacter->Camera->GetComponentLocation();
 
 		// 距离过远不显示PlayerName
 		if (FVector::Dist(Start, End) > 2000.f)
@@ -112,11 +112,11 @@ void UOverheadWidget::TraceOverheadWidget()
 
 		// 射线检测玩家是否被阻挡
 		FCollisionQueryParams QueryParams;
-		TArray<AActor*> IgnoreActors;
+		TArray<AActor*> AllPlayers;
 		if (BaseGameState == nullptr) BaseGameState = GetWorld()->GetGameState<ABaseGameState>();
 		if (BaseGameState)
 		{
-			QueryParams.AddIgnoredActors(BaseGameState->GetAllEquipments());
+			QueryParams.AddIgnoredActors(BaseGameState->AllEquipments);
 
 			if (BaseGameState)
 			{
@@ -125,12 +125,13 @@ void UOverheadWidget::TraceOverheadWidget()
 				{
 					if (PlayerStates[i])
 					{
-						IgnoreActors.AddUnique(PlayerStates[i]->GetPawn());
+						AllPlayers.AddUnique(PlayerStates[i]->GetPawn());
 					}
 				}
 			}
 		}
-		QueryParams.AddIgnoredActors(IgnoreActors);
+		QueryParams.AddIgnoredActors(AllPlayers);
+		
 		GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECollisionChannel::ECC_Visibility, QueryParams);
 		if (HitResult.bBlockingHit)
 		{
@@ -184,9 +185,9 @@ void UOverheadWidget::InitOverheadWidget()
 		if (BasePlayerState && LocalBasePlayerState)
 		{
 			// UE_LOG(LogTemp, Warning, TEXT("SetColorAndOpacity Base GetTeam %d Local GetTeam %d"), BasePlayerState->GetTeam(), LocalBasePlayerState->GetTeam());
-			if (BasePlayerState->GetTeam() != ETeam::NoTeam && LocalBasePlayerState->GetTeam() != ETeam::NoTeam)
+			if (BasePlayerState->Team != ETeam::NoTeam && LocalBasePlayerState->Team != ETeam::NoTeam)
 			{
-				FColor TeamColor = BasePlayerState->GetTeam() == LocalBasePlayerState->GetTeam() ? C_BLUE : C_RED;
+				FColor TeamColor = BasePlayerState->Team == LocalBasePlayerState->Team ? C_BLUE : C_RED;
 
 				// 设置名字颜色
 				PlayerName->SetColorAndOpacity(TeamColor);
@@ -198,7 +199,7 @@ void UOverheadWidget::InitOverheadWidget()
 						
 					if (AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(BaseCharacter))
 					{
-						if (HumanCharacter->IsImmune())
+						if (HumanCharacter->bIsImmune)
 						{
 							MID->SetVectorParameterValue(TEXT("TeamColor"), C_YELLOW);
 						}

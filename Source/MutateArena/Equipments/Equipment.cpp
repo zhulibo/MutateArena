@@ -88,6 +88,11 @@ UAnimInstance_Equipment* AEquipment::GetEquipmentAnimInstance()
 	return EquipmentAnimInstance;
 }
 
+void AEquipment::MulticastHiddenMesh_Implementation()
+{
+	EquipmentMesh->SetVisibility(false);
+}
+
 void AEquipment::OnEquip()
 {
 	EquipmentState = EEquipmentState::Equipped;
@@ -115,7 +120,7 @@ void AEquipment::SetOwnerTeam()
 	{
 		if (ABasePlayerState* PlayerState = Cast<ABasePlayerState>(HumanCharacter->GetPlayerState()))
 		{
-			OwnerTeam = PlayerState->GetTeam();
+			OwnerTeam = PlayerState->Team;
 		}
 	}
 }
@@ -143,7 +148,7 @@ void AEquipment::OnDrop()
 	{
 		if (UCameraComponent* CameraComponent = HumanCharacter->FindComponentByClass<UCameraComponent>())
 		{
-			float Impulse = HumanCharacter->IsDead() ? 100.f : 300.f;
+			float Impulse = HumanCharacter->bIsDead ? 100.f : 300.f;
 			CollisionSphere->AddImpulse(CameraComponent->GetForwardVector() * Impulse, NAME_None, true);
 		}
 	}
@@ -162,9 +167,4 @@ void AEquipment::SetAreaSphereCollision()
 void AEquipment::DestroyEquipment()
 {
 	Destroy();
-}
-
-void AEquipment::MulticastHiddenMesh_Implementation()
-{
-	EquipmentMesh->SetVisibility(false);
 }

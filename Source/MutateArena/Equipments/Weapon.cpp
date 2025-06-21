@@ -199,7 +199,7 @@ void AWeapon::SetHUDCarriedAmmo()
 	}
 }
 
-void AWeapon::MulticastFullAmmo_Implementation()
+void AWeapon::MulticastSetFullAmmo_Implementation()
 {
 	SetAmmo(MagCapacity);
 	SetCarriedAmmo(MaxCarriedAmmo);

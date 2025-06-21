@@ -12,6 +12,9 @@ class MUTATEARENA_API AMelee : public AEquipment
 public:
 	AMelee();
 
+	UPROPERTY(VisibleAnywhere)
+	class UCapsuleComponent* AttackCapsule;
+
 	UPROPERTY(EditAnywhere)
 	UAnimMontage* LightAttackMontage_C;
 	UPROPERTY(EditAnywhere)
@@ -22,10 +25,7 @@ public:
 	UPROPERTY(EditAnywhere)
 	UAnimMontage* HeavyAttackMontage_E;
 
-	virtual void OnEquip() override;
-
 	virtual void OnStartSwapOut() override;
-
 	void SetAttackCollisionEnabled(bool bIsEnabled);
 
 	void ClearHitEnemies();
@@ -33,14 +33,14 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
-	UPROPERTY(VisibleAnywhere)
-	class UCapsuleComponent* AttackCapsule;
-
 	UPROPERTY()
 	float LightAttackDamage;
 	UPROPERTY()
 	float HeavyAttackDamage;
-
+	
+public:
+	virtual void OnEquip() override;
+protected:
 	void SetAttackCapsuleCollision();
 
 	UPROPERTY()

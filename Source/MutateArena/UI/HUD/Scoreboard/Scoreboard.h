@@ -15,6 +15,9 @@ protected:
 
 	UPROPERTY()
 	class ABaseGameState* BaseGameState;
+	
+	UPROPERTY()
+	class UEOSSubsystem* EOSSubsystem;
 
 	void ShowScoreboard(bool bIsShow);
 

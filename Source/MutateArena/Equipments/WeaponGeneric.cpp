@@ -21,11 +21,11 @@ void AWeaponGeneric::Fire(const FVector& HitTarget, float RecoilVert, float Reco
 
 	if (HumanCharacter == nullptr) HumanCharacter = Cast<AHumanCharacter>(GetOwner());
 	if (OwnerTeam == ETeam::NoTeam) SetOwnerTeam();
-	if (MuzzleSocket == nullptr) MuzzleSocket = GetEquipmentMesh()->GetSocketByName(TEXT("Muzzle"));
+	const USkeletalMeshSocket* MuzzleSocket = EquipmentMesh->GetSocketByName(TEXT("Muzzle"));
 
 	if (HumanCharacter == nullptr || ProjectileClass == nullptr|| OwnerTeam == ETeam::NoTeam || MuzzleSocket == nullptr) return;
 
-	FTransform SocketTransform = MuzzleSocket->GetSocketTransform(GetEquipmentMesh());
+	FTransform SocketTransform = MuzzleSocket->GetSocketTransform(EquipmentMesh);
 	FRotator TargetRotation = (HitTarget - SocketTransform.GetLocation()).Rotation();
 
 	// 应用后坐力（gun kick）
@@ -34,7 +34,7 @@ void AWeaponGeneric::Fire(const FVector& HitTarget, float RecoilVert, float Reco
 
 	// 添加散布
 	float TempCenterSpread = CenterSpread;
-	if (HumanCharacter->GetCombatComponent() && HumanCharacter->GetCombatComponent()->IsFirstShot())
+	if (HumanCharacter->CombatComponent && HumanCharacter->CombatComponent->bIsFirstShot)
 	{
 		// 第一发无散布
 		TempCenterSpread = 0.f;

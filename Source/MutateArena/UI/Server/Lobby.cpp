@@ -102,9 +102,10 @@ void ULobby::NativeDestruct()
 void ULobby::SetUIAttr()
 {
 	if (EOSSubsystem == nullptr) return;
-
-	ServerNameEditableTextBox->SetText(FText::FromString(EOSSubsystem->GetLobbyServerName()));
-	LastServerName = FText::FromString(EOSSubsystem->GetLobbyServerName());
+	
+	FString ServerName = ULibraryCommon::ObfuscatePlayerName(EOSSubsystem->GetLobbyServerName(), this);
+	ServerNameEditableTextBox->SetText(FText::FromString(ServerName));
+	LastServerName = FText::FromString(ServerName);
 
 	ModeComboBox->ClearOptions();
 	for (int32 i = 0; i < static_cast<int32>(ECoolGameMode::None); ++i)
@@ -321,7 +322,7 @@ void ULobby::OnLobbyMemberJoined(const FLobbyMemberJoined& LobbyMemberJoined)
 void ULobby::OnServerNameCommitted(const FText& Text, ETextCommit::Type CommitMethod)
 {
 	if (Text.ToString() == LastServerName.ToString()) return;
-	
+
 	LastServerName = Text;
 
 	if (EOSSubsystem && EOSSubsystem->IsLobbyHost())
@@ -401,9 +402,10 @@ void ULobby::OnLobbyAttrChanged(const FLobbyAttributesChanged& LobbyAttributesCh
 		if (ChangedAttribute.Key == LOBBY_SERVER_NAME)
 		{
 			FString ServerName = ChangedAttribute.Value.Value.GetString();
+			ServerName = ULibraryCommon::ObfuscatePlayerName(ServerName, this);
 			ServerNameEditableTextBox->SetText(FText::FromString(ServerName));
 			LastServerName = FText::FromString(ServerName);
-			
+
 			TextChat->ShowMsg(EMsgType::ServerNameChange, PlayerTeam, PlayerName, ServerName);
 		}
 		else if (ChangedAttribute.Key == LOBBY_MODE_NAME)

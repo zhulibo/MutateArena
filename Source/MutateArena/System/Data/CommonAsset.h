@@ -4,6 +4,17 @@
 #include "Engine/DataAsset.h"
 #include "CommonAsset.generated.h"
 
+USTRUCT(BlueprintType)
+struct FSprayPaint
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere)
+	FString Name;
+	UPROPERTY(EditAnywhere)
+	UMaterialInterface* Material;
+};
+
 UCLASS()
 class MUTATEARENA_API UCommonAsset : public UPrimaryDataAsset
 {
@@ -42,5 +53,9 @@ public:
 	UMetaSoundSource* Cause1000DamageSound;
 	UPROPERTY(EditAnywhere, Category = "CombatIconSound")
 	UMetaSoundSource* BeImmuneSound;
+
+	// 喷漆
+	UPROPERTY(EditAnywhere, Category = "SprayPaint")
+	TArray<FSprayPaint> SprayPaints;
 
 };

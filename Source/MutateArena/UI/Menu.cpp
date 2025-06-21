@@ -20,7 +20,6 @@ void UMenu::NativeOnInitialized()
 	QuitButton->OnClicked().AddUObject(this, &ThisClass::OnQuitButtonClicked);
 }
 
-// TODO 禁止鼠标点击MenuStack层
 void UMenu::OnSettingButtonClicked()
 {
 	if (MenuController == nullptr) MenuController = Cast<AMenuController>(GetOwningPlayer());

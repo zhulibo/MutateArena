@@ -18,22 +18,6 @@ class MUTATEARENA_API ABaseGameState : public AGameState
 	GENERATED_BODY()
 
 public:
-	virtual void AddToPlayerStates(ABasePlayerState* BasePlayerState, ETeam Team);
-	virtual void RemoveFromPlayerStates(ABasePlayerState* BasePlayerState, ETeam Team);
-	TArray<ABasePlayerState*> GetPlayerStates(TOptional<ETeam> Team);
-
-	UFUNCTION(NetMulticast, Unreliable)
-	void MulticastAddKillLog(ABasePlayerState* AttackerState, const FText& CauserName, ABasePlayerState* DamagedState);
-	FOnAddKillLog OnAddKillLog;
-	
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastSendMsg(EMsgType MsgType, ETeam Team, const FString& PlayerName, const FString& Msg = FString());
-	FOnReceiveMsg OnReceiveMsg;
-
-	virtual void OnRep_MatchState() override;
-	FOnRoundStarted OnRoundStarted;
-	FOnRoundEnded OnRoundEnded;
-
 	UPROPERTY(Replicated)
 	bool bCanSpectate = false;
 
@@ -43,6 +27,11 @@ protected:
 	UPROPERTY()
 	class ABaseController* BaseController;
 
+public:
+	virtual void OnRep_MatchState() override;
+	FOnRoundStarted OnRoundStarted;
+	FOnRoundEnded OnRoundEnded;
+protected:
 	virtual void HandleMatchHasStarted() override;
 	virtual void HandleRoundHasEnded();
 
@@ -54,13 +43,23 @@ protected:
 	virtual void OnRep_Team1PlayerStates() {}
 	UFUNCTION()
 	virtual void OnRep_Team2PlayerStates() {}
+public:
+	virtual void AddToPlayerStates(ABasePlayerState* BasePlayerState, ETeam Team);
+	virtual void RemoveFromPlayerStates(ABasePlayerState* BasePlayerState, ETeam Team);
+	TArray<ABasePlayerState*> GetPlayerStates(TOptional<ETeam> Team);
 
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastAddKillLog(ABasePlayerState* AttackerState, const FText& CauserName, ABasePlayerState* DamagedState);
+	FOnAddKillLog OnAddKillLog;
+	
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastSendMsg(EMsgType MsgType, ETeam Team, const FString& PlayerName, const FString& Msg = FString());
+	FOnReceiveMsg OnReceiveMsg;
+	
 	UPROPERTY()
 	TArray<AActor*> AllEquipments;
-	FTimerHandle GetAllEquipmentsTimerHandle;
+protected:
+	FTimerHandle SetAllEquipmentsTimerHandle;
 	void SetAllEquipments();
-
-public:
-	FORCEINLINE TArray<AActor*> GetAllEquipments() const { return AllEquipments; }
 	
 };

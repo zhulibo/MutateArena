@@ -10,6 +10,13 @@ class MUTATEARENA_API ATeamDeadMatchMode : public ABaseMode
 	GENERATED_BODY()
 
 public:
+	UPROPERTY(EditAnywhere)
+	float WarmupTime = 10.f;
+	UPROPERTY(EditAnywhere)
+	float MatchTime = 600.f;
+	UPROPERTY(EditAnywhere)
+	float CooldownTime = 5.f;
+	
 	bool bWatchMatchState = false;
 	virtual void EndMatch() override;
 
@@ -28,13 +35,6 @@ protected:
 
 	float MatchEndTime = 0.f;
 
-	UPROPERTY(EditAnywhere)
-	float WarmupTime = 10.f;
-	UPROPERTY(EditAnywhere)
-	float MatchTime = 600.f;
-	UPROPERTY(EditAnywhere)
-	float CooldownTime = 5.f;
-
 	float CountdownTime = 0.f;
 
 	bool bIsEndingMatch = false;
@@ -45,10 +45,5 @@ protected:
 
 	FTimerHandle ChangeLobbyStatusTimerHandle;
 	void HandleChangeLobbyStatus();
-
-public:
-	FORCEINLINE float GetWarmupTime() const { return WarmupTime; }
-	FORCEINLINE float GetMatchTime() const { return MatchTime; }
-	FORCEINLINE float GetCooldownTime() const { return CooldownTime; }
 
 };

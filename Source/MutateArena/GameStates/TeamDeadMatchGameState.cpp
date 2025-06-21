@@ -1,5 +1,6 @@
 #include "TeamDeadMatchGameState.h"
 
+#include "MutateArena/MutateArena.h"
 #include "MutateArena/GameModes/TeamDeadMatchMode.h"
 #include "MutateArena/PlayerControllers/TeamDeadMatchController.h"
 #include "Net/UnrealNetwork.h"
@@ -8,6 +9,8 @@
 ATeamDeadMatchGameState::ATeamDeadMatchGameState()
 {
 	PrimaryActorTick.bCanEverTick = true;
+
+	Tags.Add(TAG_GAME_STATE_TDM);
 }
 
 void ATeamDeadMatchGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

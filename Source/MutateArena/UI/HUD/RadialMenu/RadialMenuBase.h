@@ -2,10 +2,10 @@
 
 #include "CoreMinimal.h"
 #include "CommonUserWidget.h"
-#include "RadialMenu.generated.h"
+#include "RadialMenuBase.generated.h"
 
 UCLASS()
-class MUTATEARENA_API URadialMenu : public UCommonUserWidget
+class MUTATEARENA_API URadialMenuBase : public UCommonUserWidget
 {
 	GENERATED_BODY()
 

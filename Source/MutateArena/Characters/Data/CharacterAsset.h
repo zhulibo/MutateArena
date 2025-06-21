@@ -37,11 +37,10 @@ public:
 	UPROPERTY(EditAnywhere, Category = "GAS")
 	TSubclassOf<class UGameplayEffect> MutantRestoreEffect;
 
-	UPROPERTY(EditAnywhere, Category = "GAS")
-	UMaterialInterface* MI_Overlay_Dead;
-	
-	UPROPERTY(EditAnywhere, Category = "GAS")
+	UPROPERTY(EditAnywhere, Category = "Character")
 	UMaterialInterface* MI_BloodDecal;
+	UPROPERTY(EditAnywhere, Category = "Character")
+	UMaterialInterface* MI_Overlay_Dead;
 
 	// 闪光弹
 	UPROPERTY(EditAnywhere, Category = "Flashbang")
@@ -50,5 +49,9 @@ public:
 	UMaterialInterface* MI_Flashbang;
 	UPROPERTY(EditAnywhere, Category = "Flashbang")
 	UMaterialParameterCollection* MPC_Flashbang;
+
+	// 无线电文本
+	UPROPERTY(EditAnywhere, Category = "Radio")
+	TArray<FString> RadioTexts;
 
 };

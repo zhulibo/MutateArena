@@ -63,7 +63,7 @@ FString ULibraryCommon::ObfuscatePlayerName(FString PlayerName, const UObject* C
 		if (StorageSubsystem && StorageSubsystem->CacheSetting && StorageSubsystem->CacheSetting->ObfuscatePlayerName == true)
 		{
 			UEOSSubsystem* EOSSubsystem = GameInstance->GetSubsystem<UEOSSubsystem>();
-			// 非本人
+			// 非本人名字
 			if (EOSSubsystem && EOSSubsystem->GetPlayerName() != PlayerName)
 			{
 				return ObfuscateText(PlayerName);

@@ -15,6 +15,7 @@
 #include "Components/SceneCaptureComponent2D.h"
 #include "Components/WidgetComponent.h"
 #include "Materials/MaterialParameterCollectionInstance.h"
+#include "MutateArena/MutateArena.h"
 
 AFlashbang::AFlashbang()
 {
@@ -87,29 +88,21 @@ void AFlashbang::Explode()
 
 			// 射线检测是否有阻挡
 			FHitResult HitResult;
+			
 			FCollisionQueryParams QueryParams;
-			TArray<AActor*> IgnoreActors;
-			IgnoreActors.Add(this);
-			if (BaseGameState == nullptr) BaseGameState = GetWorld()->GetGameState<ABaseGameState>();
-			if (BaseGameState)
-			{
-				TArray<ABasePlayerState*> PlayerStates = BaseGameState->GetPlayerStates({});
-				for (int32 i = 0; i < PlayerStates.Num(); ++i)
-				{
-					if (PlayerStates[i])
-					{
-						IgnoreActors.AddUnique(PlayerStates[i]->GetPawn());
-					}
-				}
-			}
-			QueryParams.AddIgnoredActors(IgnoreActors);
+			
+			TArray<AActor*> AllPlayers;
+			UGameplayStatics::GetAllActorsWithTag(GetWorld(), TAG_CHARACTER_BASE, AllPlayers);
+			QueryParams.AddIgnoredActors(AllPlayers);
+			
 			TArray<AActor*> AllEquipments;
-			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AEquipment::StaticClass(), AllEquipments);
+			UGameplayStatics::GetAllActorsWithTag(GetWorld(), TAG_EQUIPMENT, AllEquipments);
 			QueryParams.AddIgnoredActors(AllEquipments);
+			
 			bool bHit = GetWorld()->LineTraceSingleByChannel(
 				HitResult,
 				GetActorLocation(),
-				DamagedCharacter->GetCamera()->GetComponentLocation(),
+				DamagedCharacter->Camera->GetComponentLocation(),
 				ECollisionChannel::ECC_Visibility,
 				QueryParams
 			);
@@ -122,8 +115,8 @@ void AFlashbang::Explode()
 			// 应用闪光
 			float Distance = DamagedCharacter->GetDistanceTo(this);
 			
-			FVector A = DamagedCharacter->GetCamera()->GetForwardVector();
-			FVector B = GetActorLocation() - DamagedCharacter->GetCamera()->GetComponentLocation();
+			FVector A = DamagedCharacter->Camera->GetForwardVector();
+			FVector B = GetActorLocation() - DamagedCharacter->Camera->GetComponentLocation();
 			A.Normalize();
 			B.Normalize();
 			float DotProduct = FVector::DotProduct(A, B);
@@ -159,11 +152,11 @@ void AFlashbang::Explode()
 
 			// 隐藏OverheadWidget
 			float Speed = 1 / (FMath::Clamp(Distance / Radius, .5f, 1.f) * MaxCapTime);
-			for (AActor* Player : IgnoreActors)
+			for (AActor* Player : AllPlayers)
 			{
 				if (ABaseCharacter* PlayerCharacter = Cast<ABaseCharacter>(Player))
 				{
-					if (UWidgetComponent* OverheadWidget = PlayerCharacter->GetOverheadWidget())
+					if (UWidgetComponent* OverheadWidget = PlayerCharacter->OverheadWidget)
 					{
 						if (UOverheadWidget* OverheadWidgetClass = Cast<UOverheadWidget>(OverheadWidget->GetUserWidgetObject()))
 						{
@@ -174,7 +167,7 @@ void AFlashbang::Explode()
 			}
 
 			GetWorldTimerManager().SetTimerForNextTick([this, DamagedCharacter]() {
-				DamagedCharacter->GetSceneCapture()->CaptureScene();
+				DamagedCharacter->SceneCapture->CaptureScene();
 			});
 		}
 	}

@@ -34,9 +34,9 @@ void AMeleeController::RequestServerMatchInfo_Implementation()
 		ReturnServerMatchInfo(
 			MeleeMode->GetMatchState(),
 			MeleeMode->LevelStartTime,
-			MeleeMode->GetWarmupTime(),
-			MeleeMode->GetMatchTime(),
-			MeleeMode->GetCooldownTime()
+			MeleeMode->WarmupTime,
+			MeleeMode->MatchTime,
+			MeleeMode->CooldownTime
 		);
 	}
 }

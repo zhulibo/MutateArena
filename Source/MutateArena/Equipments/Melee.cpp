@@ -95,7 +95,7 @@ void AMelee::OnAttackCapsuleOverlap(UPrimitiveComponent* OverlappedComponent, AA
 		HitEnemies.Add(OtherActor);
 
 		float Damage;
-		if (InstigatorCharacter->GetCombatComponent() && InstigatorCharacter->GetCombatComponent()->GetCombatState() == ECombatState::LightAttacking)
+		if (InstigatorCharacter->CombatComponent && InstigatorCharacter->CombatComponent->CombatState == ECombatState::LightAttacking)
 		{
 			Damage = LightAttackDamage;
 		}

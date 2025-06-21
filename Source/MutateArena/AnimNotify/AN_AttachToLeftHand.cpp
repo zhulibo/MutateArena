@@ -8,8 +8,8 @@ void UAN_AttachToLeftHand::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenc
 	Super::Notify(MeshComp, Animation, EventReference);
 
 	AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(MeshComp->GetOwner());
-	if (HumanCharacter && HumanCharacter->GetCombatComponent())
+	if (HumanCharacter && HumanCharacter->CombatComponent)
 	{
-		HumanCharacter->GetCombatComponent()->AttachToLeftHand(HumanCharacter->GetCombatComponent()->GetCurEquipment());
+		HumanCharacter->CombatComponent->AttachToLeftHand(HumanCharacter->CombatComponent->GetCurEquipment());
 	}
 }

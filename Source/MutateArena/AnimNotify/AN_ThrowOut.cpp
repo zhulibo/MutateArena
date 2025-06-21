@@ -8,7 +8,7 @@ void UAN_ThrowOut::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* A
 	Super::Notify(MeshComp, Animation, EventReference);
 
 	AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(MeshComp->GetOwner());
-	if (HumanCharacter && HumanCharacter->GetCombatComponent())
+	if (HumanCharacter && HumanCharacter->CombatComponent)
 	{
 		// HACK 服务端同一角色短时间触发两次，直接退出
 		if (HumanCharacter->HasAuthority())
@@ -34,8 +34,8 @@ void UAN_ThrowOut::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* A
 		// 在服务端播放投掷动画时，动画通知和DetachFromComponent同时到达客户端，客户端动画通知不触发
 		if (HumanCharacter->IsLocallyControlled())
 		{
-			HumanCharacter->GetCombatComponent()->ServerThrowOut();
-			HumanCharacter->GetCombatComponent()->ThrowOut();
+			HumanCharacter->CombatComponent->ServerThrowOut();
+			HumanCharacter->CombatComponent->ThrowOut();
 		}
 	}
 }

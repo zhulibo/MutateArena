@@ -8,7 +8,7 @@ void UAN_ShellReload::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase
 	Super::Notify(MeshComp, Animation, EventReference);
 
 	AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(MeshComp->GetOwner());
-	if (HumanCharacter && HumanCharacter->GetCombatComponent())
+	if (HumanCharacter && HumanCharacter->CombatComponent)
 	{
 		// HACK 服务端同一角色短时间触发两次，直接退出
 		if (HumanCharacter->HasAuthority())
@@ -24,6 +24,6 @@ void UAN_ShellReload::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase
 
 		UE_LOG(LogTemp, Warning, TEXT("------------------------------------------ %d"), HumanCharacter->GetLocalRole());
 
-		HumanCharacter->GetCombatComponent()->ShellReload();
+		HumanCharacter->CombatComponent->ShellReload();
 	}
 }

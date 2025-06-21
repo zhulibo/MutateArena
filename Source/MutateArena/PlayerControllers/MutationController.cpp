@@ -42,13 +42,13 @@ void AMutationController::RequestServerMatchInfo_Implementation()
 	{
 		ReturnServerMatchInfo(
 			MutationMode->GetMatchState(),
-			MutationMode->GetTotalRound(),
+			MutationMode->TotalRound,
 			MutationMode->LevelStartTime,
-			MutationMode->GetWarmupTime(),
-			MutationMode->GetRoundTime(),
-			MutationMode->GetMutateTime(),
-			MutationMode->GetPostRoundTime(),
-			MutationMode->GetCooldownTime()
+			MutationMode->WarmupTime,
+			MutationMode->RoundTime,
+			MutationMode->MutateTime,
+			MutationMode->PostRoundTime,
+			MutationMode->CooldownTime
 		);
 	}
 }
@@ -198,12 +198,12 @@ void AMutationController::InitHUD()
 	if (MutationPlayerState == nullptr) MutationPlayerState = Cast<AMutationPlayerState>(PlayerState);
 	if (MutationPlayerState)
 	{
-		// UE_LOG(LogTemp, Warning, TEXT("InitHUD GetTeam %d"), MutationPlayerState->GetTeam());
-		if (MutationPlayerState->GetTeam() == ETeam::Team1)
+		// UE_LOG(LogTemp, Warning, TEXT("InitHUD GetTeam %d"), MutationPlayerState->Team);
+		if (MutationPlayerState->Team == ETeam::Team1)
 		{
 			InitHumanHUD();
 		}
-		else if(MutationPlayerState->GetTeam() == ETeam::Team2)
+		else if(MutationPlayerState->Team == ETeam::Team2)
 		{
 			InitMutantHUD();
 		}
@@ -221,7 +221,7 @@ void AMutationController::InitHumanHUD()
 		SetHUDCurrentRound();
 		SetHUDTeamNum(MutationGameState->GetPlayerStates(ETeam::Team1).Num(), ETeam::Team1);
 		SetHUDTeamNum(MutationGameState->GetPlayerStates(ETeam::Team2).Num(), ETeam::Team2);
-		SetHUDDamageMul(MutationGameState->GetDamageMul());
+		SetHUDDamageMul(MutationGameState->DamageMul);
 	}
 }
 
@@ -237,7 +237,7 @@ void AMutationController::InitMutantHUD()
 		SetHUDCurrentRound();
 		SetHUDTeamNum(MutationGameState->GetPlayerStates(ETeam::Team1).Num(), ETeam::Team1);
 		SetHUDTeamNum(MutationGameState->GetPlayerStates(ETeam::Team2).Num(), ETeam::Team2);
-		SetHUDRage(MutationPlayerState->GetRage());
+		SetHUDRage(MutationPlayerState->Rage);
 
 		if (MutationPlayerState->GetAbilitySystemComponent())
 		{
@@ -253,11 +253,11 @@ void AMutationController::SetHUDHealth(float Health)
 	if (MutationPlayerState == nullptr) MutationPlayerState = Cast<AMutationPlayerState>(PlayerState);
 	if (MutationPlayerState)
 	{
-		if (MutationPlayerState->GetTeam() == ETeam::Team1)
+		if (MutationPlayerState->Team == ETeam::Team1)
 		{
 			OnHumanHealthChange.Broadcast(Health);
 		}
-		else if(MutationPlayerState->GetTeam() == ETeam::Team2)
+		else if(MutationPlayerState->Team == ETeam::Team2)
 		{
 			OnMutantHealthChange.Broadcast(Health);
 		}

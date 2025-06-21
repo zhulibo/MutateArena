@@ -13,9 +13,9 @@ void UAN_AttackFirstSectionEnd::Notify(USkeletalMeshComponent* MeshComp, UAnimSe
 	if (MeshComp->GetOwner()->ActorHasTag(TAG_CHARACTER_HUMAN))
 	{
 		AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(MeshComp->GetOwner());
-		if (HumanCharacter && HumanCharacter->GetCombatComponent())
+		if (HumanCharacter && HumanCharacter->CombatComponent)
 		{
-			HumanCharacter->GetCombatComponent()->AttackFirstSectionEnd();
+			HumanCharacter->CombatComponent->AttackFirstSectionEnd();
 		}
 	}
 	else if (MeshComp->GetOwner()->ActorHasTag(TAG_CHARACTER_MUTANT))

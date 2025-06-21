@@ -36,11 +36,11 @@ void UCrosshairComponent::TickComponent(float DeltaSeconds, ELevelTick TickType,
 
 void UCrosshairComponent::SetHUDCrosshair(float DeltaSeconds)
 {
-	if (HumanCharacter == nullptr || HumanCharacter->GetCombatComponent() == nullptr) return;
+	if (HumanCharacter == nullptr || HumanCharacter->CombatComponent == nullptr) return;
 	if (BaseController == nullptr) BaseController = Cast<ABaseController>(HumanCharacter->Controller);
 	if (BaseController == nullptr) return;
 
-	AWeapon* Weapon = HumanCharacter->GetCombatComponent()->GetUsingWeapon();
+	AWeapon* Weapon = HumanCharacter->CombatComponent->GetUsingWeapon();
 	if (Weapon == nullptr) return;
 
 	// TODO 做各种动作时应关联射击精度与准星扩塞，不能只改变扩塞
@@ -61,7 +61,7 @@ void UCrosshairComponent::SetHUDCrosshair(float DeltaSeconds)
 	// }
 
 	// 瞄准
-	// if (HumanCharacter->GetCombatComponent()->IsAiming())
+	// if (HumanCharacter->CombatComponent->bIsAiming)
 	// {
 	// 	AimFactor = FMath::FInterpTo(AimFactor, -0.2f, DeltaSeconds, 10.f);
 	// }
@@ -71,7 +71,7 @@ void UCrosshairComponent::SetHUDCrosshair(float DeltaSeconds)
 	// }
 
 	// 射击
-	if (URecoilComponent* RecoilComponent = HumanCharacter->GetRecoilComponent())
+	if (URecoilComponent* RecoilComponent = HumanCharacter->RecoilComponent)
 	{
 		ShootFactor = (RecoilComponent->GetCurRecoilVert() + FMath::Abs(RecoilComponent->GetCurRecoilVert()))
 		/ (Weapon->RecoilTotalVertLimit + Weapon->RecoilTotalHorLimit);

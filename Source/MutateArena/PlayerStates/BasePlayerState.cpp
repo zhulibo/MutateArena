@@ -12,6 +12,7 @@
 #include "MutateArena/System/Storage/StorageSubsystem.h"
 #include "Components/WidgetComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "MutateArena/MutateArena.h"
 
 ABasePlayerState::ABasePlayerState()
 {
@@ -153,7 +154,7 @@ void ABasePlayerState::OnRep_Team()
 	BaseCharacter = Cast<ABaseCharacter>(GetPawn());
 	if (BaseCharacter)
 	{
-		BaseCharacter->HasInitMeshCollision = false;
+		BaseCharacter->bHasSetMeshCollisionType = false;
 	}
 
 	// InitOverheadWidget依赖于Team，OnRep_Team后主动调一下InitHUD。
@@ -167,7 +168,7 @@ void ABasePlayerState::InitOverheadWidget()
 	{
 		if (!BaseCharacter->IsLocallyControlled())
 		{
-			if (UWidgetComponent* OverheadWidget = BaseCharacter->GetOverheadWidget())
+			if (UWidgetComponent* OverheadWidget = BaseCharacter->OverheadWidget)
 			{
 				if (UOverheadWidget* OverheadWidgetClass = Cast<UOverheadWidget>(OverheadWidget->GetUserWidgetObject()))
 				{
@@ -182,12 +183,13 @@ void ABasePlayerState::InitOverheadWidget()
 		else
 		{
 			TArray<AActor*> AllPlayers;
-			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABaseCharacter::StaticClass(), AllPlayers);
+			UGameplayStatics::GetAllActorsWithTag(GetWorld(), TAG_CHARACTER_BASE, AllPlayers);
+
 			for (AActor* Player : AllPlayers)
 			{
 				if (ABaseCharacter* IgnoreBaseCharacter = Cast<ABaseCharacter>(Player))
 				{
-					if (UWidgetComponent* OverheadWidget = IgnoreBaseCharacter->GetOverheadWidget())
+					if (UWidgetComponent* OverheadWidget = IgnoreBaseCharacter->OverheadWidget)
 					{
 						if (UOverheadWidget* OverheadWidgetClass = Cast<UOverheadWidget>(OverheadWidget->GetUserWidgetObject()))
 						{

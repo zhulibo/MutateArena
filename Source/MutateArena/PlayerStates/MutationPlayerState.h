@@ -10,14 +10,7 @@ class MUTATEARENA_API AMutationPlayerState : public ABasePlayerState
 	GENERATED_BODY()
 
 public:
-	virtual void SetTeam(ETeam TempTeam) override;
-	
-	virtual void AddDamage(float TempDamage) override;
-	
-	void SetRage(float TempRage);
-
-	UPROPERTY(Replicated)
-	bool bKilledByMelee = false;
+	AMutationPlayerState();
 
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -27,20 +20,29 @@ protected:
 	UPROPERTY()
 	class AMutationController* MutationController;
 
+public:
+	UPROPERTY(Replicated)
+	bool bKilledByMelee = false;
+	
+	virtual void SetTeam(ETeam TempTeam) override;
+protected:
 	virtual void OnRep_Team() override;
 
+public:
+	virtual void AddDamage(float TempDamage) override;
+protected:
 	virtual void OnRep_Damage() override;
 	float BaseDamage = 0;
 	void Show1000DamageUI();
-
+	
+public:
 	UPROPERTY(ReplicatedUsing = OnRep_Rage)
 	float Rage = 0.f;
+	void SetRage(float TempRage);
+protected:
 	UFUNCTION()
 	void OnRep_Rage();
 	void ApplyLevelUpEffect();
 	void SetHUDRage();
-
-public:
-	FORCEINLINE float GetRage() const { return Rage; }
 
 };

@@ -14,14 +14,7 @@ class MUTATEARENA_API ATeamDeadMatchController : public ABaseController
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(ReplicatedUsing = OnRep_MatchState)
-	FName MatchState;
-	void OnMatchStateSet(FName TempMatchState);
-
 	FOnTeamScoreChange OnTeamScoreChange;
-
-	virtual void SetHUDHealth(float Health) override;
-	void SetHUDTeamScore(float Score, ETeam Team);
 
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -45,7 +38,12 @@ protected:
 		float TempMatchTime,
 		float TempCooldownTime
 	);
-
+	
+public:
+	UPROPERTY(ReplicatedUsing = OnRep_MatchState)
+	FName MatchState;
+	void OnMatchStateSet(FName TempMatchState);
+protected:
 	UFUNCTION()
 	void OnRep_MatchState();
 	void HandleMatchStateChange();
@@ -65,5 +63,8 @@ protected:
 	float HUDMaxHealth;
 	float HUDScore;
 	int32 HUDDefeat;
-
+public:
+	virtual void SetHUDHealth(float Health) override;
+	void SetHUDTeamScore(float Score, ETeam Team);
+	
 };

@@ -20,11 +20,11 @@ void AWeaponShotgun::Fire(const FVector& HitTarget, float RecoilVert, float Reco
 
 	if (HumanCharacter == nullptr) HumanCharacter = Cast<AHumanCharacter>(GetOwner());
 	if (OwnerTeam == ETeam::NoTeam) SetOwnerTeam();
-	if (MuzzleSocket == nullptr) MuzzleSocket = GetEquipmentMesh()->GetSocketByName(TEXT("Muzzle"));
+	const USkeletalMeshSocket* MuzzleSocket = EquipmentMesh->GetSocketByName(TEXT("Muzzle"));
 
 	if (ProjectileClass && HumanCharacter && OwnerTeam != ETeam::NoTeam && MuzzleSocket)
 	{
-		FTransform SocketTransform = MuzzleSocket->GetSocketTransform(GetEquipmentMesh());
+		FTransform SocketTransform = MuzzleSocket->GetSocketTransform(EquipmentMesh);
 		FRotator TargetRotation = (HitTarget - SocketTransform.GetLocation()).Rotation();
 
 		// 应用后坐力（gun kick）

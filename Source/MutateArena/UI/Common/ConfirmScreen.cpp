@@ -13,10 +13,10 @@ UWidget* UConfirmScreen::NativeGetDesiredFocusTarget() const
 	return ConfirmButton;
 }
 
-void UConfirmScreen::Setup(FText TempMsg, FConfirmScreenComplete TempCb)
+void UConfirmScreen::Setup(FText TempMsg, FConfirmScreenComplete TempCB)
 {
 	Msg->SetText(TempMsg);
-	Cb = TempCb;
+	CB = TempCB;
 
 	ConfirmButton->OnClicked().Clear();
 	CancelButton->OnClicked().Clear();
@@ -27,12 +27,12 @@ void UConfirmScreen::Setup(FText TempMsg, FConfirmScreenComplete TempCb)
 
 void UConfirmScreen::Confirm()
 {
-	Cb.ExecuteIfBound(EMsgResult::Confirm);
+	CB.ExecuteIfBound(EMsgResult::Confirm);
 }
 
 void UConfirmScreen::Cancel()
 {
 	DeactivateWidget();
 
-	Cb.ExecuteIfBound(EMsgResult::Cancel);
+	CB.ExecuteIfBound(EMsgResult::Cancel);
 }

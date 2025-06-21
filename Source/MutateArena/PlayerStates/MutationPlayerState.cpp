@@ -6,6 +6,10 @@
 #include "MutateArena/PlayerControllers/MutationController.h"
 #include "Net/UnrealNetwork.h"
 
+AMutationPlayerState::AMutationPlayerState()
+{
+}
+
 void AMutationPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);

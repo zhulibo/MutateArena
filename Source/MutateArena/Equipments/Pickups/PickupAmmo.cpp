@@ -9,11 +9,11 @@ void APickupAmmo::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AAct
 	if (!HasAuthority()) return;
 
 	AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(OtherActor);
-	if (HumanCharacter && HumanCharacter->GetCombatComponent())
+	if (HumanCharacter && HumanCharacter->CombatComponent)
 	{
-		if (AWeapon* PrimaryEquipment = HumanCharacter->GetCombatComponent()->GetPrimaryEquipment())
+		if (AWeapon* PrimaryEquipment = HumanCharacter->CombatComponent->PrimaryEquipment)
 		{
-			PrimaryEquipment->MulticastFullAmmo();
+			PrimaryEquipment->MulticastSetFullAmmo();
 
 			Destroy();
 		}

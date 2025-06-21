@@ -19,7 +19,7 @@ void UAnimInstance_Human::NativeUpdateAnimation(float DeltaSeconds)
 	Super::NativeUpdateAnimation(DeltaSeconds);
 
 	if (HumanCharacter == nullptr) HumanCharacter = Cast<AHumanCharacter>(TryGetPawnOwner());
-	if (HumanCharacter == nullptr || HumanCharacter->GetCombatComponent() == nullptr) return;
+	if (HumanCharacter == nullptr || HumanCharacter->CombatComponent == nullptr) return;
 
 	FVector Velocity = HumanCharacter->GetVelocity();
 	Velocity.Z = 0.f;
@@ -28,10 +28,10 @@ void UAnimInstance_Human::NativeUpdateAnimation(float DeltaSeconds)
 	bIsInAir = HumanCharacter->GetCharacterMovement()->IsFalling();
 	bIsAccelerating = HumanCharacter->GetCharacterMovement()->GetCurrentAcceleration().Size() > 0.f;
 	bIsCrouched = HumanCharacter->bIsCrouched;
-	bIsAiming = HumanCharacter->GetCombatComponent()->IsAiming();
-	if (HumanCharacter->GetCombatComponent()->GetCurEquipment())
+	bIsAiming = HumanCharacter->CombatComponent->bIsAiming;
+	if (HumanCharacter->CombatComponent->GetCurEquipment())
 	{
-		EquipmentName = HumanCharacter->GetCombatComponent()->GetCurEquipment()->GetEquipmentName();
+		EquipmentName = HumanCharacter->CombatComponent->GetCurEquipment()->EquipmentName;
 	}
 	else
 	{
@@ -45,7 +45,7 @@ void UAnimInstance_Human::NativeUpdateAnimation(float DeltaSeconds)
 	AimYaw = DiffRotation.Yaw;
 
 	// 根据AimPitch计算骨骼偏移量
-	AimPitch = HumanCharacter->GetAimPitch();
+	AimPitch = HumanCharacter->AimPitch;
 	Spine_01_Rotator.Roll = UKismetMathLibrary::MapRangeClamped(AimPitch, -90.f, 90.f, 20.f, -20.f);
 	Spine_02_Rotator.Roll = UKismetMathLibrary::MapRangeClamped(AimPitch, -90.f, 90.f, 10.f, -10.f);
 	Spine_03_Rotator.Roll = UKismetMathLibrary::MapRangeClamped(AimPitch, -90.f, 90.f, 60.f, -60.f);

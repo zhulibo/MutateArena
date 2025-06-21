@@ -18,6 +18,9 @@
 #define TAG_CHARACTER_MUTANT FName(TEXT("MutantCharacter"))
 #define TAG_EQUIPMENT FName(TEXT("Equipment"))
 #define TAG_SMOKE_ACTOR FName(TEXT("SmokeActor"))
+#define TAG_GAME_STATE_MUTATION FName(TEXT("TAG_GAME_STATE_MUTATION"))
+#define TAG_GAME_STATE_MELEE FName(TEXT("TAG_GAME_STATE_MELEE"))
+#define TAG_GAME_STATE_TDM FName(TEXT("TAG_GAME_STATE_TDM"))
 
 // 地图路径
 #define MAP_LOGIN FString(TEXT("/Game/Maps/UI_Login"))
@@ -65,3 +68,4 @@
 #define CULTURE_MUTANT FString(TEXT("Mutant"))
 #define CULTURE_EQUIPMENT FString(TEXT("Equipment"))
 #define CULTURE_EQUIPMENT_TYPE FString(TEXT("EquipmentType"))
+#define CULTURE_SPRAY_PAINT FString(TEXT("SprayPaint"))

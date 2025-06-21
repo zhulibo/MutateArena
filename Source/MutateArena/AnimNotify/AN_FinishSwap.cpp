@@ -8,8 +8,8 @@ void UAN_FinishSwap::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase*
 	Super::Notify(MeshComp, Animation, EventReference);
 
 	AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(MeshComp->GetOwner());
-	if (HumanCharacter && HumanCharacter->GetCombatComponent())
+	if (HumanCharacter && HumanCharacter->CombatComponent)
 	{
-		HumanCharacter->GetCombatComponent()->FinishSwap();
+		HumanCharacter->CombatComponent->FinishSwap();
 	}
 }

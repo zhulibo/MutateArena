@@ -167,7 +167,7 @@ void AMeleeMode::HumanReceiveDamage(AHumanCharacter* DamagedCharacter, ABaseCont
 			if (MeleeGameState == nullptr) MeleeGameState = GetGameState<AMeleeGameState>();
 			if (MeleeGameState)
 			{
-				MeleeGameState->AddTeamScore(AttackerState->GetTeam());
+				MeleeGameState->AddTeamScore(AttackerState->Team);
 			}
 
 			// 增加攻击者连杀

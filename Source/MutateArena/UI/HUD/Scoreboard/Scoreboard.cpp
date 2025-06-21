@@ -7,6 +7,7 @@
 #include "MutateArena/PlayerControllers/BaseController.h"
 #include "MutateArena/PlayerStates/BasePlayerState.h"
 #include "MutateArena/PlayerStates/TeamType.h"
+#include "MutateArena/System/EOSSubsystem.h"
 #include "MutateArena/Utils/LibraryCommon.h"
 
 void UScoreboard::NativeOnInitialized()
@@ -27,6 +28,12 @@ void UScoreboard::ShowScoreboard(bool bIsShow)
 		if (GetVisibility() == ESlateVisibility::Visible) return;
 
 		GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &ThisClass::RefreshScoreBoard, 0.5f, true, 0.f);
+
+		if (EOSSubsystem == nullptr) EOSSubsystem = GetGameInstance()->GetSubsystem<UEOSSubsystem>();
+		if (EOSSubsystem)
+		{
+			GameTitle->SetText(FText::FromString(ULibraryCommon::ObfuscatePlayerName(EOSSubsystem->GetLobbyServerName(), this)));
+		}
 
 		SetVisibility(ESlateVisibility::Visible);
 	}
@@ -62,7 +69,7 @@ void UScoreboard::RefreshScoreBoard()
 
 		// 按照伤害排序
 		Algo::Sort(PlayerStates, [](const ABasePlayerState* A, const ABasePlayerState* B) {
-			return A->GetDamage() > B->GetDamage();
+			return A->Damage > B->Damage;
 		});
 
 		for (int32 i = 0; i < PlayerStates.Num(); ++i)
@@ -71,13 +78,21 @@ void UScoreboard::RefreshScoreBoard()
 			{
 				FString PlayerName = PlayerStates[i]->GetPlayerName();
 				ScoreBoardLineButton->Player->SetText(FText::FromString(ULibraryCommon::ObfuscatePlayerName(PlayerName, this)));
-				ScoreBoardLineButton->Damage->SetText(FText::FromString(FString::FromInt(PlayerStates[i]->GetDamage())));
+				ScoreBoardLineButton->Damage->SetText(FText::FromString(FString::FromInt(PlayerStates[i]->Damage)));
 				ScoreBoardContainer->AddChild(ScoreBoardLineButton);
-				if (PlayerStates[i]->GetTeam() == ETeam::Team2)
+				if (PlayerStates[i]->Team == ETeam::Team2)
 				{
 					ScoreBoardLineButton->SetColorAndOpacity(C_GREEN);
 				}
 			}
 		}
 	}
+
+	// 帧率
+	float DeltaTime = FApp::GetDeltaTime();
+	int32 FPSValue = DeltaTime > 0.0f ? FMath::RoundToInt(1.0f / DeltaTime) : 0;
+	FPS->SetText(FText::FromString(FString::Printf(TEXT("%d"), FPSValue)));
+
+	// 服务器名字
+	
 }

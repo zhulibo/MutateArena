@@ -18,30 +18,20 @@ class MUTATEARENA_API ABasePlayerState : public APlayerState, public IAbilitySys
 
 public:
 	ABasePlayerState();
-
+	
+	UPROPERTY()
+	class UMAAbilitySystemComponent* AbilitySystemComponent;
+	UPROPERTY()
+	class UAttributeSetBase* AttributeSetBase;
+	
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
-	class UAttributeSetBase* GetAttributeSetBase();
+	UAttributeSetBase* GetAttributeSetBase();
 	float GetMaxHealth();
 	float GetHealth();
 	float GetDamageReceivedMul();
 	float GetRepelReceivedMul();
 	float GetCharacterLevel();
 	float GetJumpZVelocity();
-
-	virtual void SetTeam(ETeam TempTeam);
-	
-	UFUNCTION(Server, Reliable)
-	void ServerSetMutantCharacterName(EMutantCharacterName Name);
-	UFUNCTION()
-	void SetMutantCharacterName(EMutantCharacterName Name);
-
-	void InitOverheadWidget();
-
-	virtual void AddDamage(float TempDamage);
-	void AddDefeat();
-	void ResetKillStreak();
-	void AddKillStreak();
-	void OnKillStreakChange();
 
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -52,54 +42,66 @@ protected:
 	virtual void InitData();
 
 	UPROPERTY()
-	class UMAAbilitySystemComponent* AbilitySystemComponent;
-	UPROPERTY()
-	UAttributeSetBase* AttributeSetBase;
-
-	UPROPERTY()
 	class ABaseCharacter* BaseCharacter;
 	UPROPERTY()
 	class ABaseController* BaseController;
 	
-	UPROPERTY(Replicated)
-	EHumanCharacterName HumanCharacterName;
 	UFUNCTION(Server, Reliable)
 	void ServerSetHumanCharacterName(EHumanCharacterName Name);
-
+public:
+	UPROPERTY(Replicated)
+	EHumanCharacterName HumanCharacterName;
 	UPROPERTY(Replicated)
 	EMutantCharacterName MutantCharacterName;
-
+	UFUNCTION(Server, Reliable)
+	void ServerSetMutantCharacterName(EMutantCharacterName Name);
+	UFUNCTION()
+	void SetMutantCharacterName(EMutantCharacterName Name);
+	
+protected:
 	UPROPERTY(Replicated)
 	FUniqueNetIdRepl AccountIdRepl;
 	UFUNCTION(Server, Reliable)
 	void ServerSetAccountId(FUniqueNetIdRepl TempAccountIdRepl);
-
+	
+public:
 	UPROPERTY(ReplicatedUsing = OnRep_Team)
 	ETeam Team;
+	virtual void SetTeam(ETeam TempTeam);
+	void InitOverheadWidget();
+protected:
 	UFUNCTION()
 	virtual void OnRep_Team();
-
+	
+public:
 	UPROPERTY(ReplicatedUsing = OnRep_Damage)
 	float Damage;
+	virtual void AddDamage(float TempDamage);
+protected:
 	UFUNCTION()
 	virtual void OnRep_Damage();
 
+public:
 	UPROPERTY(ReplicatedUsing = OnRep_Defeat)
 	int32 Defeat;
+	void AddDefeat();
+protected:
 	UFUNCTION()
 	void OnRep_Defeat();
 
 	UPROPERTY(ReplicatedUsing = OnRep_KillStreak)
 	int32 KillStreak = 0;
+public:
+	void ResetKillStreak();
+	void AddKillStreak();
+	void OnKillStreakChange();
+protected:
 	UFUNCTION()
 	void OnRep_KillStreak();
 	FTimerHandle ResetKillStreakTimerHandle;
 
 public:
-	FORCEINLINE ETeam GetTeam() const { return Team; }
 	FORCEINLINE EHumanCharacterName GetHumanCharacterName() const { return HumanCharacterName; }
 	FORCEINLINE EMutantCharacterName GetMutantCharacterName() const { return MutantCharacterName; }
-	FORCEINLINE float GetDamage() const { return Damage; }
-	FORCEINLINE float GetDefeat() const { return Defeat; }
 
 };

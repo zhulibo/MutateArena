@@ -8,8 +8,8 @@ void UAN_FinishReload::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBas
 	Super::Notify(MeshComp, Animation, EventReference);
 
 	AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(MeshComp->GetOwner());
-	if (HumanCharacter && HumanCharacter->GetCombatComponent())
+	if (HumanCharacter && HumanCharacter->CombatComponent)
 	{
-		HumanCharacter->GetCombatComponent()->FinishReload();
+		HumanCharacter->CombatComponent->FinishReload();
 	}
 }

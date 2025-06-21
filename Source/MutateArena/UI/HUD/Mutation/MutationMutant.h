@@ -15,12 +15,12 @@ class MUTATEARENA_API UMutationMutant : public UCommonActivatableWidget
 protected:
 	virtual void NativeOnInitialized() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
-	
+
 	UPROPERTY()
 	class AMutantCharacter* MutantCharacter;
 	UPROPERTY()
 	FGameplayTag CooldownTag;
-	
+
 	UPROPERTY(meta = (BindWidget))
 	class UCommonTextBlock* Health;
 	void OnMutantHealthChange(float TempHealth);

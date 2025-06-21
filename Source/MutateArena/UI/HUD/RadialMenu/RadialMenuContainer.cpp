@@ -1,6 +1,6 @@
 #include "RadialMenuContainer.h"
 #include "CommonTextBlock.h"
-#include "RadialMenu.h"
+#include "RadialMenuBase.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "MutateArena/Characters/Components/CombatComponent.h"
@@ -50,7 +50,7 @@ void URadialMenuContainer::ShowRadialMenuInternal()
 	if (GetVisibility() == ESlateVisibility::Visible) return;
 
 	HumanCharacter = Cast<AHumanCharacter>(GetOwningPlayerPawn());
-	if (HumanCharacter == nullptr) MutantCharacter = Cast<AMutantCharacter>(GetOwningPlayerPawn());
+	MutantCharacter = Cast<AMutantCharacter>(GetOwningPlayerPawn());
 
 	TitleEquipment->SetColorAndOpacity(C_GREEN);
 	TitleRadio->SetColorAndOpacity(C_WHITE);
@@ -72,9 +72,9 @@ void URadialMenuContainer::SetSelectedItem()
 {
 	if (HumanCharacter)
 	{
-		if (HumanCharacter->GetCombatComponent())
+		if (HumanCharacter->CombatComponent)
 		{
-			switch (HumanCharacter->GetCombatComponent()->GetCurEquipmentType())
+			switch (HumanCharacter->CombatComponent->CurEquipmentType)
 			{
 			case EEquipmentType::Primary:
 				RadialMenuEquipment->SetSelectedItem(1);
@@ -138,42 +138,42 @@ void URadialMenuContainer::SelectRadialMenu(double X, double Y)
 	// UE_LOG(LogTemp, Warning, TEXT("Select %f, %f"), X, Y);
 	if (X * X + Y * Y < .6) return;
 
-	if (URadialMenu* RadialMenu = GetActiveRadialMenu())
+	if (URadialMenuBase* RadialMenu = GetActiveRadialMenu())
 	{
 		float Angle = FMath::Atan2(Y, X) * 180 / PI;
 		// UE_LOG(LogTemp, Warning, TEXT("Angle %f"), Angle);
 
 		if (Angle > -112.5 && Angle <= -67.5)
 		{
-			RadialMenu->SetSelectedItem(1);
+			RadialMenu->SetSelectedItem(0);
 		}
 		else if (Angle > -67.5 && Angle <= -22.5)
 		{
-			RadialMenu->SetSelectedItem(2);
+			RadialMenu->SetSelectedItem(1);
 		}
 		else if (Angle > -22.5 && Angle <= 22.5)
 		{
-			RadialMenu->SetSelectedItem(3);
+			RadialMenu->SetSelectedItem(2);
 		}
 		else if (Angle > 22.5 && Angle <= 67.5)
 		{
-			RadialMenu->SetSelectedItem(4);
+			RadialMenu->SetSelectedItem(3);
 		}
 		else if (Angle > 67.5 && Angle <= 112.5)
 		{
-			RadialMenu->SetSelectedItem(5);
+			RadialMenu->SetSelectedItem(4);
 		}
 		else if (Angle > 112.5 && Angle <= 157.5)
 		{
-			RadialMenu->SetSelectedItem(6);
+			RadialMenu->SetSelectedItem(5);
 		}
 		else if (Angle > 157.5 || Angle <= -157.5)
 		{
-			RadialMenu->SetSelectedItem(7);
+			RadialMenu->SetSelectedItem(6);
 		}
 		else if (Angle > -157.5 && Angle <= -112.5)
 		{
-			RadialMenu->SetSelectedItem(8);
+			RadialMenu->SetSelectedItem(7);
 		}
 	}
 }
@@ -188,19 +188,19 @@ void URadialMenuContainer::CloseRadialMenuInternal()
 			// 人类
 			if (HumanCharacter)
 			{
-				if (RadialMenuEquipment->SelectedItemIndex == 1)
+				if (RadialMenuEquipment->SelectedItemIndex == 0)
 				{
 					HumanCharacter->SwapPrimaryEquipmentButtonPressed();
 				}
-				else if (RadialMenuEquipment->SelectedItemIndex == 2)
+				else if (RadialMenuEquipment->SelectedItemIndex == 1)
 				{
 					HumanCharacter->SwapSecondaryEquipmentButtonPressed();
 				}
-				else if (RadialMenuEquipment->SelectedItemIndex == 3)
+				else if (RadialMenuEquipment->SelectedItemIndex == 2)
 				{
 					HumanCharacter->SwapMeleeEquipmentButtonPressed();
 				}
-				else if (RadialMenuEquipment->SelectedItemIndex == 4)
+				else if (RadialMenuEquipment->SelectedItemIndex == 3)
 				{
 					HumanCharacter->SwapThrowingEquipmentButtonPressed();
 				}
@@ -214,29 +214,29 @@ void URadialMenuContainer::CloseRadialMenuInternal()
 	}
 	else if (ActiveRadialMenuIndex == 2)
 	{
-		// // 人类
-		// if (HumanCharacter)
-		// {
-		// 	HumanCharacter->SendRadio(RadialMenuRadio->SelectedItemIndex);
-		// }
-		// // 突变体
-		// else if (MutantCharacter)
-		// {
-		// 	MutantCharacter->SendRadio(RadialMenuRadio->SelectedItemIndex);
-		// }
+		// 人类
+		if (HumanCharacter)
+		{
+			HumanCharacter->SendRadio(RadialMenuRadio->SelectedItemIndex);
+		}
+		// 突变体
+		else if (MutantCharacter)
+		{
+			MutantCharacter->SendRadio(RadialMenuRadio->SelectedItemIndex);
+		}
 	}
 	else if (ActiveRadialMenuIndex == 3)
 	{
-		// // 人类
-		// if (HumanCharacter)
-		// {
-		// 	HumanCharacter->SprayPaint(RadialMenuPaint->SelectedItemIndex);
-		// }
-		// // 突变体
-		// else if (MutantCharacter)
-		// {
-		// 	MutantCharacter->SprayPaint(RadialMenuPaint->SelectedItemIndex);
-		// }
+		// 人类
+		if (HumanCharacter)
+		{
+			HumanCharacter->SprayPaint(RadialMenuPaint->SelectedItemIndex);
+		}
+		// 突变体
+		else if (MutantCharacter)
+		{
+			MutantCharacter->SprayPaint(RadialMenuPaint->SelectedItemIndex);
+		}
 	}
 
 	SetVisibility(ESlateVisibility::Hidden);
@@ -288,7 +288,7 @@ void URadialMenuContainer::SetMutantRadialMenuText()
 }
 
 // 获取活跃的轮盘
-URadialMenu* URadialMenuContainer::GetActiveRadialMenu()
+URadialMenuBase* URadialMenuContainer::GetActiveRadialMenu()
 {
 	switch (ActiveRadialMenuIndex)
 	{
