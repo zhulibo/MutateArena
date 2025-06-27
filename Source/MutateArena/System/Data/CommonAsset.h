@@ -12,7 +12,8 @@ struct FSprayPaint
 	UPROPERTY(EditAnywhere)
 	FString Name;
 	UPROPERTY(EditAnywhere)
-	UMaterialInterface* Material;
+	UMaterialInterface* Material =  nullptr;
+	
 };
 
 UCLASS()

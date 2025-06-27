@@ -123,6 +123,10 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
 		{
+			// 观察者销毁时不触发ABaseController::OnUnPossess，在这里移除观察者绑定的输入映射
+			Subsystem->RemoveMappingContext(AssetSubsystem->InputAsset->BaseMappingContext);
+			Subsystem->RemoveMappingContext(AssetSubsystem->InputAsset->SpectatorMappingContext);
+
 			Subsystem->AddMappingContext(AssetSubsystem->InputAsset->BaseMappingContext, 100);
 		}
 	}
@@ -162,21 +166,23 @@ void ABaseCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	PollSetMeshCollisionType();
+	PollInit_PlayerStateTeam();
 
-	PollInit();
+	PollInit_ControllerAndPSAndTeam();
 
 	CalcAimPitch();
 }
 
 // 设置碰撞
-void ABaseCharacter::PollSetMeshCollisionType()
+void ABaseCharacter::PollInit_PlayerStateTeam()
 {
-	if (!bHasSetMeshCollisionType)
+	if (!bIsPlayerStateTeamReady)
 	{
 		if (BasePlayerState == nullptr) BasePlayerState = GetPlayerState<ABasePlayerState>();
 		if (BasePlayerState && BasePlayerState->Team != ETeam::NoTeam)
 		{
+			bIsPlayerStateTeamReady = true;
+
 			switch (BasePlayerState->Team)
 			{
 			case ETeam::Team1:
@@ -186,46 +192,51 @@ void ABaseCharacter::PollSetMeshCollisionType()
 				GetMesh()->SetCollisionObjectType(ECC_TEAM2_MESH);
 				break;
 			}
-
-			bHasSetMeshCollisionType = true;
 		}
 	}
 }
 
-void ABaseCharacter::PollInit()
+void ABaseCharacter::PollInit_ControllerAndPSAndTeam()
 {
-	if (IsLocallyControlled() && !bIsControllerReady)
+	if (IsLocallyControlled() && !bIsControllerAndPSAndTeamReady)
 	{
-		BaseController = Cast<ABaseController>(Controller);
+		if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
 		if (BaseController)
 		{
-			bIsControllerReady = true;
+			if (!bIsLocallyControllerReady)
+			{
+				bIsLocallyControllerReady = true;
+				
+				OnLocallyControllerReady();
+			}
+			
+			// InitHUD依赖Controller和Controller中的PlayerState和Controller中的PlayerState中的Team
+			ABasePlayerState* PS = Cast<ABasePlayerState>(BaseController->PlayerState);
+			if (PS && PS->Team != ETeam::NoTeam)
+			{
+				bIsControllerAndPSAndTeamReady = true;
 
-			OnControllerReady();
-
-			BaseController->ManualReset();
+				BaseController->InitHUD();
+			}
 		}
 	}
 }
 
-void ABaseCharacter::OnControllerReady()
+void ABaseCharacter::OnLocallyControllerReady()
 {
 	// 闪光弹
-	if (IsLocallyControlled())
+	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+	if (AssetSubsystem && AssetSubsystem->CharacterAsset)
 	{
-		if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-		if (AssetSubsystem && AssetSubsystem->CharacterAsset)
+		if (SceneCapture)
 		{
-			if (SceneCapture)
-			{
-				SceneCapture->TextureTarget = AssetSubsystem->CharacterAsset->RT_Flashbang;
-			}
+			SceneCapture->TextureTarget = AssetSubsystem->CharacterAsset->RT_Flashbang;
+		}
 
-			FlashbangMID = UMaterialInstanceDynamic::Create(AssetSubsystem->CharacterAsset->MI_Flashbang, this);
-			if (FlashbangMID)
-			{
-				Camera->PostProcessSettings.AddBlendable(FlashbangMID, 1.f);
-			}
+		FlashbangMID = UMaterialInstanceDynamic::Create(AssetSubsystem->CharacterAsset->MI_Flashbang, this);
+		if (FlashbangMID)
+		{
+			Camera->PostProcessSettings.AddBlendable(FlashbangMID, 1.f);
 		}
 	}
 }
@@ -310,9 +321,20 @@ void ABaseCharacter::Destroyed()
 }
 
 // 输入设备类型改变
-void ABaseCharacter::OnInputMethodChanged(ECommonInputType TempCommonInputType)
+void ABaseCharacter::OnInputMethodChanged(ECommonInputType TempInputType)
 {
-	UE_LOG(LogTemp, Warning, TEXT("OnInputMethodChanged: %d"), TempCommonInputType);
+	UE_LOG(LogTemp, Warning, TEXT("OnInputMethodChanged: %d"), TempInputType);
+
+	ServerSetInputType(TempInputType);
+}
+
+void ABaseCharacter::ServerSetInputType_Implementation(ECommonInputType TempInputType)
+{
+	if (BasePlayerState == nullptr) BasePlayerState = GetPlayerState<ABasePlayerState>();
+	if (BasePlayerState)
+	{
+		BasePlayerState->InputType = TempInputType;
+	}
 }
 
 void ABaseCharacter::InitAbilityActorInfo()
@@ -373,6 +395,11 @@ float ABaseCharacter::GetRepelReceivedMul()
 float ABaseCharacter::GetCharacterLevel()
 {
 	return AttributeSetBase ? AttributeSetBase->GetCharacterLevel() : 0.f;
+}
+
+float ABaseCharacter::GetMaxWalkSpeed()
+{
+	return AttributeSetBase ? AttributeSetBase->GetMaxWalkSpeed() : 0.f;
 }
 
 float ABaseCharacter::GetJumpZVelocity()
@@ -835,7 +862,7 @@ void ABaseCharacter::PlayFootLandSound()
 
 void ABaseCharacter::FellOutOfWorld(const UDamageType& DmgType)
 {
-	UGameplayStatics::ApplyDamage(this, GetHealth(), BaseController, this, UDamageTypeFall::StaticClass());
+	UGameplayStatics::ApplyDamage(this, 999999, BaseController, this, UDamageTypeFall::StaticClass());
 
 	// Super::FellOutOfWorld(DmgType);
 }
@@ -912,10 +939,15 @@ void ABaseCharacter::SprayPaint(int32 RadioIndex)
 			auto SprayPaints = AssetSubsystem->CommonAsset->SprayPaints;
 			if (SprayPaints.IsValidIndex(RadioIndex))
 			{
+				if (IsValid(SprayPaintDecal))
+				{
+					SprayPaintDecal->DestroyComponent();
+				}
+				
 				FRotator DecalRotation = FRotationMatrix::MakeFromX(OutHit.ImpactNormal).Rotator();
 				DecalRotation.Roll += 90.0f;
 				DecalRotation.Yaw += 180.0f;
-				UGameplayStatics::SpawnDecalAttached(
+				SprayPaintDecal = UGameplayStatics::SpawnDecalAttached(
 					SprayPaints[RadioIndex].Material,
 					FVector(5.f, 100.f, 100.f),
 					OutHit.GetComponent(),

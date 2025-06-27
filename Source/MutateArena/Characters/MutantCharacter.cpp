@@ -450,6 +450,16 @@ void AMutantCharacter::OnLeftHandCapsuleOverlap(UPrimitiveComponent* OverlappedC
 
 void AMutantCharacter::ServerApplyDamage_Implementation(AActor* OtherActor, float Damage)
 {
+	// 对局结束只有人类可以造成伤害
+	if (MutationMode == nullptr) MutationMode = GetWorld()->GetAuthGameMode<AMutationMode>();
+	if (MutationMode)
+	{
+		if (MutationMode->GetMatchState() != MatchState::InProgress)
+		{
+			return;
+		}
+	}
+	
 	// 判断Overlap对象不是人类退出（Human变为Mutant时，Team可能未同步到本地，会发生Overlap）。
 	AHumanCharacter* DamagedCharacter = Cast<AHumanCharacter>(OtherActor);
 	if (DamagedCharacter == nullptr) return;
@@ -462,7 +472,6 @@ void AMutantCharacter::ServerApplyDamage_Implementation(AActor* OtherActor, floa
 	{
 		ABaseController* DamagedController = Cast<ABaseController>(DamagedCharacter->Controller);
 		if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
-		if (MutationMode == nullptr) MutationMode = GetWorld()->GetAuthGameMode<AMutationMode>();
 		if (MutationMode)
 		{
 			MutationMode->GetInfect(DamagedCharacter, DamagedController, this, BaseController, MutantState);
@@ -561,8 +570,11 @@ void AMutantCharacter::MulticastDead_Implementation(bool bKilledByMelee)
 
 void AMutantCharacter::MutantRespawn(bool bKilledByMelee)
 {
-	// 移除绑定（没有写到UnPossessed里是因为，Character不销毁的话不触发本地客户端的UnPossessed）
-	RemoveMappingContext();
+	// 被刀死不会销毁角色，Character不销毁的话不触发客户端的ABaseController::OnUnPossess, 主动RemoveMappingContext
+	if (bKilledByMelee)
+	{
+		RemoveMappingContext();
+	}
 
 	// 重生
 	if (HasAuthority())

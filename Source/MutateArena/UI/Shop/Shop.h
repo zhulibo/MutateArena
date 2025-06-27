@@ -16,6 +16,7 @@ class MUTATEARENA_API UShop : public UCommonActivatableWidget
 
 protected:
 	virtual void NativeOnInitialized() override;
+	virtual void NativeOnActivated() override;
 	virtual UWidget* NativeGetDesiredFocusTarget() const override;
 
 	UPROPERTY()

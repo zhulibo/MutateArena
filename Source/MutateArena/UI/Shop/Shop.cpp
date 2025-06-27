@@ -33,7 +33,15 @@ void UShop::NativeOnInitialized()
 	{
 		EOSSubsystem->OnQueryOffersComplete.AddUObject(this, &ThisClass::OnQueryOffersComplete);
 		EOSSubsystem->OnCheckoutComplete.AddUObject(this, &ThisClass::OnCheckoutComplete);
+	}
+}
 
+void UShop::NativeOnActivated()
+{
+	Super::NativeOnActivated();
+	
+	if (EOSSubsystem)
+	{
 		EOSSubsystem->QueryOffers();
 	}
 }
@@ -84,6 +92,10 @@ void UShop::OnQueryOffersComplete(bool bWasSuccessful)
 
 			NativeGetDesiredFocusTarget()->SetFocus();
 		}
+	}
+	else
+	{
+		NOTIFY(this, C_RED, LOCTEXT("QueryOffers", "Get items failed"));
 	}
 }
 

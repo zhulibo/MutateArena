@@ -146,6 +146,7 @@ public:
 	int64 GetLobbyStatus();
 
 	TSharedPtr<const FLobbyMember> GetMember(FAccountId AccountId);
+	TSharedPtr<const FLobbyMember> GetMemberByPlayerName(FString PlayerName);
 
 	ETeam GetMemberTeam(TSharedPtr<const FLobbyMember> Member);
 	bool GetMemberReady(TSharedPtr<const FLobbyMember> Member);

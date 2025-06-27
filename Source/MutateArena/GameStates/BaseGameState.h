@@ -18,8 +18,6 @@ class MUTATEARENA_API ABaseGameState : public AGameState
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(Replicated)
-	bool bCanSpectate = false;
 
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -44,9 +42,9 @@ protected:
 	UFUNCTION()
 	virtual void OnRep_Team2PlayerStates() {}
 public:
+	TArray<ABasePlayerState*> GetPlayerStates(TOptional<ETeam> Team);
 	virtual void AddToPlayerStates(ABasePlayerState* BasePlayerState, ETeam Team);
 	virtual void RemoveFromPlayerStates(ABasePlayerState* BasePlayerState, ETeam Team);
-	TArray<ABasePlayerState*> GetPlayerStates(TOptional<ETeam> Team);
 
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastAddKillLog(ABasePlayerState* AttackerState, const FText& CauserName, ABasePlayerState* DamagedState);

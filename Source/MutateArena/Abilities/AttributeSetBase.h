@@ -45,6 +45,10 @@ public:
 	FGameplayAttributeData CharacterLevel;
 	ATTRIBUTE_ACCESSORS(UAttributeSetBase, CharacterLevel)
 
+	UPROPERTY(ReplicatedUsing = OnRep_MaxWalkSpeed)
+	FGameplayAttributeData MaxWalkSpeed;
+	ATTRIBUTE_ACCESSORS(UAttributeSetBase, MaxWalkSpeed)
+
 	UPROPERTY(ReplicatedUsing = OnRep_JumpZVelocity)
 	FGameplayAttributeData JumpZVelocity;
 	ATTRIBUTE_ACCESSORS(UAttributeSetBase, JumpZVelocity)
@@ -60,6 +64,8 @@ protected:
 	virtual void OnRep_RepelReceivedMul(const FGameplayAttributeData& OldRepelReceivedMul);
 	UFUNCTION()
 	virtual void OnRep_CharacterLevel(const FGameplayAttributeData& OldCharacterLevel);
+	UFUNCTION()
+	virtual void OnRep_MaxWalkSpeed(const FGameplayAttributeData& OldMaxWalkSpeed);
 	UFUNCTION()
 	virtual void OnRep_JumpZVelocity(const FGameplayAttributeData& OldJumpZVelocity);
 

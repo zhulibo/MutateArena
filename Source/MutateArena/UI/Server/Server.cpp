@@ -55,6 +55,8 @@ void UServer::NativeConstruct()
 
 	OnRefreshServerButtonClicked();
 
+	bIsActioning = false;
+
 	// for (int32 i = 0; i < 100; ++i)
 	// {
 	// 	if (UServerLineButton* ServerLineButton = CreateWidget<UServerLineButton>(this, ServerLineButtonClass))
@@ -84,11 +86,11 @@ UWidget* UServer::NativeGetDesiredFocusTarget() const
 void UServer::OnCreateServerButtonClicked()
 {
 	UE_LOG(LogTemp, Warning, TEXT("OnCreateServerButtonClicked ------------------------------------------"));
-	if (bIsClickLocked) return;
+	if (bIsActioning) return;
 	
 	if (EOSSubsystem)
 	{
-		bIsClickLocked = true;
+		bIsActioning = true;
 		
 		CreateServerButton->ButtonText->SetText(LOCTEXT("Creating", "Creating"));
 		CreateServerButton->SetIsEnabled(false);
@@ -100,7 +102,8 @@ void UServer::OnCreateServerButtonClicked()
 // 创建大厅完成事件
 void UServer::OnCreateLobbyComplete(bool bWasSuccessful)
 {
-	bIsClickLocked = false;
+	bIsActioning = false;
+	
 	CreateServerButton->ButtonText->SetText(LOCTEXT("Create", "Create"));
 	CreateServerButton->SetIsEnabled(true);
 
@@ -155,6 +158,7 @@ void UServer::OnModeComboBoxChanged(FString SelectedItem, ESelectInfo::Type Sele
 // 查找大厅
 void UServer::OnRefreshServerButtonClicked()
 {
+	UE_LOG(LogTemp, Warning, TEXT("OnRefreshServerButtonClicked ------------------------------------------"));
 	if (EOSSubsystem == nullptr) EOSSubsystem = GetGameInstance()->GetSubsystem<UEOSSubsystem>();
 	if (EOSSubsystem)
 	{
@@ -352,11 +356,13 @@ void UServer::OnPageNextButtonClicked()
 // 加入大厅
 void UServer::OnServerLineButtonClicked(UServerLineButton* ServerLineButton)
 {
-	if (bIsClickLocked) return;
+	UE_LOG(LogTemp, Warning, TEXT("OnServerLineButtonClicked ------------------------------------------"));
+	
+	if (bIsActioning) return;
 
 	if (EOSSubsystem && ServerLineButton->Lobby.IsValid())
 	{
-		bIsClickLocked = true;
+		bIsActioning = true;
 
 		EOSSubsystem->JoinLobby(ServerLineButton->Lobby);
 	}
@@ -365,7 +371,7 @@ void UServer::OnServerLineButtonClicked(UServerLineButton* ServerLineButton)
 // 加入大厅完成事件
 void UServer::OnJoinLobbyComplete(bool bWasSuccessful)
 {
-	bIsClickLocked = false;
+	bIsActioning = false;
 
 	if (bWasSuccessful)
 	{

@@ -31,6 +31,10 @@ public:
 	UPROPERTY(EditAnywhere)
 	float CooldownTime = 5.f;
 
+	float RoundStartTime = 0.f;
+	float RoundEndTime = 0.f;
+	float MatchEndTime = 0.f;
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
@@ -40,9 +44,6 @@ protected:
 	class AMutationGameState* MutationGameState;
 
 	int32 CurrentRound = 1;
-	float RoundStartTime = 0.f;
-	float RoundEndTime = 0.f;
-	float MatchEndTime = 0.f;
 	float CountdownTime = 0.f;
 
 	bool bIsEndingMatch = false;
@@ -69,7 +70,7 @@ protected:
 	TArray<class APlayerStart*> PickupStartPoints;
 	UFUNCTION()
 	void SpawnPickups();
-	
+
 	void RoundStartMutate();
 
 public:

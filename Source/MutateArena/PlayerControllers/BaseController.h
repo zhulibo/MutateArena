@@ -36,6 +36,7 @@ class MUTATEARENA_API ABaseController : public APlayerController
 	GENERATED_BODY()
 
 public:
+	// TODO 将UI部分转移到子系统中
 	UPROPERTY()
 	class UGameLayout* GameLayout;
 
@@ -64,6 +65,7 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
+	virtual void OnUnPossess() override;
 	virtual void OnRep_Pawn() override;
 	virtual void SetViewTarget(class AActor* NewViewTarget, FViewTargetTransitionParams TransitionParams) override;
 	
@@ -71,13 +73,16 @@ protected:
 	class ABaseMode* BaseMode;
 	UPROPERTY()
 	class ABaseGameState* BaseGameState;
-
-	float ServerClientDeltaTime = 0.f; // Diff between client and server WORLD TIME, not network delay.
+	UPROPERTY()
+	class UAssetSubsystem* AssetSubsystem;
+	// Diff between client and server WORLD TIME, not network delay.
+	float ServerClientDeltaTime = 0.f;
 	void HandleServerClientDeltaTime();
 	UFUNCTION(Server, Reliable)
 	void RequestServerTime(float ClientTime);
 	UFUNCTION(Client, Reliable)
 	void ReturnServerTime(float ClientTime, float ServerTime);
+	bool bServerClientDeltaTimeHasInit = false;
 	float GetServerTime();
 
 	UPROPERTY(EditAnywhere)
@@ -104,14 +109,13 @@ protected:
 	virtual void HandleLeavingMap();
 
 public:
-	virtual void ManualReset();
-	
 	virtual void SetHUDHealth(float Health) {}
 
 	virtual void SetHUDAmmo(int32 Ammo);
 	virtual void SetHUDCarriedAmmo(int32 CarriedAmmo);
-protected:
+public:
 	virtual void InitHUD() {}
+protected:
 	virtual void SetHUDTime() {}
 
 public:

@@ -11,7 +11,7 @@ class MUTATEARENA_API AMutantGhost : public AMutantCharacter
 
 public:
 	AMutantGhost();
-	
+
 	void ShowOverheadWidget(bool bIsShow);
 
 protected:

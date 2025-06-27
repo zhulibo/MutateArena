@@ -12,21 +12,12 @@ class MUTATEARENA_API UOverheadWidget : public UCommonUserWidget
 public:
 	friend class ABaseCharacter;
 
-	void InitOverheadWidget();
-
-	void OnMaxHealthChange(float MaxHealth);
-	void OnHealthChange(float OldHealth, float NewHealth);
-
-	bool bIsAllowShow = true;
-	void ShowOverheadWidget(bool bIsShow);
-	
-	void PlayFlashbangEffect(float Speed);
-
 protected:
 	virtual void NativeOnInitialized() override;
 	virtual void NativeConstruct() override;
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 	virtual void NativeDestruct() override;
-	
+
 	UPROPERTY()
 	TObjectPtr<class ABaseGameState> BaseGameState;
 
@@ -43,29 +34,29 @@ protected:
 	ABasePlayerState* LocalBasePlayerState;
 	UPROPERTY()
 	ABaseCharacter* LocalBaseCharacter;
-
-	void OnMatchEnd();
-	UPROPERTY()
-	bool bCanUseSetTimerForNextTick = true;
-
+	
 	UPROPERTY(meta = (BindWidget))
 	class UCommonTextBlock* PlayerName;
-	void SetPlayerName();
-	FTimerHandle TraceTimerHandle;
-	void TraceOverheadWidget();
-
 	UPROPERTY(meta = (BindWidget))
 	class UCommonLazyImage* HealthBar;
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
 	UWidgetAnimation* HealthDec;
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
 	UWidgetAnimation* HealthInc;
-
 	UPROPERTY(meta = (BindWidget))
 	UCommonLazyImage* HealthBarLine;
-	int32 GetHealthBarLineNum();
-
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
 	UWidgetAnimation* FadeIn;
+
+	void InitOverheadWidget();
+	FTimerHandle TraceTimerHandle;
+	void TraceOverheadWidget();
+	int32 GetHealthBarLineNum();
+	void OnMaxHealthChange(float MaxHealth);
+	void OnHealthChange(float OldHealth, float NewHealth);
+	bool bIsAllowShow = true;
+public:
+	void ShowOverheadWidget(bool bIsShow);
+	void PlayFlashbangEffect(float Speed);
 
 };

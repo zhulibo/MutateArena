@@ -28,6 +28,7 @@ void UMutationHuman::OnHumanHealthChange(float TempHealth)
 	FNumberFormattingOptions Opts;
 	Opts.RoundingMode = ERoundingMode::ToPositiveInfinity; // 向上取整
 	Opts.SetUseGrouping(false); // 不使用千位分隔符
+	Opts.SetMaximumFractionalDigits(0);
 	Health->SetText(FText::AsNumber(TempHealth, &Opts));
 }
 

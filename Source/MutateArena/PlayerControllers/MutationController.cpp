@@ -45,8 +45,10 @@ void AMutationController::RequestServerMatchInfo_Implementation()
 			MutationMode->TotalRound,
 			MutationMode->LevelStartTime,
 			MutationMode->WarmupTime,
+			MutationMode->RoundStartTime,
 			MutationMode->RoundTime,
 			MutationMode->MutateTime,
+			MutationMode->RoundEndTime,
 			MutationMode->PostRoundTime,
 			MutationMode->CooldownTime
 		);
@@ -58,8 +60,10 @@ void AMutationController::ReturnServerMatchInfo_Implementation(
 	int32 TempTotalRound,
 	float TempLevelStartTime,
 	float TempWarmupTime,
+	float TempRoundStartTime,
 	float TempRoundTime,
 	float TempMutateTime,
+	float TempRoundEndTime,
 	float TempPostRoundTime,
 	float TempCooldownTime
 ){
@@ -71,8 +75,10 @@ void AMutationController::ReturnServerMatchInfo_Implementation(
 
 	LevelStartTime = TempLevelStartTime;
 	WarmupTime = TempWarmupTime;
+	RoundStartTime = TempRoundStartTime;
 	RoundTime = TempRoundTime;
 	MutateTime = TempMutateTime;
+	RoundEndTime = TempRoundEndTime;
 	PostRoundTime = TempPostRoundTime;
 	CooldownTime = TempCooldownTime;
 }
@@ -162,6 +168,10 @@ void AMutationController::SetHUDTime()
 			int32 MutateCountdown = FMath::RoundToInt(MutateTime + TimeLeft - RoundTime);
 			if (MutateCountdown > 0)
 			{
+				// 玩家中途加入需待ABaseController::ReturnServerTime和AMutationController::ReturnServerMatchInfo已完成
+				// 不然MutateCountdown计算是错误的
+				if (!bServerClientDeltaTimeHasInit || TotalRound == 0) return;
+
 				ChangeAnnouncement.Broadcast(FText::FromString(FString::Printf(TEXT("%d"), MutateCountdown)));
 
 				// 播放倒计时
@@ -198,7 +208,6 @@ void AMutationController::InitHUD()
 	if (MutationPlayerState == nullptr) MutationPlayerState = Cast<AMutationPlayerState>(PlayerState);
 	if (MutationPlayerState)
 	{
-		// UE_LOG(LogTemp, Warning, TEXT("InitHUD GetTeam %d"), MutationPlayerState->Team);
 		if (MutationPlayerState->Team == ETeam::Team1)
 		{
 			InitHumanHUD();
@@ -207,6 +216,8 @@ void AMutationController::InitHUD()
 		{
 			InitMutantHUD();
 		}
+
+		OnTeamChange.Broadcast(MutationPlayerState->Team);
 	}
 }
 
@@ -217,7 +228,7 @@ void AMutationController::InitHumanHUD()
 
 	if (BaseCharacter && MutationGameState)
 	{
-		SetHUDHealth(BaseCharacter->GetMaxHealth());
+		SetHUDHealth(BaseCharacter->GetHealth());
 		SetHUDCurrentRound();
 		SetHUDTeamNum(MutationGameState->GetPlayerStates(ETeam::Team1).Num(), ETeam::Team1);
 		SetHUDTeamNum(MutationGameState->GetPlayerStates(ETeam::Team2).Num(), ETeam::Team2);
@@ -233,7 +244,7 @@ void AMutationController::InitMutantHUD()
 
 	if (BaseCharacter && MutationGameState && MutationPlayerState)
 	{
-		SetHUDHealth(BaseCharacter->GetMaxHealth());
+		SetHUDHealth(BaseCharacter->GetHealth());
 		SetHUDCurrentRound();
 		SetHUDTeamNum(MutationGameState->GetPlayerStates(ETeam::Team1).Num(), ETeam::Team1);
 		SetHUDTeamNum(MutationGameState->GetPlayerStates(ETeam::Team2).Num(), ETeam::Team2);

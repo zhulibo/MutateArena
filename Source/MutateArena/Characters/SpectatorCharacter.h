@@ -25,7 +25,6 @@ class MUTATEARENA_API ASpectatorCharacter : public ASpectatorPawn
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
-	virtual void Destroyed() override;
 
 	UPROPERTY()
 	class UAssetSubsystem* AssetSubsystem;

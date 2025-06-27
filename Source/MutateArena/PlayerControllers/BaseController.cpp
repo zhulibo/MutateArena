@@ -1,5 +1,6 @@
 #include "BaseController.h"
 
+#include "EnhancedInputSubsystems.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/PlayerStates/TeamType.h"
 #include "MutateArena/System/PlayerSubsystem.h"
@@ -9,6 +10,8 @@
 #include "MutateArena/UI/HUD/TeamDeadMatch/TeamDeadMatchContainer.h"
 #include "MutateArena/Utils/LibraryCommon.h"
 #include "GameFramework/PlayerState.h"
+#include "MutateArena/Characters/Data/InputAsset.h"
+#include "MutateArena/System/AssetSubsystem.h"
 #include "Widgets/CommonActivatableWidgetContainer.h"
 
 #define LOCTEXT_NAMESPACE "ABaseController"
@@ -25,7 +28,7 @@ void ABaseController::BeginPlay()
 		{
 			PlayerSubsystem->AddNotifyLayout();
 		}
-		
+
 		AddGameLayout();
 	}
 }
@@ -40,9 +43,20 @@ void ABaseController::Tick(float DeltaSeconds)
 	}
 }
 
-void ABaseController::ManualReset()
+void ABaseController::OnUnPossess()
 {
-	InitHUD();
+	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+	if (AssetSubsystem == nullptr || AssetSubsystem->InputAsset == nullptr || AssetSubsystem->InputAsset == nullptr) return;
+
+	if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
+	{
+		Subsystem->RemoveMappingContext(AssetSubsystem->InputAsset->BaseMappingContext);
+		Subsystem->RemoveMappingContext(AssetSubsystem->InputAsset->SpectatorMappingContext);
+		Subsystem->RemoveMappingContext(AssetSubsystem->InputAsset->HumanMappingContext);
+		Subsystem->RemoveMappingContext(AssetSubsystem->InputAsset->MutantMappingContext);
+	}
+
+	Super::OnUnPossess();
 }
 
 void ABaseController::HandleServerClientDeltaTime()
@@ -65,6 +79,8 @@ void ABaseController::ReturnServerTime_Implementation(float ClientTime, float Se
 {
 	float RoundTripNetworkDelay = GetWorld()->GetTimeSeconds() - ClientTime; // 往返网络延迟
 	ServerClientDeltaTime = ServerTime - ClientTime - RoundTripNetworkDelay * 0.5f;
+
+	bServerClientDeltaTimeHasInit = true;
 }
 
 float ABaseController::GetServerTime()

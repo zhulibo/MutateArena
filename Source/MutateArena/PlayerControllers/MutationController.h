@@ -42,8 +42,6 @@ protected:
 	class AMutationGameState* MutationGameState;
 	UPROPERTY()
 	class AMutationPlayerState* MutationPlayerState;
-	UPROPERTY()
-	class UAssetSubsystem* AssetSubsystem;
 
 	UFUNCTION(Server, Reliable)
 	void RequestServerMatchInfo();
@@ -53,8 +51,10 @@ protected:
 		int32 TempTotalRound,
 		float TempLevelStartTime,
 		float TempWarmupTime,
+		float TempRoundStartTime,
 		float TempRoundTime,
 		float TempMutateTime,
+		float TempRoundEndTime,
 		float TempPostRoundTime,
 		float TempCooldownTime
 	);

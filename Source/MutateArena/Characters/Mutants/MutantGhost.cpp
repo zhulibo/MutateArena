@@ -54,8 +54,7 @@ void AMutantGhost::OnAbilitySystemComponentInit()
 
 	if (AbilitySystemComponent && AttributeSetBase)
 	{
-		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(
-			AttributeSetBase->GetJumpZVelocityAttribute()).AddUObject(this, &ThisClass::OnJumpZVelocityChanged);
+		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(AttributeSetBase->GetJumpZVelocityAttribute()).AddUObject(this, &ThisClass::OnJumpZVelocityChanged);
 	}
 }
 

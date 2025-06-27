@@ -30,7 +30,7 @@ protected:
 	void RefreshScoreBoard();
 
 	UPROPERTY(meta = (BindWidget))
-	class UCommonTextBlock* GameTitle;
+	class UCommonTextBlock* Server;
 
 	UPROPERTY(meta = (BindWidget))
 	UCommonTextBlock* FPS;

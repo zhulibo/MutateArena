@@ -127,32 +127,9 @@ void AHumanCharacter::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 }
 
-void AHumanCharacter::UnPossessed()
+void AHumanCharacter::OnLocallyControllerReady()
 {
-	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-	if (AssetSubsystem == nullptr || AssetSubsystem->InputAsset == nullptr || AssetSubsystem->InputAsset == nullptr) return;
-
-	if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
-	if (BaseController)
-	{
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(BaseController->GetLocalPlayer()))
-		{
-			Subsystem->RemoveMappingContext(AssetSubsystem->InputAsset->BaseMappingContext);
-			Subsystem->RemoveMappingContext(AssetSubsystem->InputAsset->HumanMappingContext);
-		}
-	}
-
-	Super::UnPossessed();
-}
-
-void AHumanCharacter::Destroyed()
-{
-	Super::Destroyed();
-}
-
-void AHumanCharacter::OnControllerReady()
-{
-	Super::OnControllerReady();
+	Super::OnLocallyControllerReady();
 
 	ApplyLoadout();
 }
@@ -536,7 +513,7 @@ void AHumanCharacter::HumanReceiveDamage(AActor* DamagedActor, float Damage, con
 	}
 }
 
-void AHumanCharacter::MulticastMutationDead_Implementation(bool bNeedSpawn)
+void AHumanCharacter::MulticastMutationDead_Implementation(bool bNeedSpawn, ESpawnMutantReason SpawnMutantReason)
 {
 	HandleDead();
 
@@ -544,11 +521,11 @@ void AHumanCharacter::MulticastMutationDead_Implementation(bool bNeedSpawn)
 	{
 		FTimerHandle TimerHandle;
 		FTimerDelegate TimerDelegate;
-		TimerDelegate.BindWeakLambda(this, [this]() {
+		TimerDelegate.BindWeakLambda(this, [this, SpawnMutantReason]() {
 			if (MutationMode == nullptr) MutationMode = GetWorld()->GetAuthGameMode<AMutationMode>();
 			if (MutationMode)
 			{
-				MutationMode->Mutate(this, Controller, ESpawnMutantReason::MutantDamage);
+				MutationMode->Mutate(this, Controller, SpawnMutantReason);
 			}
 		});
 		GetWorldTimerManager().SetTimer(TimerHandle, TimerDelegate, 3.f, false);
@@ -632,16 +609,10 @@ void AHumanCharacter::OnInteractMutantSuccess(class AMutantCharacter* MutantChar
 void AHumanCharacter::ServerOnImmune_Implementation(class AMutantCharacter* MutantCharacter)
 {
 	bIsImmune = true;
-	OnRep_bIsImmune();
 }
 
 void AHumanCharacter::OnRep_bIsImmune()
 {
-	if (BasePlayerState == nullptr) BasePlayerState = GetPlayerState<ABasePlayerState>();
-	if (BasePlayerState)
-	{
-		BasePlayerState->InitOverheadWidget();
-	}
 }
 
 #undef LOCTEXT_NAMESPACE

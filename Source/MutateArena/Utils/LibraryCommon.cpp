@@ -23,6 +23,8 @@ int32 ULibraryCommon::GetBloodParticleCount(float Damage)
 
 FString ULibraryCommon::GetFormatTime(int32 CountdownTime)
 {
+	if (CountdownTime < 0) CountdownTime = 0;
+	
 	int32 Minutes = FMath::FloorToInt(CountdownTime / 60.f);
 	int32 Seconds = CountdownTime - Minutes * 60;
 	return  FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds);

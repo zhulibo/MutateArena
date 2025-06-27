@@ -5,11 +5,13 @@
 #include "Online/CoreOnline.h"
 #include "GameFramework/PlayerState.h"
 #include "AbilitySystemInterface.h"
+#include "TeamType.h"
 #include "BasePlayerState.generated.h"
 
 enum class ETeam : uint8;
 enum class EHumanCharacterName: uint8;
 enum class EMutantCharacterName: uint8;
+enum class ECommonInputType : uint8;
 
 UCLASS()
 class MUTATEARENA_API ABasePlayerState : public APlayerState, public IAbilitySystemInterface
@@ -31,8 +33,12 @@ public:
 	float GetDamageReceivedMul();
 	float GetRepelReceivedMul();
 	float GetCharacterLevel();
+	float GetMaxWalkSpeed();
 	float GetJumpZVelocity();
 
+	UPROPERTY(Replicated)
+	ECommonInputType InputType;
+	
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void BeginPlay() override;
@@ -58,36 +64,44 @@ public:
 	UFUNCTION()
 	void SetMutantCharacterName(EMutantCharacterName Name);
 	
-protected:
-	UPROPERTY(Replicated)
-	FUniqueNetIdRepl AccountIdRepl;
-	UFUNCTION(Server, Reliable)
-	void ServerSetAccountId(FUniqueNetIdRepl TempAccountIdRepl);
-	
-public:
 	UPROPERTY(ReplicatedUsing = OnRep_Team)
-	ETeam Team;
+	ETeam Team = ETeam::NoTeam;
 	virtual void SetTeam(ETeam TempTeam);
-	void InitOverheadWidget();
 protected:
 	UFUNCTION()
 	virtual void OnRep_Team();
 	
 public:
 	UPROPERTY(ReplicatedUsing = OnRep_Damage)
-	float Damage;
+	float Damage = 0.f;
 	virtual void AddDamage(float TempDamage);
 protected:
 	UFUNCTION()
 	virtual void OnRep_Damage();
 
 public:
-	UPROPERTY(ReplicatedUsing = OnRep_Defeat)
-	int32 Defeat;
-	void AddDefeat();
+	UPROPERTY(ReplicatedUsing = OnRep_Death)
+	int32 Death = 0;
+	void AddDeath();
 protected:
 	UFUNCTION()
-	void OnRep_Defeat();
+	void OnRep_Death();
+	
+public:
+	UPROPERTY(ReplicatedUsing = OnRep_Survive)
+	int32 Survive = 0;
+	virtual void AddSurvive(int32 TempSurvive);
+protected:
+	UFUNCTION()
+	virtual void OnRep_Survive();
+	
+public:
+	UPROPERTY(ReplicatedUsing = OnRep_Infect)
+	int32 Infect = 0;
+	virtual void AddInfect(int32 TempInfect);
+protected:
+	UFUNCTION()
+	virtual void OnRep_Infect();
 
 	UPROPERTY(ReplicatedUsing = OnRep_KillStreak)
 	int32 KillStreak = 0;

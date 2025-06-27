@@ -11,8 +11,6 @@
 /Plugins/*/Intermediate/
 /Saved/
 
-/Config/Windows/WindowsEngine.ini
-
 *.sln
 /.vsconfig
 /MutateArena.uproject.DotSettings.user

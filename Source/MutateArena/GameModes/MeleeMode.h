@@ -15,7 +15,7 @@ public:
 	UPROPERTY(EditAnywhere)
 	float MatchTime = 600.f;
 	UPROPERTY(EditAnywhere)
-	float CooldownTime = 5.f;
+	float CooldownTime = 10.f;
 	
 	bool bWatchMatchState = false;
 	virtual void EndMatch() override;

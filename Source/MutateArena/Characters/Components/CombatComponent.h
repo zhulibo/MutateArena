@@ -36,8 +36,8 @@ public:
 
 protected:
 	UPROPERTY()
-	float BaseWalkSpeed = 600.f;
-	
+	float DefaultWalkSpeed;
+
 	FVector HitTarget;
 	void TraceUnderCrosshair(FHitResult& TraceHitResult);
 	
@@ -157,10 +157,12 @@ protected:
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastDropEquipment2(EEquipmentType EquipmentType);
 	void LocalDropEquipment(EEquipmentType EquipmentType);
-
+	
+public:
 	// 销毁
 	UFUNCTION(Server, Reliable)
 	void ServerDestroyEquipments();
+protected:
 	UFUNCTION()
 	void LocalDestroyEquipments();
 

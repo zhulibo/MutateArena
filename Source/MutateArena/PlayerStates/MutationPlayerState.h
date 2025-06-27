@@ -43,6 +43,5 @@ protected:
 	UFUNCTION()
 	void OnRep_Rage();
 	void ApplyLevelUpEffect();
-	void SetHUDRage();
 
 };

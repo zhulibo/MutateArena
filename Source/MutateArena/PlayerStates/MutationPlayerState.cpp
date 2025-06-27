@@ -36,7 +36,6 @@ void AMutationPlayerState::Reset()
 void AMutationPlayerState::SetTeam(ETeam TempTeam)
 {
 	Super::SetTeam(TempTeam);
-
 	if (MutationController == nullptr) MutationController = Cast<AMutationController>(GetOwner());
 	if (MutationController && MutationController->IsLocalController())
 	{
@@ -53,7 +52,7 @@ void AMutationPlayerState::OnRep_Team()
 	{
 		MutationController->OnTeamChange.Broadcast(Team);
 
-		// OnControllerReady > InitHUD依赖于Team，OnRep_Team后主动调一下InitHUD。
+		// AMutationController::InitHUD依赖Team，OnRep_Team后主动调一下InitHUD。
 		MutationController->InitHUD();
 	}
 }
@@ -112,7 +111,7 @@ void AMutationPlayerState::SetRage(float TempRage)
 		}
 	}
 
-	SetHUDRage();
+	OnRep_Rage();
 }
 
 void AMutationPlayerState::ApplyLevelUpEffect()
@@ -126,15 +125,6 @@ void AMutationPlayerState::ApplyLevelUpEffect()
 		{
 			AbilitySystemComponent->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), AbilitySystemComponent);
 		}
-	}
-}
-
-void AMutationPlayerState::SetHUDRage()
-{
-	if (MutationController == nullptr) MutationController = Cast<AMutationController>(GetOwner());
-	if (MutationController && MutationController->IsLocalController())
-	{
-		MutationController->SetHUDRage(Rage);
 	}
 }
 

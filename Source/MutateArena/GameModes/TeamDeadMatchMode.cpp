@@ -5,6 +5,7 @@
 #include "MutateArena/GameStates/TeamDeadMatchGameState.h"
 #include "MutateArena/PlayerStates/TeamType.h"
 #include "MutateArena/System/DevSetting.h"
+#include "MutateArena/System/EOSSubsystem.h"
 
 void ATeamDeadMatchMode::BeginPlay()
 {
@@ -60,12 +61,6 @@ void ATeamDeadMatchMode::EndMatch()
 
 	// 比赛时间结束时结束监视比赛状态
 	bWatchMatchState = false;
-	
-	if (TeamDeadMatchGameState == nullptr) TeamDeadMatchGameState = GetGameState<ATeamDeadMatchGameState>();
-	if (TeamDeadMatchGameState)
-	{
-		TeamDeadMatchGameState->bCanSpectate = false;
-	}
 
 	MatchEndTime = GetWorld()->GetTimeSeconds();
 
@@ -104,12 +99,6 @@ void ATeamDeadMatchMode::HandleMatchHasStarted()
 	bWatchMatchState = true;
 
 	GetWorld()->GetTimerManager().SetTimer(ChangeLobbyStatusTimerHandle, this, &ThisClass::HandleChangeLobbyStatus,60.f, true);
-
-	if (TeamDeadMatchGameState == nullptr) TeamDeadMatchGameState = GetGameState<ATeamDeadMatchGameState>();
-	if (TeamDeadMatchGameState)
-	{
-		TeamDeadMatchGameState->bCanSpectate = true;
-	}
 }
 
 void ATeamDeadMatchMode::HandleSpawn(AController* Controller)
@@ -117,8 +106,19 @@ void ATeamDeadMatchMode::HandleSpawn(AController* Controller)
 	if (TeamDeadMatchGameState == nullptr) TeamDeadMatchGameState = GetGameState<ATeamDeadMatchGameState>();
 	if (TeamDeadMatchGameState)
 	{
-		// TODO 从EOS中获得队伍 ABasePlayerState::ServerSetAccountId
-		ETeam Team = TeamDeadMatchGameState->GetPlayerStates(ETeam::Team1).Num() > TeamDeadMatchGameState->GetPlayerStates(ETeam::Team2).Num() ? ETeam::Team2 : ETeam::Team1;
+		ETeam Team = ETeam::NoTeam;
+
+		if (EOSSubsystem == nullptr) EOSSubsystem = GetGameInstance()->GetSubsystem<UEOSSubsystem>();
+		if (EOSSubsystem)
+		{
+			Team = EOSSubsystem->GetMemberTeam(EOSSubsystem->GetMemberByPlayerName(Controller->PlayerState->GetPlayerName()));
+		}
+
+		if (Team == ETeam::NoTeam)
+		{
+			Team = TeamDeadMatchGameState->GetPlayerStates(ETeam::Team1).Num() > TeamDeadMatchGameState->GetPlayerStates(ETeam::Team2).Num() ? ETeam::Team2 : ETeam::Team1;
+		}
+
 		AssignTeam(Controller, Team);
 	}
 
@@ -180,7 +180,7 @@ void ATeamDeadMatchMode::HumanReceiveDamage(AHumanCharacter* DamagedCharacter, A
 		AddKillLog(AttackerState, DamageCauser, DamageType, DamagedState);
 
 		// 增加受伤者死亡次数
-		DamagedState->AddDefeat();
+		DamagedState->AddDeath();
 
 		// 处理受伤者死亡流程
 		DamagedCharacter->MulticastTeamDeadMatchDead();

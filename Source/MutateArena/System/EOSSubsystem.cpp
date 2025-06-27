@@ -686,6 +686,25 @@ TSharedPtr<const FLobbyMember> UEOSSubsystem::GetMember(FAccountId AccountId)
 	return nullptr;
 }
 
+TSharedPtr<const FLobbyMember> UEOSSubsystem::GetMemberByPlayerName(FString PlayerName)
+{
+	if (CurrentLobby)
+	{
+		for (const auto& Member : CurrentLobby->Members)
+		{
+			if (const FSchemaVariant* Attr = Member.Value->Attributes.Find(LOBBY_MEMBER_NAME))
+			{
+				if (Attr->GetString() == PlayerName)
+				{
+					return Member.Value;
+				}
+			}
+		}
+	}
+
+	return nullptr;
+}
+
 FString UEOSSubsystem::GetMemberMsg(TSharedPtr<const FLobbyMember> Member)
 {
 	if (Member)
@@ -947,6 +966,7 @@ void UEOSSubsystem::QueryEntitlements()
 	CommercePtr->QueryEntitlements(MoveTemp(Params))
 	.OnComplete([this](const TOnlineResult<FCommerceQueryEntitlements>& Result)
 	{
+		
 		if (Result.IsOk())
 		{
 			OnQueryEntitlementsComplete.Broadcast(true);

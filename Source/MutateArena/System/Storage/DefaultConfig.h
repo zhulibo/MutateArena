@@ -53,7 +53,7 @@ public:
 	UPROPERTY()
 	bool ControllerAimAssistSlowdown = false;
 
-	EWindowMode::Type WindowMode = EWindowMode::WindowedFullscreen;
+	EWindowMode::Type WindowMode = EWindowMode::Windowed;
 	UPROPERTY()
 	FIntPoint ScreenResolution = FIntPoint(1280, 720);
 	UPROPERTY()

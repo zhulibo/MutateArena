@@ -15,6 +15,7 @@ void UAttributeSetBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	DOREPLIFETIME_CONDITION_NOTIFY(UAttributeSetBase, DamageReceivedMul, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UAttributeSetBase, RepelReceivedMul, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UAttributeSetBase, CharacterLevel, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(UAttributeSetBase, MaxWalkSpeed, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UAttributeSetBase, JumpZVelocity, COND_None, REPNOTIFY_Always);
 }
 
@@ -78,6 +79,11 @@ void UAttributeSetBase::OnRep_RepelReceivedMul(const FGameplayAttributeData& Old
 void UAttributeSetBase::OnRep_CharacterLevel(const FGameplayAttributeData& OldCharacterLevel)
 {
 	GAMEPLAYATTRIBUTE_REPNOTIFY(UAttributeSetBase, CharacterLevel, OldCharacterLevel);
+}
+
+void UAttributeSetBase::OnRep_MaxWalkSpeed(const FGameplayAttributeData& OldMaxWalkSpeed)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UAttributeSetBase, MaxWalkSpeed, OldMaxWalkSpeed);
 }
 
 void UAttributeSetBase::OnRep_JumpZVelocity(const FGameplayAttributeData& OldJumpZVelocity)

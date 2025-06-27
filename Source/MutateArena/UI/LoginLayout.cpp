@@ -19,18 +19,11 @@ void ULoginLayout::NativeOnInitialized()
 	LoginButton->OnClicked().AddUObject(this, &ThisClass::OnLoginButtonClicked, ECoolLoginType::ExchangeCode, FString(), Token);
 
 #if UE_BUILD_DEVELOPMENT
-	DevContainer->SetVisibility(ESlateVisibility::Visible);
-
-	Login1Button->ButtonText->SetText(FText::FromString(TEXT("dust9923")));
-	Login1Button->OnClicked().AddUObject(this, &ThisClass::OnLoginButtonClicked, ECoolLoginType::DevAuth, FString(TEXT("127.0.0.1:2333")), FString(TEXT("dust9923")));
-
-	Login2Button->ButtonText->SetText(FText::FromString(TEXT("dev10001")));
-	Login2Button->OnClicked().AddUObject(this, &ThisClass::OnLoginButtonClicked, ECoolLoginType::DevAuth, FString(TEXT("127.0.0.1:2333")), FString(TEXT("dev10001")));
-
-	Login3Button->ButtonText->SetText(FText::FromString(TEXT("dev10002")));
-	Login3Button->OnClicked().AddUObject(this, &ThisClass::OnLoginButtonClicked, ECoolLoginType::DevAuth, FString(TEXT("127.0.0.1:2333")), FString(TEXT("dev10002")));
+	ShowDevContainer();
 #endif
 
+	DevButton->OnClicked().AddUObject(this, &ThisClass::OnDevButtonClicked);
+	
 	QuitButton->OnClicked().AddUObject(this, &ThisClass::OnQuitButtonClicked);
 
 	EOSSubsystem = GetGameInstance()->GetSubsystem<UEOSSubsystem>();
@@ -71,6 +64,30 @@ void ULoginLayout::OnLoginComplete(bool bWasSuccessful)
 		LoginButton->SetIsEnabled(true);
 		LoginStatus->SetText(LOCTEXT("LoginFailed", "Login failed"));
 	}
+}
+
+void ULoginLayout::ShowDevContainer()
+{
+	if (DevContainer->GetVisibility() == ESlateVisibility::Visible) return;
+	
+	DevContainer->SetVisibility(ESlateVisibility::Visible);
+
+	Login1Button->ButtonText->SetText(FText::FromString(TEXT("dust9923")));
+	Login1Button->OnClicked().AddUObject(this, &ThisClass::OnLoginButtonClicked, ECoolLoginType::DevAuth, FString(TEXT("127.0.0.1:2333")), FString(TEXT("dust9923")));
+
+	Login2Button->ButtonText->SetText(FText::FromString(TEXT("dev10001")));
+	Login2Button->OnClicked().AddUObject(this, &ThisClass::OnLoginButtonClicked, ECoolLoginType::DevAuth, FString(TEXT("127.0.0.1:2333")), FString(TEXT("dev10001")));
+
+	Login3Button->ButtonText->SetText(FText::FromString(TEXT("dev10002")));
+	Login3Button->OnClicked().AddUObject(this, &ThisClass::OnLoginButtonClicked, ECoolLoginType::DevAuth, FString(TEXT("127.0.0.1:2333")), FString(TEXT("dev10002")));
+	
+	Login4Button->ButtonText->SetText(FText::FromString(TEXT("dev10003")));
+	Login4Button->OnClicked().AddUObject(this, &ThisClass::OnLoginButtonClicked, ECoolLoginType::DevAuth, FString(TEXT("127.0.0.1:2333")), FString(TEXT("dev10003")));
+}
+
+void ULoginLayout::OnDevButtonClicked()
+{
+	ShowDevContainer();
 }
 
 void ULoginLayout::OnQuitButtonClicked()

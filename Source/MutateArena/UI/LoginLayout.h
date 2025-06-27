@@ -37,7 +37,13 @@ protected:
 	UCommonButton* Login2Button;
 	UPROPERTY(meta = (BindWidget))
 	UCommonButton* Login3Button;
-
+	UPROPERTY(meta = (BindWidget))
+	UCommonButton* Login4Button;
+	UPROPERTY(meta = (BindWidget))
+	UCommonButton* DevButton;
+	void ShowDevContainer();
+	void OnDevButtonClicked();
+	
 	UPROPERTY(meta = (BindWidget))
 	UCommonButton* QuitButton;
 	void OnQuitButtonClicked();

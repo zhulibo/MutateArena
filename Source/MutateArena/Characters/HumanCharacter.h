@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "BaseCharacter.h"
 #include "MutantCharacter.h"
+#include "Data/CharacterType.h"
 #include "Interfaces/InteractableTarget.h"
 #include "HumanCharacter.generated.h"
 
@@ -31,8 +32,6 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 	virtual void Tick(float DeltaSeconds) override;
-	virtual void UnPossessed() override;
-	virtual void Destroyed() override;
 
 	UPROPERTY()
 	class AMutationMode* MutationMode;
@@ -71,7 +70,7 @@ public:
 	void TrySwitchLoadout();
 
 protected:
-	virtual void OnControllerReady() override;
+	virtual void OnLocallyControllerReady() override;
 
 	void ApplyLoadout();
 	UFUNCTION(Server, Reliable)
@@ -99,7 +98,7 @@ protected:
 	void HumanReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* AttackerController, AActor* DamageCauser);
 public:
 	UFUNCTION(NetMulticast, Reliable)
-	void MulticastMutationDead(bool bNeedSpawn);
+	void MulticastMutationDead(bool bNeedSpawn, ESpawnMutantReason SpawnMutantReason = ESpawnMutantReason::Fall);
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastMeleeDead();
 	UFUNCTION(NetMulticast, Reliable)

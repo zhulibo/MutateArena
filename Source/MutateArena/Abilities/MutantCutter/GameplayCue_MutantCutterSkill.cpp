@@ -15,9 +15,6 @@ bool AGameplayCue_MutantCutterSkill::WhileActive_Implementation(AActor* MyTarget
 	{
 		// 更改皮肤颜色
 		MutantCutter->GetMesh()->SetOverlayMaterial(MutantCutter->MI_Overlay_Skill);
-
-		// 增加移速
-		MutantCutter->GetCharacterMovement()->MaxWalkSpeed = 700.0f;
 	}
 
 	return Super::WhileActive_Implementation(MyTarget, Parameters);
@@ -31,7 +28,6 @@ bool AGameplayCue_MutantCutterSkill::OnRemove_Implementation(AActor* MyTarget, c
 		if (MutantCutter->GetMesh()->GetOverlayMaterial() == MutantCutter->MI_Overlay_Skill)
 		{
 			MutantCutter->GetMesh()->SetOverlayMaterial(nullptr);
-			MutantCutter->GetCharacterMovement()->MaxWalkSpeed = 600.0f;
 		}
 	}
 

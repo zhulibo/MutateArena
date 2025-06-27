@@ -68,7 +68,7 @@ public:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<UGameplayEffect> SkillEffect;
 	UPROPERTY(EditAnywhere)
-	TSubclassOf<UGameplayEffect> LevelUpEffect;
+	TSubclassOf<UGameplayEffect> LevelUpEffect; // TODO 测试SkillEffect效果会被LevelUpEffect覆盖吗？
 protected:
 	virtual void OnAbilitySystemComponentInit() override;
 	void OnLocalSkillCooldownTagChanged(FGameplayTag GameplayTag, int32 TagCount);

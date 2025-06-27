@@ -5,6 +5,7 @@
 #include "MutateArena/GameStates/MeleeGameState.h"
 #include "MutateArena/PlayerStates/TeamType.h"
 #include "MutateArena/System/DevSetting.h"
+#include "MutateArena/System/EOSSubsystem.h"
 
 void AMeleeMode::BeginPlay()
 {
@@ -59,12 +60,6 @@ void AMeleeMode::EndMatch()
 
 	// 比赛时间结束时结束监视比赛状态
 	bWatchMatchState = false;
-	
-	if (MeleeGameState == nullptr) MeleeGameState = GetGameState<AMeleeGameState>();
-	if (MeleeGameState)
-	{
-		MeleeGameState->bCanSpectate = false;
-	}
 
 	MatchEndTime = GetWorld()->GetTimeSeconds();
 
@@ -103,12 +98,6 @@ void AMeleeMode::HandleMatchHasStarted()
 	bWatchMatchState = true;
 
 	GetWorld()->GetTimerManager().SetTimer(ChangeLobbyStatusTimerHandle, this, &ThisClass::HandleChangeLobbyStatus,60.f, true);
-
-	if (MeleeGameState == nullptr) MeleeGameState = GetGameState<AMeleeGameState>();
-	if (MeleeGameState)
-	{
-		MeleeGameState->bCanSpectate = true;
-	}
 }
 
 void AMeleeMode::HandleSpawn(AController* Controller)
@@ -116,7 +105,19 @@ void AMeleeMode::HandleSpawn(AController* Controller)
 	if (MeleeGameState == nullptr) MeleeGameState = GetGameState<AMeleeGameState>();
 	if (MeleeGameState)
 	{
-		ETeam Team = MeleeGameState->GetPlayerStates(ETeam::Team1).Num() > MeleeGameState->GetPlayerStates(ETeam::Team2).Num() ? ETeam::Team2 : ETeam::Team1;
+		ETeam Team = ETeam::NoTeam;
+
+		if (EOSSubsystem == nullptr) EOSSubsystem = GetGameInstance()->GetSubsystem<UEOSSubsystem>();
+		if (EOSSubsystem)
+		{
+			Team = EOSSubsystem->GetMemberTeam(EOSSubsystem->GetMemberByPlayerName(Controller->PlayerState->GetPlayerName()));
+		}
+
+		if (Team == ETeam::NoTeam)
+		{
+			Team = MeleeGameState->GetPlayerStates(ETeam::Team1).Num() > MeleeGameState->GetPlayerStates(ETeam::Team2).Num() ? ETeam::Team2 : ETeam::Team1;
+		}
+
 		AssignTeam(Controller, Team);
 	}
 
@@ -178,7 +179,7 @@ void AMeleeMode::HumanReceiveDamage(AHumanCharacter* DamagedCharacter, ABaseCont
 		AddKillLog(AttackerState, DamageCauser, DamageType, DamagedState);
 
 		// 增加受伤者死亡次数
-		DamagedState->AddDefeat();
+		DamagedState->AddDeath();
 
 		// 处理受伤者死亡流程
 		DamagedCharacter->MulticastMeleeDead();

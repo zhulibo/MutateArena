@@ -24,33 +24,30 @@ void UTabVideo::NativeOnInitialized()
 		}
 	}
 
-	// 设置全屏模式下拉项
+	// 设置窗口模式下拉项
 	WindowModeComboBox->AddOption("Fullscreen");
 	WindowModeComboBox->AddOption("WindowedFullscreen");
 	WindowModeComboBox->AddOption("Windowed");
 
 	// 设置分辨率下拉项
-	FIntPoint BaseResolution = FIntPoint(1280, 720);
+	// 添加默认分辨率
+	FIntPoint DefaultResolution = FIntPoint(1280, 720);
 	if (const UDefaultConfig* DefaultConfig = GetDefault<UDefaultConfig>())
 	{
-		BaseResolution = DefaultConfig->ScreenResolution;
+		DefaultResolution = DefaultConfig->ScreenResolution;
 	}
-
+	Resolutions.Add(FIntPoint(DefaultResolution.X, DefaultResolution.Y));
+	ScreenResolutionComboBox->AddOption(FString::FromInt(DefaultResolution.X) + TEXT("x") + FString::FromInt(DefaultResolution.Y));
+	// 添加显示器支持的分辨率（需大于默认分辨率）
 	FScreenResolutionArray TempResolutions;
 	RHIGetAvailableResolutions(TempResolutions, true);
 	for (const FScreenResolutionRHI& Resolution : TempResolutions)
 	{
-		if (Resolution.Width >= static_cast<uint32>(BaseResolution.X) && Resolution.Height >= static_cast<uint32>(BaseResolution.Y))
+		if (Resolution.Width > static_cast<uint32>(DefaultResolution.X) && Resolution.Height > static_cast<uint32>(DefaultResolution.Y))
 		{
 			Resolutions.Add(FIntPoint(Resolution.Width, Resolution.Height));
 			ScreenResolutionComboBox->AddOption(FString::FromInt(Resolution.Width) + TEXT("x") + FString::FromInt(Resolution.Height));
 		}
-	}
-
-	if (Resolutions.Num() == 0)
-	{
-		Resolutions.Add(FIntPoint(BaseResolution.X, BaseResolution.Y));
-		ScreenResolutionComboBox->AddOption(FString::FromInt(BaseResolution.X) + TEXT("x") + FString::FromInt(BaseResolution.Y));
 	}
 
 	// 设置保存值

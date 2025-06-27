@@ -41,18 +41,22 @@ protected:
 	virtual void OnRep_PlayerState() override;
 	virtual void Destroyed() override;
 
-	UFUNCTION()
-	void OnInputMethodChanged(ECommonInputType TempCommonInputType);
-
-public:
-	bool bHasSetMeshCollisionType = false;
 protected:
-	void PollSetMeshCollisionType();
+	UFUNCTION()
+	void OnInputMethodChanged(ECommonInputType TempInputType);
+	UFUNCTION(Server, Unreliable)
+	void ServerSetInputType(ECommonInputType TempInputType);
+	
+public:
+	bool bIsPlayerStateTeamReady = false;
+protected:
+	void PollInit_PlayerStateTeam();
 
-	void PollInit();
-	bool bIsControllerReady = false;
-	virtual void OnControllerReady();
-
+	bool bIsControllerAndPSAndTeamReady = false;
+	void PollInit_ControllerAndPSAndTeam();
+	bool bIsLocallyControllerReady = false;
+	virtual void OnLocallyControllerReady();
+	
 	UPROPERTY(Replicated)
 	float ControllerPitch;
 public:
@@ -81,6 +85,7 @@ public:
 	float GetDamageReceivedMul();
 	float GetRepelReceivedMul();
 	float GetCharacterLevel();
+	float GetMaxWalkSpeed();
 	float GetJumpZVelocity();
 
 protected:
@@ -179,6 +184,8 @@ protected:
 	void MulticastPlayRadioSound(int32 RadioIndex);
 	void LocalPlayRadioSound(int32 RadioIndex);
 
+	UPROPERTY()
+	UDecalComponent* SprayPaintDecal;
 public:
 	void SprayPaint(int32 RadioIndex);
 	

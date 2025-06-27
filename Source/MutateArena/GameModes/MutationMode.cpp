@@ -115,14 +115,25 @@ void AMutationMode::StartMatch()
 // 结束回合
 void AMutationMode::EndRound()
 {
-	// 对局时间结束时结束监视对局状态
-	bWatchRoundState = false;
-
+	// 存活
 	if (MutationGameState == nullptr) MutationGameState = GetGameState<AMutationGameState>();
 	if (MutationGameState)
 	{
-		MutationGameState->bCanSpectate = false;
+		TArray<ABasePlayerState*> BasePlayerStates = MutationGameState->GetPlayerStates(ETeam::Team1);
+		for (ABasePlayerState* BasePlayerState : BasePlayerStates)
+		{
+			if (ABaseCharacter* BaseCharacter = Cast<ABaseCharacter>(BasePlayerState->GetPawn()))
+			{
+				if (!BaseCharacter->bIsDead)
+				{
+					BasePlayerState->AddSurvive(1);
+				}
+			}
+		}
 	}
+
+	// 对局时间结束时结束监视对局状态
+	bWatchRoundState = false;
 
 	// 清除生成补给箱定时器
 	GetWorldTimerManager().ClearTimer(SpawnPickupTimerHandle);
@@ -222,13 +233,21 @@ void AMutationMode::HandleMatchHasStarted()
 void AMutationMode::OnPostLogin(AController* Controller)
 {
 	Super::OnPostLogin(Controller);
-
-	// 生成角色
-	if (MatchState == MatchState::InProgress)
+	
+	if (MatchState == MatchState::InProgress || MatchState == MatchState::PostRound || MatchState == MatchState::WaitingPostMatch)
 	{
-		AssignTeam(Controller, ETeam::Team1);
-
-		SpawnHumanCharacter(Controller);
+		// 突变倒计时未结束生成人类
+		if (GetWorld()->GetTimeSeconds() < RoundStartTime + MutateTime)
+		{
+			AssignTeam(Controller, ETeam::Team1);
+			SpawnHumanCharacter(Controller);
+		}
+		// 突变倒计时已结束生成突变体
+		else
+		{
+			AssignTeam(Controller, ETeam::Team2);
+			SpawnMutantCharacter(Controller, ESpawnMutantReason::FirstJoinGame);
+		}
 	}
 }
 
@@ -261,15 +280,16 @@ void AMutationMode::RoundStartMutate()
 	for (int i = 0; i < MutateNum; ++i)
 	{
 		int32 RandomIndex = FMath::RandRange(0, Team1.Num() - 1);
-
-#if UE_EDITOR
-		RandomIndex = GetDefault<UDevSetting>()->MutateClientIndex;
-
-		if (RandomIndex > Team1.Num() - 1)
+		
+		if (GetWorld()->WorldType == EWorldType::PIE)
 		{
-			RandomIndex = Team1.Num() - 1;
+			RandomIndex = GetDefault<UDevSetting>()->MutateClientIndex;
+
+			if (RandomIndex > Team1.Num() - 1)
+			{
+				RandomIndex = Team1.Num() - 1;
+			}
 		}
-#endif
 
 		if (ABasePlayerState* BasePlayerState = Team1[RandomIndex])
 		{
@@ -287,8 +307,6 @@ void AMutationMode::RoundStartMutate()
 	}
 	// 突变后开始监视对局状态
 	bWatchRoundState = true;
-
-	MutationGameState->bCanSpectate = true;
 
 	// 定时生成补给箱
 	// GetWorldTimerManager().SetTimer(SpawnPickupTimerHandle, this, &ThisClass::SpawnPickups, 5.f, false);
@@ -330,17 +348,23 @@ void AMutationMode::HumanReceiveDamage(AHumanCharacter* DamagedCharacter, ABaseC
 		// 击杀日志
 		AddKillLog(AttackerState, DamageCauser, DamageType, DamagedState);
 
-		// 人类死亡后突变
+		// 人类因突变体伤害血量为0立刻突变
+		bool bMutateImmediately = false;
 		if (const UDamageTypeBase* DamageTypeBase = Cast<UDamageTypeBase>(DamageType))
 		{
 			if (DamageTypeBase->DamageType == EDamageCauserType::MutantDamage)
 			{
+				bMutateImmediately = true;
+
 				Mutate(DamagedCharacter, DamagedController, ESpawnMutantReason::MutantDamage);
-				return;
 			}
 		}
-		// 延迟重生
-		DamagedCharacter->MulticastMutationDead(true);
+
+		// 摔死延迟重生
+		if (!bMutateImmediately)
+		{
+			DamagedCharacter->MulticastMutationDead(true, ESpawnMutantReason::Fall);
+		}
 	}
 }
 
@@ -355,9 +379,10 @@ void AMutationMode::GetInfect(AHumanCharacter* DamagedCharacter, ABaseController
 
 	if (DamagedState == nullptr || AttackerState == nullptr) return;
 
+	// 增加攻击者感染数
+	AttackerState->AddInfect(1);
 	// 增加攻击者连杀
 	AttackerState->AddKillStreak();
-
 	// 增加攻击者怒气值
 	AttackerState->SetRage(AttackerState->Rage + 2000.f);
 
@@ -377,7 +402,7 @@ void AMutationMode::Mutate(ACharacter* Character, AController* Controller, ESpaw
 		FVector Location = HumanCharacter->GetActorLocation();
 		FRotator ActorRotation = Character->GetActorRotation();
 		FRotator ViewRotation = Character->GetViewRotation();
-		
+
 		// 人类死亡
 		HumanCharacter->MulticastMutationDead(false);
 		HumanCharacter->Destroy();
@@ -511,11 +536,10 @@ void AMutationMode::SpawnMutantCharacter(AController* Controller, ESpawnMutantRe
 	}
 	if (CharacterClass == nullptr) return;
 
-	// 如果是突变体重生，使用出生点的位置和旋转
-	if (SpawnMutantReason == ESpawnMutantReason::Respawn)
+	// 如果是突变体重生，或摔死的，使用出生点的位置和旋转
+	if (SpawnMutantReason == ESpawnMutantReason::Respawn || SpawnMutantReason == ESpawnMutantReason::Fall)
 	{
-		AActor* StartSpot = FindCharacterPlayerStart(ETeam::Team2);
-		if (StartSpot)
+		if (AActor* StartSpot = FindCharacterPlayerStart(ETeam::Team2))
 		{
 			Location = StartSpot->GetActorLocation();
 			ActorRotation = StartSpot->GetActorRotation();

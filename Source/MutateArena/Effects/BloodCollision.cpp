@@ -51,7 +51,6 @@ void UBloodCollision::ReceiveParticleData_Implementation(const TArray<FBasicPart
 					DecalComponent->SetFadeOut(8.f, 2.f, false);
 					DecalComponent->SetFadeScreenSize(0.004f);
 				}
-
 			}
 		}
 	}

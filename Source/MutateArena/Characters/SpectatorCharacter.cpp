@@ -3,7 +3,6 @@
 #include "CommonInputSubsystem.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
-#include "MutateArena/GameStates/BaseGameState.h"
 #include "MutateArena/PlayerControllers/BaseController.h"
 #include "MutateArena/System/AssetSubsystem.h"
 #include "Data/InputAsset.h"
@@ -16,56 +15,30 @@ void ASpectatorCharacter::BeginPlay()
 void ASpectatorCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
-	
+
 	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
 	if (AssetSubsystem == nullptr || AssetSubsystem->InputAsset == nullptr || AssetSubsystem->InputAsset == nullptr) return;
 	
-	if (ABaseGameState* BaseGameState = Cast<ABaseGameState>(GetWorld()->GetGameState()))
+	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
 	{
-		// 第一次进入游戏生成角色前会默认生成ASpectator，避免绑定输入。
-		if (BaseGameState->bCanSpectate == false) return;
-
-		if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
 		{
-			if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
-			{
-				Subsystem->AddMappingContext(AssetSubsystem->InputAsset->BaseMappingContext, 10);
-				Subsystem->AddMappingContext(AssetSubsystem->InputAsset->SpectatorMappingContext, 20);
-			}
+			Subsystem->AddMappingContext(AssetSubsystem->InputAsset->BaseMappingContext, 10);
+			Subsystem->AddMappingContext(AssetSubsystem->InputAsset->SpectatorMappingContext, 20);
 		}
+	}
 
-		if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
-		{
-			EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->ScoreboardAction, ETriggerEvent::Triggered, this, &ThisClass::ScoreboardButtonPressed);
-			EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->ScoreboardAction, ETriggerEvent::Completed, this, &ThisClass::ScoreboardButtonReleased);
-			EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->PauseMenuAction, ETriggerEvent::Triggered, this, &ThisClass::PauseMenuButtonPressed);
-			EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->TextChatAction, ETriggerEvent::Triggered, this, &ThisClass::TextChat);
+	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
+	{
+		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->ScoreboardAction, ETriggerEvent::Triggered, this, &ThisClass::ScoreboardButtonPressed);
+		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->ScoreboardAction, ETriggerEvent::Completed, this, &ThisClass::ScoreboardButtonReleased);
+		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->PauseMenuAction, ETriggerEvent::Triggered, this, &ThisClass::PauseMenuButtonPressed);
+		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->TextChatAction, ETriggerEvent::Triggered, this, &ThisClass::TextChat);
 		
-			EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->SwitchPerspectiveAction, ETriggerEvent::Triggered, this, &ThisClass::SwitchPerspective);
-			EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->ViewNextAction, ETriggerEvent::Triggered, this, &ThisClass::ViewNextPlayer);
-			EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->ViewPrevAction, ETriggerEvent::Triggered, this, &ThisClass::ViewPrevPlayer);
-		}
+		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->SwitchPerspectiveAction, ETriggerEvent::Triggered, this, &ThisClass::SwitchPerspective);
+		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->ViewNextAction, ETriggerEvent::Triggered, this, &ThisClass::ViewNextPlayer);
+		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->ViewPrevAction, ETriggerEvent::Triggered, this, &ThisClass::ViewPrevPlayer);
 	}
-}
-
-void ASpectatorCharacter::Destroyed()
-{
-	if (GetGameInstance() == nullptr) return;
-
-	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-	if (AssetSubsystem == nullptr || AssetSubsystem->InputAsset == nullptr || AssetSubsystem->InputAsset == nullptr) return;
-	
-	if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
-	if (BaseController)
-	{
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(BaseController->GetLocalPlayer()))
-		{
-			Subsystem->RemoveMappingContext(AssetSubsystem->InputAsset->BaseMappingContext);
-			Subsystem->RemoveMappingContext(AssetSubsystem->InputAsset->SpectatorMappingContext);
-		}
-	}
-
-	Super::Destroyed();
 }
 
 void ASpectatorCharacter::SwitchPerspective(const FInputActionValue& Value)

@@ -38,7 +38,7 @@ void UCombatComponent::BeginPlay()
 
 	if (HumanCharacter)
 	{
-		HumanCharacter->GetCharacterMovement()->MaxWalkSpeed = BaseWalkSpeed;
+		DefaultWalkSpeed = HumanCharacter->GetCharacterMovement()->MaxWalkSpeed;
 
 		if (HumanCharacter->Camera)
 		{
@@ -432,7 +432,7 @@ void UCombatComponent::UseEquipment(AEquipment* Equipment)
 	}
 
 	// 更新玩家速度
-	HumanCharacter->GetCharacterMovement()->MaxWalkSpeed = BaseWalkSpeed * Equipment->MoveSpeedMul;
+	HumanCharacter->GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * Equipment->MoveSpeedMul;
 }
 
 void UCombatComponent::AttachToRightHand(AEquipment* Equipment)
@@ -487,7 +487,7 @@ void UCombatComponent::LocalSetAiming(bool TempBIsAiming)
 
 	// 移速
 	float MoveSpeedMul = bIsAiming ? GetUsingWeapon()->AimMoveSpeedMul : GetUsingWeapon()->MoveSpeedMul;
-	HumanCharacter->GetCharacterMovement()->MaxWalkSpeed = BaseWalkSpeed * MoveSpeedMul;
+	HumanCharacter->GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * MoveSpeedMul;
 
 	// 瞄准镜
 	if (GetUsingWeapon()->bHasScope)

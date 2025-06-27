@@ -15,6 +15,8 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	UCommonTextBlock* Damage;
 	UPROPERTY(meta = (BindWidget))
+	UCommonTextBlock* Death;
+	UPROPERTY(meta = (BindWidget))
 	UCommonTextBlock* Survive;
 	UPROPERTY(meta = (BindWidget))
 	UCommonTextBlock* Infect;

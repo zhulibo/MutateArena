@@ -53,6 +53,22 @@ void AMutationGameState::WatchGameState()
 		{
 			MutationMode->EndRound();
 		}
+
+		// 本应人类是否全部死亡，但是游戏不区分胜负状态，最后一名人类摔死后对局会自动结束(摔死3s后会变成突变体)
+
+		// 突变体全部死亡已在AMutationGameState::EndRoundIfAllBeKilledByMelee判断
+
+		// 队伍1所有都是观战的，结束回合
+		// bool bAllSpectator = true;
+		// for (auto Team1PlayerState : Team1PlayerStates)
+		// {
+		// 	if (!Team1PlayerState->IsSpectator())
+		// 	{
+		// 		bAllSpectator = false;
+		// 		break;
+		// 	}
+		// }
+		// if (bAllSpectator) MutationMode->EndRound();
 	}
 }
 

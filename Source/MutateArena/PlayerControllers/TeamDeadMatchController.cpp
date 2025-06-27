@@ -128,7 +128,7 @@ void ATeamDeadMatchController::InitHUD()
 
 	if (TeamDeadMatchGameState && HumanCharacter)
 	{
-		SetHUDHealth(HumanCharacter->GetMaxHealth());
+		SetHUDHealth(HumanCharacter->GetHealth());
 		SetHUDTeamScore(TeamDeadMatchGameState->GetTeamScore(ETeam::Team1), ETeam::Team1);
 		SetHUDTeamScore(TeamDeadMatchGameState->GetTeamScore(ETeam::Team2), ETeam::Team2);
 	}

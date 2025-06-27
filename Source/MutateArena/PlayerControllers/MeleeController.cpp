@@ -128,7 +128,7 @@ void AMeleeController::InitHUD()
 
 	if (MeleeGameState && HumanCharacter)
 	{
-		SetHUDHealth(HumanCharacter->GetMaxHealth());
+		SetHUDHealth(HumanCharacter->GetHealth());
 		SetHUDTeamScore(MeleeGameState->GetTeamScore(ETeam::Team1), ETeam::Team1);
 		SetHUDTeamScore(MeleeGameState->GetTeamScore(ETeam::Team2), ETeam::Team2);
 	}

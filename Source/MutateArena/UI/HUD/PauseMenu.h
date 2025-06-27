@@ -17,7 +17,9 @@ protected:
 
 	UPROPERTY()
 	class ABaseController* BaseController;
-
+	UPROPERTY()
+	class UEOSSubsystem* EOSSubsystem;
+	
 	UPROPERTY()
 	bool bWantToBack = true;
 	UFUNCTION()

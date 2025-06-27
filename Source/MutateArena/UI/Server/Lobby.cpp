@@ -46,6 +46,10 @@ void ULobby::NativeOnInitialized()
 		EOSSubsystem->OnLobbyLeft.AddUObject(this, &ThisClass::OnLobbyLeft);
 		EOSSubsystem->OnLeaveLobbyComplete.AddUObject(this, &ThisClass::OnLeaveLobbyComplete);
 	}
+
+	if (GEngine) {
+		GEngine->TravelFailureEvent.AddUObject(this, &ThisClass::OnTravelFailure);
+	}
 }
 
 UWidget* ULobby::NativeGetDesiredFocusTarget() const
@@ -80,17 +84,10 @@ void ULobby::NativeConstruct()
 
 	SetUIAttr();
 	SetUIButtonState();
-	// UpdatePlayerList(); // 已在OnLobbyMemberJoined中调用
+	UpdatePlayerList();
 
+	bIsActioning = false;
 	bIsExitingLobby = false;
-
-	// 回合置为未开始
-	if (EOSSubsystem && EOSSubsystem->IsLobbyHost())
-	{
-		EOSSubsystem->ModifyLobbyAttr(TMap<FSchemaAttributeId, FSchemaVariant>{
-			{LOBBY_STATUS, static_cast<int64>(0)},
-		});
-	}
 }
 
 void ULobby::NativeDestruct()
@@ -427,17 +424,22 @@ void ULobby::OnLobbyAttrChanged(const FLobbyAttributesChanged& LobbyAttributesCh
 		}
 		else if (ChangedAttribute.Key == LOBBY_STATUS)
 		{
+			if (EOSSubsystem && EOSSubsystem->GetLobbyStatus() == 0)
+			{
+				SetUIButtonState();
+			}
+
 			if (EOSSubsystem && EOSSubsystem->GetLobbyStatus() == 1)
 			{
 				TextChat->ShowMsg(EMsgType::Start, PlayerTeam, PlayerName);
 
 				SetUIButtonState();
-			}
 
-			// 如果玩家处于准备状态，则加入游戏
-			if (EOSSubsystem->GetMemberReady(EOSSubsystem->GetLocalMember()))
-			{
-				OnJoinServerButtonClicked();
+				// 如果玩家处于准备状态，则加入游戏
+				if (EOSSubsystem->GetMemberReady(EOSSubsystem->GetLocalMember()))
+				{
+					OnJoinServerButtonClicked();
+				}
 			}
 		}
 	}
@@ -445,6 +447,7 @@ void ULobby::OnLobbyAttrChanged(const FLobbyAttributesChanged& LobbyAttributesCh
 
 void ULobby::OnSwitchTeamButtonClicked()
 {
+	UE_LOG(LogTemp, Warning, TEXT("OnSwitchTeamButtonClicked ------------------------------------------"));
 	if (EOSSubsystem == nullptr || EOSSubsystem->CurrentLobby == nullptr) return;
 	
 	for (auto& Member : EOSSubsystem->CurrentLobby->Members)
@@ -494,27 +497,26 @@ void ULobby::OnModifyLobbyMemberAttrComplete(bool bWasSuccessful)
 // 大厅成员属性改变事件
 void ULobby::OnLobbyMemberAttrChanged(const FLobbyMemberAttributesChanged& LobbyMemberAttributesChanged)
 {
-	FString Msg = FString();
-	if (auto AddedAttribute = LobbyMemberAttributesChanged.AddedAttributes.Find(LOBBY_MEMBER_MSG))
+	if (auto ChangedAttribute = LobbyMemberAttributesChanged.ChangedAttributes.Find(LOBBY_MEMBER_MSG))
 	{
-		Msg = AddedAttribute->GetString();
-	}
-	else if (auto ChangedAttribute = LobbyMemberAttributesChanged.ChangedAttributes.Find(LOBBY_MEMBER_MSG))
-	{
-		Msg = ChangedAttribute->Value.GetString();
-	}
-
-	if (!Msg.IsEmpty())
-	{
-		if (EOSSubsystem)
+		if (FString Msg = ChangedAttribute->Value.GetString(); !Msg.IsEmpty())
 		{
-			TextChat->ShowMsg(
-				EMsgType::Msg,
-				EOSSubsystem->GetMemberTeam(LobbyMemberAttributesChanged.Member),
-				EOSSubsystem->GetMemberName(LobbyMemberAttributesChanged.Member),
-				Msg
-			);
+			if (EOSSubsystem)
+			{
+				TextChat->ShowMsg(
+					EMsgType::Msg,
+					EOSSubsystem->GetMemberTeam(LobbyMemberAttributesChanged.Member),
+					EOSSubsystem->GetMemberName(LobbyMemberAttributesChanged.Member),
+					Msg
+				);
+			}
 		}
+	}
+	
+	auto ChangedAttribute = LobbyMemberAttributesChanged.ChangedAttributes.Find(LOBBY_MEMBER_TICK_NUM);
+	if (ChangedAttribute && LobbyMemberAttributesChanged.ChangedAttributes.Num() == 1)
+	{
+		// TICK_NUM 不更新玩家列表
 	}
 	else
 	{
@@ -526,6 +528,9 @@ void ULobby::OnStartServerButtonClicked()
 {
 	if (!CanStartServer()) return;
 
+	if (bIsActioning) return;
+	bIsActioning = true;
+	
 	if (EOSSubsystem && EOSSubsystem->IsLobbyHost())
 	{
 		EOSSubsystem->ModifyLobbyAttr(TMap<FSchemaAttributeId, FSchemaVariant>{
@@ -597,8 +602,9 @@ bool ULobby::CanStartServer()
 
 void ULobby::OnJoinServerButtonClicked()
 {
-	if (EOSSubsystem == nullptr || EOSSubsystem->IsLobbyHost()) return;
-
+	if (EOSSubsystem == nullptr || EOSSubsystem->IsLobbyHost() || EOSSubsystem->GetLobbyStatus() < 0) return;
+	if (bIsActioning) return;
+	
 	// 如果未准备，把状态置为已准备。
 	if (!EOSSubsystem->GetMemberReady(EOSSubsystem->GetLocalMember()))
 	{
@@ -608,6 +614,8 @@ void ULobby::OnJoinServerButtonClicked()
 	if (MenuController == nullptr) MenuController = Cast<AMenuController>(GetOwningPlayer());
 	if (MenuController)
 	{
+		bIsActioning = true;
+		
 		FString Url;
 		EOSSubsystem->GetResolvedConnectString(Url);
 		UE_LOG(LogTemp, Warning, TEXT("ClientTravel ------------------------------------------"));
@@ -685,6 +693,14 @@ void ULobby::OnLobbyLeft(const FLobbyLeft& LobbyLeft)
 	{
 		NOTIFY(this, C_WHITE, LOCTEXT("GotKicked", "Got kicked"));
 	}
+}
+
+void ULobby::OnTravelFailure(UWorld* World, ETravelFailure::Type Arg, const FString& String)
+{
+	bIsActioning = false;
+
+	FString Msg = ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(Arg));
+	NOTIFY(this, C_RED, FText::Format(LOCTEXT("TravelFailure", "Travel failed: Type {0} Error {1}"), FText::FromString(Msg), FText::FromString(String)));
 }
 
 #undef LOCTEXT_NAMESPACE

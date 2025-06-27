@@ -15,7 +15,6 @@ void ABaseGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 
 	DOREPLIFETIME(ThisClass, Team1PlayerStates);
 	DOREPLIFETIME(ThisClass, Team2PlayerStates);
-	DOREPLIFETIME(ThisClass, bCanSpectate);
 }
 
 void ABaseGameState::BeginPlay()

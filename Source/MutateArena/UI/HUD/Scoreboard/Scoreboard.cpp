@@ -2,6 +2,7 @@
 #include "CommonHierarchicalScrollBox.h"
 #include "CommonTextBlock.h"
 #include "ScoreBoardLineButton.h"
+#include "Kismet/GameplayStatics.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/GameStates/BaseGameState.h"
 #include "MutateArena/PlayerControllers/BaseController.h"
@@ -32,7 +33,7 @@ void UScoreboard::ShowScoreboard(bool bIsShow)
 		if (EOSSubsystem == nullptr) EOSSubsystem = GetGameInstance()->GetSubsystem<UEOSSubsystem>();
 		if (EOSSubsystem)
 		{
-			GameTitle->SetText(FText::FromString(ULibraryCommon::ObfuscatePlayerName(EOSSubsystem->GetLobbyServerName(), this)));
+			Server->SetText(FText::FromString(ULibraryCommon::ObfuscatePlayerName(EOSSubsystem->GetLobbyServerName(), this)));
 		}
 
 		SetVisibility(ESlateVisibility::Visible);
@@ -49,12 +50,12 @@ void UScoreboard::ShowScoreboard(bool bIsShow)
 void UScoreboard::RefreshScoreBoard()
 {
 	if (GetVisibility() != ESlateVisibility::Visible) return;
-
+	
 	if (BaseGameState == nullptr) BaseGameState = GetWorld()->GetGameState<ABaseGameState>();
 	if (BaseGameState)
 	{
 		ScoreBoardContainer->ClearChildren();
-		
+
 		TArray<ABasePlayerState*> PlayerStates;
 		PlayerStates.Append(BaseGameState->GetPlayerStates({}));
 
@@ -71,18 +72,58 @@ void UScoreboard::RefreshScoreBoard()
 		Algo::Sort(PlayerStates, [](const ABasePlayerState* A, const ABasePlayerState* B) {
 			return A->Damage > B->Damage;
 		});
-
+		
+		ABasePlayerState* LocalBasePlayerState = nullptr;
+		if (ABaseController* LocalBaseController = Cast<ABaseController>(GetWorld()->GetFirstPlayerController()))
+		{
+			LocalBasePlayerState = Cast<ABasePlayerState>(LocalBaseController->PlayerState);
+		}
+		
 		for (int32 i = 0; i < PlayerStates.Num(); ++i)
 		{
 			if (UScoreBoardLineButton* ScoreBoardLineButton = CreateWidget<UScoreBoardLineButton>(this, ScoreBoardLineButtonClass))
 			{
 				FString PlayerName = PlayerStates[i]->GetPlayerName();
 				ScoreBoardLineButton->Player->SetText(FText::FromString(ULibraryCommon::ObfuscatePlayerName(PlayerName, this)));
+				
 				ScoreBoardLineButton->Damage->SetText(FText::FromString(FString::FromInt(PlayerStates[i]->Damage)));
-				ScoreBoardContainer->AddChild(ScoreBoardLineButton);
-				if (PlayerStates[i]->Team == ETeam::Team2)
+
+				if (BaseGameState->ActorHasTag(TAG_GAME_STATE_MELEE) || BaseGameState->ActorHasTag(TAG_GAME_STATE_TDM))
 				{
-					ScoreBoardLineButton->SetColorAndOpacity(C_GREEN);
+					ScoreBoardLineButton->Death->SetText(FText::FromString(FString::FromInt(PlayerStates[i]->Death)));
+				}
+				
+				if (BaseGameState->ActorHasTag(TAG_GAME_STATE_MUTATION))
+				{
+					ScoreBoardLineButton->Survive->SetText(FText::FromString(FString::FromInt(PlayerStates[i]->Survive)));
+					ScoreBoardLineButton->Infect->SetText(FText::FromString(FString::FromInt(PlayerStates[i]->Infect)));
+				}
+
+				// TODO 换成图标
+				ScoreBoardLineButton->Platform->SetText(FText::FromString(UGameplayStatics::GetPlatformName()));
+
+				FString InputType = FString();
+				switch (PlayerStates[i]->InputType)
+				{
+				case ECommonInputType::MouseAndKeyboard:
+					InputType = "KBM";
+					break;
+				case ECommonInputType::Gamepad:
+					InputType = "Controller";
+					break;
+				case ECommonInputType::Touch:
+					InputType = "Touch";
+					break;
+				}
+				ScoreBoardLineButton->Input->SetText(FText::FromString(InputType));
+		
+				ScoreBoardLineButton->Ping->SetText(FText::FromString(FString::FromInt(PlayerStates[i]->GetPingInMilliseconds())));
+				
+				ScoreBoardContainer->AddChild(ScoreBoardLineButton);
+
+				if (LocalBasePlayerState)
+				{
+					ScoreBoardLineButton->SetColorAndOpacity(PlayerStates[i]->Team == LocalBasePlayerState->Team ? C_BLUE : C_RED);
 				}
 			}
 		}
@@ -92,7 +133,4 @@ void UScoreboard::RefreshScoreBoard()
 	float DeltaTime = FApp::GetDeltaTime();
 	int32 FPSValue = DeltaTime > 0.0f ? FMath::RoundToInt(1.0f / DeltaTime) : 0;
 	FPS->SetText(FText::FromString(FString::Printf(TEXT("%d"), FPSValue)));
-
-	// 服务器名字
-	
 }

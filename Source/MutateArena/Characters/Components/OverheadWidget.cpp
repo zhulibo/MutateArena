@@ -11,72 +11,49 @@
 #include "CommonLazyImage.h"
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "MutateArena/Utils/LibraryCommon.h"
-#include "Kismet/GameplayStatics.h"
 
 void UOverheadWidget::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
 
 	UE_LOG(LogTemp, Warning, TEXT("NativeOnInitialized"));
-	
-	LocalBaseController = Cast<ABaseController>(GetWorld()->GetFirstPlayerController());
-	if (LocalBaseController)
-	{
-		LocalBaseController->OnMatchEnd.AddUObject(this, &ThisClass::OnMatchEnd);
-	}
 }
 
 void UOverheadWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	if (BaseCharacter->HasAuthority())
+	// TODO 服务端模拟角色UOverheadWidget不初始化
+	if (BaseCharacter)
 	{
-		if (BaseCharacter->IsLocallyControlled())
+		if (BaseCharacter->HasAuthority())
 		{
-			UE_LOG(LogTemp, Warning, TEXT("NativeConstruct 1"));
+			if (BaseCharacter->IsLocallyControlled())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("NativeConstruct 1"));
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("NativeConstruct 2"));
+			}
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("NativeConstruct 2"));
+			UE_LOG(LogTemp, Warning, TEXT("NativeConstruct 3"));
 		}
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("NativeConstruct 3"));
 	}
 	
 	// 定时判断是否显示OverheadWidget
 	GetWorld()->GetTimerManager().SetTimer(TraceTimerHandle, this, &ThisClass::TraceOverheadWidget, .2f, true, .1f);
+}
 
-	SetPlayerName();
-	
-	if (BaseCharacter)
-	{
-		if (!BaseCharacter->IsLocallyControlled())
-		{
-			InitOverheadWidget();
-		}
-		// 本地玩家队伍改变时，初始化本机所有玩家的OverheadWidget
-		else
-		{
-			TArray<AActor*> AllPlayers;
-			UGameplayStatics::GetAllActorsWithTag(GetWorld(), TAG_CHARACTER_BASE, AllPlayers);
-			for (AActor* Player : AllPlayers)
-			{
-				if (ABaseCharacter* PlayerCharacter = Cast<ABaseCharacter>(Player))
-				{
-					if (UWidgetComponent* OverheadWidget = PlayerCharacter->OverheadWidget)
-					{
-						if (UOverheadWidget* OverheadWidgetClass = Cast<UOverheadWidget>(OverheadWidget->GetUserWidgetObject()))
-						{
-							OverheadWidgetClass->InitOverheadWidget();
-						}
-					}
-				}
-			}
-		}
-	}
+void UOverheadWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+{
+	Super::NativeTick(MyGeometry, InDeltaTime);
+
+	// 获取Team不好处理，直接循环调用InitOverheadWidget
+	// ESlateVisibility::Visible时NativeTick才会执行，所有只有近处的玩家才会循环调用InitOverheadWidget
+	InitOverheadWidget();
 }
 
 void UOverheadWidget::NativeDestruct()
@@ -84,6 +61,57 @@ void UOverheadWidget::NativeDestruct()
 	GetWorld()->GetTimerManager().ClearTimer(TraceTimerHandle);
 
 	Super::NativeDestruct();
+}
+
+void UOverheadWidget::InitOverheadWidget()
+{
+	// double Time1 = FPlatformTime::Seconds();
+	
+	if (BaseCharacter)
+	{
+		if (BasePlayerState == nullptr) BasePlayerState = Cast<ABasePlayerState>(BaseCharacter->GetPlayerState());
+
+		if (LocalBasePlayerState == nullptr)
+		{
+			if (LocalBaseController == nullptr) LocalBaseController = Cast<ABaseController>(GetWorld()->GetFirstPlayerController());
+			if (LocalBaseController) LocalBasePlayerState = Cast<ABasePlayerState>(LocalBaseController->PlayerState);
+		}
+
+		if (BasePlayerState && LocalBasePlayerState)
+		{
+			// UE_LOG(LogTemp, Warning, TEXT("SetColorAndOpacity Base GetTeam %d Local GetTeam %d"), BasePlayerState->GetTeam(), LocalBasePlayerState->GetTeam());
+			if (BasePlayerState->Team != ETeam::NoTeam && LocalBasePlayerState->Team != ETeam::NoTeam)
+			{
+				FColor TeamColor = BasePlayerState->Team == LocalBasePlayerState->Team ? C_BLUE : C_RED;
+				if (AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(BaseCharacter))
+				{
+					if (HumanCharacter->bIsImmune)
+					{
+						TeamColor = C_YELLOW;
+					}
+				}
+				
+				// 设置名字
+				PlayerName->SetText(FText::FromString(ULibraryCommon::ObfuscatePlayerName(BasePlayerState->GetPlayerName(), this)));
+				PlayerName->SetColorAndOpacity(TeamColor);
+
+				// 设置血条颜色
+				if (UMaterialInstanceDynamic* MID = HealthBar->GetDynamicMaterial())
+				{
+					MID->SetVectorParameterValue(TEXT("TeamColor"), TeamColor);
+				}
+
+				// 设置血条刻度
+				if (UMaterialInstanceDynamic* MID = HealthBarLine->GetDynamicMaterial())
+				{
+					MID->SetScalarParameterValue(TEXT("LineNum"), GetHealthBarLineNum());
+				}
+			}
+		}
+	}
+
+	// double Time2 = FPlatformTime::Seconds();
+	// UE_LOG(LogTemp, Warning, TEXT("InitOverheadWidget %f"), Time2 - Time1);
 }
 
 // 判断是否显示OverheadWidget
@@ -133,110 +161,9 @@ void UOverheadWidget::TraceOverheadWidget()
 		QueryParams.AddIgnoredActors(AllPlayers);
 		
 		GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECollisionChannel::ECC_Visibility, QueryParams);
-		if (HitResult.bBlockingHit)
-		{
-			SetVisibility(ESlateVisibility::Hidden);
-		}
-		else
-		{
-			SetVisibility(ESlateVisibility::Visible);
-		}
+		
+		SetVisibility(HitResult.bBlockingHit ? ESlateVisibility::Hidden :ESlateVisibility::Visible);
 	}
-}
-
-void UOverheadWidget::OnMatchEnd()
-{
-	bCanUseSetTimerForNextTick = false;
-}
-
-// 设置用户名
-void UOverheadWidget::SetPlayerName()
-{
-	if (!GetWorld()) return;
-	
-	if (BaseCharacter)
-	{
-		if (BasePlayerState == nullptr) BasePlayerState = Cast<ABasePlayerState>(BaseCharacter->GetPlayerState());
-		if (BasePlayerState)
-		{
-			PlayerName->SetText(FText::FromString(ULibraryCommon::ObfuscatePlayerName(BasePlayerState->GetPlayerName(), this)));
-			return;
-		}
-	}
-
-	if (!bCanUseSetTimerForNextTick) return;
-	GetWorld()->GetTimerManager().SetTimerForNextTick([this]() {
-		SetPlayerName();
-	});
-}
-
-void UOverheadWidget::InitOverheadWidget()
-{
-	if (BaseCharacter)
-	{
-		if (BasePlayerState == nullptr) BasePlayerState = Cast<ABasePlayerState>(BaseCharacter->GetPlayerState());
-
-		if (LocalBasePlayerState == nullptr)
-		{
-			if (LocalBaseController == nullptr) LocalBaseController = Cast<ABaseController>(GetWorld()->GetFirstPlayerController());
-			if (LocalBaseController) LocalBasePlayerState = Cast<ABasePlayerState>(LocalBaseController->PlayerState);
-		}
-
-		if (BasePlayerState && LocalBasePlayerState)
-		{
-			// UE_LOG(LogTemp, Warning, TEXT("SetColorAndOpacity Base GetTeam %d Local GetTeam %d"), BasePlayerState->GetTeam(), LocalBasePlayerState->GetTeam());
-			if (BasePlayerState->Team != ETeam::NoTeam && LocalBasePlayerState->Team != ETeam::NoTeam)
-			{
-				FColor TeamColor = BasePlayerState->Team == LocalBasePlayerState->Team ? C_BLUE : C_RED;
-
-				// 设置名字颜色
-				PlayerName->SetColorAndOpacity(TeamColor);
-
-				// 设置血条颜色
-				if (UMaterialInstanceDynamic* MID = HealthBar->GetDynamicMaterial())
-				{
-					MID->SetVectorParameterValue(TEXT("TeamColor"), TeamColor);
-						
-					if (AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(BaseCharacter))
-					{
-						if (HumanCharacter->bIsImmune)
-						{
-							MID->SetVectorParameterValue(TEXT("TeamColor"), C_YELLOW);
-						}
-					}
-				}
-
-				// 设置血条刻度
-				if (UMaterialInstanceDynamic* MID = HealthBarLine->GetDynamicMaterial())
-				{
-					MID->SetScalarParameterValue(TEXT("LineNum"), GetHealthBarLineNum());
-				}
-
-				return;
-			}
-			else
-			{
-				// 游戏结束了关卡才加载完成GetTeam() == ETeam::NoTeam，中断循环，不然会crash。
-				if (BaseGameState == nullptr) BaseGameState = GetWorld()->GetGameState<ABaseGameState>();
-				if (BaseGameState)
-				{
-					if (BaseGameState->GetMatchState() == FName(TEXT("WaitingPostMatch")) || BaseGameState->GetMatchState() == FName(TEXT("LeavingMap")))
-					{
-						return;
-					}
-				}
-				else
-				{
-					return;
-				}
-			}
-		}
-	}
-
-	if (!bCanUseSetTimerForNextTick) return;
-	GetWorld()->GetTimerManager().SetTimerForNextTick([this]() {
-		InitOverheadWidget();
-	});
 }
 
 int32 UOverheadWidget::GetHealthBarLineNum()

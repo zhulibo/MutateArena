@@ -16,6 +16,7 @@
 #include "MutateArena/UI/TextChat/TextChat.h"
 #include "MutateArena/Utils/LibraryCommon.h"
 #include "GameFramework/PlayerStart.h"
+#include "MutateArena/Characters/Components/CombatComponent.h"
 #include "MutateArena/System/DevSetting.h"
 #include "Online/SchemaTypes.h"
 
@@ -55,13 +56,19 @@ void ABaseMode::OnPostLogin(AController* NewPlayer)
 	}
 }
 
+void ABaseMode::HandleMatchHasEnded()
+{
+	Super::HandleMatchHasEnded();
+
+	// 游戏结束修改大厅状态
+	ChangeLobbyStatus(0);
+}
+
 void ABaseMode::Logout(AController* Exiting)
 {
-	Super::Logout(Exiting);
-
 	UE_LOG(LogTemp, Warning, TEXT("Logout ------------------------------------------"));
 
-	if (MatchState != MatchState::LeavingMap)
+	if (Exiting && MatchState != MatchState::LeavingMap)
 	{
 		if (ABasePlayerState* BasePlayerState = Cast<ABasePlayerState>(Exiting->PlayerState))
 		{
@@ -89,6 +96,8 @@ void ABaseMode::Logout(AController* Exiting)
 			PlayerController->ClientTravel(MAP_MENU, ETravelType::TRAVEL_Absolute);
 		}
 	}
+	
+	Super::Logout(Exiting);
 }
 
 // 离开地图
@@ -169,7 +178,7 @@ AActor* ABaseMode::FindCharacterPlayerStart(ETeam Team)
 		{
 			for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It)
 			{
-				if (It->PlayerStartTag == "Team1")
+				if (It->PlayerStartTag == TEXT("Team1"))
 				{
 					Team1PlayerStarts.Add(*It);
 				}
@@ -184,7 +193,7 @@ AActor* ABaseMode::FindCharacterPlayerStart(ETeam Team)
 		{
 			for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It)
 			{
-				if (It->PlayerStartTag == "Team2")
+				if (It->PlayerStartTag == TEXT("Team2"))
 				{
 					Team2PlayerStarts.Add(*It);
 				}
@@ -267,7 +276,8 @@ void ABaseMode::AddKillLog(ABasePlayerState* AttackerState, AActor* DamageCauser
 // 修改大厅状态
 void ABaseMode::ChangeLobbyStatus(int64 Status)
 {
-	if (EOSSubsystem && Status > 0)
+	if (EOSSubsystem == nullptr) EOSSubsystem = GetGameInstance()->GetSubsystem<UEOSSubsystem>();
+	if (EOSSubsystem)
 	{
 		EOSSubsystem->ModifyLobbyAttr(TMap<UE::Online::FSchemaAttributeId, UE::Online::FSchemaVariant>{
 			{LOBBY_STATUS, Status},

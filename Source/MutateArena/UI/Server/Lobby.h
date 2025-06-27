@@ -96,4 +96,7 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	class UTextChat* TextChat;
 
+	bool bIsActioning = false;
+	void OnTravelFailure(UWorld* World, ETravelFailure::Type Arg, const FString& String);
+
 };

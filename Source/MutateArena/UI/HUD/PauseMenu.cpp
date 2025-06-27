@@ -1,9 +1,12 @@
 #include "PauseMenu.h"
 #include "CommonTextBlock.h"
 #include "MutateArena/MutateArena.h"
+#include "MutateArena/Characters/HumanCharacter.h"
+#include "MutateArena/Characters/Components/CombatComponent.h"
 #include "MutateArena/UI/HUD/Mutation/MutationContainer.h"
 #include "MutateArena/PlayerControllers/BaseController.h"
 #include "MutateArena/System/AssetSubsystem.h"
+#include "MutateArena/System/EOSSubsystem.h"
 #include "MutateArena/System/Data/CommonAsset.h"
 #include "MutateArena/UI/GameLayout.h"
 #include "MutateArena/UI/Common/CommonButton.h"
@@ -126,6 +129,32 @@ void UPauseMenu::Quit(EMsgResult MsgResult)
 		if (BaseController == nullptr) BaseController = Cast<ABaseController>(GetOwningPlayer());
 		if (BaseController)
 		{
+			if (EOSSubsystem == nullptr) EOSSubsystem = GetGameInstance()->GetSubsystem<UEOSSubsystem>();
+			if (EOSSubsystem)
+			{
+				// 房主退出游戏时修改大厅状态（房主一般不主动退出）
+				if (EOSSubsystem->IsLobbyHost())
+				{
+					EOSSubsystem->ModifyLobbyAttr(TMap<FSchemaAttributeId, FSchemaVariant>{
+						{LOBBY_STATUS, static_cast<int64>(0)},
+					});
+				}
+				// 非房主退出游戏时把自己置为未准备状态
+				else
+				{
+					EOSSubsystem->ModifyLobbyMemberAttr(TMap<FSchemaAttributeId, FSchemaVariant>{
+						{ LOBBY_MEMBER_READY, false}
+					});
+				}
+			}
+
+			// 销毁装备
+			AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(GetOwningPlayer()->GetPawn());
+			if (HumanCharacter && HumanCharacter->CombatComponent)
+			{
+				HumanCharacter->CombatComponent->ServerDestroyEquipments();
+			}
+			
 			BaseController->ClientTravel(MAP_MENU, ETravelType::TRAVEL_Absolute);
 		}
 	}

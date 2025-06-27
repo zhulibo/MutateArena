@@ -83,6 +83,8 @@ enum class ESpawnMutantReason : uint8
 {
 	// 开局随机突变
 	RoundStart,
+	// 突变倒计时已结束时进入游戏
+	FirstJoinGame,
 	// 被感染
 	MutantInfect,
 	// 被突变体造成伤害
@@ -91,4 +93,6 @@ enum class ESpawnMutantReason : uint8
 	SelectMutant,
 	// 突变体死亡重生
 	Respawn,
+	// 摔死的
+	Fall,
 };
