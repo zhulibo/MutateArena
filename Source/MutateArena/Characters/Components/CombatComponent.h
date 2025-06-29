@@ -74,6 +74,8 @@ protected:
 	void MulticastEquipEquipment(AEquipment* Equipment);
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastEquipEquipment2(AEquipment* Equipment);
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastReplaceCurEquipment(AEquipment* Equipment);
 	void AssignEquipment(AEquipment* Equipment);
 	void LocalEquipEquipment(AEquipment* Equipment);
 	void AttachToBodySocket(AEquipment* Equipment);
@@ -96,8 +98,6 @@ public:
 protected:
 	// 使用
 	void UseEquipment(AEquipment* Equipment);
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastReplaceCurEquipment(AEquipment* Equipment);
 public:
 	void AttachToRightHand(AEquipment* Equipment);
 	void AttachToLeftHand(AEquipment* Equipment);

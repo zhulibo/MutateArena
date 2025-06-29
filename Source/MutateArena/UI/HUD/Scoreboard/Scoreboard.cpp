@@ -131,6 +131,6 @@ void UScoreboard::RefreshScoreBoard()
 
 	// 帧率
 	float DeltaTime = FApp::GetDeltaTime();
-	int32 FPSValue = DeltaTime > 0.0f ? FMath::RoundToInt(1.0f / DeltaTime) : 0;
+	int32 FPSValue = DeltaTime > 0.f ? FMath::RoundToInt(1.f / DeltaTime) : 0;
 	FPS->SetText(FText::FromString(FString::Printf(TEXT("%d"), FPSValue)));
 }

@@ -137,7 +137,7 @@ void AFlashbang::Explode()
 			// }
 
 			if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-			if (AssetSubsystem && AssetSubsystem->CharacterAsset && AssetSubsystem->CharacterAsset->MPC_Flashbang)
+			if (AssetSubsystem && AssetSubsystem->CharacterAsset)
 			{
 				if (UMaterialParameterCollectionInstance* MPCI = GetWorld()->GetParameterCollectionInstance(AssetSubsystem->CharacterAsset->MPC_Flashbang))
 				{

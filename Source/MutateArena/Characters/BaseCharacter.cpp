@@ -32,7 +32,7 @@
 #include "Interfaces/InteractableTarget.h"
 #include "MutateArena/Effects/BloodCollision.h"
 #include "Components/SceneCaptureComponent2D.h"
-#include "MutateArena/Equipments/Equipment.h"
+#include "Materials/MaterialParameterCollectionInstance.h"
 #include "MutateArena/GameStates/BaseGameState.h"
 #include "MutateArena/System/Data/CommonAsset.h"
 #include "MutateArena/UI/TextChat/TextChat.h"
@@ -173,11 +173,11 @@ void ABaseCharacter::Tick(float DeltaSeconds)
 	CalcAimPitch();
 }
 
-// 设置碰撞
 void ABaseCharacter::PollInit_PlayerStateTeam()
 {
 	if (!bIsPlayerStateTeamReady)
 	{
+		// 设置碰撞
 		if (BasePlayerState == nullptr) BasePlayerState = GetPlayerState<ABasePlayerState>();
 		if (BasePlayerState && BasePlayerState->Team != ETeam::NoTeam)
 		{
@@ -224,21 +224,6 @@ void ABaseCharacter::PollInit_ControllerAndPSAndTeam()
 
 void ABaseCharacter::OnLocallyControllerReady()
 {
-	// 闪光弹
-	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-	if (AssetSubsystem && AssetSubsystem->CharacterAsset)
-	{
-		if (SceneCapture)
-		{
-			SceneCapture->TextureTarget = AssetSubsystem->CharacterAsset->RT_Flashbang;
-		}
-
-		FlashbangMID = UMaterialInstanceDynamic::Create(AssetSubsystem->CharacterAsset->MI_Flashbang, this);
-		if (FlashbangMID)
-		{
-			Camera->PostProcessSettings.AddBlendable(FlashbangMID, 1.f);
-		}
-	}
 }
 
 // 计算俯仰
@@ -355,10 +340,8 @@ void ABaseCharacter::OnAbilitySystemComponentInit()
 {
 	if (AbilitySystemComponent)
 	{
-		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(
-			AttributeSetBase->GetMaxHealthAttribute()).AddUObject(this, &ThisClass::OnMaxHealthChanged);
-		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(
-			AttributeSetBase->GetHealthAttribute()).AddUObject(this, &ThisClass::OnHealthChanged);
+		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(AttributeSetBase->GetMaxHealthAttribute()).AddUObject(this, &ThisClass::OnMaxHealthChanged);
+		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(AttributeSetBase->GetHealthAttribute()).AddUObject(this, &ThisClass::OnHealthChanged);
 	}
 }
 
@@ -756,6 +739,27 @@ void ABaseCharacter::OnMaxHealthChanged(const FOnAttributeChangeData& Data)
 	{
 		OverheadWidgetClass->OnMaxHealthChange(Data.NewValue);
 	}
+
+	if (IsLocallyControlled())
+	{
+		// 低血量屏幕变灰
+		if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+		if (AssetSubsystem && AssetSubsystem->CharacterAsset && AssetSubsystem->CharacterAsset->MPC_LowHealth)
+		{
+			if (Data.OldValue == 0.f || Data.NewValue == 0.f) return;
+			float OldRate = Data.OldValue / GetMaxHealth();
+			float NewRate = Data.NewValue / GetMaxHealth();
+			
+			// 没有跨过阈值
+			if (OldRate > HealthRateThreshold && NewRate > HealthRateThreshold || OldRate < HealthRateThreshold && NewRate < HealthRateThreshold) return;
+			if (UMaterialParameterCollectionInstance* MPCI = GetWorld()->GetParameterCollectionInstance(AssetSubsystem->CharacterAsset->MPC_LowHealth))
+			{
+				float TempDesaturation = NewRate < HealthRateThreshold ? Desaturation : 0.f;
+				MPCI->SetScalarParameterValue(FName("Desaturation"), TempDesaturation);
+				MPCI->SetScalarParameterValue(FName("TriggerTime"), GetWorld()->GetTimeSeconds());
+			}
+		}
+	}
 }
 
 void ABaseCharacter::OnHealthChanged(const FOnAttributeChangeData& Data)
@@ -766,10 +770,31 @@ void ABaseCharacter::OnHealthChanged(const FOnAttributeChangeData& Data)
 		OverheadWidgetClass->OnHealthChange(Data.OldValue, Data.NewValue);
 	}
 
-	if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
-	if (BaseController)
+	if (IsLocallyControlled())
 	{
-		BaseController->SetHUDHealth(Data.NewValue);
+		if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
+		if (BaseController)
+		{
+			BaseController->SetHUDHealth(Data.NewValue);
+		}
+
+		// 低血量屏幕变灰
+		if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+		if (AssetSubsystem && AssetSubsystem->CharacterAsset && AssetSubsystem->CharacterAsset->MPC_LowHealth)
+		{
+			if (GetMaxHealth() == 0.f) return;
+			float OldRate = Data.OldValue / GetMaxHealth();
+			float NewRate = Data.NewValue / GetMaxHealth();
+			
+			// 没有跨过阈值
+			if (OldRate > HealthRateThreshold && NewRate > HealthRateThreshold || OldRate < HealthRateThreshold && NewRate < HealthRateThreshold) return;
+			if (UMaterialParameterCollectionInstance* MPCI = GetWorld()->GetParameterCollectionInstance(AssetSubsystem->CharacterAsset->MPC_LowHealth))
+			{
+				float TempDesaturation = NewRate < HealthRateThreshold ? Desaturation : 0.f;
+				MPCI->SetScalarParameterValue(FName("Desaturation"), TempDesaturation);
+				MPCI->SetScalarParameterValue(FName("TriggerTime"), GetWorld()->GetTimeSeconds());
+			}
+		}
 	}
 }
 
@@ -945,8 +970,8 @@ void ABaseCharacter::SprayPaint(int32 RadioIndex)
 				}
 				
 				FRotator DecalRotation = FRotationMatrix::MakeFromX(OutHit.ImpactNormal).Rotator();
-				DecalRotation.Roll += 90.0f;
-				DecalRotation.Yaw += 180.0f;
+				DecalRotation.Roll += 90.f;
+				DecalRotation.Yaw += 180.f;
 				SprayPaintDecal = UGameplayStatics::SpawnDecalAttached(
 					SprayPaints[RadioIndex].Material,
 					FVector(5.f, 100.f, 100.f),

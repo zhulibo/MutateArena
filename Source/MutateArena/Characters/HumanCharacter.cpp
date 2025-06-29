@@ -18,7 +18,6 @@
 #include "MutateArena/GameStates/MeleeGameState.h"
 #include "MutateArena/PlayerControllers/BaseController.h"
 #include "MutateArena/PlayerControllers/MutationController.h"
-#include "MutateArena/PlayerStates/BasePlayerState.h"
 #include "MutateArena/System/AssetSubsystem.h"
 #include "MutateArena/System/DataAssetManager.h"
 #include "MutateArena/System/DevSetting.h"
@@ -439,7 +438,7 @@ void AHumanCharacter::OnServerDropEquipment()
 			return;
 		}
 	}
-	
+
 	// 否则切换至其它装备
 	CombatComponent->MulticastSwapEquipment2(CombatComponent->GetLastEquipment() ? CombatComponent->LastEquipmentType : EEquipmentType::Melee);
 }

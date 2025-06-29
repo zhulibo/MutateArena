@@ -30,7 +30,7 @@ void UBloodCollision::ReceiveParticleData_Implementation(const TArray<FBasicPart
 				{
 					FLinearColor Color = FLinearColor(ParticleData.Velocity.X, ParticleData.Velocity.Y, ParticleData.Velocity.Z, ParticleData.Size);
 					MID->SetVectorParameterValue(TEXT("Color"), Color.ToFColor(true));
-					MID->SetScalarParameterValue(TEXT("TextureIndex"), FMath::RandRange(0, 5));
+					MID->SetScalarParameterValue(FName("TextureIndex"), FMath::RandRange(0, 5));
 
 					auto DecalComponent = UGameplayStatics::SpawnDecalAttached(
 						MID,

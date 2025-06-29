@@ -154,7 +154,7 @@ void UPauseMenu::Quit(EMsgResult MsgResult)
 			{
 				HumanCharacter->CombatComponent->ServerDestroyEquipments();
 			}
-			
+
 			BaseController->ClientTravel(MAP_MENU, ETravelType::TRAVEL_Absolute);
 		}
 	}

@@ -23,7 +23,7 @@ bool AGameplayCue_MutantGhostSkill::WhileActive_Implementation(AActor* MyTarget,
 			}
 			if (DynamicMaterial)
 			{
-				DynamicMaterial->SetScalarParameterValue(TEXT("Opacity"), 0.1f);
+				DynamicMaterial->SetScalarParameterValue(FName("Opacity"), 0.1f);
 			}
 		}
 		
@@ -48,7 +48,7 @@ bool AGameplayCue_MutantGhostSkill::OnRemove_Implementation(AActor* MyTarget, co
 			}
 			if (MID)
 			{
-				MID->SetScalarParameterValue(TEXT("Opacity"), .8f);
+				MID->SetScalarParameterValue(FName("Opacity"), .8f);
 			}
 		}
 		

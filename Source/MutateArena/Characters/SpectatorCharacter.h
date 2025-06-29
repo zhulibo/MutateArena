@@ -29,6 +29,8 @@ protected:
 	UPROPERTY()
 	class UAssetSubsystem* AssetSubsystem;
 	UPROPERTY()
+	class ABaseGameState* BaseGameState;
+	UPROPERTY()
 	class ABaseController* BaseController;
 	
 	void ScoreboardButtonPressed(const struct FInputActionValue& Value);

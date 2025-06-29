@@ -12,4 +12,9 @@ class MUTATEARENA_API UMAGameInstance : public UGameInstance
 public:
 	virtual void Init() override;
 	
+	UPROPERTY()
+	class UEOSSubsystem* EOSSubsystem;
+	
+	void OnNetworkFailure(UWorld* World, UNetDriver* NetDriver, ENetworkFailure::Type Type, const FString& String);
+	
 };

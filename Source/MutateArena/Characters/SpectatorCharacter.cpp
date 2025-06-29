@@ -6,6 +6,8 @@
 #include "MutateArena/PlayerControllers/BaseController.h"
 #include "MutateArena/System/AssetSubsystem.h"
 #include "Data/InputAsset.h"
+#include "GameFramework/GameMode.h"
+#include "MutateArena/GameStates/BaseGameState.h"
 
 void ASpectatorCharacter::BeginPlay()
 {
@@ -61,6 +63,13 @@ void ASpectatorCharacter::SwitchPerspective(const FInputActionValue& Value)
 
 void ASpectatorCharacter::ViewPrevPlayer(const FInputActionValue& Value)
 {
+	// 游戏未开始无法切换玩家
+	if (BaseGameState == nullptr) BaseGameState = GetWorld()->GetGameState<ABaseGameState>();
+	if (BaseGameState && BaseGameState->GetMatchState() == MatchState::WaitingToStart)
+	{
+		return;
+	}
+
 	if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
 	if (BaseController)
 	{
@@ -71,6 +80,13 @@ void ASpectatorCharacter::ViewPrevPlayer(const FInputActionValue& Value)
 
 void ASpectatorCharacter::ViewNextPlayer(const FInputActionValue& Value)
 {
+	// 游戏未开始无法切换玩家
+	if (BaseGameState == nullptr) BaseGameState = GetWorld()->GetGameState<ABaseGameState>();
+	if (BaseGameState && BaseGameState->GetMatchState() == MatchState::WaitingToStart)
+	{
+		return;
+	}
+
 	if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
 	if (BaseController)
 	{

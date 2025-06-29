@@ -104,7 +104,7 @@ void UOverheadWidget::InitOverheadWidget()
 				// 设置血条刻度
 				if (UMaterialInstanceDynamic* MID = HealthBarLine->GetDynamicMaterial())
 				{
-					MID->SetScalarParameterValue(TEXT("LineNum"), GetHealthBarLineNum());
+					MID->SetScalarParameterValue(FName("LineNum"), GetHealthBarLineNum());
 				}
 			}
 		}
@@ -179,7 +179,7 @@ void UOverheadWidget::OnMaxHealthChange(float MaxHealth)
 {
 	if (UMaterialInstanceDynamic* MID = HealthBarLine->GetDynamicMaterial())
 	{
-		MID->SetScalarParameterValue(TEXT("LineNum"), GetHealthBarLineNum());
+		MID->SetScalarParameterValue(FName("LineNum"), GetHealthBarLineNum());
 	}
 }
 
@@ -195,8 +195,8 @@ void UOverheadWidget::OnHealthChange(float OldHealth, float NewHealth)
 
 	if (UMaterialInstanceDynamic* MID = HealthBar->GetDynamicMaterial())
 	{
-		MID->SetScalarParameterValue(TEXT("OldValue"), OldValue);
-		MID->SetScalarParameterValue(TEXT("NewValue"), NewValue);
+		MID->SetScalarParameterValue(FName("OldValue"), OldValue);
+		MID->SetScalarParameterValue(FName("NewValue"), NewValue);
 
 		float PlaybackSpeed = FMath::Abs(NewValue - OldValue) * 3;
 

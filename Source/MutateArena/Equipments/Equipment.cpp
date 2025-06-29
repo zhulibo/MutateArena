@@ -125,7 +125,7 @@ void AEquipment::SetOwnerTeam()
 	}
 }
 
-void AEquipment::OnDrop()
+void AEquipment::Drop()
 {
 	EquipmentState = EEquipmentState::Dropped;
 

@@ -82,7 +82,7 @@ protected:
 	void SetOwnerTeam();
 
 public:
-	virtual void OnDrop();
+	virtual void Drop();
 protected:
 	void SetAreaSphereCollision();
 	

@@ -195,14 +195,40 @@ void UCombatComponent::MulticastEquipEquipment2_Implementation(AEquipment* Equip
 	LocalEquipEquipment(Equipment);
 
 	// 播放装备音效
-	if (HumanCharacter == nullptr) return;
-	if (AssetSubsystem == nullptr)
+	if (HumanCharacter && HumanCharacter->IsLocallyControlled())
 	{
-		AssetSubsystem = HumanCharacter->GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+		if (AssetSubsystem == nullptr) AssetSubsystem = HumanCharacter->GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+		if (AssetSubsystem && AssetSubsystem->EquipmentAsset)
+		{
+			UGameplayStatics::PlaySoundAtLocation(this, AssetSubsystem->EquipmentAsset->EquipSound, HumanCharacter->GetActorLocation());
+		}
 	}
-	if (AssetSubsystem && AssetSubsystem->EquipmentAsset)
+}
+
+// 直接替换当前正在使用的装备
+void UCombatComponent::MulticastReplaceCurEquipment_Implementation(AEquipment* Equipment)
+{
+	if (Equipment == nullptr) return;
+
+	// 取消补给箱装备隐藏
+	Equipment->EquipmentMesh->SetVisibility(true);
+
+	Equipment->SetOwner(HumanCharacter);
+	Equipment->OnEquip();
+
+	bIsAiming = false;
+
+	AssignEquipment(Equipment);
+	UseEquipment(Equipment);
+
+	// 播放装备音效
+	if (HumanCharacter && HumanCharacter->IsLocallyControlled())
 	{
-		UGameplayStatics::PlaySoundAtLocation(this, AssetSubsystem->EquipmentAsset->EquipSound, HumanCharacter->GetActorLocation());
+		if (AssetSubsystem == nullptr) AssetSubsystem = HumanCharacter->GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+		if (AssetSubsystem && AssetSubsystem->EquipmentAsset)
+		{
+			UGameplayStatics::PlaySoundAtLocation(this, AssetSubsystem->EquipmentAsset->EquipSound, HumanCharacter->GetActorLocation());
+		}
 	}
 }
 
@@ -389,22 +415,6 @@ void UCombatComponent::PlaySwapInMontage(bool bInterrupted, AEquipment* NewEquip
 void UCombatComponent::FinishSwap()
 {
 	CombatState = ECombatState::Ready;
-}
-
-void UCombatComponent::MulticastReplaceCurEquipment_Implementation(AEquipment* Equipment)
-{
-	if (Equipment == nullptr) return;
-
-	// 取消补给箱装备隐藏
-	Equipment->EquipmentMesh->SetVisibility(true);
-
-	Equipment->SetOwner(HumanCharacter);
-	Equipment->OnEquip();
-
-	bIsAiming = false;
-
-	AssignEquipment(Equipment);
-	UseEquipment(Equipment);
 }
 
 void UCombatComponent::UseEquipment(AEquipment* Equipment)
@@ -845,7 +855,7 @@ void UCombatComponent::LocalDropEquipment(EEquipmentType EquipmentType)
 {
 	if (GetEquipmentByType(EquipmentType))
 	{
-		GetEquipmentByType(EquipmentType)->OnDrop();
+		GetEquipmentByType(EquipmentType)->Drop();
 
 		switch (EquipmentType)
 		{

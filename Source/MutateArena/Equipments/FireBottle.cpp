@@ -144,7 +144,7 @@ void AFireBottle::Destroyed()
 	// GC应该足够智能，播放完后会回收AudioComponent
 	if (AudioComponent)
 	{
-		AudioComponent->FadeOut(1.f, 0.0f);
+		AudioComponent->FadeOut(1.f, 0.f);
 	}
 
 	Super::Destroyed();

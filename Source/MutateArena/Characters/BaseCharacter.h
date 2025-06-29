@@ -22,10 +22,6 @@ public:
 	class UCameraComponent* Camera;
 	UPROPERTY(VisibleAnywhere)
 	USceneCaptureComponent2D* SceneCapture;
-protected:
-	UPROPERTY()
-	UMaterialInstanceDynamic* FlashbangMID;
-public:
 	UPROPERTY(VisibleAnywhere)
 	class UWidgetComponent* OverheadWidget;
 	UPROPERTY()
@@ -40,8 +36,7 @@ protected:
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void OnRep_PlayerState() override;
 	virtual void Destroyed() override;
-
-protected:
+	
 	UFUNCTION()
 	void OnInputMethodChanged(ECommonInputType TempInputType);
 	UFUNCTION(Server, Unreliable)
@@ -156,6 +151,9 @@ public:
 protected:
 	void OnMaxHealthChanged(const FOnAttributeChangeData& Data);
 	virtual void OnHealthChanged(const FOnAttributeChangeData& Data);
+	float HealthRateThreshold = .2f;
+	float Desaturation = .7f;
+	float Power = .7f;
 
 	// 跌落
 	virtual void Landed(const FHitResult& Hit) override;

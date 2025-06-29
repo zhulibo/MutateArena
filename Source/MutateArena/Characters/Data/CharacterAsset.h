@@ -42,6 +42,10 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Character")
 	UMaterialInterface* MI_Overlay_Dead;
 
+	// 低血量
+	UPROPERTY(EditAnywhere, Category = "LowHealth")
+	UMaterialParameterCollection* MPC_LowHealth;
+
 	// 闪光弹
 	UPROPERTY(EditAnywhere, Category = "Flashbang")
 	UTextureRenderTarget2D* RT_Flashbang;

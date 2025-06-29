@@ -36,7 +36,7 @@ float UMMC_MutantHealth::CalculateBaseMagnitude_Implementation(const FGameplayEf
 	// if (Cast<AMutationPlayerState>(Spec.GetContext().GetSourceObject()))
 	// {
 	// 	UE_LOG(LogTemp, Warning, TEXT("LevelUp"));
-	// 	NewHealth = FMath::Clamp(Health + 500.f * Spec.GetLevel(), 0.0f, MaxHealth);
+	// 	NewHealth = FMath::Clamp(Health + 500.f * Spec.GetLevel(), 0.f, MaxHealth);
 	// }
 	// else
 	// {
@@ -44,7 +44,7 @@ float UMMC_MutantHealth::CalculateBaseMagnitude_Implementation(const FGameplayEf
 	// 	NewHealth = MaxHealth;
 	// }
 
-	float NewHealth = FMath::Clamp(Health + 500.f * Spec.GetLevel(), 0.0f, MaxHealth);
+	float NewHealth = FMath::Clamp(Health + 500.f * Spec.GetLevel(), 0.f, MaxHealth);
 
 	// UE_LOG(LogTemp, Warning, TEXT("NewHealth %f"), NewHealth);
 	return NewHealth;

@@ -52,7 +52,7 @@ void UAttributeSetBase::ClampAttr(const FGameplayAttribute& Attribute, float& Ne
 {
 	if (Attribute == GetHealthAttribute())
 	{
-		NewValue = FMath::Clamp(NewValue, 0.0f, GetMaxHealth());
+		NewValue = FMath::Clamp(NewValue, 0.f, GetMaxHealth());
 	}
 }
 
