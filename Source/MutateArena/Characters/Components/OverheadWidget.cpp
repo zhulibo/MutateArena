@@ -15,33 +15,11 @@
 void UOverheadWidget::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
-
-	UE_LOG(LogTemp, Warning, TEXT("NativeOnInitialized"));
 }
 
 void UOverheadWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
-
-	// TODO 服务端模拟角色UOverheadWidget不初始化
-	if (BaseCharacter)
-	{
-		if (BaseCharacter->HasAuthority())
-		{
-			if (BaseCharacter->IsLocallyControlled())
-			{
-				UE_LOG(LogTemp, Warning, TEXT("NativeConstruct 1"));
-			}
-			else
-			{
-				UE_LOG(LogTemp, Warning, TEXT("NativeConstruct 2"));
-			}
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("NativeConstruct 3"));
-		}
-	}
 	
 	// 定时判断是否显示OverheadWidget
 	GetWorld()->GetTimerManager().SetTimer(TraceTimerHandle, this, &ThisClass::TraceOverheadWidget, .2f, true, .1f);

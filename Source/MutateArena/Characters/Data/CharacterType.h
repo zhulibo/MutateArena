@@ -7,8 +7,7 @@ UENUM(BlueprintType)
 enum class EHumanCharacterName : uint8
 {
 	Solider,
-	Doctor,
-	Test,
+	// Doctor,
 
 	None
 };

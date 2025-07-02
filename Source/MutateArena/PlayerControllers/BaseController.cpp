@@ -156,11 +156,21 @@ void ABaseController::SetPlayerPlay()
 	}
 }
 
+void ABaseController::SetPawn(APawn* InPawn)
+{
+	Super::SetPawn(InPawn);
+
+	// if (IsInState(NAME_Spectating))
+	// {
+	// 	// TODO 服务端实现自动切到玩家视角不成功
+	// 	ServerViewNextPlayer();
+	// }
+}
+
 void ABaseController::OnRep_Pawn()
 {
 	Super::OnRep_Pawn();
-
-	// TODO 1 客户端不知道为什么切到玩家视角后可以控制俯仰 2 服务端实现自动切到玩家视角
+	
 	// if (IsInState(NAME_Spectating))
 	// {
 	// 	ServerViewNextPlayer();

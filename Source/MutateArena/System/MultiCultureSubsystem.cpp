@@ -8,56 +8,55 @@ void UMultiCultureSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 
 	// 需与 FHumanCharacterMain 中的ShowName一致
 #define LOCTEXT_NAMESPACE "Human"
-	LOCTEXT("Solider", "Solider");
-	LOCTEXT("Doctor", "Doctor");
-	LOCTEXT("Test", "Test");
+	auto Solider = LOCTEXT("Solider", "Solider");
+	auto Doctor = LOCTEXT("Doctor", "Doctor");
 #undef LOCTEXT_NAMESPACE
 
 	// 需与 FMutantCharacterMain 中的ShowName一致
 #define LOCTEXT_NAMESPACE "Mutant"
-	LOCTEXT("Tank", "Tank");
-	LOCTEXT("Ghost", "Ghost");
-	LOCTEXT("Smoker", "Smoker");
-	LOCTEXT("Cutter", "Cutter");
+	auto Tank = LOCTEXT("Tank", "Tank");
+	auto Ghost = LOCTEXT("Ghost", "Ghost");
+	auto Smoker = LOCTEXT("Smoker", "Smoker");
+	auto Cutter = LOCTEXT("Cutter", "Cutter");
 #undef LOCTEXT_NAMESPACE
 
 	// 需与 FEquipmentMain 中的ShowName一致
 #define LOCTEXT_NAMESPACE "Equipment"
-	LOCTEXT("AK47", "AK47");
-	LOCTEXT("AK47 Desert", "AK47 Desert");
-	LOCTEXT("M870", "M870");
-	LOCTEXT("M60", "M60");
-	LOCTEXT("PKM", "PKM");
+	auto AK47 = LOCTEXT("AK47", "AK47");
+	auto AK47Desert = LOCTEXT("AK47 Desert", "AK47 Desert");
+	auto M870 = LOCTEXT("M870", "M870");
+	auto M60 = LOCTEXT("M60", "M60");
+	auto PKM = LOCTEXT("PKM", "PKM");
 
-	LOCTEXT("Glock17", "Glock17");
-	LOCTEXT("Desert Eagle", "Desert Eagle");
+	auto Glock17 = LOCTEXT("Glock17", "Glock17");
+	auto DesertEagle = LOCTEXT("Desert Eagle", "Desert Eagle");
 
-	LOCTEXT("Kukri", "Kukri");
-	LOCTEXT("Military Shovel", "Military Shovel");
-	LOCTEXT("Fire Axe", "Fire Axe");
+	auto Kukri = LOCTEXT("Kukri", "Kukri");
+	auto MilitaryShovel = LOCTEXT("Military Shovel", "Military Shovel");
+	auto FireAxe = LOCTEXT("Fire Axe", "Fire Axe");
 	
-	LOCTEXT("Grenade", "Grenade");
-	LOCTEXT("Flashbang", "Flashbang");
-	LOCTEXT("Smoke", "Smoke");
-	LOCTEXT("Fire Bottle", "Fire Bottle");
+	auto Grenade = LOCTEXT("Grenade", "Grenade");
+	auto Flashbang = LOCTEXT("Flashbang", "Flashbang");
+	auto Smoke = LOCTEXT("Smoke", "Smoke");
+	auto FireBottle = LOCTEXT("Fire Bottle", "Fire Bottle");
 
-	LOCTEXT("AK47 Cyclone", "AK47 Cyclone");
-	LOCTEXT("MG42", "MG42");
-	LOCTEXT("GM6 Lynx", "GM6 Lynx");
+	auto AK47Cyclone = LOCTEXT("AK47 Cyclone", "AK47 Cyclone");
+	auto MG42 = LOCTEXT("MG42", "MG42");
+	auto GM6Lynx = LOCTEXT("GM6 Lynx", "GM6 Lynx");
 #undef LOCTEXT_NAMESPACE
 
 	// 需与 EEquipmentType 的值一致
 #define LOCTEXT_NAMESPACE "EquipmentType"
-	LOCTEXT("Primary", "Primary");
-	LOCTEXT("Secondary", "Secondary");
-	LOCTEXT("Melee", "Melee");
-	LOCTEXT("Throwing", "Throwing");
+	auto Primary = LOCTEXT("Primary", "Primary");
+	auto Secondary = LOCTEXT("Secondary", "Secondary");
+	auto Melee = LOCTEXT("Melee", "Melee");
+	auto Throwing = LOCTEXT("Throwing", "Throwing");
 #undef LOCTEXT_NAMESPACE
 	
 	// 需与 SprayPaint.Name 的值一致
 #define LOCTEXT_NAMESPACE "SprayPaint"
-	LOCTEXT("Brainburger", "Brainburger");
-	LOCTEXT("Dance of Doomsday", "Dance of Doomsday");
+	auto Brainburger = LOCTEXT("Brainburger", "Brainburger");
+	auto DanceOfDoomsday = LOCTEXT("Dance Of Doomsday", "Dance of Doomsday");
 #undef LOCTEXT_NAMESPACE
 
 }

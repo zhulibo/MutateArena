@@ -43,7 +43,7 @@ void UCrosshairComponent::SetHUDCrosshair(float DeltaSeconds)
 	AWeapon* Weapon = HumanCharacter->CombatComponent->GetUsingWeapon();
 	if (Weapon == nullptr) return;
 
-	// TODO 做各种动作时应关联射击精度与准星扩塞，不能只改变扩塞
+	// TODO 做各种动作时应关联射击精度与准星扩塞，不能只改变准星扩散
 
 	// 水平速度
 	// FVector Velocity = HumanCharacter->GetVelocity();

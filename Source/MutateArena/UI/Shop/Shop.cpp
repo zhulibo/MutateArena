@@ -58,6 +58,8 @@ void UShop::OnQueryOffersComplete(bool bWasSuccessful)
 	{
 		if (EOSSubsystem)
 		{
+			ItemButtonContainer->ClearChildren();
+			
 			// 获取商品列表
 			TArray<FOffer> Offers = EOSSubsystem->GetOffers();
 
@@ -138,7 +140,6 @@ void UShop::AddCharacterButton(const FOffer& Offer, const FHumanCharacterMain& H
 // 点击购买商品
 void UShop::OnItemButtonClicked(UItemButton* ItemButton)
 {
-	// TODO PurchaseLimit
 	if (EOSSubsystem)
 	{
 		TArray<FPurchaseOffer> Offers;

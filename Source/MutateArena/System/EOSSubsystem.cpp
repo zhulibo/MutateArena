@@ -990,7 +990,7 @@ void UEOSSubsystem::GetEntitlements()
 	TOnlineResult<FCommerceGetEntitlements> Result = CommercePtr->GetEntitlements(MoveTemp(Params));
 	if (Result.IsOk())
 	{
-		// AudienceItemId == ProductId
+		// 已购商品中的ProductId等于门户商品的AudienceItemId
 		Entitlements = Result.GetOkValue().Entitlements;
 	}
 	else

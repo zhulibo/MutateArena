@@ -15,6 +15,7 @@
 #include "MutateArena/UI/Setting/Setting.h"
 #include "MutateArena/UI/HUD/LoadoutSelect/LoadoutSelect.h"
 #include "MutateArena/UI/HUD/MutantSelect/MutantSelect.h"
+#include "MutateArena/Utils/LibraryNotify.h"
 
 #define LOCTEXT_NAMESPACE "UPauseMenu"
 
@@ -107,12 +108,30 @@ void UPauseMenu::OnVoteButtonClicked()
 void UPauseMenu::OnQuitButtonClicked()
 {
 	UE_LOG(LogTemp, Warning, TEXT("OnQuitButtonClicked -------------------------------------------"));
+	
 	if (BaseController == nullptr) BaseController = Cast<ABaseController>(GetOwningPlayer());
 	UAssetSubsystem* AssetSubsystem = GetWorld()->GetGameInstance()->GetSubsystem<UAssetSubsystem>();
 	
 	if (BaseController && BaseController->GameLayout && AssetSubsystem && AssetSubsystem->CommonAsset)
 	{
 		FConfirmScreenComplete ResultCallback = FConfirmScreenComplete::CreateUObject(this, &ThisClass::Quit);
+
+		if (EOSSubsystem == nullptr) EOSSubsystem = GetGameInstance()->GetSubsystem<UEOSSubsystem>();
+		if (EOSSubsystem)
+		{
+			if (EOSSubsystem->IsLobbyHost())
+			{
+				BaseController->GameLayout->ModalStack->AddWidget<UConfirmScreen>(
+					AssetSubsystem->CommonAsset->ConfirmScreenClass,
+					[ResultCallback](UConfirmScreen& Dialog) {
+						Dialog.Setup(LOCTEXT("SureToQuitHost", "You are host, all clients will lose connection, sure to quit?"), ResultCallback);
+					}
+				);
+
+				return;
+			}
+		}
+
 		BaseController->GameLayout->ModalStack->AddWidget<UConfirmScreen>(
 			AssetSubsystem->CommonAsset->ConfirmScreenClass,
 			[ResultCallback](UConfirmScreen& Dialog) {

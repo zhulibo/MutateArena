@@ -66,6 +66,7 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void OnUnPossess() override;
+	virtual void SetPawn (APawn* InPawn) override;
 	virtual void OnRep_Pawn() override;
 	virtual void SetViewTarget(class AActor* NewViewTarget, FViewTargetTransitionParams TransitionParams) override;
 	
