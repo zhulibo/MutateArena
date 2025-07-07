@@ -16,7 +16,7 @@ void UStorageSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	EOSSubsystem = GetGameInstance()->GetSubsystem<UEOSSubsystem>();
 	if (EOSSubsystem)
 	{
-		EOSSubsystem->OnWriteFileComplete.AddUObject(this, &ThisClass::OnWriteFileComplete);
+		EOSSubsystem->OnWriteUserFileComplete.AddUObject(this, &ThisClass::OnWriteFileComplete);
 	}
 
 	// 如果本地Setting存档存在
@@ -123,7 +123,7 @@ void UStorageSubsystem::SaveSettingToCloud()
 		CacheSetting->Serialize(Ar);
 	
 		// 将本地存档保存到云端
-		EOSSubsystem->WriteFile(SlotSetting, FileContents);
+		EOSSubsystem->WriteUserFile(SlotSetting, FileContents);
 	}
 }
 
@@ -154,7 +154,7 @@ void UStorageSubsystem::SaveLoadoutToCloud()
 		CacheLoadout->Serialize(Ar);
 	
 		// 将本地存档保存到云端
-		EOSSubsystem->WriteFile(SlotLoadout, FileContents);
+		EOSSubsystem->WriteUserFile(SlotLoadout, FileContents);
 	}
 }
 

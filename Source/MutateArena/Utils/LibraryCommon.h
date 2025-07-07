@@ -24,4 +24,6 @@ public:
 	static FString ObfuscateTextChat(FString Msg, const UObject* Context);
 	static FString ObfuscateText(FString Text);
 
+	static FString GetLanguage();
+	
 };

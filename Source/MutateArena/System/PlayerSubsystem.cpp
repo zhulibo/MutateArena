@@ -17,6 +17,7 @@ UPlayerSubsystem::UPlayerSubsystem()
 		{
 			EOSSubsystem->OnLoginComplete.AddUObject(this, &ThisClass::OnLoginComplete);
 			EOSSubsystem->OnLoginStatusChanged.AddUObject(this, &ThisClass::OnLoginStatusChanged);
+			EOSSubsystem->OnUILobbyJoinRequested.AddUObject(this, &ThisClass::OnUILobbyJoinRequested);
 		}
 	}
 }
@@ -126,6 +127,24 @@ void UPlayerSubsystem::ShowLoginNotify()
 	{
 		NOTIFY(this, C_YELLOW, LOCTEXT("LoginStatusChanged_UsingLocalProfile", "Login status changed: UsingLocalProfile"));
 		bShowNotify_UsingLocalProfile = false;
+	}
+}
+
+void UPlayerSubsystem::OnUILobbyJoinRequested(const FUILobbyJoinRequested& UILobbyJoinRequested)
+{
+	if (EOSSubsystem)
+	{
+		if (EOSSubsystem->CurrentLobby)
+		{
+			NOTIFY(this, C_YELLOW, LOCTEXT("LeaveToAcceptInvitation", "You must leave current lobby to join new one"));
+
+			return;
+		}
+
+		if (UILobbyJoinRequested.Result.IsOk())
+		{
+			EOSSubsystem->JoinLobby(UILobbyJoinRequested.Result.GetOkValue());
+		}
 	}
 }
 

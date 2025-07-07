@@ -43,8 +43,6 @@ void UServer::NativeOnInitialized()
 		EOSSubsystem->OnCreateLobbyComplete.AddUObject(this, &ThisClass::OnCreateLobbyComplete);
 		EOSSubsystem->OnFindLobbiesComplete.AddUObject(this, &ThisClass::OnFindLobbiesComplete);
 		EOSSubsystem->OnJoinLobbyComplete.AddUObject(this, &ThisClass::OnJoinLobbyComplete);
-		EOSSubsystem->OnLobbyInvitationAdded.AddUObject(this, &ThisClass::OnLobbyInvitationAdded);
-		EOSSubsystem->OnUILobbyJoinRequested.AddUObject(this, &ThisClass::OnUILobbyJoinRequested);
 		EOSSubsystem->OnLobbyJoined.AddUObject(this, &ThisClass::OnLobbyJoined);
 	}
 }
@@ -394,16 +392,6 @@ void UServer::GoToLobby()
 	{
 		MenuController->ServerStack->AddWidget(LobbyClass);
 	}
-}
-
-void UServer::OnLobbyInvitationAdded(const FLobbyInvitationAdded& LobbyInvitationAdded)
-{
-	UE_LOG(LogTemp, Warning, TEXT("OnLobbyInvitationAdded"));
-}
-
-void UServer::OnUILobbyJoinRequested(const FUILobbyJoinRequested& UILobbyJoinRequested)
-{
-	UE_LOG(LogTemp, Warning, TEXT("OnUILobbyJoinRequested"));
 }
 
 #undef LOCTEXT_NAMESPACE

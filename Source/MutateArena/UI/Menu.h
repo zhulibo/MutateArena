@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "CommonActivatableWidget.h"
+#include "MutateArena/System/EOSSubsystem.h"
 #include "Menu.generated.h"
 
 enum class EMsgResult : uint8;
@@ -16,6 +17,9 @@ protected:
 
 	UPROPERTY()
 	class AMenuController* MenuController;
+
+	UPROPERTY()
+	UEOSSubsystem* EOSSubsystem;
 
 	UPROPERTY(meta = (BindWidget))
 	class UCommonButton* SettingButton;
@@ -41,4 +45,10 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	class UDev* Dev;
 
+	UPROPERTY()
+	FString TitleFile_Notice = TEXT("Notice");
+	void OnEnumerateTitleFilesComplete(bool bWasSuccessful);
+	void OnReadTitleFileComplete(bool bWasSuccessful, const FTitleFileContentsRef& FileContents);
+	bool IsBeijingTimeInRange(const FString& StartStr, const FString& EndStr);
+	
 };

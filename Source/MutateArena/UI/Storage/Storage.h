@@ -29,8 +29,8 @@ protected:
 	UEOSSubsystem* EOSSubsystem;
 
 	void OnQueryEntitlementsComplete(bool bWasSuccessful);
-	void OnEnumerateFilesComplete(bool bWasSuccessful);
-	void OnReadFileComplete(bool bWasSuccessful, const FUserFileContentsRef& FileContents);
+	void OnEnumerateUserFilesComplete(bool bWasSuccessful);
+	void OnReadUserFileComplete(bool bWasSuccessful, const FUserFileContentsRef& FileContents);
 	void InitPlayerConfig(class USaveGameLoadout* SaveGameLoadout);
 	bool HasEquipment(EEquipmentName EquipmentName, EEquipmentType EquipmentType);
 	bool HasHumanCharacter(EHumanCharacterName HumanCharacterName);

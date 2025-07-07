@@ -69,8 +69,4 @@ protected:
 	void GoToLobby();
 	bool bIsActioning = false;
 
-	// 邀请
-	void OnLobbyInvitationAdded(const FLobbyInvitationAdded& LobbyInvitationAdded);
-	void OnUILobbyJoinRequested(const FUILobbyJoinRequested& UILobbyJoinRequested);
-	
 };

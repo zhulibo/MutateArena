@@ -1,5 +1,6 @@
 #include "LibraryCommon.h"
 
+#include "Internationalization/Culture.h"
 #include "MutateArena/System/Storage/SaveGameSetting.h"
 #include "MutateArena/System/Storage/StorageSubsystem.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -112,4 +113,16 @@ FString ULibraryCommon::ObfuscateText(FString Text)
 	}
 
 	return ObfuscatedString;
+}
+
+FString ULibraryCommon::GetLanguage()
+{
+	FCulturePtr CurrentCulture = FInternationalization::Get().GetCurrentCulture();
+
+	if (CurrentCulture.IsValid())
+	{
+		return CurrentCulture->GetName();
+	}
+
+	return TEXT("en");
 }

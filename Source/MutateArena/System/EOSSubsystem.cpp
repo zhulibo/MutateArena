@@ -16,6 +16,7 @@ UEOSSubsystem::UEOSSubsystem()
 		UserInfoPtr = OnlineServicesPtr->GetUserInfoInterface();
 		LobbyPtr = OnlineServicesPtr->GetLobbiesInterface();
 		UserFilePtr = OnlineServicesPtr->GetUserFileInterface();
+		TitleFilePtr = OnlineServicesPtr->GetTitleFileInterface();
 		CommercePtr = OnlineServicesPtr->GetCommerceInterface();
 
 		if (AuthPtr)
@@ -360,9 +361,38 @@ bool UEOSSubsystem::GetJoinedLobbies()
 	TOnlineResult<FGetJoinedLobbies> Result = LobbyPtr->GetJoinedLobbies(MoveTemp(Params));
 	if (Result.IsOk())
 	{
+		// 发现加入了多个大厅，离开多余大厅
+		if (Result.GetOkValue().Lobbies.Num() > 1)
+		{
+			NOTIFY(this, C_YELLOW, LOCTEXT("FoundMultipleLobbies", "Found joined multiple lobbies, exiting the extra lobby for you"));
+
+			for (int i = 0; i < Result.GetOkValue().Lobbies.Num(); ++i)
+			{
+				if (CurrentLobby->LobbyId == Result.GetOkValue().Lobbies[i]->LobbyId) continue;
+				
+				FLeaveLobby::Params Params2;
+				Params2.LocalAccountId = AccountInfo->AccountId;
+				Params2.LobbyId = Result.GetOkValue().Lobbies[i]->LobbyId;
+
+				LobbyPtr->LeaveLobby(MoveTemp(Params2))
+				.OnComplete([this, i](const TOnlineResult<FLeaveLobby>& Result)
+				{
+					if (Result.IsOk())
+					{
+						NOTIFY(this, C_GREEN, FText::Format(LOCTEXT("LeaveLobbySuccess", "Leave lobby of index {0} success"), FText::AsNumber(i)));
+					}
+					else
+					{
+						NOTIFY(this, C_YELLOW, FText::Format(LOCTEXT("LeaveLobbyFailed", "Leave lobby of index {0} failed"), FText::AsNumber(i)));
+						
+						UE_LOG(LogTemp, Error, TEXT("LeaveLobby %d %s"), i, *Result.GetErrorValue().GetLogString());
+					}
+				});
+			}
+		}
+		
 		if (Result.GetOkValue().Lobbies.Num() > 0)
 		{
-			CurrentLobby = Result.GetOkValue().Lobbies[0];
 			return true;
 		}
 
@@ -534,7 +564,6 @@ void UEOSSubsystem::GetResolvedConnectString(FString& Url)
 	FGetResolvedConnectString::Params Params;
 	Params.LocalAccountId = AccountInfo->AccountId;
 	Params.LobbyId = CurrentLobby->LobbyId;
-	// Params.SessionId = ;
 	Params.PortType = NAME_GamePort;
 
 	TOnlineResult<FGetResolvedConnectString> Result = OnlineServicesPtr->GetResolvedConnectString(MoveTemp(Params));
@@ -782,7 +811,7 @@ TSharedPtr<const FLobbyMember> UEOSSubsystem::GetLocalMember()
 }
 
 // 获取远程用户文件
-void UEOSSubsystem::EnumerateFiles()
+void UEOSSubsystem::EnumerateUserFiles()
 {
 	if (AuthPtr == nullptr || AccountInfo == nullptr || !AuthPtr->IsLoggedIn(AccountInfo->AccountId)) return;
 	if (UserFilePtr == nullptr) return;
@@ -795,18 +824,18 @@ void UEOSSubsystem::EnumerateFiles()
 	{
 		if (Result.IsOk())
 		{
-			OnEnumerateFilesComplete.Broadcast(true);
+			OnEnumerateUserFilesComplete.Broadcast(true);
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("EnumerateFiles %s"), *Result.GetErrorValue().GetLogString());
-			OnEnumerateFilesComplete.Broadcast(false);
+			UE_LOG(LogTemp, Error, TEXT("EnumerateUserFiles %s"), *Result.GetErrorValue().GetLogString());
+			OnEnumerateUserFilesComplete.Broadcast(false);
 		}
 	});
 }
 
 // 获取用户文件名
-TArray<FString> UEOSSubsystem::GetEnumeratedFiles()
+TArray<FString> UEOSSubsystem::GetEnumeratedUserFiles()
 {
 	TArray<FString> Filenames;
 	if (UserFilePtr == nullptr || AccountInfo == nullptr) return Filenames;
@@ -821,14 +850,14 @@ TArray<FString> UEOSSubsystem::GetEnumeratedFiles()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("GetEnumeratedFiles %s"), *Result.GetErrorValue().GetLogString());
+		UE_LOG(LogTemp, Error, TEXT("GetEnumeratedUserFiles %s"), *Result.GetErrorValue().GetLogString());
 	}
 	
 	return Filenames;
 }
 
 // 读取用户文件
-void UEOSSubsystem::ReadFile(FString Filename)
+void UEOSSubsystem::ReadUserFile(FString Filename)
 {
 	if (UserFilePtr == nullptr || AccountInfo == nullptr) return;
 
@@ -841,18 +870,18 @@ void UEOSSubsystem::ReadFile(FString Filename)
 	{
 		if (Result.IsOk())
 		{
-			OnReadFileComplete.Broadcast(true, Result.GetOkValue().FileContents);
+			OnReadUserFileComplete.Broadcast(true, Result.GetOkValue().FileContents);
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("ReadFile %s"), *Result.GetErrorValue().GetLogString());
-			OnReadFileComplete.Broadcast(false, FUserFileContentsRef());
+			UE_LOG(LogTemp, Error, TEXT("ReadUserFile %s"), *Result.GetErrorValue().GetLogString());
+			OnReadUserFileComplete.Broadcast(false, FUserFileContentsRef());
 		}
 	});
 }
 
 // 创建或覆盖用户文件
-void UEOSSubsystem::WriteFile(FString Filename, FUserFileContents FileContents)
+void UEOSSubsystem::WriteUserFile(FString Filename, FUserFileContents FileContents)
 {
 	if (UserFilePtr == nullptr || AccountInfo == nullptr) return;
 
@@ -866,12 +895,82 @@ void UEOSSubsystem::WriteFile(FString Filename, FUserFileContents FileContents)
 	{
 		if (Result.IsOk())
 		{
-			OnWriteFileComplete.Broadcast(true);
+			OnWriteUserFileComplete.Broadcast(true);
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("WriteFile %s"), *Result.GetErrorValue().GetLogString());
-			OnWriteFileComplete.Broadcast(false);
+			UE_LOG(LogTemp, Error, TEXT("WriteUserFile %s"), *Result.GetErrorValue().GetLogString());
+			OnWriteUserFileComplete.Broadcast(false);
+		}
+	});
+}
+
+// 获取远程标题文件
+void UEOSSubsystem::EnumerateTitleFiles()
+{
+	if (AuthPtr == nullptr || AccountInfo == nullptr || !AuthPtr->IsLoggedIn(AccountInfo->AccountId)) return;
+	if (TitleFilePtr == nullptr) return;
+
+	FTitleFileEnumerateFiles::Params Params;
+	Params.LocalAccountId = AccountInfo->AccountId;
+
+	TitleFilePtr->EnumerateFiles(MoveTemp(Params))
+	.OnComplete([this](const TOnlineResult<FTitleFileEnumerateFiles>& Result)
+	{
+		if (Result.IsOk())
+		{
+			OnEnumerateTitleFilesComplete.Broadcast(true);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("EnumerateTitleFiles %s"), *Result.GetErrorValue().GetLogString());
+			OnEnumerateTitleFilesComplete.Broadcast(false);
+		}
+	});
+}
+
+// 获取标题文件名
+TArray<FString> UEOSSubsystem::GetEnumeratedTitleFiles()
+{
+	TArray<FString> Filenames;
+	if (TitleFilePtr == nullptr || AccountInfo == nullptr) return Filenames;
+
+	FTitleFileGetEnumeratedFiles::Params Params;
+	Params.LocalAccountId = AccountInfo->AccountId;
+
+	TOnlineResult<FTitleFileGetEnumeratedFiles> Result = TitleFilePtr->GetEnumeratedFiles(MoveTemp(Params));
+	if (Result.IsOk())
+	{
+		Filenames = Result.GetOkValue().Filenames;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("GetEnumeratedTitleFiles %s"), *Result.GetErrorValue().GetLogString());
+	}
+	
+	return Filenames;
+}
+
+// 读取标题文件
+void UEOSSubsystem::ReadTitleFile(FString Filename)
+{
+	if (TitleFilePtr == nullptr || AccountInfo == nullptr) return;
+
+	FTitleFileReadFile::Params Params;
+	Params.LocalAccountId = AccountInfo->AccountId;
+	Params.Filename = Filename;
+
+	TitleFilePtr->ReadFile(MoveTemp(Params))
+	.OnComplete([this](const TOnlineResult<FTitleFileReadFile>& Result)
+	{
+		if (Result.IsOk())
+		{
+			OnReadTitleFileComplete.Broadcast(true, Result.GetOkValue().FileContents);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("ReadTitleFile %s"), *Result.GetErrorValue().GetLogString());
+			OnReadTitleFileComplete.Broadcast(false, FTitleFileContentsRef());
 		}
 	});
 }

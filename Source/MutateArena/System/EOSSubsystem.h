@@ -6,6 +6,7 @@
 #include "Online/UserInfo.h"
 #include "Online/Lobbies.h"
 #include "Online/UserFile.h"
+#include "Online/TitleFile.h"
 #include "Online/Commerce.h"
 #include "Online/OnlineAsyncOpHandle.h"
 #include "Subsystems/GameInstanceSubsystem.h"
@@ -52,9 +53,13 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FOnLobbyLeft, const FLobbyLeft& LobbyLeft);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnLeaveLobbyComplete, bool bWasSuccessful);
 
 // UserFile
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnEnumerateFilesComplete, bool bWasSuccessful);
-DECLARE_MULTICAST_DELEGATE_TwoParams(FOnReadFileComplete, bool bWasSuccessful, const FUserFileContentsRef& FileContents);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnWriteFileComplete, bool bWasSuccessful);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnEnumerateUserFilesComplete, bool bWasSuccessful);
+DECLARE_MULTICAST_DELEGATE_TwoParams(FOnReadUserFileComplete, bool bWasSuccessful, const FUserFileContentsRef& FileContents);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnWriteUserFileComplete, bool bWasSuccessful);
+
+// TitleFile
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnEnumerateTitleFilesComplete, bool bWasSuccessful);
+DECLARE_MULTICAST_DELEGATE_TwoParams(FOnReadTitleFileComplete, bool bWasSuccessful, const FTitleFileContentsRef& FileContents);
 
 // Commerce
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnQueryOffersComplete, bool bWasSuccessful);
@@ -159,14 +164,21 @@ public:
 	TSharedPtr<const FLobbyMember> GetLocalMember();
 
 	// UserFile
-	void EnumerateFiles();
-	FOnEnumerateFilesComplete OnEnumerateFilesComplete;
-	TArray<FString> GetEnumeratedFiles();
-	FOnReadFileComplete OnReadFileComplete;
-	void ReadFile(FString Filename);
-	FOnWriteFileComplete OnWriteFileComplete;
-	void WriteFile(FString Filename, FUserFileContents FileContents);
+	void EnumerateUserFiles();
+	FOnEnumerateUserFilesComplete OnEnumerateUserFilesComplete;
+	TArray<FString> GetEnumeratedUserFiles();
+	FOnReadUserFileComplete OnReadUserFileComplete;
+	void ReadUserFile(FString Filename);
+	FOnWriteUserFileComplete OnWriteUserFileComplete;
+	void WriteUserFile(FString Filename, FUserFileContents FileContents);
 
+	// TitleFile
+	void EnumerateTitleFiles();
+	FOnEnumerateTitleFilesComplete OnEnumerateTitleFilesComplete;
+	TArray<FString> GetEnumeratedTitleFiles();
+	FOnReadTitleFileComplete OnReadTitleFileComplete;
+	void ReadTitleFile(FString Filename);
+	
 	// Commerce
 	void QueryOffers();
 	FOnQueryOffersComplete OnQueryOffersComplete;
@@ -189,6 +201,7 @@ protected:
 	IUserInfoPtr UserInfoPtr;
 	ILobbiesPtr LobbyPtr;
 	IUserFilePtr UserFilePtr;
+	ITitleFilePtr TitleFilePtr;
 	ICommercePtr CommercePtr;
-
+	
 };

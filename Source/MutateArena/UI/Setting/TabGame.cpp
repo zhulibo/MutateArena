@@ -24,7 +24,6 @@ void UTabGame::NativeOnInitialized()
 
 	LanguageComboBox->AddOption("en");
 	LanguageComboBox->AddOption("zh");
-	// LanguageComboBox->AddOption("ja");
 
 	ObfuscatePlayerNameComboBox->AddOption("on");
 	ObfuscatePlayerNameComboBox->AddOption("off");

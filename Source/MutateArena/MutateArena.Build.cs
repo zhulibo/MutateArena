@@ -25,6 +25,8 @@ public class MutateArena : ModuleRules
 				"GameplayTasks",
 				"DataRegistry",
 				"MetasoundEngine",
+				"Json",
+				"JsonUtilities",
 			}
 		);
 

@@ -49,4 +49,7 @@ protected:
 	bool bShowNotify_NotLoggedIn = false;
 	bool bShowNotify_UsingLocalProfile = false;
 	
+	// 邀请
+	void OnUILobbyJoinRequested(const FUILobbyJoinRequested& UILobbyJoinRequested);
+	
 };

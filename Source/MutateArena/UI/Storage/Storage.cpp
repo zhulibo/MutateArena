@@ -47,8 +47,8 @@ void UStorage::NativeOnInitialized()
 	{
 		EOSSubsystem->OnQueryEntitlementsComplete.AddUObject(this, &ThisClass::OnQueryEntitlementsComplete);
 
-		EOSSubsystem->OnReadFileComplete.AddUObject(this, &ThisClass::OnReadFileComplete);
-		EOSSubsystem->OnEnumerateFilesComplete.AddUObject(this, &ThisClass::OnEnumerateFilesComplete);
+		EOSSubsystem->OnEnumerateUserFilesComplete.AddUObject(this, &ThisClass::OnEnumerateUserFilesComplete);
+		EOSSubsystem->OnReadUserFileComplete.AddUObject(this, &ThisClass::OnReadUserFileComplete);
 	}
 }
 
@@ -84,7 +84,7 @@ void UStorage::OnQueryEntitlementsComplete(bool bWasSuccessful)
 			}
 
 			// 获取远程用户文件
-			EOSSubsystem->EnumerateFiles();
+			EOSSubsystem->EnumerateUserFiles();
 		}
 	}
 	else
@@ -94,7 +94,7 @@ void UStorage::OnQueryEntitlementsComplete(bool bWasSuccessful)
 }
 
 // 获取远程用户文件完成
-void UStorage::OnEnumerateFilesComplete(bool bWasSuccessful)
+void UStorage::OnEnumerateUserFilesComplete(bool bWasSuccessful)
 {
 	if (!bWasSuccessful) return;
 
@@ -102,9 +102,9 @@ void UStorage::OnEnumerateFilesComplete(bool bWasSuccessful)
 	
 	if (EOSSubsystem && StorageSubsystem)
 	{
-		if (EOSSubsystem->GetEnumeratedFiles().Contains(StorageSubsystem->SlotLoadout)) // 云包含该存档文件
+		if (EOSSubsystem->GetEnumeratedUserFiles().Contains(StorageSubsystem->SlotLoadout)) // 云包含该存档文件
 		{
-			EOSSubsystem->ReadFile(StorageSubsystem->SlotLoadout); // 读取存档文件
+			EOSSubsystem->ReadUserFile(StorageSubsystem->SlotLoadout); // 读取存档文件
 		}
 		else // 云不包含该存档文件
 		{
@@ -114,7 +114,7 @@ void UStorage::OnEnumerateFilesComplete(bool bWasSuccessful)
 }
 
 // 读取存档文件完成
-void UStorage::OnReadFileComplete(bool bWasSuccessful, const FUserFileContentsRef& FileContents)
+void UStorage::OnReadUserFileComplete(bool bWasSuccessful, const FUserFileContentsRef& FileContents)
 {
 	if (StorageSubsystem == nullptr) StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
 	if (StorageSubsystem == nullptr) return;
