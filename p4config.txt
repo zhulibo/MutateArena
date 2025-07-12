@@ -1,4 +1,0 @@
-P4PORT=ssl:47.88.105.12:1666
-P4USER=super
-P4CLIENT=MutateArenaWorkspace
-P4IGNORE=.p4ignore.txt;.gitignore
