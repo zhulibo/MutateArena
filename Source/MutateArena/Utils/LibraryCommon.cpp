@@ -19,7 +19,7 @@ FString ULibraryCommon::GetProjectVersion()
 
 int32 ULibraryCommon::GetBloodParticleCount(float Damage)
 {
-	return UKismetMathLibrary::MapRangeClamped(Damage, 40, 100, 4, 10);
+	return UKismetMathLibrary::MapRangeClamped(Damage, 40, 100, 2, 5);
 }
 
 FString ULibraryCommon::GetFormatTime(int32 CountdownTime)
@@ -55,26 +55,26 @@ FColor ULibraryCommon::GetProgressColor(double Value, double InRangeA, double In
 	return FColor(R, G, B, A);
 }
 
-FString ULibraryCommon::ObfuscatePlayerName(FString PlayerName, const UObject* Context)
+FString ULibraryCommon::ObfuscateName(FString Name, const UObject* Context)
 {
-	if (Context == nullptr) return PlayerName;
+	if (Context == nullptr) return Name;
 
 	if (UGameInstance* GameInstance = Context->GetWorld()->GetGameInstance())
 	{
 		UStorageSubsystem* StorageSubsystem = GameInstance->GetSubsystem<UStorageSubsystem>();
 		// 已开启混淆
-		if (StorageSubsystem && StorageSubsystem->CacheSetting && StorageSubsystem->CacheSetting->ObfuscatePlayerName == true)
+		if (StorageSubsystem && StorageSubsystem->CacheSetting && StorageSubsystem->CacheSetting->bObfuscateName == true)
 		{
 			UEOSSubsystem* EOSSubsystem = GameInstance->GetSubsystem<UEOSSubsystem>();
 			// 非本人名字
-			if (EOSSubsystem && EOSSubsystem->GetPlayerName() != PlayerName)
+			if (EOSSubsystem && EOSSubsystem->GetPlayerName() != Name)
 			{
-				return ObfuscateText(PlayerName);
+				return ObfuscateText(Name);
 			}
 		}
 	}
 
-	return PlayerName;
+	return Name;
 }
 
 FString ULibraryCommon::ObfuscateTextChat(FString Msg, const UObject* Context)
@@ -83,7 +83,7 @@ FString ULibraryCommon::ObfuscateTextChat(FString Msg, const UObject* Context)
 	{
 		if (UStorageSubsystem* StorageSubsystem = Context->GetWorld()->GetGameInstance()->GetSubsystem<UStorageSubsystem>())
 		{
-			if (StorageSubsystem->CacheSetting && StorageSubsystem->CacheSetting->ObfuscateTextChat == true)
+			if (StorageSubsystem->CacheSetting && StorageSubsystem->CacheSetting->bObfuscateTextChat == true)
 			{
 				return ObfuscateText(Msg);
 			}
@@ -112,16 +112,16 @@ FString ULibraryCommon::ObfuscateText(FString Text)
 		ObfuscatedString.AppendChar(ReplacedCharacter);
 	}
 
-	return ObfuscatedString;
+	return ObfuscatedString + FString::FromInt(Text.Len());
 }
 
 FString ULibraryCommon::GetLanguage()
 {
-	FCulturePtr CurrentCulture = FInternationalization::Get().GetCurrentCulture();
+	FCulturePtr CurCulture = FInternationalization::Get().GetCurrentCulture();
 
-	if (CurrentCulture.IsValid())
+	if (CurCulture.IsValid())
 	{
-		return CurrentCulture->GetName();
+		return CurCulture->GetName();
 	}
 
 	return TEXT("en");

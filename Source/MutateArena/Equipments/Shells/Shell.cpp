@@ -20,6 +20,7 @@ AShell::AShell()
 	ShellMesh->SetNotifyRigidBodyCollision(true);
 }
 
+// 使用对象池优化性能
 void AShell::BeginPlay()
 {
 	Super::BeginPlay();
@@ -30,7 +31,7 @@ void AShell::BeginPlay()
 	const FVector RandomShell = UKismetMathLibrary::RandomUnitVectorInConeInDegrees(GetActorForwardVector(), 10.f);
 	ShellMesh->AddImpulse(RandomShell * 200.f, NAME_None, true);
 
-	SetLifeSpan(100.f);
+	SetLifeSpan(10.f);
 }
 
 void AShell::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)

@@ -22,7 +22,7 @@ void AMutationController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ThisClass, MatchState);
-	DOREPLIFETIME(ThisClass, CurrentRound);
+	DOREPLIFETIME(ThisClass, CurRound);
 }
 
 void AMutationController::BeginPlay()
@@ -83,15 +83,15 @@ void AMutationController::ReturnServerMatchInfo_Implementation(
 	CooldownTime = TempCooldownTime;
 }
 
-void AMutationController::OnMatchStateSet(FName TempMatchState, int32 TempCurrentRound)
+void AMutationController::OnMatchStateSet(FName TempMatchState, int32 TempCurRound)
 {
 	MatchState = TempMatchState;
 	HandleMatchStateChange();
 
-	CurrentRound = TempCurrentRound;
+	CurRound = TempCurRound;
 	if (IsLocalController())
 	{
-		SetHUDCurrentRound();
+		SetHUDCurRound();
 	}
 }
 
@@ -127,9 +127,9 @@ void AMutationController::HandleRoundHasEnded()
 	ChangeAnnouncement.Broadcast(LOCTEXT("RoundEnd", "Round end"));
 }
 
-void AMutationController::OnRep_CurrentRound()
+void AMutationController::OnRep_CurRound()
 {
-	SetHUDCurrentRound();
+	SetHUDCurRound();
 }
 
 void AMutationController::SetHUDTime()
@@ -229,7 +229,7 @@ void AMutationController::InitHumanHUD()
 	if (BaseCharacter && MutationGameState)
 	{
 		SetHUDHealth(BaseCharacter->GetHealth());
-		SetHUDCurrentRound();
+		SetHUDCurRound();
 		SetHUDTeamNum(MutationGameState->GetPlayerStates(ETeam::Team1).Num(), ETeam::Team1);
 		SetHUDTeamNum(MutationGameState->GetPlayerStates(ETeam::Team2).Num(), ETeam::Team2);
 		SetHUDDamageMul(MutationGameState->DamageMul);
@@ -245,7 +245,7 @@ void AMutationController::InitMutantHUD()
 	if (BaseCharacter && MutationGameState && MutationPlayerState)
 	{
 		SetHUDHealth(BaseCharacter->GetHealth());
-		SetHUDCurrentRound();
+		SetHUDCurRound();
 		SetHUDTeamNum(MutationGameState->GetPlayerStates(ETeam::Team1).Num(), ETeam::Team1);
 		SetHUDTeamNum(MutationGameState->GetPlayerStates(ETeam::Team2).Num(), ETeam::Team2);
 		SetHUDRage(MutationPlayerState->Rage);
@@ -280,9 +280,9 @@ void AMutationController::SetHUDTeamNum(int32 TeamNum, ETeam Team)
 	OnTeamNumChange.Broadcast(TeamNum, Team);
 }
 
-void AMutationController::SetHUDCurrentRound()
+void AMutationController::SetHUDCurRound()
 {
-	OnCurRoundChange.Broadcast(CurrentRound);
+	OnCurRoundChange.Broadcast(CurRound);
 }
 
 void AMutationController::SetHUDTotalRound()

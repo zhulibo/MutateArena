@@ -21,6 +21,7 @@ public class MutateArena : ModuleRules
 				"CommonInput",
 				"Niagara",
 				"GameplayAbilities",
+				"ModularGameplayActors",
 				"GameplayTags",
 				"GameplayTasks",
 				"DataRegistry",

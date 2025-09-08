@@ -70,7 +70,7 @@ void UCommonHUD::OnAddKillLog(ABasePlayerState* AttackerState, const FText& Caus
 			if (AttackerState)
 			{
 				
-				KillLogLine->AttackerPlayer->SetText(FText::FromString(ULibraryCommon::ObfuscatePlayerName(AttackerState->GetPlayerName(), this)));
+				KillLogLine->AttackerPlayer->SetText(FText::FromString(ULibraryCommon::ObfuscateName(AttackerState->GetPlayerName(), this)));
 				if (LocalPlayerState)
 				{
 					if (LocalPlayerState->Team == AttackerState->Team)
@@ -90,7 +90,7 @@ void UCommonHUD::OnAddKillLog(ABasePlayerState* AttackerState, const FText& Caus
 			// 死亡者
 			if (DamagedState)
 			{
-				KillLogLine->DamagedPlayer->SetText(FText::FromString(ULibraryCommon::ObfuscatePlayerName(DamagedState->GetPlayerName(), this)));
+				KillLogLine->DamagedPlayer->SetText(FText::FromString(ULibraryCommon::ObfuscateName(DamagedState->GetPlayerName(), this)));
 				if (LocalPlayerState)
 				{
 					if (LocalPlayerState->Team == DamagedState->Team)

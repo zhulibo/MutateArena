@@ -9,15 +9,12 @@ USaveGameSetting::USaveGameSetting()
 	if (DefaultConfig == nullptr) return;
 
 	Language = DefaultConfig->Language;
-	ObfuscatePlayerName = DefaultConfig->ObfuscatePlayerName;
-	ObfuscateTextChat = DefaultConfig->ObfuscateTextChat;
+	bHideSkins = DefaultConfig->bHideSkins;
+	bObfuscateName = DefaultConfig->bObfuscateName;
+	bObfuscateTextChat = DefaultConfig->bObfuscateTextChat;
 
 	MouseSensitivity = DefaultConfig->MouseSensitivity;
-	MouseAimAssistSteering = DefaultConfig->MouseAimAssistSteering;
-	MouseAimAssistSlowdown = DefaultConfig->MouseAimAssistSlowdown;
 	ControllerSensitivity = DefaultConfig->ControllerSensitivity;
-	ControllerAimAssistSteering = DefaultConfig->ControllerAimAssistSteering;
-	ControllerAimAssistSlowdown = DefaultConfig->ControllerAimAssistSlowdown;
 
 	WindowMode = DefaultConfig->WindowMode;
 	ScreenResolution = DefaultConfig->ScreenResolution;

@@ -100,7 +100,7 @@ void ULobby::SetUIAttr()
 {
 	if (EOSSubsystem == nullptr) return;
 	
-	FString ServerName = ULibraryCommon::ObfuscatePlayerName(EOSSubsystem->GetLobbyServerName(), this);
+	FString ServerName = ULibraryCommon::ObfuscateName(EOSSubsystem->GetLobbyServerName(), this);
 	ServerNameEditableTextBox->SetText(FText::FromString(ServerName));
 	LastServerName = FText::FromString(ServerName);
 
@@ -168,7 +168,7 @@ void ULobby::SetUIButtonState()
 void ULobby::UpdatePlayerList()
 {
 	if (PlayerLineButtonClass == nullptr || Team1Container == nullptr || Team2Container == nullptr
-		|| EOSSubsystem == nullptr || EOSSubsystem->CurrentLobby == nullptr
+		|| EOSSubsystem == nullptr || EOSSubsystem->CurLobby == nullptr
 		|| GetWorld()->bIsTearingDown) return;
 
 	// 记录焦点所在位置
@@ -190,7 +190,7 @@ void ULobby::UpdatePlayerList()
 	Team2Container->ClearChildren();
 
 	// 重新生成玩家列表
-	for (auto& Member : EOSSubsystem->CurrentLobby->Members)
+	for (auto& Member : EOSSubsystem->CurLobby->Members)
 	{
 		UPlayerLineButton* PlayerLineButton = CreateWidget<UPlayerLineButton>(this, PlayerLineButtonClass);
 		if (PlayerLineButton == nullptr) continue;
@@ -198,7 +198,7 @@ void ULobby::UpdatePlayerList()
 		PlayerLineButton->Member = Member.Value;
 
 		FString PlayerName = EOSSubsystem->GetMemberName(Member.Value);
-		PlayerLineButton->PlayerName->SetText(FText::FromString(ULibraryCommon::ObfuscatePlayerName(PlayerName, this)));
+		PlayerLineButton->PlayerName->SetText(FText::FromString(ULibraryCommon::ObfuscateName(PlayerName, this)));
 
 		FText Status;
 		if (EOSSubsystem->IsLobbyHost(PlayerLineButton->Member))
@@ -399,7 +399,7 @@ void ULobby::OnLobbyAttrChanged(const FLobbyAttributesChanged& LobbyAttributesCh
 		if (ChangedAttribute.Key == LOBBY_SERVER_NAME)
 		{
 			FString ServerName = ChangedAttribute.Value.Value.GetString();
-			ServerName = ULibraryCommon::ObfuscatePlayerName(ServerName, this);
+			ServerName = ULibraryCommon::ObfuscateName(ServerName, this);
 			ServerNameEditableTextBox->SetText(FText::FromString(ServerName));
 			LastServerName = FText::FromString(ServerName);
 
@@ -448,9 +448,9 @@ void ULobby::OnLobbyAttrChanged(const FLobbyAttributesChanged& LobbyAttributesCh
 void ULobby::OnSwitchTeamButtonClicked()
 {
 	UE_LOG(LogTemp, Warning, TEXT("OnSwitchTeamButtonClicked ------------------------------------------"));
-	if (EOSSubsystem == nullptr || EOSSubsystem->CurrentLobby == nullptr) return;
+	if (EOSSubsystem == nullptr || EOSSubsystem->CurLobby == nullptr) return;
 	
-	for (auto& Member : EOSSubsystem->CurrentLobby->Members)
+	for (auto& Member : EOSSubsystem->CurLobby->Members)
 	{
 		if (EOSSubsystem->IsLocalMember(Member.Value))
 		{
@@ -465,9 +465,9 @@ void ULobby::OnSwitchTeamButtonClicked()
 
 void ULobby::OnReadyButtonClicked()
 {
-	if (EOSSubsystem == nullptr || EOSSubsystem->CurrentLobby == nullptr) return;
+	if (EOSSubsystem == nullptr || EOSSubsystem->CurLobby == nullptr) return;
 
-	for (auto& Member : EOSSubsystem->CurrentLobby->Members)
+	for (auto& Member : EOSSubsystem->CurLobby->Members)
 	{
 		if (EOSSubsystem->IsLocalMember(Member.Value))
 		{
@@ -546,7 +546,7 @@ void ULobby::OnStartServerButtonClicked()
 
 bool ULobby::CanStartServer()
 {
-	if (EOSSubsystem == nullptr || !EOSSubsystem->IsLobbyHost() || EOSSubsystem->CurrentLobby == nullptr) return false;
+	if (EOSSubsystem == nullptr || !EOSSubsystem->IsLobbyHost() || EOSSubsystem->CurLobby == nullptr) return false;
 
 	if (MapComboBox->GetSelectedOption().IsEmpty())
 	{
@@ -557,7 +557,7 @@ bool ULobby::CanStartServer()
 	if (ModeComboBox->GetSelectedOption() == MUTATION)
 	{
 		int32 ReadyPlayerNum = 0;
-		for (auto& Member : EOSSubsystem->CurrentLobby->Members)
+		for (auto& Member : EOSSubsystem->CurLobby->Members)
 		{
 			if (EOSSubsystem->GetMemberReady(Member.Value) && !EOSSubsystem->IsLobbyHost(Member.Value))
 			{
@@ -581,7 +581,7 @@ bool ULobby::CanStartServer()
 		}
 
 		bool bAnotherTeamHasPlayerReady = false;
-		for (auto& Member : EOSSubsystem->CurrentLobby->Members)
+		for (auto& Member : EOSSubsystem->CurLobby->Members)
 		{
 			if (EOSSubsystem->GetMemberTeam(Member.Value) != HostTeam && EOSSubsystem->GetMemberReady(Member.Value))
 			{

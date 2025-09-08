@@ -12,15 +12,25 @@
 #define C_WHITE FColor(255, 255, 255, 255)
 #define C_GREY FColor(120, 120, 120, 255)
 
+// Socket
+#define SOCKET_CAMERA FName(TEXT("CameraSocket"))
+#define SOCKET_MUZZLE FName(TEXT("Muzzle"))
+#define SOCKET_SHELL_EJECT FName(TEXT("ShellEject"))
+#define SOCKET_SCOPE_START FName(TEXT("ScopeStartSocket"))
+#define SOCKET_SCOPE_END FName(TEXT("ScopeEndSocket"))
+#define SOCKET_HAND_RIGHT FName(TEXT("RightHandCapsule"))
+#define SOCKET_HAND_LEFT FName(TEXT("LeftHandCapsule"))
+
 // tag
 #define TAG_CHARACTER_BASE FName(TEXT("BaseCharacter"))
 #define TAG_CHARACTER_HUMAN FName(TEXT("HumanCharacter"))
 #define TAG_CHARACTER_MUTANT FName(TEXT("MutantCharacter"))
 #define TAG_EQUIPMENT FName(TEXT("Equipment"))
 #define TAG_SMOKE_ACTOR FName(TEXT("SmokeActor"))
-#define TAG_GAME_STATE_MUTATION FName(TEXT("TAG_GAME_STATE_MUTATION"))
-#define TAG_GAME_STATE_MELEE FName(TEXT("TAG_GAME_STATE_MELEE"))
-#define TAG_GAME_STATE_TDM FName(TEXT("TAG_GAME_STATE_TDM"))
+#define TAG_PICKUP_HERB FName(TEXT("PickupHerb"))
+#define TAG_GAME_STATE_MUTATION FName(TEXT("GameStateMutation"))
+#define TAG_GAME_STATE_MELEE FName(TEXT("GameStateMelee"))
+#define TAG_GAME_STATE_TDM FName(TEXT("GameStateTDM"))
 
 // 地图路径
 #define MAP_LOGIN FString(TEXT("/Game/Maps/UI_Login"))
@@ -33,8 +43,9 @@
 #define MELEE FString(TEXT("Melee"))
 
 // 角色碰撞通道
-#define ECC_TEAM1_MESH ECollisionChannel::ECC_GameTraceChannel1
-#define ECC_TEAM2_MESH ECollisionChannel::ECC_GameTraceChannel2
+#define ECC_MESH_TEAM1 ECollisionChannel::ECC_GameTraceChannel1
+#define ECC_MESH_TEAM2 ECollisionChannel::ECC_GameTraceChannel2
+#define ECC_MESH_PICKUP_HREB ECollisionChannel::ECC_GameTraceChannel3
 
 // EOS大厅属性
 #define LOBBY_SCHEMA_ID FName(TEXT("GameLobby"))

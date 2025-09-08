@@ -36,6 +36,7 @@ void AMutationPlayerState::Reset()
 void AMutationPlayerState::SetTeam(ETeam TempTeam)
 {
 	Super::SetTeam(TempTeam);
+	
 	if (MutationController == nullptr) MutationController = Cast<AMutationController>(GetOwner());
 	if (MutationController && MutationController->IsLocalController())
 	{
@@ -91,7 +92,7 @@ void AMutationPlayerState::SetRage(float TempRage)
 
 	if (AttributeSetBase)
 	{
-		if (Rage >= 6000.f && Rage < 12000.f)
+		if (Rage >= RageLevel2 && Rage < RageLevel3)
 		{
 			if (GetCharacterLevel() < 2.f)
 			{
@@ -100,7 +101,7 @@ void AMutationPlayerState::SetRage(float TempRage)
 				ApplyLevelUpEffect();
 			}
 		}
-		else if (Rage >= 12000.f)
+		else if (Rage >= RageLevel3)
 		{
 			if (GetCharacterLevel() < 3.f)
 			{

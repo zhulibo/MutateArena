@@ -41,7 +41,7 @@ void UAnimInstance_Mutant::NativeUpdateAnimation(float DeltaSeconds)
 	if (AimPitch == 0.f)
 	{
 		if (PlayerSubsystem == nullptr) PlayerSubsystem = ULocalPlayer::GetSubsystem<UPlayerSubsystem>(GetWorld()->GetFirstLocalPlayerFromController());
-		if (PlayerSubsystem && PlayerSubsystem->IsDead) // IsDead状态只持续很短时间，尽可能避免将本地AimPitch应用给非本地角色/或本地角色延迟在出生点重生
+		if (PlayerSubsystem && PlayerSubsystem->IsDead) // IsDead状态只持续很短时间，尽可能避免将本地AimPitch应用给非本地角色，同时也可避免影响到重生（3s）的本地角色
 		{
 			if (APlayerController* PlayerController = GetWorld()->GetFirstPlayerController())
 			{
@@ -52,7 +52,7 @@ void UAnimInstance_Mutant::NativeUpdateAnimation(float DeltaSeconds)
 	// TODO 非本地角色躯体闪动暂未处理
 
 	// 根据AimPitch计算骨骼偏移量
-	Spine_01_Rotator.Roll = UKismetMathLibrary::MapRangeClamped(AimPitch, -90.f, 90.f, 20.f, -20.f);
+	Spine_01_Rotator.Roll = UKismetMathLibrary::MapRangeClamped(AimPitch, -90.f, 90.f, 10.f, -10.f);
 	Spine_02_Rotator.Roll = UKismetMathLibrary::MapRangeClamped(AimPitch, -90.f, 90.f, 10.f, -10.f);
-	Spine_03_Rotator.Roll = UKismetMathLibrary::MapRangeClamped(AimPitch, -90.f, 90.f, 60.f, -60.f);
+	Spine_03_Rotator.Roll = UKismetMathLibrary::MapRangeClamped(AimPitch, -90.f, 90.f, 70.f, -70.f);
 }

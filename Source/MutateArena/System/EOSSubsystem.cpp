@@ -311,7 +311,7 @@ void UEOSSubsystem::JoinLobby(TSharedPtr<const FLobby> Lobby)
 	FString YourVersion = ULibraryCommon::GetProjectVersion();
 	if (YourVersion != LobbyVersion)
 	{
-		NOTIFY(this, C_YELLOW, FText::Format(LOCTEXT("VersionInconsistent", "LobbyVersion {0} YourVersion {1}"), FText::FromString(LobbyVersion), FText::FromString(YourVersion)));
+		NOTIFY(this, C_YELLOW, FText::Format(LOCTEXT("GameVersionInconsistent", "Game version inconsistent: LobbyVersion {0} YourVersion {1}"), FText::FromString(LobbyVersion), FText::FromString(YourVersion)));
 		OnJoinLobbyComplete.Broadcast(false);
 		return;
 	}
@@ -368,7 +368,7 @@ bool UEOSSubsystem::GetJoinedLobbies()
 
 			for (int i = 0; i < Result.GetOkValue().Lobbies.Num(); ++i)
 			{
-				if (CurrentLobby->LobbyId == Result.GetOkValue().Lobbies[i]->LobbyId) continue;
+				if (CurLobby->LobbyId == Result.GetOkValue().Lobbies[i]->LobbyId) continue;
 				
 				FLeaveLobby::Params Params2;
 				Params2.LocalAccountId = AccountInfo->AccountId;
@@ -420,7 +420,7 @@ void UEOSSubsystem::BroadcastOnUILobbyJoinRequested(const FUILobbyJoinRequested&
 void UEOSSubsystem::BroadcastOnLobbyJoined(const FLobbyJoined& LobbyJoined)
 {
 	// TODO bug 此处LobbyMember's Attributes为空
-	CurrentLobby = LobbyJoined.Lobby;
+	CurLobby = LobbyJoined.Lobby;
 	OnLobbyJoined.Broadcast(LobbyJoined);
 }
 
@@ -428,24 +428,24 @@ void UEOSSubsystem::BroadcastOnLobbyJoined(const FLobbyJoined& LobbyJoined)
 void UEOSSubsystem::BroadcastOnLobbyMemberJoined(const FLobbyMemberJoined& LobbyMemberJoined)
 {
 	// TODO bug 此处LobbyMember's Attributes为空
-	CurrentLobby = LobbyMemberJoined.Lobby;
+	CurLobby = LobbyMemberJoined.Lobby;
 	OnLobbyMemberJoined.Broadcast(LobbyMemberJoined);
 }
 
 void UEOSSubsystem::BroadcastOnLobbyMemberLeft(const FLobbyMemberLeft& LobbyMemberLef)
 {
-	CurrentLobby = LobbyMemberLef.Lobby;
+	CurLobby = LobbyMemberLef.Lobby;
 	OnLobbyMemberLeft.Broadcast(LobbyMemberLef);
 }
 
 // 房主提升另一名成员为房主
 void UEOSSubsystem::PromoteLobbyMember(FAccountId TargetAccountId)
 {
-	if (LobbyPtr == nullptr || AccountInfo == nullptr || CurrentLobby == nullptr) return;
+	if (LobbyPtr == nullptr || AccountInfo == nullptr || CurLobby == nullptr) return;
 
 	FPromoteLobbyMember::Params Params;
 	Params.LocalAccountId = AccountInfo->AccountId;
-	Params.LobbyId = CurrentLobby->LobbyId;
+	Params.LobbyId = CurLobby->LobbyId;
 	Params.TargetAccountId = TargetAccountId;
 
 	LobbyPtr->PromoteLobbyMember(MoveTemp(Params))
@@ -465,17 +465,17 @@ void UEOSSubsystem::PromoteLobbyMember(FAccountId TargetAccountId)
 
 void UEOSSubsystem::BroadcastOnLobbyLeaderChanged(const FLobbyLeaderChanged& LobbyLeaderChanged)
 {
-	CurrentLobby = LobbyLeaderChanged.Lobby;
+	CurLobby = LobbyLeaderChanged.Lobby;
 	OnLobbyLeaderChanged.Broadcast(LobbyLeaderChanged);
 }
 
 void UEOSSubsystem::KickLobbyMember(FAccountId TargetAccountId)
 {
-	if (LobbyPtr == nullptr || AccountInfo == nullptr || CurrentLobby == nullptr) return;
+	if (LobbyPtr == nullptr || AccountInfo == nullptr || CurLobby == nullptr) return;
 
 	FKickLobbyMember::Params Params;
 	Params.LocalAccountId = AccountInfo->AccountId;
-	Params.LobbyId = CurrentLobby->LobbyId;
+	Params.LobbyId = CurLobby->LobbyId;
 	Params.TargetAccountId = TargetAccountId;
 
 	LobbyPtr->KickLobbyMember(MoveTemp(Params))
@@ -496,11 +496,11 @@ void UEOSSubsystem::KickLobbyMember(FAccountId TargetAccountId)
 // 修改大厅属性
 void UEOSSubsystem::ModifyLobbyAttr(TMap<FSchemaAttributeId, FSchemaVariant> UpdatedAttr, TSet<FSchemaAttributeId> RemovedAttr)
 {
-	if (LobbyPtr == nullptr || AccountInfo == nullptr || CurrentLobby == nullptr) return;
+	if (LobbyPtr == nullptr || AccountInfo == nullptr || CurLobby == nullptr) return;
 
 	FModifyLobbyAttributes::Params Params;
 	Params.LocalAccountId = AccountInfo->AccountId;
-	Params.LobbyId = CurrentLobby->LobbyId;
+	Params.LobbyId = CurLobby->LobbyId;
 	Params.UpdatedAttributes = MoveTemp(UpdatedAttr);
 	Params.RemovedAttributes = MoveTemp(RemovedAttr);
 
@@ -521,18 +521,18 @@ void UEOSSubsystem::ModifyLobbyAttr(TMap<FSchemaAttributeId, FSchemaVariant> Upd
 
 void UEOSSubsystem::BroadcastOnLobbyAttrChanged(const FLobbyAttributesChanged& LobbyAttrChanged)
 {
-	CurrentLobby = LobbyAttrChanged.Lobby;
+	CurLobby = LobbyAttrChanged.Lobby;
 	OnLobbyAttrChanged.Broadcast(LobbyAttrChanged);
 }
 
 // 修改大厅成员属性
 void UEOSSubsystem::ModifyLobbyMemberAttr(TMap<FSchemaAttributeId, FSchemaVariant> UpdatedAttr, TSet<FSchemaAttributeId> RemovedAttr)
 {
-	if (LobbyPtr == nullptr || AccountInfo == nullptr || CurrentLobby == nullptr) return;
+	if (LobbyPtr == nullptr || AccountInfo == nullptr || CurLobby == nullptr) return;
 
 	FModifyLobbyMemberAttributes::Params Params;
 	Params.LocalAccountId = AccountInfo->AccountId;
-	Params.LobbyId = CurrentLobby->LobbyId;
+	Params.LobbyId = CurLobby->LobbyId;
 	Params.UpdatedAttributes = MoveTemp(UpdatedAttr);
 	Params.RemovedAttributes = MoveTemp(RemovedAttr);
 
@@ -553,17 +553,17 @@ void UEOSSubsystem::ModifyLobbyMemberAttr(TMap<FSchemaAttributeId, FSchemaVarian
 
 void UEOSSubsystem::BroadcastOnLobbyMemberAttrChanged(const FLobbyMemberAttributesChanged& LobbyMemberAttrChanged)
 {
-	CurrentLobby = LobbyMemberAttrChanged.Lobby;
+	CurLobby = LobbyMemberAttrChanged.Lobby;
 	OnLobbyMemberAttrChanged.Broadcast(LobbyMemberAttrChanged);
 }
 
 void UEOSSubsystem::GetResolvedConnectString(FString& Url)
 {
-	if (OnlineServicesPtr == nullptr || AccountInfo == nullptr || CurrentLobby == nullptr) return;
+	if (OnlineServicesPtr == nullptr || AccountInfo == nullptr || CurLobby == nullptr) return;
 
 	FGetResolvedConnectString::Params Params;
 	Params.LocalAccountId = AccountInfo->AccountId;
-	Params.LobbyId = CurrentLobby->LobbyId;
+	Params.LobbyId = CurLobby->LobbyId;
 	Params.PortType = NAME_GamePort;
 
 	TOnlineResult<FGetResolvedConnectString> Result = OnlineServicesPtr->GetResolvedConnectString(MoveTemp(Params));
@@ -579,25 +579,25 @@ void UEOSSubsystem::GetResolvedConnectString(FString& Url)
 
 void UEOSSubsystem::BroadcastOnLobbyLeft(const FLobbyLeft& LobbyLeft)
 {
-	CurrentLobby = nullptr;
+	CurLobby = nullptr;
 	OnLobbyLeft.Broadcast(LobbyLeft);
 }
 
 // 离开大厅
 void UEOSSubsystem::LeaveLobby()
 {
-	if (LobbyPtr == nullptr || AccountInfo == nullptr || CurrentLobby == nullptr) return;
+	if (LobbyPtr == nullptr || AccountInfo == nullptr || CurLobby == nullptr) return;
 
 	FLeaveLobby::Params Params;
 	Params.LocalAccountId = AccountInfo->AccountId;
-	Params.LobbyId = CurrentLobby->LobbyId;
+	Params.LobbyId = CurLobby->LobbyId;
 
 	LobbyPtr->LeaveLobby(MoveTemp(Params))
 	.OnComplete([this](const TOnlineResult<FLeaveLobby>& Result)
 	{
 		if (Result.IsOk())
 		{
-			CurrentLobby = nullptr;
+			CurLobby = nullptr;
 			OnLeaveLobbyComplete.Broadcast(true);
 		}
 		else
@@ -610,9 +610,9 @@ void UEOSSubsystem::LeaveLobby()
 
 FString UEOSSubsystem::GetLobbyServerName()
 {
-	if (CurrentLobby)
+	if (CurLobby)
 	{
-		if (const FSchemaVariant* Attr = CurrentLobby->Attributes.Find(LOBBY_SERVER_NAME))
+		if (const FSchemaVariant* Attr = CurLobby->Attributes.Find(LOBBY_SERVER_NAME))
 		{
 			return Attr->GetString();
 		}
@@ -623,9 +623,9 @@ FString UEOSSubsystem::GetLobbyServerName()
 
 FString UEOSSubsystem::GetLobbyModeName()
 {
-	if (CurrentLobby)
+	if (CurLobby)
 	{
-		if (const FSchemaVariant* Attr = CurrentLobby->Attributes.Find(LOBBY_MODE_NAME))
+		if (const FSchemaVariant* Attr = CurLobby->Attributes.Find(LOBBY_MODE_NAME))
 		{
 			return Attr->GetString();
 		}
@@ -636,9 +636,9 @@ FString UEOSSubsystem::GetLobbyModeName()
 
 FString UEOSSubsystem::GetLobbyMapName()
 {
-	if (CurrentLobby)
+	if (CurLobby)
 	{
-		if (const FSchemaVariant* Attr = CurrentLobby->Attributes.Find(LOBBY_MAP_NAME))
+		if (const FSchemaVariant* Attr = CurLobby->Attributes.Find(LOBBY_MAP_NAME))
 		{
 			return Attr->GetString();
 		}
@@ -649,9 +649,9 @@ FString UEOSSubsystem::GetLobbyMapName()
 
 int64 UEOSSubsystem::GetLobbyStatus()
 {
-	if (CurrentLobby)
+	if (CurLobby)
 	{
-		if (const FSchemaVariant* Attr = CurrentLobby->Attributes.Find(LOBBY_STATUS))
+		if (const FSchemaVariant* Attr = CurLobby->Attributes.Find(LOBBY_STATUS))
 		{
 			return Attr->GetInt64();
 		}
@@ -701,9 +701,9 @@ FString UEOSSubsystem::GetMemberName(TSharedPtr<const FLobbyMember> Member)
 
 TSharedPtr<const FLobbyMember> UEOSSubsystem::GetMember(FAccountId AccountId)
 {
-	if (CurrentLobby)
+	if (CurLobby)
 	{
-		for (const auto& Member : CurrentLobby->Members)
+		for (const auto& Member : CurLobby->Members)
 		{
 			if (Member.Value->AccountId == AccountId)
 			{
@@ -717,9 +717,9 @@ TSharedPtr<const FLobbyMember> UEOSSubsystem::GetMember(FAccountId AccountId)
 
 TSharedPtr<const FLobbyMember> UEOSSubsystem::GetMemberByPlayerName(FString PlayerName)
 {
-	if (CurrentLobby)
+	if (CurLobby)
 	{
-		for (const auto& Member : CurrentLobby->Members)
+		for (const auto& Member : CurLobby->Members)
 		{
 			if (const FSchemaVariant* Attr = Member.Value->Attributes.Find(LOBBY_MEMBER_NAME))
 			{
@@ -749,19 +749,19 @@ FString UEOSSubsystem::GetMemberMsg(TSharedPtr<const FLobbyMember> Member)
 
 bool UEOSSubsystem::IsLobbyHost(TSharedPtr<const FLobbyMember> Member)
 {
-	if (CurrentLobby)
+	if (CurLobby)
 	{
 		// 未传Member，判断本地是否为主机
 		if (Member == nullptr)
 		{
 			if (AccountInfo)
 			{
-				return AccountInfo->AccountId == CurrentLobby->OwnerAccountId;
+				return AccountInfo->AccountId == CurLobby->OwnerAccountId;
 			}
 		}
 		else
 		{
-			return Member->AccountId == CurrentLobby->OwnerAccountId;
+			return Member->AccountId == CurLobby->OwnerAccountId;
 		}
 	}
 	
@@ -770,9 +770,9 @@ bool UEOSSubsystem::IsLobbyHost(TSharedPtr<const FLobbyMember> Member)
 
 TSharedPtr<const FLobbyMember> UEOSSubsystem::GetLobbyHost()
 {
-	if (CurrentLobby)
+	if (CurLobby)
 	{
-		for (auto& Member : CurrentLobby->Members)
+		for (auto& Member : CurLobby->Members)
 		{
 			if (IsLobbyHost(Member.Value))
 			{
@@ -796,9 +796,9 @@ bool UEOSSubsystem::IsLocalMember(TSharedPtr<const FLobbyMember> Member)
 
 TSharedPtr<const FLobbyMember> UEOSSubsystem::GetLocalMember()
 {
-	if (CurrentLobby)
+	if (CurLobby)
 	{
-		for (auto& Member : CurrentLobby->Members)
+		for (auto& Member : CurLobby->Members)
 		{
 			if (IsLocalMember(Member.Value))
 			{
@@ -970,7 +970,7 @@ void UEOSSubsystem::ReadTitleFile(FString Filename)
 		else
 		{
 			UE_LOG(LogTemp, Error, TEXT("ReadTitleFile %s"), *Result.GetErrorValue().GetLogString());
-			OnReadTitleFileComplete.Broadcast(false, FTitleFileContentsRef());
+			OnReadTitleFileComplete.Broadcast(false, MakeShared<TArray<uint8>>());
 		}
 	});
 }

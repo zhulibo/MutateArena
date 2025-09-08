@@ -3,14 +3,15 @@
 .vs/
 
 /Binaries/
-/Plugins/*/Binaries/
 /Build/
+/Content/
 /DerivedDataCache/
 /Intermediate/
-/Plugins/*/Intermediate/
+/Plugins/**/Binaries/
+/Plugins/**/Content/
+/Plugins/**/Intermediate/
 /Saved/
 
-/Content/
 
 *.sln
 /.vsconfig

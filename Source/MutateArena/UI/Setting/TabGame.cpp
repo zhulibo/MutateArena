@@ -24,16 +24,18 @@ void UTabGame::NativeOnInitialized()
 
 	LanguageComboBox->AddOption("en");
 	LanguageComboBox->AddOption("zh");
-
-	ObfuscatePlayerNameComboBox->AddOption("on");
-	ObfuscatePlayerNameComboBox->AddOption("off");
+	HideSkinsComboBox->AddOption("on");
+	HideSkinsComboBox->AddOption("off");
+	ObfuscateNameComboBox->AddOption("on");
+	ObfuscateNameComboBox->AddOption("off");
 	ObfuscateTextChatComboBox->AddOption("on");
 	ObfuscateTextChatComboBox->AddOption("off");
 	
 	SetUISavedValue();
 
 	LanguageComboBox->OnSelectionChanged.AddUniqueDynamic(this, &ThisClass::OnLanguageChanged);
-	ObfuscatePlayerNameComboBox->OnSelectionChanged.AddUniqueDynamic(this, &ThisClass::OnObfuscatePlayerNameChanged);
+	HideSkinsComboBox->OnSelectionChanged.AddUniqueDynamic(this, &ThisClass::OnHideSkinsChanged);
+	ObfuscateNameComboBox->OnSelectionChanged.AddUniqueDynamic(this, &ThisClass::OnObfuscateNameChanged);
 	ObfuscateTextChatComboBox->OnSelectionChanged.AddUniqueDynamic(this, &ThisClass::OnObfuscateTextChatChanged);
 
 	SetDefaultHandle = RegisterUIActionBinding(FBindUIActionArgs(SetDefaultData, true, FSimpleDelegate::CreateUObject(this, &ThisClass::SetDefault)));
@@ -64,8 +66,9 @@ void UTabGame::SetUISavedValue()
 			LanguageComboBox->SetSelectedOption(StorageSubsystem->CacheSetting->Language);
 		}
 
-		ObfuscatePlayerNameComboBox->SetSelectedOption(StorageSubsystem->CacheSetting->ObfuscatePlayerName ? "on" : "off");
-		ObfuscateTextChatComboBox->SetSelectedOption(StorageSubsystem->CacheSetting->ObfuscateTextChat ? "on" : "off");
+		HideSkinsComboBox->SetSelectedOption(StorageSubsystem->CacheSetting->bHideSkins ? "on" : "off");
+		ObfuscateNameComboBox->SetSelectedOption(StorageSubsystem->CacheSetting->bObfuscateName ? "on" : "off");
+		ObfuscateTextChatComboBox->SetSelectedOption(StorageSubsystem->CacheSetting->bObfuscateTextChat ? "on" : "off");
 	}
 }
 
@@ -81,12 +84,22 @@ void UTabGame::OnLanguageChanged(FString SelectedItem, ESelectInfo::Type Selecti
 	}
 }
 
-void UTabGame::OnObfuscatePlayerNameChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
+void UTabGame::OnHideSkinsChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
 {
 	if (StorageSubsystem == nullptr) StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
 	if (StorageSubsystem && StorageSubsystem->CacheSetting)
 	{
-		StorageSubsystem->CacheSetting->ObfuscatePlayerName = SelectedItem == "on";
+		StorageSubsystem->CacheSetting->bHideSkins = SelectedItem == "on";
+		StorageSubsystem->SaveSetting();
+	}
+}
+
+void UTabGame::OnObfuscateNameChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
+{
+	if (StorageSubsystem == nullptr) StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
+	if (StorageSubsystem && StorageSubsystem->CacheSetting)
+	{
+		StorageSubsystem->CacheSetting->bObfuscateName = SelectedItem == "on";
 		StorageSubsystem->SaveSetting();
 	}
 }
@@ -96,7 +109,7 @@ void UTabGame::OnObfuscateTextChatChanged(FString SelectedItem, ESelectInfo::Typ
 	if (StorageSubsystem == nullptr) StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
 	if (StorageSubsystem && StorageSubsystem->CacheSetting)
 	{
-		StorageSubsystem->CacheSetting->ObfuscateTextChat = SelectedItem == "on";
+		StorageSubsystem->CacheSetting->bObfuscateTextChat = SelectedItem == "on";
 		StorageSubsystem->SaveSetting();
 	}
 }
@@ -109,12 +122,14 @@ void UTabGame::SetDefault()
 		if (StorageSubsystem && StorageSubsystem->CacheSetting)
 		{
 			LanguageComboBox->SetSelectedOption(DefaultConfig->Language);
-			ObfuscatePlayerNameComboBox->SetSelectedOption(DefaultConfig->ObfuscatePlayerName ? "on" : "off");
-			ObfuscateTextChatComboBox->SetSelectedOption(DefaultConfig->ObfuscateTextChat ? "on" : "off");
+			HideSkinsComboBox->SetSelectedOption(DefaultConfig->bHideSkins ? "on" : "off");
+			ObfuscateNameComboBox->SetSelectedOption(DefaultConfig->bObfuscateName ? "on" : "off");
+			ObfuscateTextChatComboBox->SetSelectedOption(DefaultConfig->bObfuscateTextChat ? "on" : "off");
 
 			StorageSubsystem->CacheSetting->Language = DefaultConfig->Language;
-			StorageSubsystem->CacheSetting->ObfuscatePlayerName = DefaultConfig->ObfuscatePlayerName;
-			StorageSubsystem->CacheSetting->ObfuscateTextChat = DefaultConfig->ObfuscateTextChat;
+			StorageSubsystem->CacheSetting->bHideSkins = DefaultConfig->bHideSkins;
+			StorageSubsystem->CacheSetting->bObfuscateName = DefaultConfig->bObfuscateName;
+			StorageSubsystem->CacheSetting->bObfuscateTextChat = DefaultConfig->bObfuscateTextChat;
 			StorageSubsystem->SaveSetting();
 		}
 	}

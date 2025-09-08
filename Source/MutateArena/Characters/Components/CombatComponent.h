@@ -7,7 +7,7 @@
 enum class ECombatState : uint8;
 enum class EEquipmentType : uint8;
 
-UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
+UCLASS()
 class MUTATEARENA_API UCombatComponent : public UActorComponent
 {
 	GENERATED_BODY()
@@ -18,6 +18,7 @@ public:
 	friend class AHumanCharacter;
 
 protected:
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void BeginPlay() override;
 	virtual void TickComponent(float DeltaSeconds, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
@@ -33,6 +34,19 @@ protected:
 public:
 	UPROPERTY()
 	ECombatState CombatState;
+	
+	float DefaultFOV;
+	float TargetFOV;
+protected:
+	bool bNeedInterpFOV = false;
+	float FOVInterpTime = 0.2f;
+	float CurrentFOVInterpElapsed = 0.f;
+	float StartFOV;
+	void StartInterpFOV(float TempTargetFOV, float TempFOVInterpTime);
+	void InterpFOV(float DeltaSeconds);
+public:
+	// 瞄准程度
+	float AimingProgress = 0.f;
 
 protected:
 	UPROPERTY()
@@ -40,10 +54,6 @@ protected:
 
 	FVector HitTarget;
 	void TraceUnderCrosshair(FHitResult& TraceHitResult);
-	
-	float DefaultFOV;
-	float CurrentFOV;
-	void InterpFOV(float DeltaSeconds);
 
 public:
 	UPROPERTY()
@@ -61,7 +71,7 @@ public:
 	class AEquipment* GetCurEquipment();
 	AEquipment* GetLastEquipment();
 	// 如果正在使用主、副武器，返回正在使用的武器，否则返空。
-	AWeapon* GetUsingWeapon();
+	AWeapon* GetCurWeapon();
 protected:
 	AEquipment* GetEquipmentByType(EEquipmentType EquipmentType);
 	bool HasEquippedThisTypeEquipment(EEquipmentType EquipmentType);
@@ -90,8 +100,10 @@ protected:
 	void MulticastSwapEquipment2(EEquipmentType EquipmentType);
 	void LocalSwapEquipment(EEquipmentType EquipmentType);
 	void PreLocalSwapEquipment();
+	bool bIsSwappingOut = false;
 	void PlaySwapOutMontage(AEquipment* NewEquipment);
 	void PlaySwapInMontage(bool bInterrupted, AEquipment* NewEquipment);
+	void PlaySwapOutMontage_Reverse(bool bInterrupted, AEquipment* NewEquipment);
 public:
 	void FinishSwap();
 	

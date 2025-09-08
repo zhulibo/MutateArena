@@ -20,8 +20,8 @@ AFireBottle::AFireBottle()
 	FireSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	FireSphere->SetSphereRadius(FireRadius);
 	
-	ProjectileMovement->Bounciness = 0.3f;
-	ProjectileMovement->Friction = 0.6f;
+	ProjectileMovement->Bounciness = 0.1f;
+	ProjectileMovement->Friction = 0.9f;
 }
 
 void AFireBottle::ThrowOut()
@@ -54,7 +54,7 @@ void AFireBottle::Explode()
 		GetWorld(),
 		ExplodeEffect,
 		GetActorLocation(),
-		GetActorRotation()
+		FRotator(0.f, 0.f, 0.f)
 	);
 	if (ExplodeEffectComponent)
 	{

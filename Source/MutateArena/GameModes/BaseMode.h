@@ -1,13 +1,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/GameMode.h"
+#include "ModularGameMode.h"
 #include "BaseMode.generated.h"
 
 enum class ETeam : uint8;
 
 UCLASS()
-class MUTATEARENA_API ABaseMode : public AGameMode
+class MUTATEARENA_API ABaseMode : public AModularGameMode
 {
 	GENERATED_BODY()
 

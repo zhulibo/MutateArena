@@ -13,6 +13,9 @@
 #include "MutateArena/Equipments/Data/EquipmentType.h"
 #include "MutateArena/PlayerControllers/BaseController.h"
 #include "MutateArena/PlayerStates/TeamType.h"
+#include "MutateArena/System/DataAssetManager.h"
+#include "MutateArena/System/Storage/SaveGameSetting.h"
+#include "MutateArena/System/Storage/StorageSubsystem.h"
 #include "MutateArena/Utils/LibraryCommon.h"
 
 AEquipment::AEquipment()
@@ -26,14 +29,14 @@ AEquipment::AEquipment()
 	CollisionSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
 	CollisionSphere->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore); // 忽略角色胶囊体
 	CollisionSphere->SetLinearDamping(1.f);
-	CollisionSphere->SetSphereRadius(20.f);
+	CollisionSphere->SetSphereRadius(20.f); // 离地面的距离
 
 	EquipmentMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("EquipmentMesh"));
 	EquipmentMesh->SetupAttachment(RootComponent);
 	EquipmentMesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	EquipmentMesh->SetCollisionObjectType(ECollisionChannel::ECC_WorldDynamic);
 	EquipmentMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
-	EquipmentMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block); // 碰撞血液
+	EquipmentMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block); // 与血液碰撞
 
 	OverlapSphere = CreateDefaultSubobject<USphereComponent>(TEXT("OverlapSphere"));
 	OverlapSphere->SetupAttachment(RootComponent);
@@ -68,6 +71,25 @@ void AEquipment::BeginPlay()
 		EquipmentParentName = EquipmentMain->EquipmentParentName;
 		EquipmentCate = EquipmentMain->EquipmentCate;
 		EquipmentType = EquipmentMain->EquipmentType;
+
+		// TODO 待测试屏蔽皮肤
+		// 屏蔽皮肤
+		bool bIsMyOwnWeapon = false;
+		if (APawn* OwningPawn = Cast<APawn>(GetOwner()))
+		{
+			if (OwningPawn->IsLocallyControlled()) bIsMyOwnWeapon = true;
+		}
+		if (StorageSubsystem == nullptr) StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
+		if (StorageSubsystem->CacheSetting->bHideSkins && !bIsMyOwnWeapon && EquipmentName != EquipmentParentName)
+		{
+			FString EnumValue2 = ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(EquipmentParentName));
+			FDataRegistryId DataRegistryId2(DR_EQUIPMENT_MAIN, FName(EnumValue2));
+			if (const FEquipmentMain* EquipmentMain2 = UDataRegistrySubsystem::Get()->GetCachedItem<FEquipmentMain>(DataRegistryId2))
+			{
+				USkeletalMesh* SkeletalMesh = UDataAssetManager::Get().GetAsset(EquipmentMain2->SkeletalMesh);
+				EquipmentMesh->SetSkeletalMesh(SkeletalMesh);
+			}
+		}
 	}
 }
 

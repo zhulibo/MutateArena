@@ -5,7 +5,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Components/CombatComponent.h"
 #include "MutateArena/Equipments/Equipment.h"
-#include "MutateArena/Equipments/Data/EquipmentType.h"
+#include "MutateArena/Equipments/Weapon.h"
 
 UAnimInstance_Human::UAnimInstance_Human()
 {
@@ -28,14 +28,18 @@ void UAnimInstance_Human::NativeUpdateAnimation(float DeltaSeconds)
 	bIsInAir = HumanCharacter->GetCharacterMovement()->IsFalling();
 	bIsAccelerating = HumanCharacter->GetCharacterMovement()->GetCurrentAcceleration().Size() > 0.f;
 	bIsCrouched = HumanCharacter->bIsCrouched;
-	bIsAiming = HumanCharacter->CombatComponent->bIsAiming;
+	
 	if (HumanCharacter->CombatComponent->GetCurEquipment())
 	{
 		EquipmentName = HumanCharacter->CombatComponent->GetCurEquipment()->EquipmentName;
 	}
-	else
+	
+	if (HumanCharacter->CombatComponent->GetCurWeapon())
 	{
-		EquipmentName = EEquipmentName::None;
+		if (!Montage_IsPlaying(HumanCharacter->CombatComponent->GetCurWeapon()->ADSMontage_C))
+		{
+			bIsAiming = HumanCharacter->CombatComponent->bIsAiming;
+		}
 	}
 
 	// 计算瞄准方向与移动方向的偏移量，用于控制脚步朝向
@@ -46,7 +50,7 @@ void UAnimInstance_Human::NativeUpdateAnimation(float DeltaSeconds)
 
 	// 根据AimPitch计算骨骼偏移量
 	AimPitch = HumanCharacter->AimPitch;
-	Spine_01_Rotator.Roll = UKismetMathLibrary::MapRangeClamped(AimPitch, -90.f, 90.f, 20.f, -20.f);
+	Spine_01_Rotator.Roll = UKismetMathLibrary::MapRangeClamped(AimPitch, -90.f, 90.f, 10.f, -10.f);
 	Spine_02_Rotator.Roll = UKismetMathLibrary::MapRangeClamped(AimPitch, -90.f, 90.f, 10.f, -10.f);
-	Spine_03_Rotator.Roll = UKismetMathLibrary::MapRangeClamped(AimPitch, -90.f, 90.f, 60.f, -60.f);
+	Spine_03_Rotator.Roll = UKismetMathLibrary::MapRangeClamped(AimPitch, -90.f, 90.f, 70.f, -70.f);
 }

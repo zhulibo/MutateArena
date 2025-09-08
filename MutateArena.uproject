@@ -28,11 +28,7 @@
 			]
 		},
 		{
-			"Name": "CommonUI",
-			"Enabled": true
-		},
-		{
-			"Name": "OnlineServicesEOS",
+			"Name": "DataRegistry",
 			"Enabled": true
 		},
 		{
@@ -40,15 +36,35 @@
 			"Enabled": true
 		},
 		{
-			"Name": "DataRegistry",
+			"Name": "OnlineServicesEOS",
 			"Enabled": true
 		},
 		{
-			"Name": "Chooser",
+			"Name": "CommonUI",
 			"Enabled": true
 		},
 		{
 			"Name": "GameplayAbilities",
+			"Enabled": true
+		},
+		{
+			"Name": "ModularGameplay",
+			"Enabled": true
+		},
+		{
+			"Name": "GameFeatures",
+			"Enabled": true
+		},
+		{
+			"Name": "ModularGameplayActors",
+			"Enabled": true
+		},
+		{
+			"Name": "ExampleMod",
+			"Enabled": true
+		},
+		{
+			"Name": "Chooser",
 			"Enabled": true
 		},
 		{

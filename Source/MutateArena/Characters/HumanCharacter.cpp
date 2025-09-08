@@ -181,7 +181,7 @@ void AHumanCharacter::ServerSpawnEquipments_Implementation(EEquipmentName Primar
 
 	// 包括Standalone
 #if UE_EDITOR
-	if (GetDefault<UDevSetting>()->bUseEquipmentSettings)
+	if (GetDefault<UDevSetting>()->bIsUseCustomEquipment)
 	{
 		PrimaryName = FName(ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(GetDefault<UDevSetting>()->PrimaryEquipment)));
 		SecondaryName = FName(ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(GetDefault<UDevSetting>()->SecondaryEquipment)));
@@ -322,7 +322,7 @@ void AHumanCharacter::AimButtonPressed(const FInputActionValue& Value)
 {
 	if (CombatComponent == nullptr) return;
 
-	if (CombatComponent->GetUsingWeapon())
+	if (CombatComponent->GetCurWeapon())
 	{
 		CombatComponent->SetAiming(true);
 	}
@@ -334,9 +334,21 @@ void AHumanCharacter::AimButtonPressed(const FInputActionValue& Value)
 
 void AHumanCharacter::AimButtonReleased(const FInputActionValue& Value)
 {
-	if (CombatComponent && CombatComponent->GetUsingWeapon())
+	if (GetWorld()->WorldType == EWorldType::PIE)
 	{
-		CombatComponent->SetAiming(false);
+		if (GetDefault<UDevSetting>()->bIsAdjustEquipmentSocketTransform) return;
+	}
+
+	if (CombatComponent && CombatComponent->GetCurWeapon())
+	{
+		if (CombatComponent->bIsAiming)
+		{
+			CombatComponent->SetAiming(false);
+		}
+		else
+		{
+			// 瞄准时切枪，切枪完成后退出瞄准
+		}
 	}
 }
 
@@ -377,7 +389,7 @@ void AHumanCharacter::FireButtonReleased(const FInputActionValue& Value)
 
 void AHumanCharacter::ReloadButtonPressed(const FInputActionValue& Value)
 {
-	if (CombatComponent && CombatComponent->GetUsingWeapon())
+	if (CombatComponent && CombatComponent->GetCurWeapon())
 	{
 		CombatComponent->Reload();
 	}
@@ -386,7 +398,7 @@ void AHumanCharacter::ReloadButtonPressed(const FInputActionValue& Value)
 void AHumanCharacter::DropButtonPressed(const FInputActionValue& Value)
 {
 	// 只有主副武器可以丢弃
-	if (CombatComponent && CombatComponent->GetUsingWeapon())
+	if (CombatComponent && CombatComponent->GetCurWeapon())
 	{
 		CombatComponent->DropEquipment(CombatComponent->CurEquipmentType);
 

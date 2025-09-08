@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/GameState.h"
+#include "ModularGameState.h"
 #include "BaseGameState.generated.h"
 
 enum class EMsgType : uint8;
@@ -13,7 +13,7 @@ DECLARE_MULTICAST_DELEGATE_FourParams(FOnReceiveMsg, EMsgType MsgType, ETeam Tea
 enum class ETeam : uint8;
 
 UCLASS()
-class MUTATEARENA_API ABaseGameState : public AGameState
+class MUTATEARENA_API ABaseGameState : public AModularGameState
 {
 	GENERATED_BODY()
 

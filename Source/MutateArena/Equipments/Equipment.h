@@ -51,6 +51,8 @@ protected:
 	UPROPERTY()
 	class UAssetSubsystem* AssetSubsystem;
 	UPROPERTY()
+	class UStorageSubsystem* StorageSubsystem;
+	UPROPERTY()
 	class AHumanCharacter* HumanCharacter;
 	UPROPERTY()
 	class ABaseController* BaseController;
@@ -73,7 +75,7 @@ public:
 	UPROPERTY()
 	EEquipmentState EquipmentState;
 	UPROPERTY()
-	float MoveSpeedMul = 1.f;
+	float WalkSpeedMul = 1.f;
 
 	virtual void OnEquip();
 protected:

@@ -20,7 +20,8 @@ void UBloodCollision::ReceiveParticleData_Implementation(const TArray<FBasicPart
 		FHitResult OutHit;
 		FVector Start = WorldPos - FVector(0,0,1);
 		FVector End   = WorldPos + FVector(0,0,1);
-		GetWorld()->SweepSingleByChannel(OutHit, Start, End, FQuat::Identity, ECollisionChannel::ECC_Visibility, FCollisionShape::MakeSphere(1.f));
+		FCollisionQueryParams QueryParams; // BUG 不传QueryParams碰撞不生效
+		GetWorld()->SweepSingleByChannel(OutHit, Start, End, FQuat::Identity, ECollisionChannel::ECC_Visibility, FCollisionShape::MakeSphere(1.f), QueryParams);
 		if (OutHit.bBlockingHit)
 		{
 			if (AssetSubsystem == nullptr) AssetSubsystem = GetWorld()->GetGameInstance()->GetSubsystem<UAssetSubsystem>();

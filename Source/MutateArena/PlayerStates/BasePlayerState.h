@@ -3,8 +3,8 @@
 #include "CoreMinimal.h"
 #include "MutateArena/Characters/Data/CharacterType.h"
 #include "Online/CoreOnline.h"
-#include "GameFramework/PlayerState.h"
 #include "AbilitySystemInterface.h"
+#include "ModularPlayerState.h"
 #include "TeamType.h"
 #include "BasePlayerState.generated.h"
 
@@ -14,7 +14,7 @@ enum class EMutantCharacterName: uint8;
 enum class ECommonInputType : uint8;
 
 UCLASS()
-class MUTATEARENA_API ABasePlayerState : public APlayerState, public IAbilitySystemInterface
+class MUTATEARENA_API ABasePlayerState : public AModularPlayerState, public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 

@@ -36,22 +36,21 @@ public:
 	UPROPERTY()
 	FString Language;
 	UPROPERTY()
-	bool ObfuscatePlayerName = false;
+	bool bHideSkins = false;
 	UPROPERTY()
-	bool ObfuscateTextChat = false;
+	bool bObfuscateName = false;
+	UPROPERTY()
+	bool bObfuscateTextChat = false;
 
 	UPROPERTY()
-	float MouseSensitivity = 0.8f;
+	float MouseSensitivity = 1.2f;
 	UPROPERTY()
-	bool MouseAimAssistSteering = false;
+	float MouseSensitivityMaxMul = 4.f;
+
 	UPROPERTY()
-	bool MouseAimAssistSlowdown = false;
+	float ControllerSensitivity = 3.4f;
 	UPROPERTY()
-	float ControllerSensitivity = 3.f;
-	UPROPERTY()
-	bool ControllerAimAssistSteering = false;
-	UPROPERTY()
-	bool ControllerAimAssistSlowdown = false;
+	float ControllerSensitivityMaxMul = 3.f;
 
 	EWindowMode::Type WindowMode = EWindowMode::Windowed;
 	UPROPERTY()

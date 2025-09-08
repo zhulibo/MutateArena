@@ -1,11 +1,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/GameModeBase.h"
+#include "ModularGameMode.h"
 #include "MenuMode.generated.h"
 
 UCLASS()
-class MUTATEARENA_API AMenuMode : public AGameModeBase
+class MUTATEARENA_API AMenuMode : public AModularGameModeBase
 {
 	GENERATED_BODY()
 	

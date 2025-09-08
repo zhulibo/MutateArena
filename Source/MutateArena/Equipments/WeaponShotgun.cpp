@@ -20,14 +20,14 @@ void AWeaponShotgun::Fire(const FVector& HitTarget, float RecoilVert, float Reco
 
 	if (HumanCharacter == nullptr) HumanCharacter = Cast<AHumanCharacter>(GetOwner());
 	if (OwnerTeam == ETeam::NoTeam) SetOwnerTeam();
-	const USkeletalMeshSocket* MuzzleSocket = EquipmentMesh->GetSocketByName(TEXT("Muzzle"));
+	const USkeletalMeshSocket* MuzzleSocket = EquipmentMesh->GetSocketByName(SOCKET_MUZZLE);
 
 	if (ProjectileClass && HumanCharacter && OwnerTeam != ETeam::NoTeam && MuzzleSocket)
 	{
 		FTransform SocketTransform = MuzzleSocket->GetSocketTransform(EquipmentMesh);
 		FRotator TargetRotation = (HitTarget - SocketTransform.GetLocation()).Rotation();
 
-		// 应用后坐力（gun kick）
+		// 子弹偏移
 		TargetRotation.Pitch += RecoilVert;
 		TargetRotation.Yaw += RecoilHor;
 
@@ -40,7 +40,7 @@ void AWeaponShotgun::Fire(const FVector& HitTarget, float RecoilVert, float Reco
 			for (int32 i = 0; i < PelletNum; ++i)
 			{
 				// 添加散布
-				FVector ToTargetWithSpread = UKismetMathLibrary::RandomUnitVectorInConeInDegrees(TargetRotation.Vector(), CenterSpread);
+				FVector ToTargetWithSpread = UKismetMathLibrary::RandomUnitVectorInConeInDegrees(TargetRotation.Vector(), CenterSpreadAngle);
 
 				AProjectileBullet* Projectile = GetWorld()->SpawnActor<AProjectileBullet>(
 					ProjectileClass,
@@ -54,10 +54,10 @@ void AWeaponShotgun::Fire(const FVector& HitTarget, float RecoilVert, float Reco
 				switch (OwnerTeam)
 				{
 				case ETeam::Team1:
-					Projectile->GetCollisionBox()->SetCollisionResponseToChannel(ECC_TEAM2_MESH, ECollisionResponse::ECR_Block);
+					Projectile->GetCollisionBox()->SetCollisionResponseToChannel(ECC_MESH_TEAM2, ECollisionResponse::ECR_Block);
 					break;
 				case ETeam::Team2:
-					Projectile->GetCollisionBox()->SetCollisionResponseToChannel(ECC_TEAM1_MESH, ECollisionResponse::ECR_Block);
+					Projectile->GetCollisionBox()->SetCollisionResponseToChannel(ECC_MESH_TEAM1, ECollisionResponse::ECR_Block);
 					break;
 				}
 			}

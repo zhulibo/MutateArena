@@ -19,6 +19,7 @@
 #include "MutateArena/System/DevSetting.h"
 #include "MutateArena/Utils/LibraryCommon.h"
 #include "GameFramework/PlayerStart.h"
+#include "MutateArena/Equipments/Pickups/PickupHerb.h"
 
 namespace MatchState
 {
@@ -73,7 +74,7 @@ void AMutationMode::Tick(float DeltaSeconds)
 		CountdownTime = RoundEndTime + PostRoundTime - GetWorld()->GetTimeSeconds();
 		if (CountdownTime <= 0.f)
 		{
-			if (CurrentRound < TotalRound)
+			if (CurRound < TotalRound)
 			{
 				StartNextRound();
 			}
@@ -145,11 +146,11 @@ void AMutationMode::EndRound()
 // 开启下一回合
 void AMutationMode::StartNextRound()
 {
-	CurrentRound++;
+	CurRound++;
 	RoundStartTime = GetWorld()->GetTimeSeconds();
 	SetMatchState(MatchState::InProgress);
 
-	ChangeLobbyStatus(CurrentRound);
+	ChangeLobbyStatus(CurRound);
 }
 
 // 结束比赛
@@ -179,7 +180,7 @@ void AMutationMode::OnMatchStateSet()
 	{
 		if (AMutationController* MutationController = Cast<AMutationController>(*It))
 		{
-			MutationController->OnMatchStateSet(MatchState, CurrentRound);
+			MutationController->OnMatchStateSet(MatchState, CurRound);
 		}
 	}
 }
@@ -190,7 +191,7 @@ void AMutationMode::HandleMatchHasStarted()
 	Super::HandleMatchHasStarted();
 
 	// 重新开始回合时，重置状态
-	if (CurrentRound > 1)
+	if (CurRound > 1)
 	{
 		// 重置关卡
 		ResetLevel();
@@ -219,7 +220,7 @@ void AMutationMode::HandleMatchHasStarted()
 	}
 
 	// 第一回合角色生成后开始监视比赛状态
-	if (CurrentRound == 1)
+	if (CurRound == 1)
 	{
 		bWatchMatchState = true;
 	}
@@ -309,8 +310,9 @@ void AMutationMode::RoundStartMutate()
 	bWatchRoundState = true;
 
 	// 定时生成补给箱
-	// GetWorldTimerManager().SetTimer(SpawnPickupTimerHandle, this, &ThisClass::SpawnPickups, 5.f, false);
 	GetWorldTimerManager().SetTimer(SpawnPickupTimerHandle, this, &ThisClass::SpawnPickups, 40.f, true, 35.f);
+	// 定时生成草药
+	GetWorldTimerManager().SetTimer(SpawnPickupHerbTimerHandle, this, &ThisClass::SpawnPickupHerbs, 10.f);
 }
 
 // 人类受到伤害
@@ -611,5 +613,43 @@ void AMutationMode::SpawnPickups()
 		{
 			MutationController->MulticastPlaySpawnPickupSound();
 		}
+	}
+}
+
+// 生成草药
+void AMutationMode::SpawnPickupHerbs()
+{
+	// 寻找补给箱重生点
+	if (PickupHerbStartPoints.IsEmpty())
+	{
+		for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It)
+		{
+			if (It->PlayerStartTag == TEXT("PickupHerb"))
+			{
+				PickupHerbStartPoints.Add(*It);
+			}
+		}
+	}
+
+	// 随机选3个重生点
+	auto SelectedStartPoints = PickupHerbStartPoints;
+	while (SelectedStartPoints.Num() > 3)
+	{
+		int32 RandomIndex = FMath::RandRange(0, SelectedStartPoints.Num() - 1);
+		SelectedStartPoints.RemoveAt(RandomIndex);
+	}
+
+	for (int i = 0; i < SelectedStartPoints.Num(); ++i)
+	{
+		if (SelectedStartPoints[i] == nullptr) continue;
+		// 生成
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+		GetWorld()->SpawnActor<APickupHerb>(
+			PickupHerbClasses[FMath::RandRange(0, PickupHerbClasses.Num() - 1)],
+			SelectedStartPoints[i]->GetActorLocation(),
+			SelectedStartPoints[i]->GetActorRotation(),
+			SpawnParams
+		);
 	}
 }

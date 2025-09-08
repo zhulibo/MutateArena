@@ -4,7 +4,7 @@
 #include "Components/ActorComponent.h"
 #include "CrosshairComponent.generated.h"
 
-UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
+UCLASS()
 class MUTATEARENA_API UCrosshairComponent : public UActorComponent
 {
 	GENERATED_BODY()
@@ -24,7 +24,6 @@ protected:
 
 	float VelocityFactor = 0.f;
 	float JumpFactor = 0.f;
-	float AimFactor = 0.f;
 	float ShootFactor = 0.f;
 	void SetHUDCrosshair(float DeltaSeconds);
 

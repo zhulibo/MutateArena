@@ -47,7 +47,7 @@ ABaseCharacter::ABaseCharacter()
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
 
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
-	CameraBoom->SetupAttachment(GetMesh(), TEXT("CameraSocket"));
+	CameraBoom->SetupAttachment(GetMesh(), SOCKET_CAMERA);
 	CameraBoom->TargetArmLength = 0.f;
 
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
@@ -60,8 +60,9 @@ ABaseCharacter::ABaseCharacter()
 	SceneCapture->bCaptureOnMovement = false;
 
 	OverheadWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("OverheadWidget"));
-	OverheadWidget->SetupAttachment(GetMesh(), TEXT("CameraSocket"));
-	OverheadWidget->SetRelativeLocation(FVector(0.f, 0.f, 60.f)); // TODO 垂直向上
+	OverheadWidget->SetupAttachment(GetMesh(), SOCKET_CAMERA);
+	OverheadWidget->SetRelativeLocation(FVector(0.f, 0.f, 50.f)); // TODO 垂直向上
+	OverheadWidget->SetDrawSize(FVector2D(120.f, 50.f));
 
 	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
 	GetCharacterMovement()->bCanWalkOffLedgesWhenCrouching = true;
@@ -186,10 +187,10 @@ void ABaseCharacter::PollInit_PlayerStateTeam()
 			switch (BasePlayerState->Team)
 			{
 			case ETeam::Team1:
-				GetMesh()->SetCollisionObjectType(ECC_TEAM1_MESH);
+				GetMesh()->SetCollisionObjectType(ECC_MESH_TEAM1);
 				break;
 			case ETeam::Team2:
-				GetMesh()->SetCollisionObjectType(ECC_TEAM2_MESH);
+				GetMesh()->SetCollisionObjectType(ECC_MESH_TEAM2);
 				break;
 			}
 		}
@@ -493,25 +494,22 @@ void ABaseCharacter::TraceInteractTarget(FHitResult& OutHit)
 	FVector Start = Camera->GetComponentLocation();
 	FVector End = Start + Camera->GetForwardVector() * 160.f;
 
-	DrawDebugLine(GetWorld(), Start, End, C_YELLOW, true);
+	// DrawDebugLine(GetWorld(), Start, End, C_YELLOW, true);
 
 	FCollisionQueryParams QueryParams;
 	TArray<AActor*> TeamPlayers;
+	
 	if (BaseGameState == nullptr) BaseGameState = GetWorld()->GetGameState<ABaseGameState>();
-	if (BasePlayerState == nullptr) BasePlayerState = GetPlayerState<ABasePlayerState>();
-	if (BaseGameState && BasePlayerState)
+	if (BaseGameState)
 	{
 		QueryParams.AddIgnoredActors(BaseGameState->AllEquipments);
 
-		if (BaseGameState)
+		TArray<ABasePlayerState*> PlayerStates = BaseGameState->GetPlayerStates({});
+		for (int32 i = 0; i < PlayerStates.Num(); ++i)
 		{
-			TArray<ABasePlayerState*> PlayerStates = BaseGameState->GetPlayerStates(BasePlayerState->Team);
-			for (int32 i = 0; i < PlayerStates.Num(); ++i)
+			if (PlayerStates[i] && PlayerStates[i]->GetHealth() > 0.f)
 			{
-				if (PlayerStates[i])
-				{
-					TeamPlayers.AddUnique(PlayerStates[i]->GetPawn());
-				}
+				TeamPlayers.AddUnique(PlayerStates[i]->GetPawn());
 			}
 		}
 	}
@@ -532,6 +530,7 @@ void ABaseCharacter::InteractStarted(const FInputActionValue& Value)
 {
 	FHitResult OutHit;
 	TraceInteractTarget(OutHit);
+	
 	if (OutHit.bBlockingHit)
 	{
 		if (IInteractableTarget* Target = Cast<IInteractableTarget>(OutHit.GetActor()))
@@ -545,7 +544,7 @@ void ABaseCharacter::InteractStarted(const FInputActionValue& Value)
 				{
 					BaseController->OnInteractStarted.Broadcast();
 				}
-
+				
 				return;
 			}
 		}
@@ -603,7 +602,7 @@ void ABaseCharacter::ServerInteractTriggered_Implementation(AActor* TempInteract
 {
 	if (IInteractableTarget* Target = Cast<IInteractableTarget>(TempInteractTarget))
 	{
-		Target->OnInteractOnServer();
+		Target->OnInteract_Server();
 	}
 }
 
@@ -849,6 +848,41 @@ float ABaseCharacter::CalcFallDamageRate()
 void ABaseCharacter::MulticastPlayOuchSound_Implementation(float DamageRate)
 {
 	UGameplayStatics::PlaySoundAtLocation(this, OuchSound, GetActorLocation());
+}
+
+// 根据地形播放不同脚步声
+void ABaseCharacter::PlayFootSound()
+{
+	FHitResult HitResult;
+	FVector Start = GetActorLocation();
+	FVector End = Start - FVector(0.f, 0.f, 100.f);
+
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(this);
+	Params.bReturnPhysicalMaterial = true;
+
+	GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECollisionChannel::ECC_Visibility, Params);
+	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+	if (HitResult.bBlockingHit && AssetSubsystem && AssetSubsystem->CharacterAsset)
+	{
+		UMetaSoundSource* Sound = AssetSubsystem->CharacterAsset->FootSound_Concrete;
+		switch (UGameplayStatics::GetSurfaceType(HitResult))
+		{
+		case EPhysicalSurface::SurfaceType1:
+			Sound = AssetSubsystem->CharacterAsset->FootSound_Concrete;
+			break;
+		case EPhysicalSurface::SurfaceType2:
+			Sound = AssetSubsystem->CharacterAsset->FootSound_Dirt;
+			break;
+		case EPhysicalSurface::SurfaceType3:
+			Sound = AssetSubsystem->CharacterAsset->FootSound_Metal;
+			break;
+		case EPhysicalSurface::SurfaceType4:
+			Sound = AssetSubsystem->CharacterAsset->FootSound_Wood;
+			break;
+		}
+		UGameplayStatics::PlaySoundAtLocation(this, Sound, HitResult.Location);
+	}
 }
 
 void ABaseCharacter::PlayFootLandSound()

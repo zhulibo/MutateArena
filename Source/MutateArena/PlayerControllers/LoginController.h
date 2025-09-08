@@ -1,11 +1,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/PlayerController.h"
+#include "ModularPlayerController.h"
 #include "LoginController.generated.h"
 
 UCLASS()
-class MUTATEARENA_API ALoginController : public APlayerController
+class MUTATEARENA_API ALoginController : public AModularPlayerController
 {
 	GENERATED_BODY()
 

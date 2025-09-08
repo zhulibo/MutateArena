@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/PlayerController.h"
+#include "ModularPlayerController.h"
 #include "BaseController.generated.h"
 
 enum class EHUDState : uint8;
@@ -31,7 +31,7 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FOnHUDStateChange, EHUDState HUDState);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnViewTargetChange, AActor* ViewTarget);
 
 UCLASS()
-class MUTATEARENA_API ABaseController : public APlayerController
+class MUTATEARENA_API ABaseController : public AModularPlayerController
 {
 	GENERATED_BODY()
 
@@ -114,7 +114,6 @@ public:
 
 	virtual void SetHUDAmmo(int32 Ammo);
 	virtual void SetHUDCarriedAmmo(int32 CarriedAmmo);
-public:
 	virtual void InitHUD() {}
 protected:
 	virtual void SetHUDTime() {}

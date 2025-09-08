@@ -14,10 +14,10 @@ void UDev::NativeConstruct()
 
 	ProjectVersion->SetText(FText::FromString(ULibraryCommon::GetProjectVersion()));
 	
-	const FEngineVersion& CurrentVersion = FEngineVersion::Current();
-	int32 Major = CurrentVersion.GetMajor();
-	int32 Minor = CurrentVersion.GetMinor();
-	int32 Patch = CurrentVersion.GetPatch();
+	const FEngineVersion& CurVersion = FEngineVersion::Current();
+	int32 Major = CurVersion.GetMajor();
+	int32 Minor = CurVersion.GetMinor();
+	int32 Patch = CurVersion.GetPatch();
 	EngineVersion->SetText(FText::FromString(FString::Printf(TEXT("UE %d.%d.%d"), Major, Minor, Patch)));
 }
 

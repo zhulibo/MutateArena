@@ -29,11 +29,16 @@ protected:
 	UPROPERTY()
 	class UAssetSubsystem* AssetSubsystem;
 	UPROPERTY()
+	class UStorageSubsystem* StorageSubsystem;
+	UPROPERTY()
 	class ABaseGameState* BaseGameState;
 	UPROPERTY()
 	class ABaseController* BaseController;
 	
-	void ScoreboardButtonPressed(const struct FInputActionValue& Value);
+	void LookMouse(const struct FInputActionValue& Value);
+	void LookStick(const FInputActionValue& Value);
+	
+	void ScoreboardButtonPressed(const FInputActionValue& Value);
 	void ScoreboardButtonReleased(const FInputActionValue& Value);
 	void PauseMenuButtonPressed(const FInputActionValue& Value);
 

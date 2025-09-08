@@ -17,11 +17,11 @@ public:
 
 	// Returns the asset referenced by a TSoftObjectPtr. This will synchronously load the asset if it's not already loaded.
 	template<typename AssetType>
-	static AssetType* GetAsset(const TSoftObjectPtr<AssetType>& AssetPointer, bool bKeepInMemory = true);
+	static AssetType* GetAsset(const TSoftObjectPtr<AssetType>& AssetPointer, bool bKeepInMemory = false);
 
 	// Returns the subclass referenced by a TSoftClassPtr. This will synchronously load the asset if it's not already loaded.
 	template<typename AssetType>
-	static TSubclassOf<AssetType> GetSubclass(const TSoftClassPtr<AssetType>& AssetPointer, bool bKeepInMemory = true);
+	static TSubclassOf<AssetType> GetSubclass(const TSoftClassPtr<AssetType>& AssetPointer, bool bKeepInMemory = false);
 
 	void UnloadTrackedAsset(const UObject* Asset);
 	

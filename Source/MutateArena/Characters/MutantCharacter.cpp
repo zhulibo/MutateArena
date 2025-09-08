@@ -38,19 +38,19 @@ AMutantCharacter::AMutantCharacter()
 	MutantState = EMutantState::Ready;
 
 	RightHandCapsule = CreateDefaultSubobject<UCapsuleComponent>(TEXT("RightHandCapsule"));
-	RightHandCapsule->SetupAttachment(GetMesh(), TEXT("RightHandCapsule"));
+	RightHandCapsule->SetupAttachment(GetMesh(), SOCKET_HAND_RIGHT);
 	RightHandCapsule->SetGenerateOverlapEvents(true);
 	RightHandCapsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	RightHandCapsule->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
-	RightHandCapsule->SetCollisionResponseToChannel(ECC_TEAM1_MESH, ECollisionResponse::ECR_Overlap);
+	RightHandCapsule->SetCollisionResponseToChannel(ECC_MESH_TEAM1, ECollisionResponse::ECR_Overlap);
 	RightHandCapsule->OnComponentBeginOverlap.AddUniqueDynamic(this, &ThisClass::OnRightHandCapsuleOverlap);
 
 	LeftHandCapsule = CreateDefaultSubobject<UCapsuleComponent>(TEXT("LeftHandCapsule"));
-	LeftHandCapsule->SetupAttachment(GetMesh(), TEXT("LeftHandCapsule"));
+	LeftHandCapsule->SetupAttachment(GetMesh(), SOCKET_HAND_LEFT);
 	LeftHandCapsule->SetGenerateOverlapEvents(true);
 	LeftHandCapsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	LeftHandCapsule->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
-	LeftHandCapsule->SetCollisionResponseToChannel(ECC_TEAM1_MESH, ECollisionResponse::ECR_Overlap);
+	LeftHandCapsule->SetCollisionResponseToChannel(ECC_MESH_TEAM1, ECollisionResponse::ECR_Overlap);
 	LeftHandCapsule->OnComponentBeginOverlap.AddUniqueDynamic(this, &ThisClass::OnLeftHandCapsuleOverlap);
 
 	Tags.Add(TAG_CHARACTER_MUTANT);
@@ -563,7 +563,7 @@ void AMutantCharacter::MulticastDead_Implementation(bool bKilledByMelee)
 	FTimerHandle TimerHandle;
 	FTimerDelegate TimerDelegate;
 	TimerDelegate.BindWeakLambda(this, [this, bKilledByMelee]() {
-		this->MutantRespawn(bKilledByMelee);
+		MutantRespawn(bKilledByMelee);
 	});
 	GetWorld()->GetTimerManager().SetTimer(TimerHandle, TimerDelegate, 3.f, false);
 }
@@ -637,15 +637,13 @@ void AMutantCharacter::OnInteract(ABaseCharacter* BaseCharacter)
 {
 	if (IInteractableTarget* Interactor = Cast<IInteractableTarget>(BaseCharacter))
 	{
-		// 交互目标本地立即响应交互事件
-		SetIsSuckedDry(bSuckedDry);
-
-		// 通知交互者交互成功
+		SetIsSuckedDry(true);
+		
 		Interactor->OnInteractMutantSuccess(this);
 	}
 }
 
-void AMutantCharacter::OnInteractOnServer()
+void AMutantCharacter::OnInteract_Server()
 {
 	SetIsSuckedDry(true);
 }

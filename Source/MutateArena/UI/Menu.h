@@ -14,6 +14,7 @@ class MUTATEARENA_API UMenu : public UCommonActivatableWidget
 
 protected:
 	virtual void NativeOnInitialized() override;
+	virtual void NativeDestruct() override;
 
 	UPROPERTY()
 	class AMenuController* MenuController;
@@ -45,8 +46,13 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	class UDev* Dev;
 
+	UPROPERTY(meta = (BindWidget))
+	class UHorizontalBox* MessageBox;
+	UPROPERTY(meta = (BindWidget))
+	class UCommonTextBlock* Message;
+	FTimerHandle EnumerateTitleFileTimerHandle;
 	UPROPERTY()
-	FString TitleFile_Notice = TEXT("Notice");
+	FString TitleFile_Message = TEXT("Message");
 	void OnEnumerateTitleFilesComplete(bool bWasSuccessful);
 	void OnReadTitleFileComplete(bool bWasSuccessful, const FTitleFileContentsRef& FileContents);
 	bool IsBeijingTimeInRange(const FString& StartStr, const FString& EndStr);

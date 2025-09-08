@@ -32,9 +32,14 @@ protected:
 	void OnLanguageChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
 
 	UPROPERTY(meta = (BindWidget))
-	UComboBoxString* ObfuscatePlayerNameComboBox;
+	UComboBoxString* HideSkinsComboBox;
 	UFUNCTION()
-	void OnObfuscatePlayerNameChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
+	void OnHideSkinsChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
+
+	UPROPERTY(meta = (BindWidget))
+	UComboBoxString* ObfuscateNameComboBox;
+	UFUNCTION()
+	void OnObfuscateNameChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
 
 	UPROPERTY(meta = (BindWidget))
 	UComboBoxString* ObfuscateTextChatComboBox;

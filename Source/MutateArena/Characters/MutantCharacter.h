@@ -30,7 +30,7 @@ public:
 	UCapsuleComponent* RightHandCapsule;
 	UPROPERTY(VisibleAnywhere)
 	UCapsuleComponent* LeftHandCapsule;
-	
+
 	UPROPERTY(EditAnywhere)
 	UAnimMontage* LightAttackMontage;
 	UPROPERTY(EditAnywhere)
@@ -159,8 +159,7 @@ protected:
 	void SetDeadMaterial();
 	virtual bool CanInteract() override;
 	virtual void OnInteract(ABaseCharacter* BaseCharacter) override;
-	virtual void OnInteractOnServer() override;
-	UFUNCTION()
+	virtual void OnInteract_Server() override;
 	void SetIsSuckedDry(bool TempBSuckedDry);
 	UFUNCTION()
 	virtual void OnInteractMutantSuccess(AMutantCharacter* MutantCharacter) override;

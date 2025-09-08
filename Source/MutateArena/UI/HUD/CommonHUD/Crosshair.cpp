@@ -3,6 +3,7 @@
 #include "CommonBorder.h"
 #include "MutateArena/PlayerControllers/BaseController.h"
 #include "Components/CanvasPanelSlot.h"
+#include "MutateArena/System/DevSetting.h"
 
 void UCrosshair::NativeOnInitialized()
 {
@@ -42,5 +43,10 @@ void UCrosshair::ChangeCrosshairSpread(float Spread)
 
 void UCrosshair::OnCrosshairHidden(bool bIsHidden)
 {
+	if (GetWorld()->WorldType == EWorldType::PIE)
+	{
+		if (GetDefault<UDevSetting>()->bIsAdjustEquipmentSocketTransform) return;
+	}
+
 	SetVisibility(bIsHidden ? ESlateVisibility::Hidden : ESlateVisibility::Visible);
 }

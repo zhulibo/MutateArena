@@ -14,6 +14,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Data/DamageTypeMelee.h"
 #include "Kismet/GameplayStatics.h"
+#include "Pickups/PickupHerb.h"
 
 AMelee::AMelee()
 {
@@ -35,7 +36,7 @@ void AMelee::BeginPlay()
 	{
 		LightAttackDamage = MeleeData->LightAttackDamage;
 		HeavyAttackDamage = MeleeData->HeavyAttackDamage;
-		MoveSpeedMul = MeleeData->MoveSpeedMul;
+		WalkSpeedMul = MeleeData->WalkSpeedMul;
 	}
 
 	SetAttackCapsuleCollision();
@@ -56,12 +57,14 @@ void AMelee::SetAttackCapsuleCollision()
 		switch (OwnerTeam)
 		{
 		case ETeam::Team1:
-			AttackCapsule->SetCollisionResponseToChannel(ECC_TEAM2_MESH, ECollisionResponse::ECR_Overlap);
+			AttackCapsule->SetCollisionResponseToChannel(ECC_MESH_TEAM2, ECollisionResponse::ECR_Overlap);
 			break;
 		case ETeam::Team2:
-			AttackCapsule->SetCollisionResponseToChannel(ECC_TEAM1_MESH, ECollisionResponse::ECR_Overlap);
+			AttackCapsule->SetCollisionResponseToChannel(ECC_MESH_TEAM1, ECollisionResponse::ECR_Overlap);
 			break;
 		}
+
+		AttackCapsule->SetCollisionResponseToChannel(ECC_MESH_PICKUP_HREB, ECollisionResponse::ECR_Overlap);
 	}
 }
 
@@ -94,21 +97,32 @@ void AMelee::OnAttackCapsuleOverlap(UPrimitiveComponent* OverlappedComponent, AA
 	{
 		HitEnemies.Add(OtherActor);
 
-		float Damage;
-		if (InstigatorCharacter->CombatComponent && InstigatorCharacter->CombatComponent->CombatState == ECombatState::LightAttacking)
+		if (OtherActor->ActorHasTag(TAG_CHARACTER_BASE))
 		{
-			Damage = LightAttackDamage;
-		}
-		else
-		{
-			Damage = HeavyAttackDamage;
-		}
-
-		DropBlood(OverlappedComponent, OtherActor, OtherComp, Damage);
+			float Damage;
+			if (InstigatorCharacter->CombatComponent && InstigatorCharacter->CombatComponent->CombatState == ECombatState::LightAttacking)
+			{
+				Damage = LightAttackDamage;
+			}
+			else
+			{
+				Damage = HeavyAttackDamage;
+			}
+			
+			DropBlood(OverlappedComponent, OtherActor, OtherComp, Damage);
 		
-		if (InstigatorCharacter->IsLocallyControlled())
+			if (InstigatorCharacter->IsLocallyControlled())
+			{
+				ServerApplyDamage(OtherActor, InstigatorCharacter, Damage);
+			}
+		}
+		else if (OtherActor->ActorHasTag(TAG_PICKUP_HERB))
 		{
-			ServerApplyDamage(OtherActor, InstigatorCharacter, Damage);
+			if (APickupHerb* PickupHerb = Cast<APickupHerb>(OtherActor))
+			{
+				// TODO 测试PickupHerb
+				PickupHerb->ServerDestroy();
+			}
 		}
 	}
 }

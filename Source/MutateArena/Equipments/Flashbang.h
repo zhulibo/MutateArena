@@ -28,9 +28,10 @@ protected:
 	UPROPERTY()
 	float Radius = 1000.f;
 	UPROPERTY()
-	float MaxFlashTime = 8.f;
+	float MaxFlashTime = 6.f;
 	UPROPERTY()
-	float MaxCapTime = 12.f;
+	float MaxCapTime = 8.f;
 	void Explode();
+	void PlayExplodeSound();
 
 };

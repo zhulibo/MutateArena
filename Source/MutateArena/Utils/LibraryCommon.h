@@ -20,7 +20,8 @@ public:
 	
 	static FColor GetProgressColor(double Value, double InRangeA, double InRangeB, FColor InColor, FColor OutColor);
 
-	static FString ObfuscatePlayerName(FString PlayerName, const UObject* Context);
+	
+	static FString ObfuscateName(FString PlayerName, const UObject* Context);
 	static FString ObfuscateTextChat(FString Msg, const UObject* Context);
 	static FString ObfuscateText(FString Text);
 

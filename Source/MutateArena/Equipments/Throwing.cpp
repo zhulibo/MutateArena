@@ -8,7 +8,7 @@ AThrowing::AThrowing()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	CollisionSphere->SetSphereRadius(10.f);
+	CollisionSphere->SetSphereRadius(10.f); // 离地面的距离
 
 	ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovement"));
 	ProjectileMovement->SetUpdatedComponent(CollisionSphere);

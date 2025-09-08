@@ -10,19 +10,22 @@ void UAN_AttackFirstSectionEnd::Notify(USkeletalMeshComponent* MeshComp, UAnimSe
 {
 	Super::Notify(MeshComp, Animation, EventReference);
 
-	if (MeshComp->GetOwner()->ActorHasTag(TAG_CHARACTER_HUMAN))
+	if (MeshComp->GetOwner())
 	{
-		AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(MeshComp->GetOwner());
-		if (HumanCharacter && HumanCharacter->CombatComponent)
+		if (MeshComp->GetOwner()->ActorHasTag(TAG_CHARACTER_HUMAN))
 		{
-			HumanCharacter->CombatComponent->AttackFirstSectionEnd();
+			AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(MeshComp->GetOwner());
+			if (HumanCharacter && HumanCharacter->CombatComponent)
+			{
+				HumanCharacter->CombatComponent->AttackFirstSectionEnd();
+			}
 		}
-	}
-	else if (MeshComp->GetOwner()->ActorHasTag(TAG_CHARACTER_MUTANT))
-	{
-		if (AMutantCharacter* MutantCharacter = Cast<AMutantCharacter>(MeshComp->GetOwner()))
+		else if (MeshComp->GetOwner()->ActorHasTag(TAG_CHARACTER_MUTANT))
 		{
-			MutantCharacter->AttackFirstSectionEnd();
+			if (AMutantCharacter* MutantCharacter = Cast<AMutantCharacter>(MeshComp->GetOwner()))
+			{
+				MutantCharacter->AttackFirstSectionEnd();
+			}
 		}
 	}
 }

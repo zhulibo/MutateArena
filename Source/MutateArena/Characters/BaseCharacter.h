@@ -3,13 +3,13 @@
 #include "CoreMinimal.h"
 #include "AbilitySystemInterface.h"
 #include "GameplayEffectTypes.h"
-#include "GameFramework/Character.h"
+#include "ModularCharacter.h"
 #include "BaseCharacter.generated.h"
 
 enum class ECommonInputType : uint8;
 
 UCLASS()
-class MUTATEARENA_API ABaseCharacter : public ACharacter, public IAbilitySystemInterface
+class MUTATEARENA_API ABaseCharacter : public AModularCharacter, public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 
@@ -163,6 +163,7 @@ protected:
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastPlayOuchSound(float DamageRate);
 public:
+	void PlayFootSound();
 	void PlayFootLandSound();
 protected:
 	virtual void FellOutOfWorld(const UDamageType& DmgType) override;

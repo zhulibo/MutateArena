@@ -2,9 +2,8 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
+#include "MutateArena/Equipments/Data/EquipmentType.h"
 #include "AnimInstance_Human.generated.h"
-
-enum class EEquipmentName : uint8;
 
 UCLASS()
 class MUTATEARENA_API UAnimInstance_Human : public UAnimInstance
@@ -31,7 +30,7 @@ protected:
 	UPROPERTY(BlueprintReadOnly)
 	bool bIsAiming;
 	UPROPERTY(BlueprintReadOnly)
-	EEquipmentName EquipmentName;
+	EEquipmentName EquipmentName = EEquipmentName::None;
 	UPROPERTY(BlueprintReadOnly)
 	float AimYaw;
 	UPROPERTY(BlueprintReadOnly)

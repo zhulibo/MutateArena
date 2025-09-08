@@ -41,6 +41,8 @@ void AFlashbang::ThrowOut()
 
 	FTimerHandle TimerHandle;
 	GetWorldTimerManager().SetTimer(TimerHandle, this, &ThisClass::Explode, 2.f);
+	FTimerHandle TimerHandle2;
+	GetWorldTimerManager().SetTimer(TimerHandle2, this, &ThisClass::PlayExplodeSound, 1.8f);
 }
 
 void AFlashbang::Explode()
@@ -52,11 +54,6 @@ void AFlashbang::Explode()
 	{
 		if (HumanCharacter == nullptr) HumanCharacter = Cast<AHumanCharacter>(GetOwner());
 		if (HumanCharacter) BaseController = Cast<ABaseController>(HumanCharacter->GetController());
-	}
-
-	if (ExplodeSound)
-	{
-		UGameplayStatics::PlaySoundAtLocation(this, ExplodeSound, GetActorLocation());
 	}
 
 	ExplodeEffectComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
@@ -170,5 +167,13 @@ void AFlashbang::Explode()
 				DamagedCharacter->SceneCapture->CaptureScene();
 			});
 		}
+	}
+}
+
+void AFlashbang::PlayExplodeSound()
+{
+	if (ExplodeSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, ExplodeSound, GetActorLocation());
 	}
 }

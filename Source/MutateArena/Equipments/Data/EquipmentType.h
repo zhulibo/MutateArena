@@ -17,6 +17,8 @@ enum class EEquipmentName : uint8 // 装备名字
 	M60,
 	
 	PKM,
+	
+	GM6Lynx,
 
 	// 副
 	Glock17,
@@ -39,7 +41,6 @@ enum class EEquipmentName : uint8 // 装备名字
 	// 补给箱
 	AK47_Cyclone,
 	MG42,
-	GM6Lynx,
 
 	None
 };
@@ -99,6 +100,9 @@ struct FEquipmentMain : public FTableRowBase
 	UPROPERTY(EditAnywhere)
 	TSoftClassPtr<class AEquipment> EquipmentClass;
 
+	UPROPERTY(EditAnywhere)
+	TSoftObjectPtr<USkeletalMesh> SkeletalMesh;
+
 	/**
 	 * Must be the same as the OfferId in dev portal,
 	 * Used to determine the button type in the UShop::OnQueryOffersComplete.
@@ -144,11 +148,11 @@ struct FWeaponData : public FTableRowBase
 	UPROPERTY(EditAnywhere)
 	float AimingFOVMul = 0.9;
 	UPROPERTY(EditAnywhere)
-	float AimSpeed = 30.f;
+	float WalkSpeedMul = 1.f;
 	UPROPERTY(EditAnywhere)
-	float MoveSpeedMul = 1.f;
+	float AimingWalkSpeedMul = 1.f;
 	UPROPERTY(EditAnywhere)
-	float AimMoveSpeedMul = 1.f;
+	bool bIsPIP = false;
 	UPROPERTY(EditAnywhere)
 	float ScopeFOV = 90.f;
 
@@ -168,7 +172,7 @@ struct FMeleeData : public FTableRowBase
 	float HeavyAttackDamage = 0.f;
 
 	UPROPERTY(EditAnywhere)
-	float MoveSpeedMul = 1.f;
+	float WalkSpeedMul = 1.f;
 
 };
 
@@ -204,6 +208,6 @@ struct FEquipmentRecoil : public FTableRowBase
 	float RecoilDecSpeed = 0.f;
 
 	UPROPERTY(EditAnywhere)
-	float CenterSpread = 0.f;
+	float CenterSpreadAngle = 0.f;
 
 };

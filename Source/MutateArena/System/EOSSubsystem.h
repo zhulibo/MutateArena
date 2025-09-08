@@ -94,7 +94,7 @@ public:
 	FString GetPlayerName();
 
 	// Lobby
-	TSharedPtr<const FLobby> CurrentLobby;
+	TSharedPtr<const FLobby> CurLobby;
 	FName LocalLobbyName = TEXT("LocalLobbyName");
 	void CreateLobby();
 	FOnCreateLobbyComplete OnCreateLobbyComplete;

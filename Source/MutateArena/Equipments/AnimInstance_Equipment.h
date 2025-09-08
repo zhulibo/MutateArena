@@ -20,4 +20,7 @@ protected:
 	UPROPERTY()
 	class AEquipment* Equipment;
 
+	UPROPERTY(BlueprintReadOnly)
+	bool bIsAiming;
+
 };

@@ -11,7 +11,7 @@ void AMenuController::BeginPlay()
 	if (UPlayerSubsystem* PlayerSubsystem = ULocalPlayer::GetSubsystem<UPlayerSubsystem>(GetLocalPlayer()))
 	{
 		PlayerSubsystem->AddNotifyLayout();
-		PlayerSubsystem->ShowLoginNotify();
+		PlayerSubsystem->CheckIfNeedShowLoginNotify();
 	}
 
 	AddMenuLayout();

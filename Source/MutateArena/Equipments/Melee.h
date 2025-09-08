@@ -53,5 +53,5 @@ protected:
 	void ServerApplyDamage(AActor* OtherActor, AHumanCharacter* InstigatorCharacter, float Damage);
 	UFUNCTION()
 	virtual void DropBlood(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, float Damage);
-
+	
 };

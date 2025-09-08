@@ -7,6 +7,8 @@
 #include "Common/CommonButton.h"
 #include "Components/SizeBox.h"
 #include "Kismet/GameplayStatics.h"
+#include "MutateArena/MutateArena.h"
+#include "MutateArena/Utils/LibraryNotify.h"
 
 #define LOCTEXT_NAMESPACE "ULoginLayout"
 
@@ -43,10 +45,11 @@ void ULoginLayout::OnLoginButtonClicked(ECoolLoginType LoginType, FString Id, FS
 	if (LoginController == nullptr) LoginController = Cast<ALoginController>(GetOwningPlayer());
 	if (LoginController)
 	{
-		if (UPlayerSubsystem* PlayerSubsystem = ULocalPlayer::GetSubsystem<UPlayerSubsystem>(LoginController->GetLocalPlayer()))
+		if (EOSSubsystem == nullptr) EOSSubsystem = GetGameInstance()->GetSubsystem<UEOSSubsystem>();
+		if (EOSSubsystem)
 		{
-			PlayerSubsystem->Login(LoginType, Id, Token);
-	
+			EOSSubsystem->Login(LoginController->GetPlatformUserId(), LoginType, Id, Token);
+			
 			LoginStatus->SetText(LOCTEXT("Logging", "Logging..."));
 			LoginButton->SetIsEnabled(false);
 		}
@@ -58,9 +61,17 @@ void ULoginLayout::OnLoginComplete(bool bWasSuccessful)
 	if (bWasSuccessful)
 	{
 		LoginStatus->SetText(LOCTEXT("Redirecting", "Redirecting..."));
+		
+		if (LoginController == nullptr) LoginController = Cast<ALoginController>(GetOwningPlayer());
+		if (LoginController)
+		{
+			LoginController->ClientTravel(MAP_MENU, ETravelType::TRAVEL_Absolute);
+		}
 	}
 	else
 	{
+		NOTIFY(this, C_RED, LOCTEXT("LoginFailed", "Login failed"));
+		
 		LoginButton->SetIsEnabled(true);
 		LoginStatus->SetText(LOCTEXT("LoginFailed", "Login failed"));
 	}

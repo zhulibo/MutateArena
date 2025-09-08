@@ -30,16 +30,15 @@ void AWeapon::BeginPlay()
 	
 	InitData();
 
-	if (bHasScope)
+	if (bIsPIP)
 	{
 		if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
 		if (AssetSubsystem && AssetSubsystem->EquipmentAsset)
 		{
 			ScopeCapture = NewObject<USceneCaptureComponent2D>(this, TEXT("ScopeCapture"));
 			ScopeCapture->RegisterComponent();
-			ScopeCapture->AttachToComponent(EquipmentMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, TEXT("ScopeSocket"));
+			ScopeCapture->AttachToComponent(EquipmentMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, SOCKET_SCOPE_START);
 			ScopeCapture->CaptureSource = ESceneCaptureSource::SCS_FinalColorHDR;
-			// ScopeCapture->ShowFlags.SetDynamicShadows(true);
 			ScopeCapture->FOVAngle = ScopeFOV;
 			ScopeCapture->TextureTarget = AssetSubsystem->EquipmentAsset->RT_Scope;
 			ScopeCapture->Deactivate();
@@ -57,14 +56,14 @@ void AWeapon::InitData()
 		if (const FWeaponData* WeaponData = UDataRegistrySubsystem::Get()->GetCachedItem<FWeaponData>(DataRegistryId))
 		{
 			AimingFOVMul = WeaponData->AimingFOVMul;
-			AimSpeed = WeaponData->AimSpeed;
-			AimMoveSpeedMul = WeaponData->AimMoveSpeedMul;
+			AimingWalkSpeedMul = WeaponData->AimingWalkSpeedMul;
+			bIsPIP = WeaponData->bIsPIP;
 			ScopeFOV = WeaponData->ScopeFOV;
 			MaxCarriedAmmo = WeaponData->MaxCarriedAmmo;
 			MagCapacity = WeaponData->MagCapacity;
 			FireRate = WeaponData->FireRate;
 			bIsAutomatic = WeaponData->bIsAutomatic;
-			MoveSpeedMul = WeaponData->MoveSpeedMul;
+			WalkSpeedMul = WeaponData->WalkSpeedMul;
 			PelletNum = WeaponData->PelletNum;
 
 			CarriedAmmo = MaxCarriedAmmo;
@@ -80,12 +79,12 @@ void AWeapon::InitData()
 			RecoilMinVert = EquipmentData->RecoilMinVert;
 			RecoilMaxHor = EquipmentData->RecoilMaxHor;
 			RecoilMinHor = EquipmentData->RecoilMinHor;
-			FirstShotRecoilMul = EquipmentData->FirstShotRecoilMul;
-			RecoilIncTime = EquipmentData->RecoilIncTime;
 			RecoilTotalVertLimit = EquipmentData->RecoilTotalVertLimit;
 			RecoilTotalHorLimit = EquipmentData->RecoilTotalHorLimit;
+			FirstShotRecoilMul = EquipmentData->FirstShotRecoilMul;
+			RecoilIncTime = EquipmentData->RecoilIncTime;
 			RecoilDecSpeed = EquipmentData->RecoilDecSpeed;
-			CenterSpread = EquipmentData->CenterSpread;
+			CenterSpreadAngle = EquipmentData->CenterSpreadAngle;
 		}
 	}
 }
@@ -102,7 +101,7 @@ void AWeapon::Fire(const FVector& HitTarget, float RecoilVert, float RecoilHor)
 {
 	if (ShellClass)
 	{
-		if (const USkeletalMeshSocket* ShellEjectSocket = EquipmentMesh->GetSocketByName(TEXT("ShellEject")))
+		if (const USkeletalMeshSocket* ShellEjectSocket = EquipmentMesh->GetSocketByName(SOCKET_SHELL_EJECT))
 		{
 			FTransform SocketTransform = ShellEjectSocket->GetSocketTransform(EquipmentMesh);
 
@@ -132,9 +131,9 @@ void AWeapon::Fire(const FVector& HitTarget, float RecoilVert, float RecoilHor)
 	if (UAudioComponent* AudioComponent = UGameplayStatics::SpawnSoundAttached(MechSound, EquipmentMesh))
 	{
 		float Volume = 1.f;
-		if (Ammo * (60 / FireRate) < 1.f)
+		if (Ammo <= 1.f * (FireRate / 60.f)) // 一秒后耗尽弹药
 		{
-			Volume = 3.f;
+			Volume = Volume * 2.f;
 		}
 		AudioComponent->SetFloatParameter(TEXT("Volume"), Volume);
 	}

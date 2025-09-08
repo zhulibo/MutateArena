@@ -15,12 +15,13 @@ class MUTATEARENA_API IInteractableTarget
 	GENERATED_BODY()
 
 public:
+	// 交互目标是否允许交互
 	virtual bool CanInteract() { return false; }
-	// 通知交互目标
+	// 通知交互目标交互成功
 	virtual void OnInteract(class ABaseCharacter* BaseCharacter) {}
-	// 在服务端通知交互目标
-	virtual void OnInteractOnServer() {}
-	// 通知交互者已经与突变体交互成功
+	// 在服务端通知交互目标交互成功
+	virtual void OnInteract_Server() {}
+	// 交互目标通知交互者已经与突变体交互成功（在交互者本地运行）
 	virtual void OnInteractMutantSuccess(class AMutantCharacter* MutantCharacter) {}
 
 };

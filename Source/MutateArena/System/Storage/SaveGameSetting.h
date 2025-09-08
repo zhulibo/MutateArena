@@ -20,24 +20,17 @@ public:
 
 	UPROPERTY()
 	FString Language;
-	
 	UPROPERTY()
-	bool ObfuscatePlayerName;
+	bool bHideSkins;
 	UPROPERTY()
-	bool ObfuscateTextChat;
+	bool bObfuscateName;
+	UPROPERTY()
+	bool bObfuscateTextChat;
 
 	UPROPERTY()
 	float MouseSensitivity;
 	UPROPERTY()
-	bool MouseAimAssistSteering;
-	UPROPERTY()
-	bool MouseAimAssistSlowdown;
-	UPROPERTY()
 	float ControllerSensitivity;
-	UPROPERTY()
-	bool ControllerAimAssistSteering;
-	UPROPERTY()
-	bool ControllerAimAssistSlowdown;
 
 	EWindowMode::Type WindowMode;
 	UPROPERTY()

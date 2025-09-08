@@ -18,7 +18,7 @@ class MUTATEARENA_API AHumanCharacter : public ABaseCharacter, public IInteracta
 
 public:
 	AHumanCharacter();
-	
+
 	UPROPERTY(VisibleAnywhere)
 	class UCombatComponent* CombatComponent;
 	UPROPERTY(VisibleAnywhere)

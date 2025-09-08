@@ -60,8 +60,8 @@ protected:
 	);
 
 	int32 TotalRound = 0;
-	UPROPERTY(ReplicatedUsing = OnRep_CurrentRound)
-	int32 CurrentRound = 1;
+	UPROPERTY(ReplicatedUsing = OnRep_CurRound)
+	int32 CurRound = 1;
 
 	float RoundStartTime = 0.f;
 	float RoundEndTime = 0.f;
@@ -78,7 +78,7 @@ protected:
 	int32 CountdownSeconds = 0;
 	
 public:
-	void OnMatchStateSet(FName TempMatchState, int32 TempCurrentRound);
+	void OnMatchStateSet(FName TempMatchState, int32 TempCurRound);
 protected:
 	UFUNCTION()
 	void OnRep_MatchState();
@@ -87,7 +87,7 @@ protected:
 
 	void HandleRoundHasEnded();
 	UFUNCTION()
-	void OnRep_CurrentRound();
+	void OnRep_CurRound();
 
 	virtual void SetHUDTime() override;
 
@@ -102,7 +102,7 @@ public:
 	void SetHUDRage(float UpdateRageUI);
 	void SetHUDDamageMul(float DamageMul);
 protected:
-	void SetHUDCurrentRound();
+	void SetHUDCurRound();
 	void SetHUDTotalRound();
 
 public:

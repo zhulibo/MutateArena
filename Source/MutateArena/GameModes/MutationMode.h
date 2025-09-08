@@ -43,7 +43,7 @@ protected:
 	UPROPERTY()
 	class AMutationGameState* MutationGameState;
 
-	int32 CurrentRound = 1;
+	int32 CurRound = 1;
 	float CountdownTime = 0.f;
 
 	bool bIsEndingMatch = false;
@@ -70,6 +70,14 @@ protected:
 	TArray<class APlayerStart*> PickupStartPoints;
 	UFUNCTION()
 	void SpawnPickups();
+	
+	UPROPERTY(EditAnywhere)
+	TArray<TSubclassOf<class APickupHerb>> PickupHerbClasses;
+	FTimerHandle SpawnPickupHerbTimerHandle;
+	UPROPERTY()
+	TArray<class APlayerStart*> PickupHerbStartPoints;
+	UFUNCTION()
+	void SpawnPickupHerbs();
 
 	void RoundStartMutate();
 

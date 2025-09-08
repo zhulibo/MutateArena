@@ -33,7 +33,7 @@ void UScoreboard::ShowScoreboard(bool bIsShow)
 		if (EOSSubsystem == nullptr) EOSSubsystem = GetGameInstance()->GetSubsystem<UEOSSubsystem>();
 		if (EOSSubsystem)
 		{
-			Server->SetText(FText::FromString(ULibraryCommon::ObfuscatePlayerName(EOSSubsystem->GetLobbyServerName(), this)));
+			Server->SetText(FText::FromString(ULibraryCommon::ObfuscateName(EOSSubsystem->GetLobbyServerName(), this)));
 		}
 
 		SetVisibility(ESlateVisibility::Visible);
@@ -84,7 +84,7 @@ void UScoreboard::RefreshScoreBoard()
 			if (UScoreBoardLineButton* ScoreBoardLineButton = CreateWidget<UScoreBoardLineButton>(this, ScoreBoardLineButtonClass))
 			{
 				FString PlayerName = PlayerStates[i]->GetPlayerName();
-				ScoreBoardLineButton->Player->SetText(FText::FromString(ULibraryCommon::ObfuscatePlayerName(PlayerName, this)));
+				ScoreBoardLineButton->Player->SetText(FText::FromString(ULibraryCommon::ObfuscateName(PlayerName, this)));
 				
 				ScoreBoardLineButton->Damage->SetText(FText::FromString(FString::FromInt(PlayerStates[i]->Damage)));
 

@@ -33,17 +33,16 @@ void UCrosshairComponent::TickComponent(float DeltaSeconds, ELevelTick TickType,
 	}
 }
 
-
 void UCrosshairComponent::SetHUDCrosshair(float DeltaSeconds)
 {
 	if (HumanCharacter == nullptr || HumanCharacter->CombatComponent == nullptr) return;
 	if (BaseController == nullptr) BaseController = Cast<ABaseController>(HumanCharacter->Controller);
 	if (BaseController == nullptr) return;
 
-	AWeapon* Weapon = HumanCharacter->CombatComponent->GetUsingWeapon();
+	AWeapon* Weapon = HumanCharacter->CombatComponent->GetCurWeapon();
 	if (Weapon == nullptr) return;
 
-	// TODO 做各种动作时应关联射击精度与准星扩塞，不能只改变准星扩散
+	// TODO 做各种动作时应关联射击精度与准星扩塞
 
 	// 水平速度
 	// FVector Velocity = HumanCharacter->GetVelocity();
@@ -60,24 +59,14 @@ void UCrosshairComponent::SetHUDCrosshair(float DeltaSeconds)
 	// 	JumpFactor = FMath::FInterpTo(JumpFactor, 0.f, DeltaSeconds, 20.f);
 	// }
 
-	// 瞄准
-	// if (HumanCharacter->CombatComponent->bIsAiming)
-	// {
-	// 	AimFactor = FMath::FInterpTo(AimFactor, -0.2f, DeltaSeconds, 10.f);
-	// }
-	// else
-	// {
-	// 	AimFactor = FMath::FInterpTo(AimFactor, 0.f, DeltaSeconds, 20.f);
-	// }
-
 	// 射击
 	if (URecoilComponent* RecoilComponent = HumanCharacter->RecoilComponent)
 	{
-		ShootFactor = (RecoilComponent->GetCurRecoilVert() + FMath::Abs(RecoilComponent->GetCurRecoilVert()))
+		ShootFactor = (RecoilComponent->RecoilVertTotal + FMath::Abs(RecoilComponent->RecoilHorTotal))
 		/ (Weapon->RecoilTotalVertLimit + Weapon->RecoilTotalHorLimit);
 	}
 
-	float TotalFactor = 1.f + VelocityFactor + JumpFactor + AimFactor + ShootFactor * 2.f;
+	float TotalFactor = 1.f + VelocityFactor + JumpFactor + ShootFactor * 2.f;
 
 	float BaseWeaponSpread = (Weapon->RecoilMaxVert + Weapon->RecoilMaxHor) * 4;
 

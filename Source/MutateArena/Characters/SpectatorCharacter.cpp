@@ -8,6 +8,8 @@
 #include "Data/InputAsset.h"
 #include "GameFramework/GameMode.h"
 #include "MutateArena/GameStates/BaseGameState.h"
+#include "MutateArena/System/Storage/SaveGameSetting.h"
+#include "MutateArena/System/Storage/StorageSubsystem.h"
 
 void ASpectatorCharacter::BeginPlay()
 {
@@ -32,6 +34,9 @@ void ASpectatorCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
 
 	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
 	{
+		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->LookMouseAction, ETriggerEvent::Triggered, this, &ThisClass::LookMouse);
+		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->LookStickAction, ETriggerEvent::Triggered, this, &ThisClass::LookStick);
+		
 		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->ScoreboardAction, ETriggerEvent::Triggered, this, &ThisClass::ScoreboardButtonPressed);
 		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->ScoreboardAction, ETriggerEvent::Completed, this, &ThisClass::ScoreboardButtonReleased);
 		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->PauseMenuAction, ETriggerEvent::Triggered, this, &ThisClass::PauseMenuButtonPressed);
@@ -93,6 +98,22 @@ void ASpectatorCharacter::ViewNextPlayer(const FInputActionValue& Value)
 		PerspectiveType = EPerspectiveType::FirstPerson;
 		BaseController->ServerViewNextPlayer();
 	}
+}
+
+void ASpectatorCharacter::LookMouse(const FInputActionValue& Value)
+{
+	FVector2D AxisVector = Value.Get<FVector2D>();
+	if (StorageSubsystem == nullptr) StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
+	AddControllerYawInput(AxisVector.X * StorageSubsystem->CacheSetting->MouseSensitivity);
+	AddControllerPitchInput(AxisVector.Y * StorageSubsystem->CacheSetting->MouseSensitivity);
+}
+
+void ASpectatorCharacter::LookStick(const FInputActionValue& Value)
+{
+	FVector2D AxisVector = Value.Get<FVector2D>();
+	if (StorageSubsystem == nullptr) StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
+	AddControllerYawInput(AxisVector.X * StorageSubsystem->CacheSetting->ControllerSensitivity);
+	AddControllerPitchInput(AxisVector.Y * StorageSubsystem->CacheSetting->ControllerSensitivity);
 }
 
 void ASpectatorCharacter::ScoreboardButtonPressed(const FInputActionValue& Value)

@@ -70,7 +70,7 @@ void UOverheadWidget::InitOverheadWidget()
 				}
 				
 				// 设置名字
-				PlayerName->SetText(FText::FromString(ULibraryCommon::ObfuscatePlayerName(BasePlayerState->GetPlayerName(), this)));
+				PlayerName->SetText(FText::FromString(ULibraryCommon::ObfuscateName(BasePlayerState->GetPlayerName(), this)));
 				PlayerName->SetColorAndOpacity(TeamColor);
 
 				// 设置血条颜色

@@ -131,7 +131,7 @@ void UTextChat::ShowMsg(const EMsgType MsgType, const ETeam Team, const FString&
 
 	ETeam LocalTeam = ETeam::NoTeam;
 	// PlayerName
-	MsgLineButton->PlayerName->SetText(FText::FromString(ULibraryCommon::ObfuscatePlayerName(PlayerName, this)));
+	MsgLineButton->PlayerName->SetText(FText::FromString(ULibraryCommon::ObfuscateName(PlayerName, this)));
 	if (EOSSubsystem)
 	{
 		LocalTeam = EOSSubsystem->GetMemberTeam(EOSSubsystem->GetLocalMember());

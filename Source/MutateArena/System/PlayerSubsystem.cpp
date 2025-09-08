@@ -15,7 +15,6 @@ UPlayerSubsystem::UPlayerSubsystem()
 		EOSSubsystem = LocalPlayer->GetGameInstance()->GetSubsystem<UEOSSubsystem>();
 		if (EOSSubsystem)
 		{
-			EOSSubsystem->OnLoginComplete.AddUObject(this, &ThisClass::OnLoginComplete);
 			EOSSubsystem->OnLoginStatusChanged.AddUObject(this, &ThisClass::OnLoginStatusChanged);
 			EOSSubsystem->OnUILobbyJoinRequested.AddUObject(this, &ThisClass::OnUILobbyJoinRequested);
 		}
@@ -39,35 +38,11 @@ void UPlayerSubsystem::AddNotifyLayout()
 	}
 }
 
-void UPlayerSubsystem::ShowNotify(const FColor DisplayColor, const FText& Msg)
+void UPlayerSubsystem::AddNotify(const FColor DisplayColor, const FText& Msg)
 {
 	if (NotifyLayout)
 	{
 		NotifyLayout->AddNotify(DisplayColor, Msg);
-	}
-}
-
-void UPlayerSubsystem::Login(ECoolLoginType LoginType, FString Id, FString Token)
-{
-	if (ULocalPlayer* LocalPlayer = GetLocalPlayer())
-	{
-		if (EOSSubsystem == nullptr) EOSSubsystem = LocalPlayer->GetGameInstance()->GetSubsystem<UEOSSubsystem>();
-		if (EOSSubsystem)
-		{
-			EOSSubsystem->Login(LocalPlayer->GetPlatformUserId(), LoginType, Id, Token);
-		}
-	}
-}
-
-void UPlayerSubsystem::OnLoginComplete(bool bWasSuccessful)
-{
-	if (bWasSuccessful)
-	{
-		LevelTravel(MAP_MENU);
-	}
-	else
-	{
-		NOTIFY(this, C_RED, LOCTEXT("LoginFailed", "Login failed"));
 	}
 }
 
@@ -84,29 +59,25 @@ void UPlayerSubsystem::OnLoginStatusChanged(const FAuthLoginStatusChanged& AuthL
 	else if (AuthLoginStatusChanged.LoginStatus == ELoginStatus::NotLoggedIn)
 	{
 		bShowNotify_NotLoggedIn = true;
-	
-		LevelTravel(MAP_LOGIN);
 	}
 	else if (AuthLoginStatusChanged.LoginStatus == ELoginStatus::UsingLocalProfile)
 	{
 		bShowNotify_UsingLocalProfile = true;
-	
-		LevelTravel(MAP_LOGIN);
 	}
-}
 
-void UPlayerSubsystem::LevelTravel(FString Url)
-{
-	if (ULocalPlayer* LocalPlayer = GetLocalPlayer())
+	if (AuthLoginStatusChanged.LoginStatus == ELoginStatus::NotLoggedIn || AuthLoginStatusChanged.LoginStatus == ELoginStatus::UsingLocalProfile)
 	{
-		if (APlayerController* PlayerController = LocalPlayer->GetPlayerController(GetWorld()))
+		if (ULocalPlayer* LocalPlayer = GetLocalPlayer())
 		{
-			PlayerController->ClientTravel(Url, ETravelType::TRAVEL_Absolute);
+			if (APlayerController* PlayerController = LocalPlayer->GetPlayerController(GetWorld()))
+			{
+				PlayerController->ClientTravel(MAP_LOGIN, ETravelType::TRAVEL_Absolute);
+			}
 		}
 	}
 }
 
-void UPlayerSubsystem::ShowLoginNotify()
+void UPlayerSubsystem::CheckIfNeedShowLoginNotify()
 {
 	if (bShowNotify_LoggedIn)
 	{
@@ -134,7 +105,7 @@ void UPlayerSubsystem::OnUILobbyJoinRequested(const FUILobbyJoinRequested& UILob
 {
 	if (EOSSubsystem)
 	{
-		if (EOSSubsystem->CurrentLobby)
+		if (EOSSubsystem->CurLobby)
 		{
 			NOTIFY(this, C_YELLOW, LOCTEXT("LeaveToAcceptInvitation", "You must leave current lobby to join new one"));
 
@@ -152,14 +123,13 @@ void UPlayerSubsystem::SetIsDead()
 {
 	IsDead = true;
 
-	// IsDead状态只需持续很短时间
+	// 0.02s后恢复IsDead为false
 	FTimerHandle TimerHandle;
-	GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &ThisClass::SetIsAlive, 0.02f);
-}
-
-void UPlayerSubsystem::SetIsAlive()
-{
-	IsDead = false;
+	FTimerDelegate TimerDelegate;
+	TimerDelegate.BindWeakLambda(this, [this]() {
+		IsDead = false;
+	});
+	GetWorld()->GetTimerManager().SetTimer(TimerHandle, TimerDelegate, 0.02f,  false);
 }
 
 #undef LOCTEXT_NAMESPACE

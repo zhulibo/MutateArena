@@ -36,17 +36,15 @@ public:
 	UAnimMontage* ADSMontage_C;
 	UPROPERTY(EditAnywhere)
 	UAnimMontage* ADSMontage_E;
-	UPROPERTY(EditAnywhere)
-	UAnimMontage* ADSReverseMontage_C;
 
 	UPROPERTY()
 	float AimingFOVMul = 0.9; // 缩放倍数
 	UPROPERTY()
-	float AimSpeed = 30.f;
+	float AimingWalkSpeedMul = 1.f;
 	UPROPERTY()
-	float AimMoveSpeedMul = 1.f;
+	bool bIsPIP = false;
 	UPROPERTY()
-	float ScopeFOV = 1.f;
+	float ScopeFOV = 90.f;
 	UPROPERTY()
 	int32 MaxCarriedAmmo; // 最大携弹量
 	UPROPERTY()
@@ -61,8 +59,6 @@ public:
 	bool bIsAutomatic;
 	UPROPERTY()
 	int32 PelletNum;
-	UPROPERTY(EditAnywhere)
-	bool bHasScope = false;
 	FORCEINLINE bool IsEmpty() const { return Ammo <= 0; }
 	FORCEINLINE bool IsFull() const { return Ammo == MagCapacity; }
 	FORCEINLINE float GetFireDelay() const { return 60 / FireRate; }
@@ -76,23 +72,23 @@ public:
 	float RecoilMaxHor;
 	UPROPERTY()
 	float RecoilMinHor;
+	// 总后坐力上限
+	UPROPERTY()
+	float RecoilTotalVertLimit;
+	UPROPERTY()
+	float RecoilTotalHorLimit;
 	// 首发后坐力倍率
 	UPROPERTY()
 	float FirstShotRecoilMul;
 	// 应用后坐力需要的时间
 	UPROPERTY()
 	float RecoilIncTime;
-	// 总后坐力上限
-	UPROPERTY()
-	float RecoilTotalVertLimit;
-	UPROPERTY()
-	float RecoilTotalHorLimit;
 	// 后坐力回复速度
 	UPROPERTY()
 	float RecoilDecSpeed;
-	// 子弹散布，固定值，不受其他因素影响，固定存在
+	// 子弹散布角度
 	UPROPERTY()
-	float CenterSpread;
+	float CenterSpreadAngle;
 
 	void SetScopeActive(bool bIsActive);
 

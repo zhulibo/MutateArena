@@ -1,6 +1,5 @@
 #include "Pickup.h"
 
-#include "MutateArena/MutateArena.h"
 #include "MutateArena/GameStates/MutationGameState.h"
 #include "Components/SphereComponent.h"
 
@@ -10,10 +9,9 @@ APickup::APickup()
 
 	OverlapSphere = CreateDefaultSubobject<USphereComponent>(TEXT("OverlapSphere"));
 	SetRootComponent(OverlapSphere);
-	OverlapSphere->SetSphereRadius(150.f);
+	OverlapSphere->SetSphereRadius(100.f);
 	OverlapSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	OverlapSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
-	OverlapSphere->SetCollisionResponseToChannel(ECC_TEAM1_MESH, ECollisionResponse::ECR_Overlap);
 	OverlapSphere->OnComponentBeginOverlap.AddUniqueDynamic(this, &APickup::OnSphereOverlap);
 
 	PickupMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PickupMesh"));
@@ -24,7 +22,7 @@ APickup::APickup()
 void APickup::BeginPlay()
 {
 	Super::BeginPlay();
-
+	
 	if (MutationGameState == nullptr) MutationGameState = GetWorld()->GetGameState<AMutationGameState>();
 	if (MutationGameState)
 	{

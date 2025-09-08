@@ -21,19 +21,19 @@ void AWeaponGeneric::Fire(const FVector& HitTarget, float RecoilVert, float Reco
 
 	if (HumanCharacter == nullptr) HumanCharacter = Cast<AHumanCharacter>(GetOwner());
 	if (OwnerTeam == ETeam::NoTeam) SetOwnerTeam();
-	const USkeletalMeshSocket* MuzzleSocket = EquipmentMesh->GetSocketByName(TEXT("Muzzle"));
+	const USkeletalMeshSocket* MuzzleSocket = EquipmentMesh->GetSocketByName(SOCKET_MUZZLE);
 
 	if (HumanCharacter == nullptr || ProjectileClass == nullptr|| OwnerTeam == ETeam::NoTeam || MuzzleSocket == nullptr) return;
 
 	FTransform SocketTransform = MuzzleSocket->GetSocketTransform(EquipmentMesh);
 	FRotator TargetRotation = (HitTarget - SocketTransform.GetLocation()).Rotation();
 
-	// 应用后坐力（gun kick）
+	// 子弹偏移
 	TargetRotation.Pitch += RecoilVert;
 	TargetRotation.Yaw += RecoilHor;
 
 	// 添加散布
-	float TempCenterSpread = CenterSpread;
+	float TempCenterSpread = CenterSpreadAngle;
 	if (HumanCharacter->CombatComponent && HumanCharacter->CombatComponent->bIsFirstShot)
 	{
 		// 第一发无散布
@@ -57,10 +57,10 @@ void AWeaponGeneric::Fire(const FVector& HitTarget, float RecoilVert, float Reco
 	switch (OwnerTeam)
 	{
 	case ETeam::Team1:
-		Projectile->GetCollisionBox()->SetCollisionResponseToChannel(ECC_TEAM2_MESH, ECollisionResponse::ECR_Block);
+		Projectile->GetCollisionBox()->SetCollisionResponseToChannel(ECC_MESH_TEAM2, ECollisionResponse::ECR_Block);
 		break;
 	case ETeam::Team2:
-		Projectile->GetCollisionBox()->SetCollisionResponseToChannel(ECC_TEAM1_MESH, ECollisionResponse::ECR_Block);
+		Projectile->GetCollisionBox()->SetCollisionResponseToChannel(ECC_MESH_TEAM1, ECollisionResponse::ECR_Block);
 		break;
 	}
 }

@@ -21,35 +21,29 @@ public:
 		RETURN_QUICK_DECLARE_CYCLE_STAT(UPlayerSubsystem, STATGROUP_Tickables);
 	}
 
-	UPROPERTY()
-	class UNotifyLayout* NotifyLayout;
-	void AddNotifyLayout();
-	void ShowNotify(const FColor DisplayColor, const FText& Msg);
-
-	void Login(ECoolLoginType LoginType, FString ID, FString Token);
-
-	// UMG会在关卡切换时销毁，待新关卡Viewport加载后再显示登录通知。
-	void ShowLoginNotify();
-
-	bool IsDead = false;
-	void SetIsDead();
-	void SetIsAlive();
-
 protected:
 	UPROPERTY()
 	UEOSSubsystem* EOSSubsystem;
 
-	void OnLoginComplete(bool bWasSuccessful);
-	void OnLoginStatusChanged(const FAuthLoginStatusChanged& AuthLoginStatusChanged);
-	
-	void LevelTravel(FString Url);
-
+public:
+	UPROPERTY()
+	class UNotifyLayout* NotifyLayout;
+	void AddNotifyLayout();
+	void AddNotify(const FColor DisplayColor, const FText& Msg);
+	// UMG会在关卡切换时销毁，待新关卡Viewport加载后再显示登录通知。
+	void CheckIfNeedShowLoginNotify();
+protected:
 	bool bShowNotify_LoggedIn = false;
 	bool bShowNotify_LoggedInReducedFunctionality = false;
 	bool bShowNotify_NotLoggedIn = false;
 	bool bShowNotify_UsingLocalProfile = false;
+	void OnLoginStatusChanged(const FAuthLoginStatusChanged& AuthLoginStatusChanged);
 	
 	// 邀请
 	void OnUILobbyJoinRequested(const FUILobbyJoinRequested& UILobbyJoinRequested);
+
+public:
+	bool IsDead = false;
+	void SetIsDead();
 	
 };

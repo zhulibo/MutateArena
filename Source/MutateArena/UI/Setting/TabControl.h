@@ -28,17 +28,17 @@ protected:
 	FVector2D Range_1_50 = FVector2D(1.f, 50.f);
 	FVector2D Range_50_100 = FVector2D(50.f, 100.f);
 
-	float SensitivityMouseMin = 0.2f;
-	float SensitivityMouseMiddle = 0.8f; // 需同步修改USaveGameSetting中的默认值
-	float SensitivityMouseMax = 3.2f;
-	float MapSensitivityMouse(float Value);
-	float InverseMapSensitivityMouse(float Value);
+	float MouseSensitivityMin;
+	float MouseSensitivityMiddle;
+	float MouseSensitivityMax;
+	float MapMouseSensitivity(float Value);
+	float InverseMapMouseSensitivity(float Value);
 
-	float SensitivityControllerMin = 1.f;
-	float SensitivityControllerMiddle = 3.f; // 需同步修改USaveGameSetting中的默认值
-	float SensitivityControllerMax = 9.f;
-	float MapSensitivityController(float Value);
-	float InverseMapSensitivityController(float Value);
+	float ControllerSensitivityMin;
+	float ControllerSensitivityMiddle;
+	float ControllerSensitivityMax;
+	float MapControllerSensitivity(float Value);
+	float InverseMapControllerSensitivity(float Value);
 
 	// 键鼠
 	UPROPERTY(meta = (BindWidget))
@@ -48,16 +48,6 @@ protected:
 	UFUNCTION()
 	void OnMouseSensitivityChanged(float Value);
 
-	UPROPERTY(meta = (BindWidget))
-	class UComboBoxString* MouseAimAssistSteeringComboBox;
-	UFUNCTION()
-	void OnMouseAimAssistSteeringChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
-
-	UPROPERTY(meta = (BindWidget))
-	UComboBoxString* MouseAimAssistSlowdownComboBox;
-	UFUNCTION()
-	void OnMouseAimAssistSlowdownChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
-
 	// 手柄
 	UPROPERTY(meta = (BindWidget))
 	UAnalogSlider* ControllerSensitivityAnalogSlider;
@@ -65,16 +55,6 @@ protected:
 	UCommonTextBlock* ControllerSensitivity;
 	UFUNCTION()
 	void OnControllerSensitivityChanged(float Value);
-
-	UPROPERTY(meta = (BindWidget))
-	UComboBoxString* ControllerAimAssistSteeringComboBox;
-	UFUNCTION()
-	void OnControllerAimAssistSteeringChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
-
-	UPROPERTY(meta = (BindWidget))
-	UComboBoxString* ControllerAimAssistSlowdownComboBox;
-	UFUNCTION()
-	void OnControllerAimAssistSlowdownChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
 
 	UPROPERTY(EditAnywhere)
 	FDataTableRowHandle SetDefaultData;

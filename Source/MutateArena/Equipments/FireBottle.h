@@ -33,7 +33,7 @@ protected:
 
 	UPROPERTY()
 	UAudioComponent* AudioComponent;
-	
+
 	void Explode();
 
 	UPROPERTY()

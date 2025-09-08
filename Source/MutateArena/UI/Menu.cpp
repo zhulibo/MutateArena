@@ -1,12 +1,16 @@
 #include "Menu.h"
+
+#include "CommonTextBlock.h"
 #include "MenuLayout.h"
 #include "MutateArena/PlayerControllers/MenuController.h"
 #include "MutateArena/System/AssetSubsystem.h"
 #include "MutateArena/System/Data/CommonAsset.h"
 #include "Common/CommonButton.h"
+#include "Components/HorizontalBox.h"
 #include "MutateArena/UI/Setting/Setting.h"
 #include "MutateArena/UI/Common/ConfirmScreen.h"
 #include "Kismet/GameplayStatics.h"
+#include "MutateArena/MutateArena.h"
 #include "MutateArena/System/EOSSubsystem.h"
 #include "MutateArena/Utils/LibraryCommon.h"
 #include "Widgets/CommonActivatableWidgetContainer.h"
@@ -21,14 +25,29 @@ void UMenu::NativeOnInitialized()
 
 	QuitButton->OnClicked().AddUObject(this, &ThisClass::OnQuitButtonClicked);
 
-	// EOSSubsystem = GetGameInstance()->GetSubsystem<UEOSSubsystem>();
-	// if (EOSSubsystem)
-	// {
-	// 	EOSSubsystem->OnEnumerateTitleFilesComplete.AddUObject(this, &ThisClass::OnEnumerateTitleFilesComplete);
-	// 	EOSSubsystem->OnReadTitleFileComplete.AddUObject(this, &ThisClass::OnReadTitleFileComplete);
-	//
-	// 	EOSSubsystem->EnumerateTitleFiles();
-	// }
+	EOSSubsystem = GetGameInstance()->GetSubsystem<UEOSSubsystem>();
+	if (EOSSubsystem)
+	{
+		EOSSubsystem->OnEnumerateTitleFilesComplete.AddUObject(this, &ThisClass::OnEnumerateTitleFilesComplete);
+		EOSSubsystem->OnReadTitleFileComplete.AddUObject(this, &ThisClass::OnReadTitleFileComplete);
+
+		// 读取标题文件显示消息
+		FTimerDelegate TimerDelegate;
+		TimerDelegate.BindWeakLambda(this, [this]() {
+			if (EOSSubsystem)
+			{
+				EOSSubsystem->EnumerateTitleFiles();
+			}
+		});
+		GetWorld()->GetTimerManager().SetTimer(EnumerateTitleFileTimerHandle, TimerDelegate, 600.f, true, 0.f);
+	}
+}
+
+void UMenu::NativeDestruct()
+{
+	GetWorld()->GetTimerManager().ClearTimer(EnumerateTitleFileTimerHandle);
+
+	Super::NativeDestruct();
 }
 
 void UMenu::OnSettingButtonClicked()
@@ -71,10 +90,10 @@ void UMenu::OnEnumerateTitleFilesComplete(bool bWasSuccessful)
 {
 	if (!bWasSuccessful) return;
 	
-	if (EOSSubsystem && EOSSubsystem->GetEnumeratedTitleFiles().Contains(TitleFile_Notice))
+	if (EOSSubsystem && EOSSubsystem->GetEnumeratedTitleFiles().Contains(TitleFile_Message))
 	{
 
-		EOSSubsystem->ReadTitleFile(TitleFile_Notice);
+		EOSSubsystem->ReadTitleFile(TitleFile_Message);
 	}
 }
 
@@ -93,6 +112,7 @@ void UMenu::OnReadTitleFileComplete(bool bWasSuccessful, const FTitleFileContent
 	{
 		const FString StartTimeString = JsonObject->GetStringField(TEXT("StartTime"));
 		const FString EndTimeString = JsonObject->GetStringField(TEXT("EndTime"));
+		const int32 Level = JsonObject->GetIntegerField(TEXT("Level"));
 
 		FString Content;
 		if (ULibraryCommon::GetLanguage().Contains(TEXT("zh")))
@@ -106,7 +126,28 @@ void UMenu::OnReadTitleFileComplete(bool bWasSuccessful, const FTitleFileContent
 
 		if (IsBeijingTimeInRange(StartTimeString, EndTimeString))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Content %s"), *Content);
+			MessageBox->SetVisibility(ESlateVisibility::Visible);
+			Message->SetText(FText::FromString(Content));
+			
+			FColor Color = C_WHITE;
+			if (Level == 1)
+			{
+				Color = C_WHITE;
+			}
+			else if (Level == 2)
+			{
+				Color = C_YELLOW;
+			}
+			else if (Level == 3)
+			{
+				Color = C_RED;
+			}
+			Message->SetColorAndOpacity(Color);
+		}
+		else
+		{
+			Message->SetText(FText::FromString(TEXT("")));
+			MessageBox->SetVisibility(ESlateVisibility::Hidden);
 		}
 	}
 }

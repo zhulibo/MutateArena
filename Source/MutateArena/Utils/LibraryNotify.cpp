@@ -3,13 +3,13 @@
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/System/PlayerSubsystem.h"
 
-void ULibraryNotify::ShowNotify(const UObject* Context, const FColor DisplayColor, const FText& Msg)
+void ULibraryNotify::AddNotify(const UObject* Context, const FColor DisplayColor, const FText& Msg)
 {
 	if (Context && Context->GetWorld())
 	{
 		if (UPlayerSubsystem* PlayerSubsystem = ULocalPlayer::GetSubsystem<UPlayerSubsystem>(Context->GetWorld()->GetFirstLocalPlayerFromController()))
 		{
-			PlayerSubsystem->ShowNotify(DisplayColor, Msg);
+			PlayerSubsystem->AddNotify(DisplayColor, Msg);
 
 			return;
 		}

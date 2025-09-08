@@ -22,31 +22,21 @@ void UTabControl::NativeOnInitialized()
 			TabButton->OnHovered().AddUObject(this, &ThisClass::OnTabButtonHovered, i);
 		}
 	}
+	if (const UDefaultConfig* DefaultConfig = GetDefault<UDefaultConfig>())
+	{
+		MouseSensitivityMin = DefaultConfig->MouseSensitivity / DefaultConfig->MouseSensitivityMaxMul;
+		MouseSensitivityMiddle = DefaultConfig->MouseSensitivity;
+		MouseSensitivityMax = DefaultConfig->MouseSensitivity * DefaultConfig->MouseSensitivityMaxMul;
 
-	MouseAimAssistSteeringComboBox->AddOption("on");
-	MouseAimAssistSteeringComboBox->AddOption("off");
-	MouseAimAssistSlowdownComboBox->AddOption("on");
-	MouseAimAssistSlowdownComboBox->AddOption("off");
+		ControllerSensitivityMin = DefaultConfig->ControllerSensitivity / DefaultConfig->ControllerSensitivityMaxMul;
+		ControllerSensitivityMiddle = DefaultConfig->ControllerSensitivity;
+		ControllerSensitivityMax = DefaultConfig->ControllerSensitivity * DefaultConfig->ControllerSensitivityMaxMul;
+	}
 
-	ControllerAimAssistSteeringComboBox->AddOption("on");
-	ControllerAimAssistSteeringComboBox->AddOption("off");
-	ControllerAimAssistSlowdownComboBox->AddOption("on");
-	ControllerAimAssistSlowdownComboBox->AddOption("off");
-
-	// TODO 辅助瞄准
-	MouseAimAssistSteeringComboBox->SetIsEnabled(false);
-	MouseAimAssistSlowdownComboBox->SetIsEnabled(false);
-	ControllerAimAssistSteeringComboBox->SetIsEnabled(false);
-	ControllerAimAssistSlowdownComboBox->SetIsEnabled(false);
-	
 	SetUISavedValue();
 
 	MouseSensitivityAnalogSlider->OnValueChanged.AddUniqueDynamic(this, &ThisClass::OnMouseSensitivityChanged);
-	MouseAimAssistSteeringComboBox->OnSelectionChanged.AddUniqueDynamic(this, &ThisClass::OnMouseAimAssistSteeringChanged);
-	MouseAimAssistSlowdownComboBox->OnSelectionChanged.AddUniqueDynamic(this, &ThisClass::OnMouseAimAssistSlowdownChanged);
 	ControllerSensitivityAnalogSlider->OnValueChanged.AddUniqueDynamic(this, &ThisClass::OnControllerSensitivityChanged);
-	ControllerAimAssistSteeringComboBox->OnSelectionChanged.AddUniqueDynamic(this, &ThisClass::OnControllerAimAssistSteeringChanged);
-	ControllerAimAssistSlowdownComboBox->OnSelectionChanged.AddUniqueDynamic(this, &ThisClass::OnControllerAimAssistSlowdownChanged);
 
 	SetDefaultHandle = RegisterUIActionBinding(FBindUIActionArgs(SetDefaultData, true, FSimpleDelegate::CreateUObject(this, &ThisClass::SetDefault)));
 }
@@ -82,54 +72,50 @@ void UTabControl::SetUISavedValue()
 	if (StorageSubsystem == nullptr) StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
 	if (StorageSubsystem && StorageSubsystem->CacheSetting)
 	{
-		int32 MouseSensitivityInverse = FMath::RoundToInt(InverseMapSensitivityMouse(StorageSubsystem->CacheSetting->MouseSensitivity));
+		int32 MouseSensitivityInverse = FMath::RoundToInt(InverseMapMouseSensitivity(StorageSubsystem->CacheSetting->MouseSensitivity));
 		MouseSensitivityAnalogSlider->SetValue(MouseSensitivityInverse);
 		MouseSensitivity->SetText(FText::AsNumber(MouseSensitivityInverse));
-		MouseAimAssistSteeringComboBox->SetSelectedOption(StorageSubsystem->CacheSetting->MouseAimAssistSteering ? "on" : "off");
-		MouseAimAssistSlowdownComboBox->SetSelectedOption(StorageSubsystem->CacheSetting->MouseAimAssistSlowdown ? "on" : "off");
 
-		int32 ControllerSensitivityInverse = FMath::RoundToInt(InverseMapSensitivityController(StorageSubsystem->CacheSetting->ControllerSensitivity));
+		int32 ControllerSensitivityInverse = FMath::RoundToInt(InverseMapControllerSensitivity(StorageSubsystem->CacheSetting->ControllerSensitivity));
 		ControllerSensitivityAnalogSlider->SetValue(ControllerSensitivityInverse);
 		ControllerSensitivity->SetText(FText::AsNumber(ControllerSensitivityInverse));
-		ControllerAimAssistSteeringComboBox->SetSelectedOption(StorageSubsystem->CacheSetting->ControllerAimAssistSteering ? "on" : "off");
-		ControllerAimAssistSlowdownComboBox->SetSelectedOption(StorageSubsystem->CacheSetting->ControllerAimAssistSlowdown ? "on" : "off");
 	}
 }
 
-float UTabControl::MapSensitivityMouse(float Value)
+float UTabControl::MapMouseSensitivity(float Value)
 {
 	float Sensitivity;
 
 	if (Value < 50.f)
 	{
-		FVector2D OutRange(SensitivityMouseMin, SensitivityMouseMiddle);
+		FVector2D OutRange(MouseSensitivityMin, MouseSensitivityMiddle);
 		Sensitivity = FMath::GetMappedRangeValueClamped(Range_1_50, OutRange, Value);
 	}
 	else if (Value > 50.f)
 	{
-		FVector2D OutRange(SensitivityMouseMiddle, SensitivityMouseMax);
+		FVector2D OutRange(MouseSensitivityMiddle, MouseSensitivityMax);
 		Sensitivity = FMath::GetMappedRangeValueClamped(Range_50_100, OutRange, Value);
 	}
 	else
 	{
-		Sensitivity = SensitivityMouseMiddle;
+		Sensitivity = MouseSensitivityMiddle;
 	}
 
 	return Sensitivity;
 }
 
-float UTabControl::InverseMapSensitivityMouse(float Value)
+float UTabControl::InverseMapMouseSensitivity(float Value)
 {
 	float Sensitivity;
 
-	if (Value < SensitivityMouseMiddle)
+	if (Value < MouseSensitivityMiddle)
 	{
-		FVector2D InRange(SensitivityMouseMin, SensitivityMouseMiddle);
+		FVector2D InRange(MouseSensitivityMin, MouseSensitivityMiddle);
 		Sensitivity = FMath::GetMappedRangeValueClamped(InRange, Range_1_50, Value);
 	}
-	else if (Value > SensitivityMouseMiddle)
+	else if (Value > MouseSensitivityMiddle)
 	{
-		FVector2D InRange(SensitivityMouseMiddle, SensitivityMouseMax);
+		FVector2D InRange(MouseSensitivityMiddle, MouseSensitivityMax);
 		Sensitivity = FMath::GetMappedRangeValueClamped(InRange, Range_50_100, Value);
 	}
 	else
@@ -140,40 +126,40 @@ float UTabControl::InverseMapSensitivityMouse(float Value)
 	return Sensitivity;
 }
 
-float UTabControl::MapSensitivityController(float Value)
+float UTabControl::MapControllerSensitivity(float Value)
 {
 	float Sensitivity;
 
 	if (Value < 50.f)
 	{
-		FVector2D OutRange(SensitivityControllerMin, SensitivityControllerMiddle);
+		FVector2D OutRange(ControllerSensitivityMin, ControllerSensitivityMiddle);
 		Sensitivity = FMath::GetMappedRangeValueClamped(Range_1_50, OutRange, Value);
 	}
 	else if (Value > 50.f)
 	{
-		FVector2D OutRange(SensitivityControllerMiddle, SensitivityControllerMax);
+		FVector2D OutRange(ControllerSensitivityMiddle, ControllerSensitivityMax);
 		Sensitivity = FMath::GetMappedRangeValueClamped(Range_50_100, OutRange, Value);
 	}
 	else
 	{
-		Sensitivity = SensitivityControllerMiddle;
+		Sensitivity = ControllerSensitivityMiddle;
 	}
 
 	return Sensitivity;
 }
 
-float UTabControl::InverseMapSensitivityController(float Value)
+float UTabControl::InverseMapControllerSensitivity(float Value)
 {
 	float Sensitivity;
 
-	if (Value < SensitivityControllerMiddle)
+	if (Value < ControllerSensitivityMiddle)
 	{
-		FVector2D InRange(SensitivityControllerMin, SensitivityControllerMiddle);
+		FVector2D InRange(ControllerSensitivityMin, ControllerSensitivityMiddle);
 		Sensitivity = FMath::GetMappedRangeValueClamped(InRange, Range_1_50, Value);
 	}
-	else if (Value > SensitivityControllerMiddle)
+	else if (Value > ControllerSensitivityMiddle)
 	{
-		FVector2D InRange(SensitivityControllerMiddle, SensitivityControllerMax);
+		FVector2D InRange(ControllerSensitivityMiddle, ControllerSensitivityMax);
 		Sensitivity = FMath::GetMappedRangeValueClamped(InRange, Range_50_100, Value);
 	}
 	else
@@ -191,27 +177,7 @@ void UTabControl::OnMouseSensitivityChanged(float Value)
 	if (StorageSubsystem == nullptr) StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
 	if (StorageSubsystem && StorageSubsystem->CacheSetting)
 	{
-		StorageSubsystem->CacheSetting->MouseSensitivity = MapSensitivityMouse(Value);
-		StorageSubsystem->SaveSetting();
-	}
-}
-
-void UTabControl::OnMouseAimAssistSteeringChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
-{
-	if (StorageSubsystem == nullptr) StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
-	if (StorageSubsystem && StorageSubsystem->CacheSetting)
-	{
-		StorageSubsystem->CacheSetting->MouseAimAssistSteering = SelectedItem == "on";
-		StorageSubsystem->SaveSetting();
-	}
-}
-
-void UTabControl::OnMouseAimAssistSlowdownChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
-{
-	if (StorageSubsystem == nullptr) StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
-	if (StorageSubsystem && StorageSubsystem->CacheSetting)
-	{
-		StorageSubsystem->CacheSetting->MouseAimAssistSlowdown = SelectedItem == "on";
+		StorageSubsystem->CacheSetting->MouseSensitivity = MapMouseSensitivity(Value);
 		StorageSubsystem->SaveSetting();
 	}
 }
@@ -223,26 +189,7 @@ void UTabControl::OnControllerSensitivityChanged(float Value)
 	if (StorageSubsystem == nullptr) StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
 	if (StorageSubsystem && StorageSubsystem->CacheSetting)
 	{
-		StorageSubsystem->CacheSetting->ControllerSensitivity = MapSensitivityController(Value);
-		StorageSubsystem->SaveSetting();
-	}
-}
-
-void UTabControl::OnControllerAimAssistSteeringChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
-{
-	if (StorageSubsystem == nullptr) StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
-	if (StorageSubsystem && StorageSubsystem->CacheSetting)
-	{
-		StorageSubsystem->CacheSetting->ControllerAimAssistSteering = SelectedItem == "on";
-		StorageSubsystem->SaveSetting();
-	}
-}
-void UTabControl::OnControllerAimAssistSlowdownChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
-{
-	if (StorageSubsystem == nullptr) StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
-	if (StorageSubsystem && StorageSubsystem->CacheSetting)
-	{
-		StorageSubsystem->CacheSetting->ControllerAimAssistSlowdown = SelectedItem == "on";
+		StorageSubsystem->CacheSetting->ControllerSensitivity = MapControllerSensitivity(Value);
 		StorageSubsystem->SaveSetting();
 	}
 }
@@ -254,24 +201,16 @@ void UTabControl::SetDefault()
 		if (StorageSubsystem == nullptr) StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
 		if (StorageSubsystem && StorageSubsystem->CacheSetting)
 		{
-			int32 MouseSensitivityInverse = FMath::RoundToInt(InverseMapSensitivityMouse(DefaultConfig->MouseSensitivity));
+			int32 MouseSensitivityInverse = FMath::RoundToInt(InverseMapMouseSensitivity(DefaultConfig->MouseSensitivity));
 			MouseSensitivityAnalogSlider->SetValue(MouseSensitivityInverse);
 			MouseSensitivity->SetText(FText::AsNumber(MouseSensitivityInverse));
-			MouseAimAssistSteeringComboBox->SetSelectedOption(DefaultConfig->MouseAimAssistSteering ? "on" : "off");
-			MouseAimAssistSlowdownComboBox->SetSelectedOption(DefaultConfig->MouseAimAssistSlowdown ? "on" : "off");
 
-			int32 ControllerSensitivityInverse = FMath::RoundToInt(InverseMapSensitivityController(DefaultConfig->ControllerSensitivity));
+			int32 ControllerSensitivityInverse = FMath::RoundToInt(InverseMapControllerSensitivity(DefaultConfig->ControllerSensitivity));
 			ControllerSensitivityAnalogSlider->SetValue(ControllerSensitivityInverse);
 			ControllerSensitivity->SetText(FText::AsNumber(ControllerSensitivityInverse));
-			ControllerAimAssistSteeringComboBox->SetSelectedOption(DefaultConfig->ControllerAimAssistSteering ? "on" : "off");
-			ControllerAimAssistSlowdownComboBox->SetSelectedOption(DefaultConfig->ControllerAimAssistSlowdown ? "on" : "off");
 
 			StorageSubsystem->CacheSetting->MouseSensitivity = DefaultConfig->MouseSensitivity;
-			StorageSubsystem->CacheSetting->MouseAimAssistSteering = DefaultConfig->MouseAimAssistSteering;
-			StorageSubsystem->CacheSetting->MouseAimAssistSlowdown = DefaultConfig->MouseAimAssistSlowdown;
 			StorageSubsystem->CacheSetting->ControllerSensitivity = DefaultConfig->ControllerSensitivity;
-			StorageSubsystem->CacheSetting->ControllerAimAssistSteering = DefaultConfig->ControllerAimAssistSteering;
-			StorageSubsystem->CacheSetting->ControllerAimAssistSlowdown = DefaultConfig->ControllerAimAssistSlowdown;
 			StorageSubsystem->SaveSetting();
 		}
 	}
