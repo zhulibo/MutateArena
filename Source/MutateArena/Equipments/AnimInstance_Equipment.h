@@ -21,6 +21,6 @@ protected:
 	class AEquipment* Equipment;
 
 	UPROPERTY(BlueprintReadOnly)
-	bool bIsAiming;
+	bool bIsAiming =  false;
 
 };

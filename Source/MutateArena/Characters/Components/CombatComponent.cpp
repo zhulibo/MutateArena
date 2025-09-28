@@ -442,7 +442,16 @@ void UCombatComponent::UseEquipment(AEquipment* Equipment)
 {
 	if (Equipment == nullptr || HumanCharacter == nullptr) return;
 
-	AttachToRightHand(Equipment);
+	// TODO Kukri切入蒙太奇第一帧是在左手上，需要存成变量
+	// TODO 播放Kukri切入蒙太奇时第一帧异常
+	if (Equipment->EquipmentName == EEquipmentName::Kukri)
+	{
+		AttachToLeftHand(Equipment);
+	}
+	else
+	{
+		AttachToRightHand(Equipment);
+	}
 
 	// 更新子弹
 	if (BaseController == nullptr) BaseController = Cast<ABaseController>(HumanCharacter->Controller);
@@ -525,65 +534,68 @@ void UCombatComponent::LocalSetAiming(bool TempBIsAiming)
 	{
 		HumanCharacter->GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * GetCurWeapon()->WalkSpeedMul;
 	}
-	
-	// 角色瞄准动画
-	if (bIsAiming) // 瞄准
-	{
-		if (HumanAnimInstance->Montage_IsPlaying(GetCurWeapon()->ADSMontage_C))
-		{
-			HumanAnimInstance->Montage_SetPlayRate(GetCurWeapon()->ADSMontage_C, 1.f);
 
-			float TempFOVInterpTime = GetCurWeapon()->ADSMontage_C->GetPlayLength() - HumanAnimInstance->Montage_GetPosition(GetCurWeapon()->ADSMontage_C);
-			StartInterpFOV(DefaultFOV * GetCurWeapon()->AimingFOVMul, TempFOVInterpTime);
-		}
-		else
-		{
-			HumanAnimInstance->Montage_Play(GetCurWeapon()->ADSMontage_C);
-			
-			StartInterpFOV(DefaultFOV * GetCurWeapon()->AimingFOVMul, GetCurWeapon()->ADSMontage_C->GetPlayLength());
-		}
-	}
-	else // 取消瞄准
+	if (HumanCharacter->IsLocallyControlled()) // TODO 非本地瞄准动画暂时禁用了
 	{
-		if (HumanAnimInstance->Montage_IsPlaying(GetCurWeapon()->ADSMontage_C))
-		{
-			HumanAnimInstance->Montage_SetPlayRate(GetCurWeapon()->ADSMontage_C, -1.f);
-
-			StartInterpFOV(DefaultFOV, HumanAnimInstance->Montage_GetPosition(GetCurWeapon()->ADSMontage_C));
-		}
-		else
-		{
-			HumanAnimInstance->Montage_Play(GetCurWeapon()->ADSMontage_C, -1.f);
-			HumanAnimInstance->Montage_SetPosition(GetCurWeapon()->ADSMontage_C, GetCurWeapon()->ADSMontage_C->GetPlayLength());
-			
-			StartInterpFOV(DefaultFOV, GetCurWeapon()->ADSMontage_C->GetPlayLength());
-		}
-	}
-
-	// 武器瞄准动画
-	if (UAnimInstance_Equipment* EquipmentAnimInstance = GetCurEquipment()->GetEquipmentAnimInstance())
-	{
+		// 角色瞄准动画
 		if (bIsAiming) // 瞄准
 		{
-			if (EquipmentAnimInstance->Montage_IsPlaying(GetCurWeapon()->ADSMontage_E))
+			if (HumanAnimInstance->Montage_IsPlaying(GetCurWeapon()->ADSMontage_C))
 			{
-				EquipmentAnimInstance->Montage_SetPlayRate(GetCurWeapon()->ADSMontage_E, 1.f);
+				HumanAnimInstance->Montage_SetPlayRate(GetCurWeapon()->ADSMontage_C, 1.f);
+
+				float TempFOVInterpTime = GetCurWeapon()->ADSMontage_C->GetPlayLength() - HumanAnimInstance->Montage_GetPosition(GetCurWeapon()->ADSMontage_C);
+				StartInterpFOV(DefaultFOV * GetCurWeapon()->AimingFOVMul, TempFOVInterpTime);
 			}
 			else
 			{
-				EquipmentAnimInstance->Montage_Play(GetCurWeapon()->ADSMontage_E);
+				HumanAnimInstance->Montage_Play(GetCurWeapon()->ADSMontage_C);
+				
+				StartInterpFOV(DefaultFOV * GetCurWeapon()->AimingFOVMul, GetCurWeapon()->ADSMontage_C->GetPlayLength());
 			}
 		}
 		else // 取消瞄准
 		{
-			if (EquipmentAnimInstance->Montage_IsPlaying(GetCurWeapon()->ADSMontage_E))
+			if (HumanAnimInstance->Montage_IsPlaying(GetCurWeapon()->ADSMontage_C))
 			{
-				EquipmentAnimInstance->Montage_SetPlayRate(GetCurWeapon()->ADSMontage_E, -1.f);
+				HumanAnimInstance->Montage_SetPlayRate(GetCurWeapon()->ADSMontage_C, -1.f);
+
+				StartInterpFOV(DefaultFOV, HumanAnimInstance->Montage_GetPosition(GetCurWeapon()->ADSMontage_C));
 			}
 			else
 			{
-				EquipmentAnimInstance->Montage_Play(GetCurWeapon()->ADSMontage_E, -1.f);
-				EquipmentAnimInstance->Montage_SetPosition(GetCurWeapon()->ADSMontage_E, GetCurWeapon()->ADSMontage_E->GetPlayLength());
+				HumanAnimInstance->Montage_Play(GetCurWeapon()->ADSMontage_C, -1.f);
+				HumanAnimInstance->Montage_SetPosition(GetCurWeapon()->ADSMontage_C, GetCurWeapon()->ADSMontage_C->GetPlayLength());
+				
+				StartInterpFOV(DefaultFOV, GetCurWeapon()->ADSMontage_C->GetPlayLength());
+			}
+		}
+
+		// 武器瞄准动画
+		if (UAnimInstance_Equipment* EquipmentAnimInstance = GetCurEquipment()->GetEquipmentAnimInstance())
+		{
+			if (bIsAiming) // 瞄准
+			{
+				if (EquipmentAnimInstance->Montage_IsPlaying(GetCurWeapon()->ADSMontage_E))
+				{
+					EquipmentAnimInstance->Montage_SetPlayRate(GetCurWeapon()->ADSMontage_E, 1.f);
+				}
+				else
+				{
+					EquipmentAnimInstance->Montage_Play(GetCurWeapon()->ADSMontage_E);
+				}
+			}
+			else // 取消瞄准
+			{
+				if (EquipmentAnimInstance->Montage_IsPlaying(GetCurWeapon()->ADSMontage_E))
+				{
+					EquipmentAnimInstance->Montage_SetPlayRate(GetCurWeapon()->ADSMontage_E, -1.f);
+				}
+				else
+				{
+					EquipmentAnimInstance->Montage_Play(GetCurWeapon()->ADSMontage_E, -1.f);
+					EquipmentAnimInstance->Montage_SetPosition(GetCurWeapon()->ADSMontage_E, GetCurWeapon()->ADSMontage_E->GetPlayLength());
+				}
 			}
 		}
 	}
@@ -827,6 +839,13 @@ void UCombatComponent::PlayFireMontage()
 	if (HumanAnimInstance)
 	{
 		UAnimMontage* MontageToPlay = bIsAiming ? GetCurWeapon()->FireADSMontage_C : GetCurWeapon()->FireMontage_C;
+		
+		// TODO 非本地瞄准动画暂时禁用了
+		if (!HumanCharacter->IsLocallyControlled())
+		{
+			MontageToPlay = GetCurWeapon()->FireMontage_C;
+		}
+		
 		if (HumanAnimInstance->Montage_IsPlaying(GetCurWeapon()->ADSMontage_C))
 		{
 			// 打断ADSMontage_C会影响FOV，FOV依赖ADSMontage_C的播放进度
@@ -841,7 +860,14 @@ void UCombatComponent::PlayFireMontage()
 
 	if (GetCurWeapon()->GetEquipmentAnimInstance())
 	{
-		GetCurWeapon()->GetEquipmentAnimInstance()->Montage_Play(bIsAiming ? GetCurWeapon()->FireADSMontage_E : GetCurWeapon()->FireMontage_E);
+		UAnimMontage* MontageToPlay = bIsAiming ? GetCurWeapon()->FireADSMontage_E : GetCurWeapon()->FireMontage_E;
+		
+		// TODO 非本地瞄准动画暂时禁用了
+		if (!HumanCharacter->IsLocallyControlled())
+		{
+			MontageToPlay = GetCurWeapon()->FireMontage_E;
+		}
+		GetCurWeapon()->GetEquipmentAnimInstance()->Montage_Play(MontageToPlay);
 	}
 }
 
@@ -872,7 +898,13 @@ void UCombatComponent::LocalReload()
 	CombatState = ECombatState::Reloading;
 	
 	bIsAiming = false;
-	
+
+	// 瞄准状态下换弹，重置行走速度
+	if (HumanCharacter)
+	{
+		HumanCharacter->GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * GetCurWeapon()->WalkSpeedMul;
+	}
+
 	PlayReloadMontage();
 }
 

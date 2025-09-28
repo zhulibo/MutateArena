@@ -13,4 +13,4 @@ DefaultEngine.ini中的
 !NetDriverDefinitions=ClearArray
 +NetDriverDefinitions=(DefName="GameNetDriver",DriverClassName="SocketSubsystemEOS.NetDriverEOSBase",DriverClassNameFallback="OnlineSubsystemUtils.IpNetDriver")
 +NetDriverDefinitions=(DefName="DemoNetDriver",DriverClassName="/Script/Engine.DemoNetDriver",DriverClassNameFallback="/Script/Engine.DemoNetDriver")
-只是为了PIE在当前关卡中运行，打包或以独立进程运行需注释掉！！！
+只是为了开发时在当前关卡中运行，进行多人联机时需注释掉！！！（新版EOS搭配SocketSubsystemEOS.NetDriverEOSBase无法在当前关卡中运行，会跳转到默认关卡）

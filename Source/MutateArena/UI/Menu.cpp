@@ -92,7 +92,6 @@ void UMenu::OnEnumerateTitleFilesComplete(bool bWasSuccessful)
 	
 	if (EOSSubsystem && EOSSubsystem->GetEnumeratedTitleFiles().Contains(TitleFile_Message))
 	{
-
 		EOSSubsystem->ReadTitleFile(TitleFile_Message);
 	}
 }
@@ -104,12 +103,13 @@ void UMenu::OnReadTitleFileComplete(bool bWasSuccessful, const FTitleFileContent
 	FString JsonString;
 	FFileHelper::BufferToString(JsonString, FileContents->GetData(), FileContents->Num());
     
-	UE_LOG(LogTemp, Log, TEXT("JsonString %s"), *JsonString);
-    
 	TSharedPtr<FJsonObject> JsonObject;
 	TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(JsonString);
 	if (FJsonSerializer::Deserialize(Reader, JsonObject) && JsonObject.IsValid())
 	{
+		if (JsonObject->GetStringField(TEXT("FileName")) != TitleFile_Message) return;
+		// UE_LOG(LogTemp, Log, TEXT("JsonString %s"), *JsonString);
+		
 		const FString StartTimeString = JsonObject->GetStringField(TEXT("StartTime"));
 		const FString EndTimeString = JsonObject->GetStringField(TEXT("EndTime"));
 		const int32 Level = JsonObject->GetIntegerField(TEXT("Level"));

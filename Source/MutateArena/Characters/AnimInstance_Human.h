@@ -28,7 +28,7 @@ protected:
 	UPROPERTY(BlueprintReadOnly)
 	bool bIsCrouched;
 	UPROPERTY(BlueprintReadOnly)
-	bool bIsAiming;
+	bool bIsAiming = false;
 	UPROPERTY(BlueprintReadOnly)
 	EEquipmentName EquipmentName = EEquipmentName::None;
 	UPROPERTY(BlueprintReadOnly)

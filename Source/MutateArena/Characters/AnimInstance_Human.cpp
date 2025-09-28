@@ -33,12 +33,15 @@ void UAnimInstance_Human::NativeUpdateAnimation(float DeltaSeconds)
 	{
 		EquipmentName = HumanCharacter->CombatComponent->GetCurEquipment()->EquipmentName;
 	}
-	
-	if (HumanCharacter->CombatComponent->GetCurWeapon())
+
+	if (HumanCharacter->IsLocallyControlled()) // TODO 非本地瞄准动画暂时禁用了
 	{
-		if (!Montage_IsPlaying(HumanCharacter->CombatComponent->GetCurWeapon()->ADSMontage_C))
+		if (HumanCharacter->CombatComponent->GetCurWeapon())
 		{
-			bIsAiming = HumanCharacter->CombatComponent->bIsAiming;
+			if (!Montage_IsPlaying(HumanCharacter->CombatComponent->GetCurWeapon()->ADSMontage_C))
+			{
+				bIsAiming = HumanCharacter->CombatComponent->bIsAiming;
+			}
 		}
 	}
 

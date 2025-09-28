@@ -49,6 +49,10 @@ ABaseCharacter::ABaseCharacter()
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(GetMesh(), SOCKET_CAMERA);
 	CameraBoom->TargetArmLength = 0.f;
+	// CameraBoom->bEnableCameraLag = true;
+	// CameraBoom->CameraLagSpeed = 15.f;
+	// CameraBoom->bEnableCameraRotationLag = true;
+	// CameraBoom->CameraRotationLagSpeed = 15.f;
 
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);

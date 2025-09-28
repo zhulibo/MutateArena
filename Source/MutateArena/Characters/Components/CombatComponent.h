@@ -193,7 +193,7 @@ protected:
 public:
 	void AttackFirstSectionEnd();
 	void SetAttackCollisionEnabled(bool bIsEnabled);
-	
+
 protected:
 	// 投掷
 	void Throw();
