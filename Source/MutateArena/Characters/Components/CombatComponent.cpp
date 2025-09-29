@@ -360,15 +360,8 @@ void UCombatComponent::PlaySwapOutMontage(AEquipment* NewEquipment)
 				GetCurEquipment()->GetEquipmentAnimInstance()->Montage_Play(GetCurEquipment()->SwapOutMontage_E);
 			}
 
-			// 切出动画播放完后播放切入动画
-			// HACK 依赖混出时间
-			FOnMontageBlendingOutStarted OnMontageBlendingOutStarted;
-			OnMontageBlendingOutStarted.BindWeakLambda(this, [this, NewEquipment](UAnimMontage* AnimMontage, bool bInterrupted)
-			{
-				PlaySwapInMontage(bInterrupted, NewEquipment);
-			});
-			// Don't use Montage_SetEndDelegate, if SwapOutMontage ended, the current frame will be the base pose.
-			HumanAnimInstance->Montage_SetBlendingOutDelegate(OnMontageBlendingOutStarted, GetCurEquipment()->SwapOutMontage_C);
+			// 缓存要切换的装备
+			TargetEquipment = NewEquipment;
 		}
 	}
 	// 投掷装备扔出后切换到上一个武器 / 开局赋予武器时，当前武器为空
@@ -381,23 +374,19 @@ void UCombatComponent::PlaySwapOutMontage(AEquipment* NewEquipment)
 // 播放新装备切入动画
 void UCombatComponent::PlaySwapInMontage(bool bInterrupted, AEquipment* NewEquipment)
 {
-	if (!bIsSwappingOut) return; // 玩家快速切枪切出动画未完成，又切回去了，此处禁用第一次切枪Montage_SetBlendingOutDelegate委托，直接退出
 	bIsSwappingOut = false;
 	
-	if (bInterrupted) return;
+	if (bInterrupted || NewEquipment == nullptr) return;
 
-	if (NewEquipment)
-	{
-		LastEquipmentType = CurEquipmentType;
-		CurEquipmentType = NewEquipment->EquipmentType;
-	}
+	LastEquipmentType = CurEquipmentType;
+	CurEquipmentType = NewEquipment->EquipmentType;
 
 	// 切出旧装备
 	if (AEquipment* LastEquipment = GetLastEquipment())
 	{
 		AttachToBodySocket(LastEquipment);
 	}
-	
+
 	if (HumanCharacter == nullptr) return;
 	if (HumanAnimInstance == nullptr) HumanAnimInstance = Cast<UAnimInstance_Human>(HumanCharacter->GetMesh()->GetAnimInstance());
 	if (HumanAnimInstance)
@@ -442,16 +431,7 @@ void UCombatComponent::UseEquipment(AEquipment* Equipment)
 {
 	if (Equipment == nullptr || HumanCharacter == nullptr) return;
 
-	// TODO Kukri切入蒙太奇第一帧是在左手上，需要存成变量
-	// TODO 播放Kukri切入蒙太奇时第一帧异常
-	if (Equipment->EquipmentName == EEquipmentName::Kukri)
-	{
-		AttachToLeftHand(Equipment);
-	}
-	else
-	{
-		AttachToRightHand(Equipment);
-	}
+	AttachToRightHand(Equipment);
 
 	// 更新子弹
 	if (BaseController == nullptr) BaseController = Cast<ABaseController>(HumanCharacter->Controller);

@@ -102,7 +102,11 @@ protected:
 	void PreLocalSwapEquipment();
 	bool bIsSwappingOut = false;
 	void PlaySwapOutMontage(AEquipment* NewEquipment);
+public:
+	UPROPERTY()
+	AEquipment* TargetEquipment;
 	void PlaySwapInMontage(bool bInterrupted, AEquipment* NewEquipment);
+protected:
 	void PlaySwapOutMontage_Reverse(bool bInterrupted, AEquipment* NewEquipment);
 public:
 	void FinishSwap();
