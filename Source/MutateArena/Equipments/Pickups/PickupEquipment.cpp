@@ -22,8 +22,11 @@ void APickupEquipment::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	// 取消补给箱装备隐藏
-	Equipment->EquipmentMesh->SetVisibility(true);
-	
+	if (Equipment)
+	{
+		Equipment->EquipmentMesh->SetVisibility(true);
+	}
+
 	AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(OtherActor);
 	if (HumanCharacter && HumanCharacter->IsLocallyControlled())
 	{

@@ -38,7 +38,7 @@ void AShell::BeginPlay()
 	const FVector RandomShell = UKismetMathLibrary::RandomUnitVectorInConeInDegrees(GetActorForwardVector(), 10.f);
 	ShellMesh->AddImpulse(RandomShell * 300.f, NAME_None, true);
 
-	SetLifeSpan(10.f);
+	SetLifeSpan(FMath::FRandRange(3.f, 5.f));
 
 	FTimerHandle TimerHandle;
 	FTimerDelegate TimerDelegate;

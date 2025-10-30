@@ -110,7 +110,7 @@ void UOverheadWidget::TraceOverheadWidget()
 		FVector End = BaseCharacter->Camera->GetComponentLocation();
 
 		// 距离过远不显示PlayerName
-		if (FVector::Dist(Start, End) > 2000.f)
+		if (FVector::Dist(Start, End) > 2500.f)
 		{
 			SetVisibility(ESlateVisibility::Hidden);
 			return;

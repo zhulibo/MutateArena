@@ -86,8 +86,8 @@ void AEquipment::BeginPlay()
 			FDataRegistryId DataRegistryId2(DR_EQUIPMENT_MAIN, FName(EnumValue2));
 			if (const FEquipmentMain* EquipmentMain2 = UDataRegistrySubsystem::Get()->GetCachedItem<FEquipmentMain>(DataRegistryId2))
 			{
-				USkeletalMesh* SkeletalMesh = UDataAssetManager::Get().GetAsset(EquipmentMain2->SkeletalMesh);
-				EquipmentMesh->SetSkeletalMesh(SkeletalMesh);
+				USkeletalMesh* DefaultSkeletalMesh = UDataAssetManager::Get().GetAsset(EquipmentMain2->DefaultSkeletalMesh);
+				EquipmentMesh->SetSkeletalMesh(DefaultSkeletalMesh);
 			}
 		}
 	}

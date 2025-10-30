@@ -16,6 +16,9 @@ void UBloodCollision::ReceiveParticleData_Implementation(const TArray<FBasicPart
 		if (PositionXs.Contains(TempX)) continue;
 		PositionXs.Add(TempX);
 
+		// 根据概率生成贴图
+		if (FMath::RandRange(1, 4) != 1) continue;
+
 		FVector WorldPos = ParticleData.Position + SimulationPositionOffset;
 		FHitResult OutHit;
 		FVector Start = WorldPos - FVector(0,0,1);
@@ -41,7 +44,7 @@ void UBloodCollision::ReceiveParticleData_Implementation(const TArray<FBasicPart
 						OutHit.ImpactPoint,
 						OutHit.ImpactNormal.Rotation(),
 						EAttachLocation::KeepWorldPosition,
-						10.f
+						FMath::FRandRange(5.f, 10.f)
 					);
 
 					// if (OutHit.BoneName.ToString() != FString(TEXT("NONE")))

@@ -11,6 +11,8 @@ enum class EEquipmentName : uint8 // 装备名字
 	// 主
 	AK47,
 	AK47_Desert,
+	AK47_Gold,
+	AK47_Quenching,
 	
 	M870,
 	
@@ -24,9 +26,12 @@ enum class EEquipmentName : uint8 // 装备名字
 	Glock17,
 	
 	DesertEagle,
+	DesertEagle_Quenching,
 	
 	// 近战
 	Kukri,
+	Kukri_Damascus,
+	Kukri_Quenching,
 	
 	MilitaryShovel,
 	
@@ -101,7 +106,7 @@ struct FEquipmentMain : public FTableRowBase
 	TSoftClassPtr<class AEquipment> EquipmentClass;
 
 	UPROPERTY(EditAnywhere)
-	TSoftObjectPtr<USkeletalMesh> SkeletalMesh;
+	TSoftObjectPtr<USkeletalMesh> DefaultSkeletalMesh;
 
 	/**
 	 * Must be the same as the OfferId in dev portal,

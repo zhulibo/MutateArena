@@ -15,7 +15,7 @@ public:
 	AProjectile();
 
 	UPROPERTY()
-	float InitialSpeed = 60000.f;
+	float InitialSpeed = 40000.f;
 
 	UFUNCTION()
 	float GetDamage(float Distance);

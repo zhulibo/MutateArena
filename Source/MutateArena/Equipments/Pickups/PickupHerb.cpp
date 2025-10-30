@@ -31,6 +31,7 @@ void APickupHerb::BeginPlay()
 		TimerDelegate.BindWeakLambda(this, [this]() {
 			SetLevel(2);
 		});
+		// 生成15秒内处于生长状态，只能被双方看到，15秒后可被双方交互
 		GetWorldTimerManager().SetTimer(TimerHandle, TimerDelegate, 15.f, false);
 	}
 }
@@ -38,7 +39,7 @@ void APickupHerb::BeginPlay()
 void APickupHerb::SetLevel(int32 TempLevel)
 {
 	Level = TempLevel;
-	
+
 	OnRep_Level();
 }
 
@@ -47,13 +48,16 @@ void APickupHerb::OnRep_Level()
 	if (Level == 2)
 	{
 		PickupMesh->SetStaticMesh(PickupMeshLevel2);
+		
+		// 可被人类近战武器销毁
+		PickupMesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 
+		// 可被突变体食用
 		OverlapSphere->SetCollisionResponseToChannel(ECC_MESH_TEAM2, ECollisionResponse::ECR_Overlap);
 	}
 }
 
-void APickupHerb::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-                                  UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void APickupHerb::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (!HasAuthority()) return;
 

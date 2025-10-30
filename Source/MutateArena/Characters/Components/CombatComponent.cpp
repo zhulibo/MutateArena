@@ -375,7 +375,7 @@ void UCombatComponent::PlaySwapOutMontage(AEquipment* NewEquipment)
 void UCombatComponent::PlaySwapInMontage(bool bInterrupted, AEquipment* NewEquipment)
 {
 	bIsSwappingOut = false;
-	
+
 	if (bInterrupted || NewEquipment == nullptr) return;
 
 	LastEquipmentType = CurEquipmentType;

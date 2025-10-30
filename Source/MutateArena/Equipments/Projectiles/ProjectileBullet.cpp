@@ -53,7 +53,8 @@ void AProjectileBullet::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, 
 		);
 	}
 
-	SetLifeSpan(5.f);
+	float LifeTime = FMath::FRandRange(4.f, 5.f);
+	SetLifeSpan(LifeTime);
 
 	if (TracerEffectComponent)
 	{
@@ -82,10 +83,10 @@ void AProjectileBullet::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, 
 				Hit.ImpactPoint,
 				Hit.ImpactNormal.Rotation(),
 				EAttachLocation::KeepWorldPosition,
-				5.f
+				LifeTime
 			);
 
-			DecalComponent->SetFadeOut(4.f, 1.f, false);
+			DecalComponent->SetFadeOut(LifeTime - 1.f, 1.f, false);
 			DecalComponent->SetFadeScreenSize(0.002f);
 		}
 	}
