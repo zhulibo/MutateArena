@@ -15,6 +15,8 @@ enum class ERecoilHorDirection : uint8
 	Left,
 };
 
+// TODO 重构后坐力系统
+
 /**
  * 开火后在一个周期内应用掉后坐力，应用完毕后，在一个周期内回复掉增加的后坐力
  * 开火会打断后坐力的应用和回复，到开火当前帧未来得及应用或未回复的坐力会被弃用
@@ -71,5 +73,6 @@ protected:
 public:
 	float GetCurRecoilVert();
 	float GetCurRecoilHor();
+	FVector2D GetCurSpreadVector();
 
 };

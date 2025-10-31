@@ -68,7 +68,7 @@ void UCrosshairComponent::SetHUDCrosshair(float DeltaSeconds)
 
 	float TotalFactor = 1.f + VelocityFactor + JumpFactor + ShootFactor * 2.f;
 
-	float BaseWeaponSpread = (Weapon->RecoilMaxVert + Weapon->RecoilMaxHor) * 4;
+	float BaseWeaponSpread = (Weapon->RecoilMaxVert + Weapon->RecoilMaxHor) * 6;
 
 	BaseController->ChangeCrosshairSpread.Broadcast(2.f + BaseWeaponSpread * TotalFactor);
 }

@@ -20,7 +20,6 @@ AProjectileBullet::AProjectileBullet()
 	ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovement"));
 	ProjectileMovement->SetUpdatedComponent(CollisionBox);
 	ProjectileMovement->bRotationFollowsVelocity = true;
-	ProjectileMovement->SetIsReplicated(true);
 	ProjectileMovement->InitialSpeed = InitialSpeed;
 	ProjectileMovement->MaxSpeed = InitialSpeed;
 }

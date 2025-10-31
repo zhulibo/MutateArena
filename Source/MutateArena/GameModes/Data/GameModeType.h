@@ -14,9 +14,9 @@ UENUM(BlueprintType)
 enum class EMutationMap : uint8
 {
 	Colosseum,
-	CrossStreet,
 	Dust,
 	Farm,
+	Crossroads,
 
 	None
 };
@@ -32,7 +32,7 @@ enum class EMeleeMap : uint8
 UENUM(BlueprintType)
 enum class ETeamDeadMatchMap : uint8
 {
-	TrainingField,
+	TrainingGround,
 
 	None
 };

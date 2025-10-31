@@ -62,6 +62,11 @@ void URecoilComponent::IncRecoil()
 		RecoilHorCurFire = -FMath::RandRange(Weapon->RecoilMinHor, Weapon->RecoilMaxHor * 2);
 	}
 
+	// 缩小初期开火后坐力
+	float Mul = FMath::Clamp(RecoilVertTotal / Weapon->RecoilTotalVertLimit, .6f, 1.f);
+	RecoilVertCurFire *= Mul;
+	RecoilHorCurFire *= Mul;
+
 	// 首发后座倍率
 	if (HumanCharacter->CombatComponent->bIsFirstShot)
 	{
@@ -144,7 +149,8 @@ void URecoilComponent::PollApplyRecoil(float DeltaSeconds)
 		RecoilIncCostTime = Weapon->RecoilIncTime;
 
 		// 计算回复后坐力所需时间
-		RecoilDecTime = RecoilVertTotal / Weapon->RecoilDecSpeed;
+		RecoilDecTime = FMath::Clamp(RecoilVertTotal / Weapon->RecoilTotalVertLimit, Weapon->RecoilMinDecTime, Weapon->RecoilMaxDecTime);
+
 		// 备份需要恢复的总后坐力
 		RecoilVertRecoverTotal = RecoilVertTotal;
 		RecoilHorRecoverTotal = RecoilHorTotal;
@@ -160,7 +166,7 @@ void URecoilComponent::PollApplyRecoil(float DeltaSeconds)
 	// UE_LOG(LogTemp, Warning, TEXT("RecoilIncCostTime %f RecoilVertCurTick %f RecoilHorCurTick %f"), RecoilIncCostTime, RecoilVertCurTick, RecoilHorCurTick);
 
 	// 应用掉当前帧需要增加的后坐力（view kick）
-	HumanCharacter->AddControllerPitchInput(RecoilVertCurTick - RecoilVertLastTick);
+	HumanCharacter->AddControllerPitchInput((RecoilVertCurTick - RecoilVertLastTick) * -1.f); // InputPitchScale_DEPRECATED == -2.5
 	HumanCharacter->AddControllerYawInput(RecoilHorCurTick - RecoilHorLastTick);
 
 	// 记录后坐力
@@ -196,7 +202,7 @@ void URecoilComponent::PollRecoverRecoil(float DeltaSeconds)
 
 	// 回复垂直后坐力
 	float DiffRecoilVert = RecoilVertRecoverCurTick - RecoilVertRecoverLastTick;
-	HumanCharacter->AddControllerPitchInput(-DiffRecoilVert); // 回复时准星是向下的
+	HumanCharacter->AddControllerPitchInput(-DiffRecoilVert * -1.f); // 回复时准星是向下的
 	RecoilVertTotal -= DiffRecoilVert;
 	// 限制垂直后坐力
 	if (RecoilVertTotal < 0.f) RecoilVertTotal = 0.f;
@@ -233,14 +239,31 @@ void URecoilComponent::SetRecoilHorDirection(ERecoilHorDirection TempRecoilHorDi
 // 获取子弹偏移
 float URecoilComponent::GetCurRecoilVert()
 {
-	if (HumanCharacter == nullptr || HumanCharacter->CombatComponent == nullptr) return RecoilVertTotal;
+	if (HumanCharacter == nullptr || HumanCharacter->CombatComponent == nullptr)
+	{
+		return RecoilVertTotal;
+	}
 	
 	return RecoilVertTotal * (1 - HumanCharacter->CombatComponent->AimingProgress);
 }
 
 float URecoilComponent::GetCurRecoilHor()
 {
-	if (HumanCharacter == nullptr || HumanCharacter->CombatComponent == nullptr) return RecoilHorTotal;
+	if (HumanCharacter == nullptr || HumanCharacter->CombatComponent == nullptr)
+	{
+		return RecoilHorTotal;
+	}
 	
 	return RecoilHorTotal * (1 - HumanCharacter->CombatComponent->AimingProgress);
+}
+
+FVector2D URecoilComponent::GetCurSpreadVector()
+{
+	AWeapon* Weapon = HumanCharacter->CombatComponent->GetCurWeapon();
+	if (Weapon && HumanCharacter && HumanCharacter->CombatComponent && !HumanCharacter->CombatComponent->bIsFirstShot)
+	{
+		return FMath::RandPointInCircle(Weapon->CenterSpread);
+	}
+	
+	return FVector2D::ZeroVector;
 }

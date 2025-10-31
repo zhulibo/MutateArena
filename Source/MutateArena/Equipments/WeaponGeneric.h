@@ -12,7 +12,7 @@ class MUTATEARENA_API AWeaponGeneric : public AWeapon
 public:
 	AWeaponGeneric();
 
-	virtual void Fire(const FVector& HitTarget, float RecoilVert, float RecoilHor) override;
+	virtual void Fire(const FVector& HitTarget, float RecoilVert, float RecoilHor, float SpreadPitch, float SpreadYaw) override;
 
 protected:
 	UPROPERTY(EditAnywhere)

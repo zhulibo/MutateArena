@@ -312,7 +312,7 @@ void AMutationMode::RoundStartMutate()
 	// 定时生成补给箱
 	GetWorldTimerManager().SetTimer(SpawnPickupTimerHandle, this, &ThisClass::SpawnPickups, 40.f, true, 35.f);
 	// 定时生成草药
-	GetWorldTimerManager().SetTimer(SpawnPickupHerbTimerHandle, this, &ThisClass::SpawnPickupHerbs, 10.f); // 延迟10秒生成，避免人类开局蹲草药复活点
+	GetWorldTimerManager().SetTimer(SpawnPickupHerbTimerHandle, this, &ThisClass::SpawnPickupHerbs, FMath::FRandRange(10.f, 15.f));
 }
 
 // 人类受到伤害

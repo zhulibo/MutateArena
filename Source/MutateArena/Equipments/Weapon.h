@@ -83,12 +83,14 @@ public:
 	// 应用后坐力需要的时间
 	UPROPERTY()
 	float RecoilIncTime;
-	// 后坐力回复速度
+	// 后坐力回复时间
 	UPROPERTY()
-	float RecoilDecSpeed;
-	// 子弹散布角度
+	float RecoilMaxDecTime;
 	UPROPERTY()
-	float CenterSpreadAngle;
+	float RecoilMinDecTime;
+	// 子弹散布
+	UPROPERTY()
+	float CenterSpread;
 
 	void SetScopeActive(bool bIsActive);
 
@@ -100,7 +102,7 @@ protected:
 	UPROPERTY(EditAnywhere)
 	class UMetaSoundSource* MechSound;
 public:
-	virtual void Fire(const FVector& HitTarget, float RecoilVert, float RecoilHor);
+	virtual void Fire(const FVector& HitTarget, float RecoilVert, float RecoilHor, float SpreadPitch, float SpreadYaw);
 	virtual void SetAmmo(int32 AmmoNum);
 	virtual void SetCarriedAmmo(int32 AmmoNum);
 protected:

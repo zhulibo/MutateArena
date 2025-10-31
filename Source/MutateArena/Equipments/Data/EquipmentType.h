@@ -210,9 +210,11 @@ struct FEquipmentRecoil : public FTableRowBase
 	float RecoilTotalHorLimit = 0.f;
 
 	UPROPERTY(EditAnywhere)
-	float RecoilDecSpeed = 0.f;
+	float RecoilMaxDecTime = 0.f;
+	UPROPERTY(EditAnywhere)
+	float RecoilMinDecTime = 0.f;
 
 	UPROPERTY(EditAnywhere)
-	float CenterSpreadAngle = 0.f;
+	float CenterSpread = 0.f;
 
 };

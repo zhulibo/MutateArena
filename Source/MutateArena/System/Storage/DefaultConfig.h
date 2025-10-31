@@ -43,12 +43,12 @@ public:
 	bool bObfuscateTextChat = false;
 
 	UPROPERTY()
-	float MouseSensitivity = 1.2f;
+	float MouseSensitivity = .6f;
 	UPROPERTY()
 	float MouseSensitivityMaxMul = 4.f;
 
 	UPROPERTY()
-	float ControllerSensitivity = 3.4f;
+	float ControllerSensitivity = 1.5f;
 	UPROPERTY()
 	float ControllerSensitivityMaxMul = 3.f;
 

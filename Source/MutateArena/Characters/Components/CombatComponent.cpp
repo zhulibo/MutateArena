@@ -733,9 +733,10 @@ void UCombatComponent::Fire()
 		// 获取后坐力
 		float RecoilVert = HumanCharacter->RecoilComponent->GetCurRecoilVert();
 		float RecoilHor = HumanCharacter->RecoilComponent->GetCurRecoilHor();
+		FVector2D Spread = HumanCharacter->RecoilComponent->GetCurSpreadVector();
 
-		LocalFire(HitTarget, RecoilVert, RecoilHor);
-		ServerFire(HitTarget, RecoilVert, RecoilHor);
+		LocalFire(HitTarget, RecoilVert, RecoilHor, Spread.X, Spread.Y);
+		ServerFire(HitTarget, RecoilVert, RecoilHor, Spread.X, Spread.Y);
 
 		// 开火后增加后坐力
 		HumanCharacter->RecoilComponent->IncRecoil();
@@ -785,25 +786,25 @@ void UCombatComponent::LoadNewBulletFinished()
 	}
 }
 
-void UCombatComponent::ServerFire_Implementation(const FVector_NetQuantize& TraceHitTarget, float RecoilVert, float RecoilHor)
+void UCombatComponent::ServerFire_Implementation(const FVector_NetQuantize& TraceHitTarget, float RecoilVert, float RecoilHor, float SpreadPitch, float SpreadYaw)
 {
-	MulticastFire(TraceHitTarget, RecoilVert, RecoilHor);
+	MulticastFire(TraceHitTarget, RecoilVert, RecoilHor, SpreadPitch, SpreadYaw);
 }
 
-void UCombatComponent::MulticastFire_Implementation(const FVector_NetQuantize& TraceHitTarget, float RecoilVert, float RecoilHor)
+void UCombatComponent::MulticastFire_Implementation(const FVector_NetQuantize& TraceHitTarget, float RecoilVert, float RecoilHor, float SpreadPitch, float SpreadYaw)
 {
 	if (HumanCharacter && !HumanCharacter->IsLocallyControlled())
 	{
-		LocalFire(TraceHitTarget, RecoilVert, RecoilHor);
+		LocalFire(TraceHitTarget, RecoilVert, RecoilHor, SpreadPitch, SpreadYaw);
 	}
 }
 
-void UCombatComponent::LocalFire(const FVector_NetQuantize& TraceHitTarget, float RecoilVert, float RecoilHor)
+void UCombatComponent::LocalFire(const FVector_NetQuantize& TraceHitTarget, float RecoilVert, float RecoilHor, float SpreadPitch, float SpreadYaw)
 {
 	if (HumanCharacter == nullptr || GetCurWeapon() == nullptr) return;
 
 	PlayFireMontage();
-	GetCurWeapon()->Fire(TraceHitTarget, RecoilVert, RecoilHor);
+	GetCurWeapon()->Fire(TraceHitTarget, RecoilVert, RecoilHor, SpreadPitch, SpreadYaw);
 
 	if (CombatState == ECombatState::Reloading && GetCurWeapon()->EquipmentCate == EEquipmentCate::Shotgun)
 	{

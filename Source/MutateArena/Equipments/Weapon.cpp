@@ -83,8 +83,9 @@ void AWeapon::InitData()
 			RecoilTotalHorLimit = EquipmentData->RecoilTotalHorLimit;
 			FirstShotRecoilMul = EquipmentData->FirstShotRecoilMul;
 			RecoilIncTime = EquipmentData->RecoilIncTime;
-			RecoilDecSpeed = EquipmentData->RecoilDecSpeed;
-			CenterSpreadAngle = EquipmentData->CenterSpreadAngle;
+			RecoilMaxDecTime = EquipmentData->RecoilMaxDecTime;
+			RecoilMinDecTime = EquipmentData->RecoilMinDecTime;
+			CenterSpread = EquipmentData->CenterSpread;
 		}
 	}
 }
@@ -97,7 +98,7 @@ void AWeapon::SetScopeActive(bool bIsActive)
 	}
 }
 
-void AWeapon::Fire(const FVector& HitTarget, float RecoilVert, float RecoilHor)
+void AWeapon::Fire(const FVector& HitTarget, float RecoilVert, float RecoilHor, float SpreadPitch, float SpreadYaw)
 {
 	if (ShellClass)
 	{

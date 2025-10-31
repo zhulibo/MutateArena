@@ -144,10 +144,10 @@ protected:
 	FTimerHandle LoadNewBulletTimerHandle;
 	void LoadNewBulletFinished();
 	UFUNCTION(Server, Reliable)
-	void ServerFire(const FVector_NetQuantize& TraceHitTarget, float RecoilVert, float RecoilHor);
+	void ServerFire(const FVector_NetQuantize& TraceHitTarget, float RecoilVert, float RecoilHor, float SpreadPitch, float SpreadYaw);
 	UFUNCTION(NetMulticast, Reliable)
-	void MulticastFire(const FVector_NetQuantize& TraceHitTarget, float RecoilVert, float RecoilHor);
-	void LocalFire(const FVector_NetQuantize& TraceHitTarget, float RecoilVert, float RecoilHor);
+	void MulticastFire(const FVector_NetQuantize& TraceHitTarget, float RecoilVert, float RecoilHor, float SpreadPitch, float SpreadYaw);
+	void LocalFire(const FVector_NetQuantize& TraceHitTarget, float RecoilVert, float RecoilHor, float SpreadPitch, float SpreadYaw);
 	void PlayFireMontage();
 
 	// 装弹

@@ -14,9 +14,9 @@ AWeaponShotgun::AWeaponShotgun()
 {
 }
 
-void AWeaponShotgun::Fire(const FVector& HitTarget, float RecoilVert, float RecoilHor)
+void AWeaponShotgun::Fire(const FVector& HitTarget, float RecoilVert, float RecoilHor, float SpreadPitch, float SpreadYaw)
 {
-	Super::Fire(HitTarget, RecoilVert, RecoilHor);
+	Super::Fire(HitTarget, RecoilVert, RecoilHor, SpreadPitch, SpreadYaw);
 
 	if (HumanCharacter == nullptr) HumanCharacter = Cast<AHumanCharacter>(GetOwner());
 	if (OwnerTeam == ETeam::NoTeam) SetOwnerTeam();
@@ -27,7 +27,7 @@ void AWeaponShotgun::Fire(const FVector& HitTarget, float RecoilVert, float Reco
 		FTransform SocketTransform = MuzzleSocket->GetSocketTransform(EquipmentMesh);
 		FRotator TargetRotation = (HitTarget - SocketTransform.GetLocation()).Rotation();
 
-		// 子弹偏移
+		// 添加后座
 		TargetRotation.Pitch += RecoilVert;
 		TargetRotation.Yaw += RecoilHor;
 
@@ -40,7 +40,7 @@ void AWeaponShotgun::Fire(const FVector& HitTarget, float RecoilVert, float Reco
 			for (int32 i = 0; i < PelletNum; ++i)
 			{
 				// 添加散布
-				FVector ToTargetWithSpread = UKismetMathLibrary::RandomUnitVectorInConeInDegrees(TargetRotation.Vector(), CenterSpreadAngle);
+				FVector ToTargetWithSpread = UKismetMathLibrary::RandomUnitVectorInConeInDegrees(TargetRotation.Vector(), CenterSpread);
 
 				AProjectileBullet* Projectile = GetWorld()->SpawnActor<AProjectileBullet>(
 					ProjectileClass,

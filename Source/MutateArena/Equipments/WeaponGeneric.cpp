@@ -15,9 +15,9 @@ AWeaponGeneric::AWeaponGeneric()
 {
 }
 
-void AWeaponGeneric::Fire(const FVector& HitTarget, float RecoilVert, float RecoilHor)
+void AWeaponGeneric::Fire(const FVector& HitTarget, float RecoilVert, float RecoilHor, float SpreadPitch, float SpreadYaw)
 {
-	Super::Fire(HitTarget, RecoilVert, RecoilHor);
+	Super::Fire(HitTarget, RecoilVert, RecoilHor, SpreadPitch, SpreadYaw);
 
 	if (HumanCharacter == nullptr) HumanCharacter = Cast<AHumanCharacter>(GetOwner());
 	if (OwnerTeam == ETeam::NoTeam) SetOwnerTeam();
@@ -28,18 +28,13 @@ void AWeaponGeneric::Fire(const FVector& HitTarget, float RecoilVert, float Reco
 	FTransform SocketTransform = MuzzleSocket->GetSocketTransform(EquipmentMesh);
 	FRotator TargetRotation = (HitTarget - SocketTransform.GetLocation()).Rotation();
 
-	// 子弹偏移
+	// 添加后座
 	TargetRotation.Pitch += RecoilVert;
 	TargetRotation.Yaw += RecoilHor;
 
 	// 添加散布
-	float TempCenterSpread = CenterSpreadAngle;
-	if (HumanCharacter->CombatComponent && HumanCharacter->CombatComponent->bIsFirstShot)
-	{
-		// 第一发无散布
-		TempCenterSpread = 0.f;
-	}
-	FVector ToTargetWithSpread = UKismetMathLibrary::RandomUnitVectorInConeInDegrees(TargetRotation.Vector(), TempCenterSpread);
+	TargetRotation.Pitch += SpreadPitch;
+	TargetRotation.Yaw += SpreadYaw;
 
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Owner = this;
@@ -48,7 +43,7 @@ void AWeaponGeneric::Fire(const FVector& HitTarget, float RecoilVert, float Reco
 	AProjectileBullet* Projectile = GetWorld()->SpawnActor<AProjectileBullet>(
 		ProjectileClass,
 		SocketTransform.GetLocation(),
-		ToTargetWithSpread.Rotation(),
+		TargetRotation,
 		SpawnParams
 	);
 

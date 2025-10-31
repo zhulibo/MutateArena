@@ -31,8 +31,9 @@ void APickupHerb::BeginPlay()
 		TimerDelegate.BindWeakLambda(this, [this]() {
 			SetLevel(2);
 		});
-		// 生成15秒内处于生长状态，只能被双方看到，15秒后可被双方交互
-		GetWorldTimerManager().SetTimer(TimerHandle, TimerDelegate, 15.f, false);
+		float X = FMath::RandRange(15.f, 20.f);
+		// 生成X秒内处于生长状态，只能被双方看到，X秒后可被双方交互
+		GetWorldTimerManager().SetTimer(TimerHandle, TimerDelegate, X, false);
 	}
 }
 
