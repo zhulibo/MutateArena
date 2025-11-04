@@ -706,20 +706,14 @@ void UCombatComponent::StartFire()
 {
 	bFireButtonPressed = true;
 
-	bIsFirstShot = true;
-
+	CurShotCount = 1;
+	
 	Fire();
 }
 
 void UCombatComponent::StopFire()
 {
 	bFireButtonPressed = false;
-
-	// 重置水平后坐力方向
-	if (HumanCharacter && HumanCharacter->RecoilComponent)
-	{
-		HumanCharacter->RecoilComponent->SetRecoilHorDirection(ERecoilHorDirection::Random);
-	}
 }
 
 void UCombatComponent::Fire()
@@ -776,11 +770,11 @@ bool UCombatComponent::CanFire()
 void UCombatComponent::LoadNewBulletFinished()
 {
 	bCanFire = true;
-
+	
 	// 自动武器持续射击
 	if (bFireButtonPressed && GetCurWeapon() && GetCurWeapon()->bIsAutomatic)
 	{
-		if (bIsFirstShot == true) bIsFirstShot = false;
+		CurShotCount++;
 
 		Fire();
 	}

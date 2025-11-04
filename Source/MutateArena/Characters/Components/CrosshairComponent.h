@@ -22,12 +22,13 @@ protected:
 	UPROPERTY()
 	class ABaseController* BaseController;
 
+public:
 	float VelocityFactor = 0.f;
 	float JumpFactor = 0.f;
+protected:
 	float ShootFactor = 0.f;
 	void SetHUDCrosshair(float DeltaSeconds);
 
-	// FVector2D WalkSpeedRange;
-	// FVector2D VelocityFactorRange = FVector2D(0.f, 0.4f);
+	FVector2D WalkSpeedRange;
 
 };

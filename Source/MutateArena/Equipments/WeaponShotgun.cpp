@@ -6,8 +6,10 @@
 #include "MutateArena/PlayerStates/TeamType.h"
 #include "MutateArena/Utils/LibraryCommon.h"
 #include "Components/BoxComponent.h"
+#include "Curves/CurveVector.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "MutateArena/Characters/Components/CombatComponent.h"
 #include "Projectiles/ProjectileBullet.h"
 
 AWeaponShotgun::AWeaponShotgun()
@@ -22,7 +24,7 @@ void AWeaponShotgun::Fire(const FVector& HitTarget, float RecoilVert, float Reco
 	if (OwnerTeam == ETeam::NoTeam) SetOwnerTeam();
 	const USkeletalMeshSocket* MuzzleSocket = EquipmentMesh->GetSocketByName(SOCKET_MUZZLE);
 
-	if (ProjectileClass && HumanCharacter && OwnerTeam != ETeam::NoTeam && MuzzleSocket)
+	if (ProjectileClass && HumanCharacter && HumanCharacter->CombatComponent && RecoilCurve && OwnerTeam != ETeam::NoTeam && MuzzleSocket)
 	{
 		FTransform SocketTransform = MuzzleSocket->GetSocketTransform(EquipmentMesh);
 		FRotator TargetRotation = (HitTarget - SocketTransform.GetLocation()).Rotation();
@@ -36,11 +38,13 @@ void AWeaponShotgun::Fire(const FVector& HitTarget, float RecoilVert, float Reco
 			FActorSpawnParameters SpawnParams;
 			SpawnParams.Owner = this;
 			SpawnParams.Instigator = HumanCharacter;
+			
+			FVector RecoilKick = RecoilCurve->GetVectorValue(HumanCharacter->CombatComponent->CurShotCount);
 
 			for (int32 i = 0; i < PelletNum; ++i)
 			{
 				// 添加散布
-				FVector ToTargetWithSpread = UKismetMathLibrary::RandomUnitVectorInConeInDegrees(TargetRotation.Vector(), CenterSpread);
+				FVector ToTargetWithSpread = UKismetMathLibrary::RandomUnitVectorInConeInDegrees(TargetRotation.Vector(), RecoilKick.Z);
 
 				AProjectileBullet* Projectile = GetWorld()->SpawnActor<AProjectileBullet>(
 					ProjectileClass,

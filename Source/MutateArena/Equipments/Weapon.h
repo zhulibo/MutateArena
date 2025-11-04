@@ -62,36 +62,30 @@ public:
 	FORCEINLINE bool IsEmpty() const { return Ammo <= 0; }
 	FORCEINLINE bool IsFull() const { return Ammo == MagCapacity; }
 	FORCEINLINE float GetFireDelay() const { return 60 / FireRate; }
-
-	// 后坐力范围
+	
 	UPROPERTY()
-	float RecoilMaxVert;
+	class UCurveVector* RecoilCurve;
 	UPROPERTY()
-	float RecoilMinVert;
+	UCurveFloat* RecoilCurveRandVert;
 	UPROPERTY()
-	float RecoilMaxHor;
-	UPROPERTY()
-	float RecoilMinHor;
-	// 总后坐力上限
-	UPROPERTY()
-	float RecoilTotalVertLimit;
-	UPROPERTY()
-	float RecoilTotalHorLimit;
-	// 首发后坐力倍率
-	UPROPERTY()
-	float FirstShotRecoilMul;
+	UCurveFloat* RecoilCurveRandHor;
 	// 应用后坐力需要的时间
 	UPROPERTY()
 	float RecoilIncTime;
-	// 后坐力回复时间
+	// 恢复后坐力需要的时间
 	UPROPERTY()
 	float RecoilMaxDecTime;
 	UPROPERTY()
 	float RecoilMinDecTime;
-	// 子弹散布
+	// 恢复后坐力需要的时间 达到最大时所需要的垂直后坐力
 	UPROPERTY()
-	float CenterSpread;
-
+	float RecoilVertRef_DecTime;
+	// 准星达到最大时所需要的垂直后坐力
+	UPROPERTY()
+	float RecoilVertRef_Crosshair;
+	// 准星
+	UPROPERTY()
+	float CrosshairBaseSpread;
 	void SetScopeActive(bool bIsActive);
 
 protected:

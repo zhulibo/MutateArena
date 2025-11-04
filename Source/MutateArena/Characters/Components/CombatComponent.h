@@ -134,7 +134,7 @@ protected:
 	// 射击
 	bool bCanFire = true;
 public:
-	bool bIsFirstShot = true;
+	int32 CurShotCount = 1;
 protected:
 	bool bFireButtonPressed;
 	void StartFire();

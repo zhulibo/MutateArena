@@ -3,6 +3,7 @@
 #include "CombatComponent.h"
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "TimerManager.h"
+#include "Curves/CurveVector.h"
 #include "MutateArena/Equipments/Weapon.h"
 
 URecoilComponent::URecoilComponent()
@@ -38,78 +39,29 @@ void URecoilComponent::IncRecoil()
 	if (HumanCharacter == nullptr || HumanCharacter->CombatComponent == nullptr) return;
 
 	AWeapon* Weapon = HumanCharacter->CombatComponent->GetCurWeapon();
-	if (Weapon == nullptr) return;
+	if (Weapon == nullptr || Weapon->RecoilCurve == nullptr) return;
 
 	// 从总后坐力中减去上次开火未及时应用的后坐力（开火后后坐力并非瞬时增加，而是分多帧应用）
 	RecoilVertTotal -= RecoilVertCurFire - RecoilVertLastTick;
 	RecoilHorTotal -= RecoilHorCurFire - RecoilHorLastTick;
 
+	int32 CurShotCount = HumanCharacter->CombatComponent->CurShotCount;
+	int32 RandRecoilCurveCount = CurShotCount % 10 + 1; // 曲线横轴只做了1-10
+
+	FVector RecoilKick = Weapon->RecoilCurve->GetVectorValue(CurShotCount);
+	float RecoilRandVert = 0.f;
+	float RecoilRandHor = 0.f;
+	if (Weapon->RecoilCurveRandVert) RecoilRandVert = Weapon->RecoilCurveRandVert->GetFloatValue(RandRecoilCurveCount);
+	if (Weapon->RecoilCurveRandHor) RecoilRandHor = Weapon->RecoilCurveRandHor->GetFloatValue(RandRecoilCurveCount);
 	// 开火需要增加的目标垂直后坐力
-	RecoilVertCurFire = FMath::RandRange(Weapon->RecoilMinVert, Weapon->RecoilMaxVert);
-
+	RecoilVertCurFire = RecoilKick.Y + RecoilRandVert;
 	// 开火需要增加的目标水平后坐力
-	if (RecoilHorDirection == ERecoilHorDirection::Random)
-	{
-		RecoilHorCurFire = FMath::RandRange(Weapon->RecoilMinHor, Weapon->RecoilMaxHor);
-	}
-	else if (RecoilHorDirection == ERecoilHorDirection::Right)
-	{
-		// 水平后坐力方向锁定时，垂直后坐力处于最大状态且不会再增加，增加RecoilMaxHor至2倍
-		RecoilHorCurFire = FMath::RandRange(Weapon->RecoilMinHor, Weapon->RecoilMaxHor * 2);
-	}
-	else if (RecoilHorDirection == ERecoilHorDirection::Left)
-	{
-		RecoilHorCurFire = -FMath::RandRange(Weapon->RecoilMinHor, Weapon->RecoilMaxHor * 2);
-	}
-
-	// 缩小初期开火后坐力
-	float Mul = FMath::Clamp(RecoilVertTotal / Weapon->RecoilTotalVertLimit, .6f, 1.f);
-	RecoilVertCurFire *= Mul;
-	RecoilHorCurFire *= Mul;
-
-	// 首发后座倍率
-	if (HumanCharacter->CombatComponent->bIsFirstShot)
-	{
-		RecoilVertCurFire *= Weapon->FirstShotRecoilMul;
-		RecoilHorCurFire *= Weapon->FirstShotRecoilMul;
-	}
+	RecoilHorCurFire = RecoilKick.X + RecoilRandHor;
 
 	// 累计总垂直后坐力
 	RecoilVertTotal += RecoilVertCurFire;
-	// 限制总垂直后坐力
-	if (RecoilVertTotal > Weapon->RecoilTotalVertLimit)
-	{
-		RecoilVertCurFire -= RecoilVertTotal - Weapon->RecoilTotalVertLimit;
-		RecoilVertTotal = Weapon->RecoilTotalVertLimit;
-
-		// 垂直后坐力首次达到最大时，固定水平后坐力方向
-		if (RecoilHorDirection == ERecoilHorDirection::Random)
-		{
-			RecoilHorDirection = FMath::Abs(Weapon->RecoilMaxHor) > FMath::Abs(Weapon->RecoilMinHor)
-			? ERecoilHorDirection::Right : ERecoilHorDirection::Left;
-		}
-	}
-
 	// 累计总水平后坐力
 	RecoilHorTotal += RecoilHorCurFire;
-	// 限制总水平后坐力
-	if (RecoilHorTotal > Weapon->RecoilTotalHorLimit) // 达到最右值
-	{
-		RecoilHorCurFire -= RecoilHorTotal - Weapon->RecoilTotalHorLimit;
-		RecoilHorTotal = Weapon->RecoilTotalHorLimit;
-		RecoilHorDirection = ERecoilHorDirection::Left; // 转向左
-		// UE_LOG(LogTemp, Warning, TEXT("turn left"));
-	}
-	else if (RecoilHorTotal < -Weapon->RecoilTotalHorLimit) // 达到最左值
-	{
-		RecoilHorCurFire += -RecoilHorTotal - Weapon->RecoilTotalHorLimit;
-		RecoilHorTotal = -Weapon->RecoilTotalHorLimit;
-		RecoilHorDirection = ERecoilHorDirection::Right; // 转向右
-		// UE_LOG(LogTemp, Warning, TEXT("turn right"));
-	}
-
-	// UE_LOG(LogTemp, Warning, TEXT("RecoilVertTarget %f RecoilHorTarget %f"), RecoilVertTarget, RecoilHorTarget);
-	// UE_LOG(LogTemp, Warning, TEXT("RecoilTotalVert %f RecoilTotalHor %f"), RecoilVertTotal, RecoilHorTotal);
 
 	// 重置应用开火后坐力耗时
 	RecoilIncCostTime = 0.f;
@@ -117,11 +69,11 @@ void URecoilComponent::IncRecoil()
 	RecoilVertLastTick = 0.f;
 	RecoilHorLastTick = 0.f;
 
-	// 重置回复后坐力需要的时间
+	// 重置恢复后坐力需要的时间
 	RecoilDecTime = 0.f;
-	// 重置回复后坐力已经消耗的时间
+	// 重置恢复后坐力已经消耗的时间
 	RecoilDecCostTime = 0.f;
-	// 重置回复后坐力上一帧后坐力
+	// 重置恢复后坐力上一帧后坐力
 	RecoilVertRecoverLastTick = 0.f;
 	RecoilHorRecoverLastTick = 0.f;
 }
@@ -148,8 +100,8 @@ void URecoilComponent::PollApplyRecoil(float DeltaSeconds)
 		// 约束耗时
 		RecoilIncCostTime = Weapon->RecoilIncTime;
 
-		// 计算回复后坐力所需时间
-		RecoilDecTime = FMath::Clamp(RecoilVertTotal / Weapon->RecoilTotalVertLimit, Weapon->RecoilMinDecTime, Weapon->RecoilMaxDecTime);
+		// 计算恢复后坐力所需时间
+		RecoilDecTime = FMath::Clamp(RecoilVertTotal / Weapon->RecoilVertRef_DecTime, Weapon->RecoilMinDecTime, Weapon->RecoilMaxDecTime);
 
 		// 备份需要恢复的总后坐力
 		RecoilVertRecoverTotal = RecoilVertTotal;
@@ -167,7 +119,7 @@ void URecoilComponent::PollApplyRecoil(float DeltaSeconds)
 
 	// 应用掉当前帧需要增加的后坐力（view kick）
 	HumanCharacter->AddControllerPitchInput((RecoilVertCurTick - RecoilVertLastTick) * -1.f); // InputPitchScale_DEPRECATED == -2.5
-	HumanCharacter->AddControllerYawInput(RecoilHorCurTick - RecoilHorLastTick);
+	HumanCharacter->AddControllerYawInput(RecoilHorCurTick - RecoilHorLastTick); // InputYawScale_DEPRECATED == 2.5
 
 	// 记录后坐力
 	RecoilVertLastTick = RecoilVertCurTick;
@@ -183,31 +135,31 @@ void URecoilComponent::PollRecoverRecoil(float DeltaSeconds)
 	AWeapon* Weapon = HumanCharacter->CombatComponent->GetCurWeapon();
 	if (Weapon == nullptr) return;
 
-	// 累计回复后坐力耗时
+	// 累计恢复后坐力耗时
 	RecoilDecCostTime += DeltaSeconds;
 
-	// 回复后坐力完毕
+	// 恢复后坐力完毕
 	if (RecoilDecCostTime >= RecoilDecTime)
 	{
 		// 约束耗时
 		RecoilDecCostTime = RecoilDecTime;
 	}
 
-	// 当前帧需要回复的后坐力
+	// 当前帧需要恢复的后坐力
 	float Alpha = RecoilDecCostTime / RecoilDecTime;
 	float RecoilVertRecoverCurTick = FMath::InterpEaseInOut(0.f, RecoilVertRecoverTotal, Alpha, 2.f);
 	float RecoilHorRecoverCurTick = FMath::InterpEaseInOut(0.f, RecoilHorRecoverTotal, Alpha, 2.f);
 
 	// UE_LOG(LogTemp, Warning, TEXT("RecoilDecCostTime %f RecoilVertRecoverCurTick %f RecoilHorRecoverCurTick %f"), RecoilDecCostTime, RecoilVertRecoverCurTick, RecoilHorRecoverCurTick);
 
-	// 回复垂直后坐力
+	// 恢复垂直后坐力
 	float DiffRecoilVert = RecoilVertRecoverCurTick - RecoilVertRecoverLastTick;
-	HumanCharacter->AddControllerPitchInput(-DiffRecoilVert * -1.f); // 回复时准星是向下的
+	HumanCharacter->AddControllerPitchInput(-DiffRecoilVert * -1.f); // 恢复时准星是向下的
 	RecoilVertTotal -= DiffRecoilVert;
 	// 限制垂直后坐力
 	if (RecoilVertTotal < 0.f) RecoilVertTotal = 0.f;
 
-	// 回复水平后坐力
+	// 恢复水平后坐力
 	float DiffRecoilHor = RecoilHorRecoverCurTick - RecoilHorRecoverLastTick;
 	HumanCharacter->AddControllerYawInput(-DiffRecoilHor);
 
@@ -228,12 +180,6 @@ void URecoilComponent::PollRecoverRecoil(float DeltaSeconds)
 	// 记录上一帧后坐力
 	RecoilVertRecoverLastTick = RecoilVertRecoverCurTick;
 	RecoilHorRecoverLastTick = RecoilHorRecoverCurTick;
-}
-
-// 设置水平后坐力方向
-void URecoilComponent::SetRecoilHorDirection(ERecoilHorDirection TempRecoilHorDirection)
-{
-	RecoilHorDirection = TempRecoilHorDirection;
 }
 
 // 获取子弹偏移
@@ -257,13 +203,19 @@ float URecoilComponent::GetCurRecoilHor()
 	return RecoilHorTotal * (1 - HumanCharacter->CombatComponent->AimingProgress);
 }
 
+// TODO 跳跃、移动速度影响精度
 FVector2D URecoilComponent::GetCurSpreadVector()
 {
-	AWeapon* Weapon = HumanCharacter->CombatComponent->GetCurWeapon();
-	if (Weapon && HumanCharacter && HumanCharacter->CombatComponent && !HumanCharacter->CombatComponent->bIsFirstShot)
+	if (HumanCharacter && HumanCharacter->CombatComponent)
 	{
-		return FMath::RandPointInCircle(Weapon->CenterSpread);
+		AWeapon* Weapon = HumanCharacter->CombatComponent->GetCurWeapon();
+		if (Weapon && Weapon->RecoilCurve)
+		{
+			FVector RecoilKick = Weapon->RecoilCurve->GetVectorValue(HumanCharacter->CombatComponent->CurShotCount);
+			
+			return FMath::RandPointInCircle(RecoilKick.Z);
+		}
 	}
-	
+
 	return FVector2D::ZeroVector;
 }

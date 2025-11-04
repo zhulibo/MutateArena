@@ -75,17 +75,15 @@ void AWeapon::InitData()
 		FDataRegistryId DataRegistryId(DR_EQUIPMENT_RECOIL, FName(EnumValue));
 		if (const FEquipmentRecoil* EquipmentData = UDataRegistrySubsystem::Get()->GetCachedItem<FEquipmentRecoil>(DataRegistryId))
 		{
-			RecoilMaxVert = EquipmentData->RecoilMaxVert;
-			RecoilMinVert = EquipmentData->RecoilMinVert;
-			RecoilMaxHor = EquipmentData->RecoilMaxHor;
-			RecoilMinHor = EquipmentData->RecoilMinHor;
-			RecoilTotalVertLimit = EquipmentData->RecoilTotalVertLimit;
-			RecoilTotalHorLimit = EquipmentData->RecoilTotalHorLimit;
-			FirstShotRecoilMul = EquipmentData->FirstShotRecoilMul;
+			RecoilCurve = EquipmentData->RecoilCurve;
+			RecoilCurveRandVert = EquipmentData->RecoilCurveRandVert;
+			RecoilCurveRandHor = EquipmentData->RecoilCurveRandHor;
 			RecoilIncTime = EquipmentData->RecoilIncTime;
 			RecoilMaxDecTime = EquipmentData->RecoilMaxDecTime;
 			RecoilMinDecTime = EquipmentData->RecoilMinDecTime;
-			CenterSpread = EquipmentData->CenterSpread;
+			RecoilVertRef_DecTime = EquipmentData->RecoilVertRef_DecTime;
+			RecoilVertRef_Crosshair = EquipmentData->RecoilVertRef_Crosshair;
+			CrosshairBaseSpread = EquipmentData->CrosshairBaseSpread;
 		}
 	}
 }

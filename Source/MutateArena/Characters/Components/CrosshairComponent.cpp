@@ -17,10 +17,10 @@ void UCrosshairComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// if (HumanCharacter)
-	// {
-	// 	WalkSpeedRange = FVector2D(0.f, HumanCharacter->GetCharacterMovement()->MaxWalkSpeed);
-	// }
+	if (HumanCharacter)
+	{
+		WalkSpeedRange = FVector2D(0.f, HumanCharacter->GetCharacterMovement()->MaxWalkSpeed);
+	}
 }
 
 void UCrosshairComponent::TickComponent(float DeltaSeconds, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -42,33 +42,28 @@ void UCrosshairComponent::SetHUDCrosshair(float DeltaSeconds)
 	AWeapon* Weapon = HumanCharacter->CombatComponent->GetCurWeapon();
 	if (Weapon == nullptr) return;
 
-	// TODO 做各种动作时应关联射击精度与准星扩塞
-
 	// 水平速度
-	// FVector Velocity = HumanCharacter->GetVelocity();
-	// Velocity.Z = 0.f;
-	// VelocityFactor = FMath::GetMappedRangeValueClamped(WalkSpeedRange, VelocityFactorRange, Velocity.Size());
+	FVector Velocity = HumanCharacter->GetVelocity();
+	Velocity.Z = 0.f;
+	VelocityFactor = FMath::GetMappedRangeValueClamped(WalkSpeedRange, FVector2D(0.f, 1.f), Velocity.Size());
 
 	// 跳跃
-	// if (HumanCharacter->GetCharacterMovement()->IsFalling())
-	// {
-	// 	JumpFactor = FMath::FInterpTo(JumpFactor, 1.f, DeltaSeconds, 10.f);
-	// }
-	// else
-	// {
-	// 	JumpFactor = FMath::FInterpTo(JumpFactor, 0.f, DeltaSeconds, 20.f);
-	// }
+	if (HumanCharacter->GetCharacterMovement()->IsFalling())
+	{
+		JumpFactor = FMath::FInterpTo(JumpFactor, 1.f, DeltaSeconds, 10.f);
+	}
+	else
+	{
+		JumpFactor = FMath::FInterpTo(JumpFactor, 0.f, DeltaSeconds, 20.f);
+	}
 
 	// 射击
 	if (URecoilComponent* RecoilComponent = HumanCharacter->RecoilComponent)
 	{
-		ShootFactor = (RecoilComponent->RecoilVertTotal + FMath::Abs(RecoilComponent->RecoilHorTotal))
-		/ (Weapon->RecoilTotalVertLimit + Weapon->RecoilTotalHorLimit);
+		ShootFactor = FMath::Clamp(RecoilComponent->RecoilVertTotal / Weapon->RecoilVertRef_Crosshair, 0.f, 1.f);
 	}
 
-	float TotalFactor = 1.f + VelocityFactor + JumpFactor + ShootFactor * 2.f;
+	float TotalFactor = 4.f + VelocityFactor * 1.f + JumpFactor * 2.f + ShootFactor * 2.f;
 
-	float BaseWeaponSpread = (Weapon->RecoilMaxVert + Weapon->RecoilMaxHor) * 6;
-
-	BaseController->ChangeCrosshairSpread.Broadcast(2.f + BaseWeaponSpread * TotalFactor);
+	BaseController->ChangeCrosshairSpread.Broadcast(Weapon->CrosshairBaseSpread * TotalFactor);
 }

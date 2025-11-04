@@ -230,7 +230,7 @@ void AMutantCharacter::MoveCompleted(const FInputActionValue& Value)
 	}
 }
 
-// 回复血量
+// 恢复血量
 void AMutantCharacter::ActivateRestoreAbility()
 {
 	if (AbilitySystemComponent && AssetSubsystem && AssetSubsystem->CharacterAsset)
@@ -240,7 +240,7 @@ void AMutantCharacter::ActivateRestoreAbility()
 	}
 }
 
-// 停止回复血量
+// 停止恢复血量
 void AMutantCharacter::EndRestoreAbility()
 {
 	if (StillTimerHandle.IsValid())

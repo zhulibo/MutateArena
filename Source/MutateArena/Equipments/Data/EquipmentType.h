@@ -146,7 +146,7 @@ struct FWeaponData : public FTableRowBase
 	TObjectPtr<UCurveFloat> DamageCurve;
 	UPROPERTY(EditAnywhere)
 	float Impulse = 0.f;
-
+	
 	UPROPERTY(EditAnywhere)
 	int32 PelletNum = 1;
 
@@ -189,32 +189,28 @@ struct FEquipmentRecoil : public FTableRowBase
 	UPROPERTY(EditAnywhere)
 	EEquipmentName EquipmentName = EEquipmentName::None;
 
+	// Y 垂直后坐力 X 水平后坐力 Z 散布
 	UPROPERTY(EditAnywhere)
-	float RecoilMaxVert = 0.f;
+	TObjectPtr<class UCurveVector> RecoilCurve;
+	// 随机
 	UPROPERTY(EditAnywhere)
-	float RecoilMinVert = 0.f;
+	TObjectPtr<UCurveFloat> RecoilCurveRandVert;
 	UPROPERTY(EditAnywhere)
-	float RecoilMaxHor = 0.f;
-	UPROPERTY(EditAnywhere)
-	float RecoilMinHor = 0.f;
-
-	UPROPERTY(EditAnywhere)
-	float FirstShotRecoilMul = 1.f;
+	TObjectPtr<UCurveFloat> RecoilCurveRandHor;
 
 	UPROPERTY(EditAnywhere)
 	float RecoilIncTime = 0.f;
 
 	UPROPERTY(EditAnywhere)
-	float RecoilTotalVertLimit = 0.f;
-	UPROPERTY(EditAnywhere)
-	float RecoilTotalHorLimit = 0.f;
-
-	UPROPERTY(EditAnywhere)
 	float RecoilMaxDecTime = 0.f;
 	UPROPERTY(EditAnywhere)
 	float RecoilMinDecTime = 0.f;
-
 	UPROPERTY(EditAnywhere)
-	float CenterSpread = 0.f;
+	float RecoilVertRef_DecTime = 0.f;
+	UPROPERTY(EditAnywhere)
+	float RecoilVertRef_Crosshair = 0.f;
+	
+	UPROPERTY(EditAnywhere)
+	float CrosshairBaseSpread = 0.f;
 
 };

@@ -98,7 +98,7 @@ float AProjectile::GetImpulse(float DeclineDamage)
 
 			if (MaxDamage != 0)
 			{
-				Impulse = DeclineDamage / MaxDamage * WeaponData->Impulse / WeaponData->PelletNum;
+				Impulse = WeaponData->Impulse * (DeclineDamage / MaxDamage) / WeaponData->PelletNum;
 			}
 		}
 	}
