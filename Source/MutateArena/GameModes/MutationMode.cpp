@@ -19,7 +19,8 @@
 #include "MutateArena/System/DevSetting.h"
 #include "MutateArena/Utils/LibraryCommon.h"
 #include "GameFramework/PlayerStart.h"
-#include "MutateArena/Equipments/Pickups/PickupHerb.h"
+#include "MutateArena/Equipments/Herbs/HerbRage.h"
+#include "MutateArena/Equipments/Herbs/HerbRepelReceived.h"
 
 namespace MatchState
 {
@@ -312,7 +313,8 @@ void AMutationMode::RoundStartMutate()
 	// 定时生成补给箱
 	GetWorldTimerManager().SetTimer(SpawnPickupTimerHandle, this, &ThisClass::SpawnPickups, 40.f, true, 35.f);
 	// 定时生成草药
-	GetWorldTimerManager().SetTimer(SpawnPickupHerbTimerHandle, this, &ThisClass::SpawnPickupHerbs, FMath::FRandRange(10.f, 15.f));
+	GetWorldTimerManager().SetTimer(SpawnHerbRageTimerHandle, this, &ThisClass::SpawnHerbRages, FMath::FRandRange(10.f, 20.f));
+	GetWorldTimerManager().SetTimer(SpawnHerbRepelReceivedTimerHandle, this, &ThisClass::SpawnHerbRepelReceived, 10.f);
 }
 
 // 人类受到伤害
@@ -452,8 +454,8 @@ void AMutationMode::MutantReceiveDamage(AMutantCharacter* DamagedCharacter, ABas
 	{
 		FVector ImpulseVector = ProjectileBullet->GetActorForwardVector();
 		ImpulseVector.Z = 0.f;
-
-		DamagedCharacter->MulticastRepel(ImpulseVector * ProjectileBullet->GetImpulse(Damage));
+		DamagedCharacter->MulticastRepel(ImpulseVector * ProjectileBullet->GetImpulse(Damage) * DamagedState->GetRepelReceivedMul());
+		UE_LOG(LogTemp, Warning, TEXT("ProjectileBullet->GetImpulse(Damage) = %f"), ProjectileBullet->GetImpulse(Damage));
 	}
 
 	// 设置受伤者血量
@@ -616,23 +618,23 @@ void AMutationMode::SpawnPickups()
 	}
 }
 
-// 生成草药
-void AMutationMode::SpawnPickupHerbs()
+// 生成加怒气草药
+void AMutationMode::SpawnHerbRages()
 {
-	// 寻找补给箱重生点
-	if (PickupHerbStartPoints.IsEmpty())
+	// 寻找重生点
+	if (HerbRageStartPoints.IsEmpty())
 	{
 		for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It)
 		{
-			if (It->PlayerStartTag == TEXT("PickupHerb"))
+			if (It->PlayerStartTag == TEXT("HerbRage"))
 			{
-				PickupHerbStartPoints.Add(*It);
+				HerbRageStartPoints.Add(*It);
 			}
 		}
 	}
 
 	// 随机选3个重生点
-	auto SelectedStartPoints = PickupHerbStartPoints;
+	auto SelectedStartPoints = HerbRageStartPoints;
 	while (SelectedStartPoints.Num() > 3)
 	{
 		int32 RandomIndex = FMath::RandRange(0, SelectedStartPoints.Num() - 1);
@@ -645,8 +647,46 @@ void AMutationMode::SpawnPickupHerbs()
 		// 生成
 		FActorSpawnParameters SpawnParams;
 		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
-		GetWorld()->SpawnActor<APickupHerb>(
-			PickupHerbClasses[FMath::RandRange(0, PickupHerbClasses.Num() - 1)],
+		GetWorld()->SpawnActor<AHerbRage>(
+			HerbRageClasses[FMath::RandRange(0, HerbRageClasses.Num() - 1)],
+			SelectedStartPoints[i]->GetActorLocation(),
+			SelectedStartPoints[i]->GetActorRotation(),
+			SpawnParams
+		);
+	}
+}
+
+// 生成抗击退草药
+void AMutationMode::SpawnHerbRepelReceived()
+{
+	// 寻找重生点
+	if (HerbRepelReceivedStartPoints.IsEmpty())
+	{
+		for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It)
+		{
+			if (It->PlayerStartTag == TEXT("HerbRepelReceived"))
+			{
+				HerbRepelReceivedStartPoints.Add(*It);
+			}
+		}
+	}
+
+	// 随机选3个重生点
+	auto SelectedStartPoints = HerbRepelReceivedStartPoints;
+	while (SelectedStartPoints.Num() > 3)
+	{
+		int32 RandomIndex = FMath::RandRange(0, SelectedStartPoints.Num() - 1);
+		SelectedStartPoints.RemoveAt(RandomIndex);
+	}
+
+	for (int i = 0; i < SelectedStartPoints.Num(); ++i)
+	{
+		if (SelectedStartPoints[i] == nullptr) continue;
+		// 生成
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+		GetWorld()->SpawnActor<AHerbRepelReceived>(
+			HerbRepelReceivedClasses[FMath::RandRange(0, HerbRepelReceivedClasses.Num() - 1)],
 			SelectedStartPoints[i]->GetActorLocation(),
 			SelectedStartPoints[i]->GetActorRotation(),
 			SpawnParams

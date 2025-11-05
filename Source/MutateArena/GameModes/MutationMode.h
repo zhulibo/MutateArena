@@ -67,17 +67,25 @@ protected:
 	TArray<TSubclassOf<class APickup>> PickupClasses;
 	FTimerHandle SpawnPickupTimerHandle;
 	UPROPERTY()
-	TArray<class APlayerStart*> PickupStartPoints;
+	TArray<APlayerStart*> PickupStartPoints;
 	UFUNCTION()
 	void SpawnPickups();
 	
 	UPROPERTY(EditAnywhere)
-	TArray<TSubclassOf<class APickupHerb>> PickupHerbClasses;
-	FTimerHandle SpawnPickupHerbTimerHandle;
+	TArray<TSubclassOf<class AHerbRage>> HerbRageClasses;
+	FTimerHandle SpawnHerbRageTimerHandle;
 	UPROPERTY()
-	TArray<class APlayerStart*> PickupHerbStartPoints;
+	TArray<APlayerStart*> HerbRageStartPoints;
 	UFUNCTION()
-	void SpawnPickupHerbs();
+	void SpawnHerbRages();
+	
+	UPROPERTY(EditAnywhere)
+	TArray<TSubclassOf<class AHerbRepelReceived>> HerbRepelReceivedClasses;
+	FTimerHandle SpawnHerbRepelReceivedTimerHandle;
+	UPROPERTY()
+	TArray<APlayerStart*> HerbRepelReceivedStartPoints;
+	UFUNCTION()
+	void SpawnHerbRepelReceived();
 
 	void RoundStartMutate();
 

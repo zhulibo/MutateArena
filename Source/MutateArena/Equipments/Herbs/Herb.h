@@ -1,16 +1,16 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "Pickup.h"
-#include "PickupHerb.generated.h"
+#include "GameFramework/Actor.h"
+#include "Herb.generated.h"
 
 UCLASS()
-class MUTATEARENA_API APickupHerb : public APickup
+class MUTATEARENA_API AHerb : public AActor
 {
 	GENERATED_BODY()
-
+	
 public:
-	APickupHerb();
+	AHerb();
 	
 	UFUNCTION(Server, Reliable)
 	void ServerDestroy();
@@ -20,7 +20,14 @@ protected:
 	virtual void BeginPlay() override;
 
 	UPROPERTY(EditAnywhere)
-	UStaticMesh* PickupMeshLevel2;
+	class USphereComponent* OverlapSphere;
+	UPROPERTY(EditAnywhere)
+	UStaticMeshComponent* HerbMesh;
+	UPROPERTY(EditAnywhere)
+	UStaticMesh* HerbMeshLevel2;
+
+	UPROPERTY()
+	class AMutationGameState* MutationGameState;
 
 	UPROPERTY(ReplicatedUsing = OnRep_Level)
 	int32 Level = 1;
@@ -28,7 +35,10 @@ protected:
 	UFUNCTION()
 	void OnRep_Level();
 
+	UFUNCTION()
 	virtual void OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) override;
+		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) {}
+
+	void OnRoundStarted();
 
 };

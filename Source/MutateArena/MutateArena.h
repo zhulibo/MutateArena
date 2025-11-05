@@ -27,7 +27,7 @@
 #define TAG_CHARACTER_MUTANT FName(TEXT("MutantCharacter"))
 #define TAG_EQUIPMENT FName(TEXT("Equipment"))
 #define TAG_SMOKE_ACTOR FName(TEXT("SmokeActor"))
-#define TAG_PICKUP_HERB FName(TEXT("PickupHerb"))
+#define TAG_HERB FName(TEXT("PickupHerb"))
 #define TAG_GAME_STATE_MUTATION FName(TEXT("GameStateMutation"))
 #define TAG_GAME_STATE_MELEE FName(TEXT("GameStateMelee"))
 #define TAG_GAME_STATE_TDM FName(TEXT("GameStateTDM"))
@@ -45,7 +45,7 @@
 // 角色碰撞通道
 #define ECC_MESH_TEAM1 ECollisionChannel::ECC_GameTraceChannel1
 #define ECC_MESH_TEAM2 ECollisionChannel::ECC_GameTraceChannel2
-#define ECC_MESH_PICKUP_HREB ECollisionChannel::ECC_GameTraceChannel3
+#define ECC_MESH_HREB ECollisionChannel::ECC_GameTraceChannel3
 
 // EOS大厅属性
 #define LOBBY_SCHEMA_ID FName(TEXT("GameLobby"))

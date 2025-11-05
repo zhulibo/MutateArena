@@ -27,25 +27,14 @@ float UMMC_MutantHealth::CalculateBaseMagnitude_Implementation(const FGameplayEf
 	EvaluationParameters.TargetTags = TargetTags;
 
 	float MaxHealth = 0.f;
-	GetCapturedAttributeMagnitude(MaxHealthDef, Spec, EvaluationParameters, MaxHealth);
+	GetCapturedAttributeMagnitude(MaxHealthDef, Spec, EvaluationParameters, MaxHealth); // TODO 此处捕获到的依然是升级前的最大血量，需要升级后的
 	float Health = 0.f;
 	GetCapturedAttributeMagnitude(HealthDef, Spec, EvaluationParameters, Health);
 	// UE_LOG(LogTemp, Warning, TEXT("MaxHealth %f Health %f"), MaxHealth, Health);
 
-	// float NewHealth;
-	// if (Cast<AMutationPlayerState>(Spec.GetContext().GetSourceObject()))
-	// {
-	// 	UE_LOG(LogTemp, Warning, TEXT("LevelUp"));
-	// 	NewHealth = FMath::Clamp(Health + 500.f * Spec.GetLevel(), 0.f, MaxHealth);
-	// }
-	// else
-	// {
-	// 	UE_LOG(LogTemp, Warning, TEXT("Spawn"));
-	// 	NewHealth = MaxHealth;
-	// }
-
-	float NewHealth = FMath::Clamp(Health + 500.f * Spec.GetLevel(), 0.f, MaxHealth);
-
+	// float NewHealth = FMath::Clamp(Health + 500.f * Spec.GetLevel(), 0.f, MaxHealth); 
+	float NewHealth = Health + 1000.f;
 	// UE_LOG(LogTemp, Warning, TEXT("NewHealth %f"), NewHealth);
+	
 	return NewHealth;
 }

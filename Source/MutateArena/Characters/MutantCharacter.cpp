@@ -266,7 +266,9 @@ void AMutantCharacter::EndRestoreAbility()
 void AMutantCharacter::LightAttackButtonPressed(const FInputActionValue& Value)
 {
 	if (MutantState != EMutantState::Ready) return;
-
+	
+	bIsCombo = true;
+	
 	LocalLightAttack();
 	ServerLightAttack();
 }
@@ -280,6 +282,7 @@ void AMutantCharacter::MulticastLightAttack_Implementation()
 {
 	if (!IsLocallyControlled())
 	{
+		bIsCombo = true;
 		LocalLightAttack();
 	}
 }
@@ -289,8 +292,6 @@ void AMutantCharacter::LocalLightAttack()
 	if (AnimInstance_Mutant == nullptr) AnimInstance_Mutant = Cast<UAnimInstance_Mutant>(GetMesh()->GetAnimInstance());
 	if (AnimInstance_Mutant)
 	{
-		bIsCombo = true;
-		ServerSetIsCombo(true);
 		MutantState = EMutantState::LightAttacking;
 		AnimInstance_Mutant->Montage_Play(LightAttackMontage);
 

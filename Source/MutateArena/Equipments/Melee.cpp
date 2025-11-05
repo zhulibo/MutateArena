@@ -14,7 +14,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Data/DamageTypeMelee.h"
 #include "Kismet/GameplayStatics.h"
-#include "Pickups/PickupHerb.h"
+#include "Herbs/Herb.h"
 
 AMelee::AMelee()
 {
@@ -64,7 +64,7 @@ void AMelee::SetAttackCapsuleCollision()
 			break;
 		}
 
-		AttackCapsule->SetCollisionResponseToChannel(ECC_MESH_PICKUP_HREB, ECollisionResponse::ECR_Overlap);
+		AttackCapsule->SetCollisionResponseToChannel(ECC_MESH_HREB, ECollisionResponse::ECR_Overlap);
 	}
 }
 
@@ -116,12 +116,11 @@ void AMelee::OnAttackCapsuleOverlap(UPrimitiveComponent* OverlappedComponent, AA
 				ServerApplyDamage(OtherActor, InstigatorCharacter, Damage);
 			}
 		}
-		else if (OtherActor->ActorHasTag(TAG_PICKUP_HERB))
+		else if (OtherActor->ActorHasTag(TAG_HERB))
 		{
-			if (APickupHerb* PickupHerb = Cast<APickupHerb>(OtherActor))
+			if (AHerb* Herb = Cast<AHerb>(OtherActor))
 			{
-				// TODO 测试PickupHerb
-				PickupHerb->ServerDestroy();
+				Herb->ServerDestroy();
 			}
 		}
 	}

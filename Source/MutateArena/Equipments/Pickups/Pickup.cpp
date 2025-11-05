@@ -12,7 +12,7 @@ APickup::APickup()
 	OverlapSphere->SetSphereRadius(100.f);
 	OverlapSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	OverlapSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
-	OverlapSphere->OnComponentBeginOverlap.AddUniqueDynamic(this, &APickup::OnSphereOverlap);
+	OverlapSphere->OnComponentBeginOverlap.AddUniqueDynamic(this, &ThisClass::OnSphereOverlap);
 
 	PickupMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PickupMesh"));
 	PickupMesh->SetupAttachment(RootComponent);
