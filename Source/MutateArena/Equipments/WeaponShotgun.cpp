@@ -1,6 +1,5 @@
 #include "WeaponShotgun.h"
 
-#include "MutateArena/Equipments/Data/EquipmentType.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "MutateArena/PlayerStates/TeamType.h"

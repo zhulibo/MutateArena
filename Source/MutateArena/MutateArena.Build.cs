@@ -28,6 +28,7 @@ public class MutateArena : ModuleRules
 				"MetasoundEngine",
 				"Json",
 				"JsonUtilities",
+				"AudioModulation",
 			}
 		);
 

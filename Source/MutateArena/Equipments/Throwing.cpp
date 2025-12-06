@@ -1,6 +1,5 @@
 #include "Throwing.h"
 
-#include "MutateArena/Equipments/Data/EquipmentType.h"
 #include "Components/SphereComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 

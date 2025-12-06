@@ -1,10 +1,16 @@
 #include "MutantTank.h"
 
+#include "GameFramework/CharacterMovementComponent.h"
 #include "MutateArena/Characters/Data/CharacterType.h"
 
 AMutantTank::AMutantTank()
 {
 	MutantCharacterName = EMutantCharacterName::Tank;
+	
+	// 需保证与角色ASC中的MaxWalkSpeed一级速度一致
+	DefaultMaxWalkSpeed = 650.f;
+	GetCharacterMovement()->MaxWalkSpeed = DefaultMaxWalkSpeed;
+	GetCharacterMovement()->MaxWalkSpeedCrouched = DefaultMaxWalkSpeed * 0.5f;
 }
 
 void AMutantTank::BeginPlay()

@@ -9,6 +9,11 @@
 AMutantGhost::AMutantGhost()
 {
 	MutantCharacterName = EMutantCharacterName::Ghost;
+	
+	// 需保证与角色ASC中的MaxWalkSpeed一级速度一致
+	DefaultMaxWalkSpeed = 650.f;
+	GetCharacterMovement()->MaxWalkSpeed = DefaultMaxWalkSpeed;
+	GetCharacterMovement()->MaxWalkSpeedCrouched = DefaultMaxWalkSpeed * 0.5f;
 }
 
 void AMutantGhost::BeginPlay()
@@ -48,13 +53,13 @@ void AMutantGhost::OnLeftHandCapsuleOverlap(UPrimitiveComponent* OverlappedCompo
 	Super::OnLeftHandCapsuleOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
 }
 
-void AMutantGhost::OnAbilitySystemComponentInit()
+void AMutantGhost::OnASCInit()
 {
-	Super::OnAbilitySystemComponentInit();
+	Super::OnASCInit();
 
-	if (AbilitySystemComponent && AttributeSetBase)
+	if (ASC && AttributeSetBase)
 	{
-		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(AttributeSetBase->GetJumpZVelocityAttribute()).AddUObject(this, &ThisClass::OnJumpZVelocityChanged);
+		ASC->GetGameplayAttributeValueChangeDelegate(AttributeSetBase->GetJumpZVelocityAttribute()).AddUObject(this, &ThisClass::OnJumpZVelocityChanged);
 	}
 }
 

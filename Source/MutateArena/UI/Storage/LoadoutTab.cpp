@@ -1,11 +1,21 @@
 #include "LoadoutTab.h"
 
+#include "CommonActionWidget.h"
 #include "LoadoutContent.h"
 #include "CommonActivatableWidgetSwitcher.h"
 #include "MutateArena/UI/Common/CommonButton.h"
 #include "Components/HorizontalBox.h"
 #include "CommonTextBlock.h"
 #include "Components/SizeBox.h"
+
+void ULoadoutTab::NativeOnInitialized()
+{
+	Super::NativeOnInitialized();
+
+	// 把ActionData绑定给CommonActionWidget
+	LeftTabAction->SetInputAction(PreviousTabInputActionData);
+	RightTabAction->SetInputAction(NextTabInputActionData);
+}
 
 void ULoadoutTab::NativeConstruct()
 {

@@ -29,7 +29,7 @@ void AHerbRepelReceived::OnSphereOverlap(UPrimitiveComponent* OverlappedComponen
 
 	if (AMutantCharacter* MutantCharacter = Cast<AMutantCharacter>(OtherActor))
 	{
-		if (UAbilitySystemComponent* AbilitySystemComponent = MutantCharacter->GetAbilitySystemComponent())
+		if (UAbilitySystemComponent* AbilitySystemComponent = MutantCharacter->GetASC())
 		{
 			FGameplayEffectContextHandle EffectContext = AbilitySystemComponent->MakeEffectContext();
 			EffectContext.AddSourceObject(this);

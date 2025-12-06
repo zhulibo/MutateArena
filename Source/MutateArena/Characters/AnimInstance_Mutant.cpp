@@ -7,6 +7,8 @@
 
 UAnimInstance_Mutant::UAnimInstance_Mutant()
 {
+	// 多线程动画开启且在服务端播放非本地角色动画蒙太奇时，动画通知会触发两次。
+	// 性能影响较大，暂时在 UAN_ShellReload::Notify 中处理。
 	// bUseMultiThreadedAnimationUpdate = false;
 }
 
@@ -20,6 +22,9 @@ void UAnimInstance_Mutant::NativeUpdateAnimation(float DeltaSeconds)
 	FVector Velocity = MutantCharacter->GetVelocity();
 	Velocity.Z = 0.f;
 	Speed = Velocity.Size();
+
+	WalkPlayRate = MutantCharacter->GetMaxWalkSpeed() / MutantCharacter->DefaultMaxWalkSpeed;
+	// UE_LOG(LogTemp, Warning, TEXT("DefaultWalkSpeed %f GetMaxWalkSpeed %f WalkPlayRate: %f"), MutantCharacter->DefaultWalkSpeed, MutantCharacter->GetMaxWalkSpeed(), WalkPlayRate);
 
 	bIsInAir = MutantCharacter->GetCharacterMovement()->IsFalling();
 	bIsAccelerating = MutantCharacter->GetCharacterMovement()->GetCurrentAcceleration().Size() > 0.f;

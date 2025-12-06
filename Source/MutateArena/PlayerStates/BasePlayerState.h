@@ -26,7 +26,7 @@ public:
 	UPROPERTY()
 	class UAttributeSetBase* AttributeSetBase;
 	
-	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+	virtual UAbilitySystemComponent* GetASC() const override;
 	UAttributeSetBase* GetAttributeSetBase();
 	float GetMaxHealth();
 	float GetHealth();

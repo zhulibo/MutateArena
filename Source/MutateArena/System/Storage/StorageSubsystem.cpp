@@ -1,7 +1,6 @@
 #include "StorageSubsystem.h"
 
 #include "MutateArena/System/AssetSubsystem.h"
-#include "AudioDevice.h"
 #include "SaveGameLoadout.h"
 #include "SaveGameSetting.h"
 #include "MutateArena/UI/Setting/TabAudio.h"
@@ -185,9 +184,8 @@ void UStorageSubsystem::ApplySetting()
 // 设置音量（PIE是无效的，需要在独立进程条件下测试。）
 void UStorageSubsystem::SetAudio(float Value, ESoundClassType SoundClassType)
 {
-	if (AssetSubsystem == nullptr) AudioDevice = GEngine->GetActiveAudioDevice();
 	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-	if (AudioDevice && AssetSubsystem && AssetSubsystem->CommonAsset)
+	if (AssetSubsystem && AssetSubsystem->CommonAsset)
 	{
 		USoundClass* SoundClass;
 		switch (SoundClassType)
@@ -209,7 +207,8 @@ void UStorageSubsystem::SetAudio(float Value, ESoundClassType SoundClassType)
 			break;
 		}
 
-		AudioDevice->SetSoundMixClassOverride(
+		UGameplayStatics::SetSoundMixClassOverride(
+			this,
 			AssetSubsystem->CommonAsset->SoundMix,
 			SoundClass,
 			Value,

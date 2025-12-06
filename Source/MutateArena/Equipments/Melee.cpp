@@ -1,7 +1,6 @@
 #include "Melee.h"
 
 #include "DataRegistrySubsystem.h"
-#include "MutateArena/Equipments/Data/EquipmentType.h"
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "MutateArena/MutateArena.h"
@@ -171,14 +170,23 @@ void AMelee::DropBlood(UPrimitiveComponent* OverlappedComponent, AActor* OtherAc
 				TraceResult.ImpactPoint,
 				TraceResult.ImpactNormal.Rotation()
 			);
-
 			if (BloodEffectComponent)
 			{
 				BloodEffectComponent->SetVariableInt(TEXT("Count"), ULibraryCommon::GetBloodParticleCount(Damage));
 				BloodEffectComponent->SetVariableLinearColor(TEXT("Color"), OverlappedCharacter->BloodColor);
-
 				UBloodCollision* CollisionCB = NewObject<UBloodCollision>(this);
 				BloodEffectComponent->SetVariableObject(TEXT("CollisionCB"), CollisionCB);
+			}
+			
+			auto BloodSmokeEffectComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+				GetWorld(),
+				OverlappedCharacter->BloodSmokeEffect,
+				TraceResult.ImpactPoint,
+				TraceResult.ImpactNormal.Rotation()
+			);
+			if (BloodSmokeEffectComponent)
+			{
+				BloodSmokeEffectComponent->SetVariableLinearColor(TEXT("SmokeColor"), OverlappedCharacter->BloodColor);
 			}
 
 			break;

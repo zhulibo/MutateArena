@@ -15,6 +15,7 @@ public:
 	virtual void ThrowOut() override;
 
 protected:
+	virtual void BeginPlay() override;
 	virtual void Destroyed() override;
 
 	UPROPERTY(VisibleAnywhere)
@@ -33,7 +34,12 @@ protected:
 
 	UPROPERTY()
 	UAudioComponent* AudioComponent;
-
+	
+	UFUNCTION()
+	void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastOnHit();
+	
 	void Explode();
 
 	UPROPERTY()

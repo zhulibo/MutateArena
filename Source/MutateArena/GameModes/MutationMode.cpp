@@ -455,7 +455,6 @@ void AMutationMode::MutantReceiveDamage(AMutantCharacter* DamagedCharacter, ABas
 		FVector ImpulseVector = ProjectileBullet->GetActorForwardVector();
 		ImpulseVector.Z = 0.f;
 		DamagedCharacter->MulticastRepel(ImpulseVector * ProjectileBullet->GetImpulse(Damage) * DamagedState->GetRepelReceivedMul());
-		UE_LOG(LogTemp, Warning, TEXT("ProjectileBullet->GetImpulse(Damage) = %f"), ProjectileBullet->GetImpulse(Damage));
 	}
 
 	// 设置受伤者血量

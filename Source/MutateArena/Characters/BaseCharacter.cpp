@@ -94,7 +94,7 @@ void ABaseCharacter::PostInitializeComponents()
 void ABaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-
+	
 	// 监听输入设备类型改变
 	if (UCommonInputSubsystem* CommonInputSubsystem = UCommonInputSubsystem::Get(GetWorld()->GetFirstLocalPlayerFromController()))
 	{
@@ -273,17 +273,17 @@ void ABaseCharacter::PossessedBy(AController* NewController)
 	// 初始化ASC
 	InitAbilityActorInfo();
 
-	OnAbilitySystemComponentInit();
+	OnASCInit();
 
-	if (AbilitySystemComponent)
+	if (ASC)
 	{
 		// 赋予默认值Effect
-		FGameplayEffectContextHandle EffectContext = AbilitySystemComponent->MakeEffectContext();
+		FGameplayEffectContextHandle EffectContext = ASC->MakeEffectContext();
 		EffectContext.AddSourceObject(this);
-		FGameplayEffectSpecHandle SpecHandle = AbilitySystemComponent->MakeOutgoingSpec(DefaultAttrEffect, GetCharacterLevel(), EffectContext);
+		FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(DefaultAttrEffect, GetCharacterLevel(), EffectContext);
 		if (SpecHandle.IsValid())
 		{
-			AbilitySystemComponent->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), AbilitySystemComponent);
+			ASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), ASC);
 		}
 	}
 }
@@ -294,7 +294,7 @@ void ABaseCharacter::OnRep_PlayerState()
 
 	InitAbilityActorInfo();
 
-	OnAbilitySystemComponentInit();
+	OnASCInit();
 }
 
 void ABaseCharacter::Destroyed()
@@ -332,27 +332,27 @@ void ABaseCharacter::InitAbilityActorInfo()
 	if (BasePlayerState == nullptr) BasePlayerState = GetPlayerState<ABasePlayerState>();
 	if (BasePlayerState)
 	{
-		AbilitySystemComponent = Cast<UMAAbilitySystemComponent>(BasePlayerState->GetAbilitySystemComponent());
-		if (AbilitySystemComponent)
+		ASC = Cast<UMAAbilitySystemComponent>(BasePlayerState->GetASC());
+		if (ASC)
 		{
-			AbilitySystemComponent->InitAbilityActorInfo(BasePlayerState, this);
+			ASC->InitAbilityActorInfo(BasePlayerState, this);
 		}
 		AttributeSetBase = BasePlayerState->GetAttributeSetBase();
 	}
 }
 
-void ABaseCharacter::OnAbilitySystemComponentInit()
+void ABaseCharacter::OnASCInit()
 {
-	if (AbilitySystemComponent)
+	if (ASC)
 	{
-		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(AttributeSetBase->GetMaxHealthAttribute()).AddUObject(this, &ThisClass::OnMaxHealthChanged);
-		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(AttributeSetBase->GetHealthAttribute()).AddUObject(this, &ThisClass::OnHealthChanged);
+		ASC->GetGameplayAttributeValueChangeDelegate(AttributeSetBase->GetMaxHealthAttribute()).AddUObject(this, &ThisClass::OnMaxHealthChanged);
+		ASC->GetGameplayAttributeValueChangeDelegate(AttributeSetBase->GetHealthAttribute()).AddUObject(this, &ThisClass::OnHealthChanged);
 	}
 }
 
-UAbilitySystemComponent* ABaseCharacter::GetAbilitySystemComponent() const
+UAbilitySystemComponent* ABaseCharacter::GetASC() const
 {
-	return AbilitySystemComponent;
+	return ASC;
 }
 
 UAttributeSetBase* ABaseCharacter::GetAttributeSetBase()
@@ -398,12 +398,13 @@ float ABaseCharacter::GetJumpZVelocity()
 void ABaseCharacter::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	FVector NormalImpulse, const FHitResult& Hit)
 {
+	// UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::OnHit Location: %s"), *Hit.ImpactPoint.ToString());
+	// UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::OnHit Rotation: %s"), *Hit.ImpactNormal.Rotation().ToString());
+
+	FRotator HitRotation = Hit.ImpactNormal.Rotation();
+	
 	if (BloodEffect)
 	{
-		// UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::OnHit Location: %s"), *Hit.ImpactPoint.ToString());
-		// UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::OnHit Rotation: %s"), *Hit.ImpactNormal.Rotation().ToString());
-
-		FRotator HitRotation = Hit.ImpactNormal.Rotation();
 		auto BloodEffectComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
 			GetWorld(),
 			BloodEffect,
@@ -421,6 +422,20 @@ void ABaseCharacter::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPr
 
 			UBloodCollision* CollisionCB = NewObject<UBloodCollision>(this);
 			BloodEffectComponent->SetVariableObject(TEXT("CollisionCB"), CollisionCB);
+		}
+	}
+	
+	if (BloodSmokeEffect)
+	{
+		auto BloodSmokeEffectComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+			GetWorld(),
+			BloodSmokeEffect,
+			Hit.ImpactPoint,
+			FRotator(-HitRotation.Pitch, HitRotation.Yaw + 180.f, HitRotation.Roll)
+		);
+		if (BloodSmokeEffectComponent)
+		{
+			BloodSmokeEffectComponent->SetVariableLinearColor(TEXT("SmokeColor"), BloodColor);
 		}
 	}
 }
@@ -973,7 +988,7 @@ void ABaseCharacter::LocalPlayRadioSound(int32 RadioIndex)
 void ABaseCharacter::SprayPaint(int32 RadioIndex)
 {
 	FVector Start = Camera->GetComponentLocation();
-	FVector End = Start + Camera->GetForwardVector() * 300.f;
+	FVector End = Start + Camera->GetForwardVector() * 500.f;
 
 	DrawDebugLine(GetWorld(), Start, End, C_YELLOW, true);
 

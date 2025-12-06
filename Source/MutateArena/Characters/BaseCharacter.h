@@ -43,6 +43,10 @@ protected:
 	void ServerSetInputType(ECommonInputType TempInputType);
 	
 public:
+	// 标准行走速度参考值，用于计算行走动画播放速度。在子类中会被赋值，赋值时需保证与角色ASC中的MaxWalkSpeed一级速度一致
+	UPROPERTY()
+	float DefaultMaxWalkSpeed = 600.f;
+
 	bool bIsPlayerStateTeamReady = false;
 protected:
 	void PollInit_PlayerStateTeam();
@@ -65,15 +69,15 @@ public:
 	// GAS
 protected:
 	UPROPERTY()
-	class UMAAbilitySystemComponent* AbilitySystemComponent;
+	class UMAAbilitySystemComponent* ASC;
 	UPROPERTY()
 	class UAttributeSetBase* AttributeSetBase;
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UGameplayEffect> DefaultAttrEffect;
 	void InitAbilityActorInfo();
-	virtual void OnAbilitySystemComponentInit();
+	virtual void OnASCInit();
 public:
-	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+	virtual UAbilitySystemComponent* GetASC() const override;
 	UAttributeSetBase* GetAttributeSetBase();
 	float GetMaxHealth();
 	float GetHealth();
@@ -102,6 +106,8 @@ public:
 	FColor BloodColor;
 	UPROPERTY(EditAnywhere)
 	class UNiagaraSystem* BloodEffect;
+	UPROPERTY(EditAnywhere)
+	UNiagaraSystem* BloodSmokeEffect;
 protected:
 	UFUNCTION()
 	virtual void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,

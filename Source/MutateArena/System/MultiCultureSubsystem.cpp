@@ -76,9 +76,10 @@ void UMultiCultureSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	
 	// 需与 SprayPaint.Name 的值一致
 #define LOCTEXT_NAMESPACE "SprayPaint"
-	auto Brainburger = LOCTEXT("Brainburger", "Brainburger");
+	auto SealingTalisman = LOCTEXT("SealingTalisman", "Sealing Talisman");
 	auto Kun = LOCTEXT("2.5", "2.5");
-	auto CorpseSuppressingTalisman = LOCTEXT("CorpseSuppressingTalisman", "Corpse Suppressing Talisman");
+	auto Brainburger = LOCTEXT("Brainburger", "Brainburger");
+	auto Biohazard = LOCTEXT("Biohazard", "Biohazard");
 #undef LOCTEXT_NAMESPACE
 
 }

@@ -76,7 +76,7 @@ void AProjectileBullet::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, 
 		{
 			auto DecalComponent = UGameplayStatics::SpawnDecalAttached(
 				ImpactDecal,
-				FVector(7.f),
+				FVector(5.f, 7.f, 7.f),
 				HitComp,
 				NAME_None,
 				Hit.ImpactPoint,
@@ -85,8 +85,12 @@ void AProjectileBullet::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, 
 				LifeTime
 			);
 
-			DecalComponent->SetFadeOut(LifeTime - 1.f, 1.f, false);
-			DecalComponent->SetFadeScreenSize(0.002f);
+			if (DecalComponent)
+			{
+				DecalComponent->SetSortOrder(999);
+				DecalComponent->SetFadeOut(LifeTime - 1.f, 1.f, false);
+				DecalComponent->SetFadeScreenSize(0.002f);
+			}
 		}
 	}
 

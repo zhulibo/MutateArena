@@ -32,7 +32,7 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 	virtual void Tick(float DeltaSeconds) override;
-
+	
 	UPROPERTY()
 	class AMutationMode* MutationMode;
 	UPROPERTY()
@@ -42,6 +42,13 @@ protected:
 	UPROPERTY()
 	class AMeleeGameState* MeleeGameState;
 
+	
+public:
+	virtual void OnASCInit() override;
+	void OnMaxWalkSpeedChanged(const FOnAttributeChangeData& Data);
+	void UpdateMaxWalkSpeed();
+	
+protected:
 	void AimButtonPressed(const FInputActionValue& Value);
 	void AimButtonReleased(const FInputActionValue& Value);
 public:

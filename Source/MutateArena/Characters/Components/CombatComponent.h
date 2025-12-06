@@ -49,9 +49,6 @@ public:
 	float AimingProgress = 0.f;
 
 protected:
-	UPROPERTY()
-	float DefaultWalkSpeed;
-
 	FVector HitTarget;
 	void TraceUnderCrosshair(FHitResult& TraceHitResult);
 

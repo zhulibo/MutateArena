@@ -32,6 +32,8 @@
 #include "Data/CharacterType.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Data/InputAsset.h"
+#include "MutateArena/Abilities/AttributeSetBase.h"
+#include "MutateArena/Abilities/MAAbilitySystemComponent.h"
 #include "Net/UnrealNetwork.h"
 
 #define LOCTEXT_NAMESPACE "AHumanCharacter"
@@ -45,7 +47,11 @@ AHumanCharacter::AHumanCharacter()
 	CrosshairComponent = CreateDefaultSubobject<UCrosshairComponent>(TEXT("CrosshairComponent"));
 
 	BloodColor = C_RED;
-
+	
+	DefaultMaxWalkSpeed = 600.f;
+	GetCharacterMovement()->MaxWalkSpeed = DefaultMaxWalkSpeed;
+	GetCharacterMovement()->MaxWalkSpeedCrouched = DefaultMaxWalkSpeed * 0.5f;
+	
 	Tags.Add(TAG_CHARACTER_HUMAN);
 }
 
@@ -124,6 +130,32 @@ void AHumanCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 void AHumanCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+}
+
+void AHumanCharacter::OnASCInit()
+{
+	Super::OnASCInit();
+	
+	if (ASC && AttributeSetBase)
+	{
+		ASC->GetGameplayAttributeValueChangeDelegate(AttributeSetBase->GetMaxWalkSpeedAttribute()).AddUObject(this, &ThisClass::OnMaxWalkSpeedChanged);
+	}
+}
+
+void AHumanCharacter::OnMaxWalkSpeedChanged(const FOnAttributeChangeData& Data)
+{
+	GetCharacterMovement()->MaxWalkSpeed = Data.NewValue;
+	GetCharacterMovement()->MaxWalkSpeedCrouched = Data.NewValue * 0.5f;
+}
+
+void AHumanCharacter::UpdateMaxWalkSpeed()
+{
+	if (CombatComponent && CombatComponent->GetCurEquipment())
+	{
+		float TempMaxWalkSpeed = GetMaxWalkSpeed() * (CombatComponent->bIsAiming ? CombatComponent->GetCurEquipment()->AimingWalkSpeedMul : CombatComponent->GetCurEquipment()->WalkSpeedMul);
+		GetCharacterMovement()->MaxWalkSpeed = TempMaxWalkSpeed;
+		GetCharacterMovement()->MaxWalkSpeedCrouched = TempMaxWalkSpeed * 0.5f;
+	}
 }
 
 void AHumanCharacter::OnLocallyControllerReady()

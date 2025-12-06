@@ -23,16 +23,18 @@ class MUTATEARENA_API UCommonAsset : public UPrimaryDataAsset
 
 public:
 	// System Sound
-	UPROPERTY(EditAnywhere, Category = "SystemSound")
+	UPROPERTY(EditAnywhere, Category = "Audio")
 	class USoundMix* SoundMix;
-	UPROPERTY(EditAnywhere, Category = "SystemSound")
+	UPROPERTY(EditAnywhere, Category = "Audio")
 	class USoundClass* MasterSound;
-	UPROPERTY(EditAnywhere, Category = "SystemSound")
+	UPROPERTY(EditAnywhere, Category = "Audio")
 	USoundClass* EffectsSound;
-	UPROPERTY(EditAnywhere, Category = "SystemSound")
+	UPROPERTY(EditAnywhere, Category = "Audio")
 	USoundClass* MusicSound;
-	UPROPERTY(EditAnywhere, Category = "SystemSound")
+	UPROPERTY(EditAnywhere, Category = "Audio")
 	USoundClass* DialogueSound;
+	UPROPERTY(EditAnywhere, Category = "Audio")
+	class USoundControlBus* CB_EquipmentMech;
 
 	// UI
 	UPROPERTY(EditAnywhere, Category = "UI")

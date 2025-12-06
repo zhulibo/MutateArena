@@ -22,6 +22,8 @@ protected:
 	UPROPERTY(BlueprintReadOnly)
 	float Speed;
 	UPROPERTY(BlueprintReadOnly)
+	float WalkPlayRate = 1.f;
+	UPROPERTY(BlueprintReadOnly)
 	bool bIsInAir;
 	UPROPERTY(BlueprintReadOnly)
 	bool bIsAccelerating;

@@ -49,6 +49,5 @@ protected:
 
 	UPROPERTY()
 	class UAssetSubsystem* AssetSubsystem;
-	FAudioDeviceHandle AudioDevice;
 
 };

@@ -40,8 +40,6 @@ public:
 	UPROPERTY()
 	float AimingFOVMul = 0.9; // 缩放倍数
 	UPROPERTY()
-	float AimingWalkSpeedMul = 1.f;
-	UPROPERTY()
 	bool bIsPIP = false;
 	UPROPERTY()
 	float ScopeFOV = 90.f;
@@ -86,6 +84,7 @@ public:
 	// 准星
 	UPROPERTY()
 	float CrosshairBaseSpread;
+	
 	void SetScopeActive(bool bIsActive);
 
 protected:

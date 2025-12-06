@@ -1,10 +1,15 @@
 #include "MutantSmoker.h"
 
+#include "GameFramework/CharacterMovementComponent.h"
 #include "MutateArena/Characters/Data/CharacterType.h"
 
 AMutantSmoker::AMutantSmoker()
 {
 	MutantCharacterName = EMutantCharacterName::Smoker;
+	
+	DefaultMaxWalkSpeed = 650.f;
+	GetCharacterMovement()->MaxWalkSpeed = DefaultMaxWalkSpeed;
+	GetCharacterMovement()->MaxWalkSpeedCrouched = DefaultMaxWalkSpeed * 0.5f;
 }
 
 void AMutantSmoker::BeginPlay()

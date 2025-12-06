@@ -68,11 +68,12 @@ public:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<UGameplayEffect> SkillEffect;
 	UPROPERTY(EditAnywhere)
-	TSubclassOf<UGameplayEffect> LevelUpEffect; // TODO 测试SkillEffect效果会被LevelUpEffect覆盖吗？
+	TSubclassOf<UGameplayEffect> LevelUpEffect;
 protected:
-	virtual void OnAbilitySystemComponentInit() override;
+	virtual void OnASCInit() override;
 	void OnLocalSkillCooldownTagChanged(FGameplayTag GameplayTag, int32 TagCount);
 	void OnLocalCharacterLevelChanged(const FOnAttributeChangeData& Data);
+	void OnMaxWalkSpeedChanged(const FOnAttributeChangeData& Data);
 	virtual void OnHealthChanged(const FOnAttributeChangeData& Data) override;
 	void SkillButtonPressed(const FInputActionValue& Value);
 	virtual void MoveStarted(const FInputActionValue& Value) override;

@@ -18,5 +18,12 @@ public:
 	UStorageButton* Melee;
 	UPROPERTY(meta = (BindWidget))
 	UStorageButton* Throwing;
+	UPROPERTY(meta = (BindWidget))
+	UStorageButton* Tool;
+	UPROPERTY(meta = (BindWidget))
+	UStorageButton* Tonic;
 
+protected:
+	virtual void NativeOnInitialized() override;
+	
 };

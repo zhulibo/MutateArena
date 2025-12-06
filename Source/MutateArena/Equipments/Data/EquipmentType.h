@@ -182,7 +182,7 @@ struct FMeleeData : public FTableRowBase
 };
 
 USTRUCT(BlueprintType)
-struct FEquipmentRecoil : public FTableRowBase
+struct FWeaponRecoil : public FTableRowBase
 {
 	GENERATED_BODY()
 

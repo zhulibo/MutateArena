@@ -9,7 +9,7 @@
 
 UAnimInstance_Human::UAnimInstance_Human()
 {
-	// 多线程动画更新开启时，在服务端播放非本地角色动画蒙太奇时，动画通知会触发两次。
+	// 多线程动画开启且在服务端播放非本地角色动画蒙太奇时，动画通知会触发两次。
 	// 性能影响较大，暂时在 UAN_ShellReload::Notify 中处理。
 	// bUseMultiThreadedAnimationUpdate = false;
 }
@@ -24,21 +24,35 @@ void UAnimInstance_Human::NativeUpdateAnimation(float DeltaSeconds)
 	FVector Velocity = HumanCharacter->GetVelocity();
 	Velocity.Z = 0.f;
 	Speed = Velocity.Size();
-
+	
 	bIsInAir = HumanCharacter->GetCharacterMovement()->IsFalling();
 	bIsAccelerating = HumanCharacter->GetCharacterMovement()->GetCurrentAcceleration().Size() > 0.f;
 	bIsCrouched = HumanCharacter->bIsCrouched;
 	
-	if (HumanCharacter->CombatComponent->GetCurEquipment())
+	if (AEquipment* CurEquipment = HumanCharacter->CombatComponent->GetCurEquipment())
 	{
-		EquipmentName = HumanCharacter->CombatComponent->GetCurEquipment()->EquipmentName;
+		EquipmentName = CurEquipment->EquipmentName;
+		
+		WalkPlayRate = HumanCharacter->GetMaxWalkSpeed() / HumanCharacter->DefaultMaxWalkSpeed;
+		if (HumanCharacter->CombatComponent->bIsAiming)
+		{
+			WalkPlayRate *= CurEquipment->AimingWalkSpeedMul;
+		}
+		else
+		{
+			WalkPlayRate *= CurEquipment->WalkSpeedMul;
+		}
+	}
+	else
+	{
+		WalkPlayRate = 1.f;
 	}
 
 	if (HumanCharacter->IsLocallyControlled()) // TODO 非本地瞄准动画暂时禁用了
 	{
-		if (HumanCharacter->CombatComponent->GetCurWeapon())
+		if (AWeapon* CurWeapon = HumanCharacter->CombatComponent->GetCurWeapon())
 		{
-			if (!Montage_IsPlaying(HumanCharacter->CombatComponent->GetCurWeapon()->ADSMontage_C))
+			if (!Montage_IsPlaying(CurWeapon->ADSMontage_C)) // 完全进入瞄准状态
 			{
 				bIsAiming = HumanCharacter->CombatComponent->bIsAiming;
 			}

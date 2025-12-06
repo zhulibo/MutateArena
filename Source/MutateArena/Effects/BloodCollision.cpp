@@ -52,8 +52,11 @@ void UBloodCollision::ReceiveParticleData_Implementation(const TArray<FBasicPart
 					// 	UE_LOG(LogTemp, Warning, TEXT("OutHit.BoneName %s"), *OutHit.BoneName.ToString());
 					// }
 					
-					DecalComponent->SetFadeOut(8.f, 2.f, false);
-					DecalComponent->SetFadeScreenSize(0.004f);
+					if (DecalComponent)
+					{
+						DecalComponent->SetFadeOut(8.f, 2.f, false);
+						DecalComponent->SetFadeScreenSize(0.004f);
+					}
 				}
 			}
 		}

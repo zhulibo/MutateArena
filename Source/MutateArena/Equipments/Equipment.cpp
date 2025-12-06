@@ -10,7 +10,6 @@
 #include "Camera/CameraComponent.h"
 #include "Components/SphereComponent.h"
 #include "Net/UnrealNetwork.h"
-#include "MutateArena/Equipments/Data/EquipmentType.h"
 #include "MutateArena/PlayerControllers/BaseController.h"
 #include "MutateArena/PlayerStates/TeamType.h"
 #include "MutateArena/System/DataAssetManager.h"

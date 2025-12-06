@@ -45,8 +45,6 @@ void UCombatComponent::BeginPlay()
 
 	if (HumanCharacter)
 	{
-		DefaultWalkSpeed = HumanCharacter->GetCharacterMovement()->MaxWalkSpeed;
-
 		if (HumanCharacter->Camera)
 		{
 			DefaultFOV = HumanCharacter->Camera->FieldOfView;
@@ -451,8 +449,7 @@ void UCombatComponent::UseEquipment(AEquipment* Equipment)
 		BaseController->OnCrosshairHidden.Broadcast(bIsAiming);
 	}
 
-	// 更新玩家速度
-	HumanCharacter->GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * Equipment->WalkSpeedMul;
+	HumanCharacter->UpdateMaxWalkSpeed();
 }
 
 void UCombatComponent::AttachToRightHand(AEquipment* Equipment)
@@ -505,15 +502,7 @@ void UCombatComponent::LocalSetAiming(bool TempBIsAiming)
 
 	bIsAiming = TempBIsAiming;
 
-	// 移速
-	if (bIsAiming)
-	{
-		HumanCharacter->GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * GetCurWeapon()->AimingWalkSpeedMul;
-	}
-	else
-	{
-		HumanCharacter->GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * GetCurWeapon()->WalkSpeedMul;
-	}
+	HumanCharacter->UpdateMaxWalkSpeed();
 
 	if (HumanCharacter->IsLocallyControlled()) // TODO 非本地瞄准动画暂时禁用了
 	{
@@ -877,7 +866,7 @@ void UCombatComponent::LocalReload()
 	// 瞄准状态下换弹，重置行走速度
 	if (HumanCharacter)
 	{
-		HumanCharacter->GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * GetCurWeapon()->WalkSpeedMul;
+		HumanCharacter->UpdateMaxWalkSpeed();
 	}
 
 	PlayReloadMontage();

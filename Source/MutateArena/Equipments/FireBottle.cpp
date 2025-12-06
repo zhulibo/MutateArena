@@ -15,6 +15,8 @@
 
 AFireBottle::AFireBottle()
 {
+	CollisionSphere->SetNotifyRigidBodyCollision(true);
+	
 	FireSphere = CreateDefaultSubobject<USphereComponent>(TEXT("SmokeSphere"));
 	FireSphere->SetupAttachment(RootComponent);
 	FireSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -39,9 +41,32 @@ void AFireBottle::ThrowOut()
 			ProjectileMovement->Activate();
 		}
 	}
+}
 
-	FTimerHandle TimerHandle;
-	GetWorldTimerManager().SetTimer(TimerHandle, this, &ThisClass::Explode, 2.f);
+void AFireBottle::BeginPlay()
+{
+	Super::BeginPlay();
+	
+	CollisionSphere->OnComponentHit.AddDynamic(this, &ThisClass::OnHit);
+}
+
+void AFireBottle::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+{
+	if (HasAuthority())
+	{
+		ProjectileMovement->StopMovementImmediately();
+		
+		MulticastOnHit();
+	}
+}
+
+void AFireBottle::MulticastOnHit_Implementation()
+{
+	CollisionSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	
+	EquipmentMesh->SetHiddenInGame(true);
+	
+	Explode();
 }
 
 void AFireBottle::Explode()
@@ -95,6 +120,7 @@ void AFireBottle::DetectActors()
 		{
 			if (OverlapActor == nullptr) continue;
 			
+			// 烟雾可以灭火
 			if (OverlapActor->ActorHasTag(TAG_SMOKE_ACTOR))
 			{
 				if (ExtinguishSound)

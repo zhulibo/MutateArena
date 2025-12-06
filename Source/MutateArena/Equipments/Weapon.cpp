@@ -1,14 +1,12 @@
 #include "Weapon.h"
 
+#include "AudioModulationStatics.h"
 #include "DataRegistryId.h"
 #include "DataRegistrySubsystem.h"
-#include "MetasoundSource.h"
-#include "MutateArena/Equipments/Data/EquipmentType.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "MutateArena/PlayerControllers/BaseController.h"
 #include "MutateArena/Utils/LibraryCommon.h"
-#include "Components/AudioComponent.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include "Components/SphereComponent.h"
 #include "Data/EquipmentAsset.h"
@@ -16,6 +14,7 @@
 #include "Engine/SkeletalMeshSocket.h"
 #include "Kismet/GameplayStatics.h"
 #include "MutateArena/System/AssetSubsystem.h"
+#include "MutateArena/System/Data/CommonAsset.h"
 
 AWeapon::AWeapon()
 {
@@ -73,17 +72,17 @@ void AWeapon::InitData()
 
 	{
 		FDataRegistryId DataRegistryId(DR_EQUIPMENT_RECOIL, FName(EnumValue));
-		if (const FEquipmentRecoil* EquipmentData = UDataRegistrySubsystem::Get()->GetCachedItem<FEquipmentRecoil>(DataRegistryId))
+		if (const FWeaponRecoil* WeaponRecoil = UDataRegistrySubsystem::Get()->GetCachedItem<FWeaponRecoil>(DataRegistryId))
 		{
-			RecoilCurve = EquipmentData->RecoilCurve;
-			RecoilCurveRandVert = EquipmentData->RecoilCurveRandVert;
-			RecoilCurveRandHor = EquipmentData->RecoilCurveRandHor;
-			RecoilIncTime = EquipmentData->RecoilIncTime;
-			RecoilMaxDecTime = EquipmentData->RecoilMaxDecTime;
-			RecoilMinDecTime = EquipmentData->RecoilMinDecTime;
-			RecoilVertRef_DecTime = EquipmentData->RecoilVertRef_DecTime;
-			RecoilVertRef_Crosshair = EquipmentData->RecoilVertRef_Crosshair;
-			CrosshairBaseSpread = EquipmentData->CrosshairBaseSpread;
+			RecoilCurve = WeaponRecoil->RecoilCurve;
+			RecoilCurveRandVert = WeaponRecoil->RecoilCurveRandVert;
+			RecoilCurveRandHor = WeaponRecoil->RecoilCurveRandHor;
+			RecoilIncTime = WeaponRecoil->RecoilIncTime;
+			RecoilMaxDecTime = WeaponRecoil->RecoilMaxDecTime;
+			RecoilMinDecTime = WeaponRecoil->RecoilMinDecTime;
+			RecoilVertRef_DecTime = WeaponRecoil->RecoilVertRef_DecTime;
+			RecoilVertRef_Crosshair = WeaponRecoil->RecoilVertRef_Crosshair;
+			CrosshairBaseSpread = WeaponRecoil->CrosshairBaseSpread;
 		}
 	}
 }
@@ -126,15 +125,21 @@ void AWeapon::Fire(const FVector& HitTarget, float RecoilVert, float RecoilHor, 
 
 	SpendRound();
 
-	// 播放开火机械层声音
-	if (UAudioComponent* AudioComponent = UGameplayStatics::SpawnSoundAttached(MechSound, EquipmentMesh))
+	// 即将耗尽弹药时增大机械层声音
+	float Volume = 0.4f;
+	if (Ammo <= FireRate / 60.f * 1.2f)
 	{
-		float Volume = 1.f;
-		if (Ammo <= 1.f * (FireRate / 60.f)) // 一秒后耗尽弹药
-		{
-			Volume = Volume * 2.f;
-		}
-		AudioComponent->SetFloatParameter(TEXT("Volume"), Volume);
+		Volume = 1.f;
+	}
+	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+	if (AssetSubsystem && AssetSubsystem->CommonAsset)
+	{
+		UAudioModulationStatics::SetGlobalBusMixValue(
+			this, 
+			AssetSubsystem->CommonAsset->CB_EquipmentMech, 
+			Volume, 
+			0.f
+		);
 	}
 }
 

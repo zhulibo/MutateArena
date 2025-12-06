@@ -128,36 +128,41 @@ void AMutantCharacter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
 
-	if (AbilitySystemComponent)
+	if (ASC)
 	{
-		AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(SkillAbility));
+		ASC->GiveAbility(FGameplayAbilitySpec(SkillAbility));
 
 		if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
 		if (AssetSubsystem && AssetSubsystem->CharacterAsset)
 		{
-			AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(AssetSubsystem->CharacterAsset->MutantChangeAbility));
-			AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(AssetSubsystem->CharacterAsset->MutantRestoreAbility));
+			ASC->GiveAbility(FGameplayAbilitySpec(AssetSubsystem->CharacterAsset->MutantChangeAbility));
+			ASC->GiveAbility(FGameplayAbilitySpec(AssetSubsystem->CharacterAsset->MutantRestoreAbility));
 
 			if (SpawnMutantReason != ESpawnMutantReason::SelectMutant)
 			{
-				AbilitySystemComponent->TryActivateAbilityByClass(AssetSubsystem->CharacterAsset->MutantChangeAbility);
+				ASC->TryActivateAbilityByClass(AssetSubsystem->CharacterAsset->MutantChangeAbility);
 			}
 		}
 	}
 }
 
-void AMutantCharacter::OnAbilitySystemComponentInit()
+void AMutantCharacter::OnASCInit()
 {
-	Super::OnAbilitySystemComponentInit();
+	Super::OnASCInit();
 
-	if (AbilitySystemComponent && AttributeSetBase && IsLocallyControlled())
+	if (ASC && AttributeSetBase && IsLocallyControlled())
 	{
 		FGameplayTag SkillCooldownTag = FGameplayTag::RequestGameplayTag(TAG_MUTANT_SKILL_CD);
-		AbilitySystemComponent->RegisterGameplayTagEvent(
+		ASC->RegisterGameplayTagEvent(
 			SkillCooldownTag, EGameplayTagEventType::NewOrRemoved).AddUObject(this, &ThisClass::OnLocalSkillCooldownTagChanged);
 
-		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(
+		ASC->GetGameplayAttributeValueChangeDelegate(
 			AttributeSetBase->GetCharacterLevelAttribute()).AddUObject(this, &ThisClass::OnLocalCharacterLevelChanged);
+	}
+
+	if (ASC && AttributeSetBase)
+	{
+		ASC->GetGameplayAttributeValueChangeDelegate(AttributeSetBase->GetMaxWalkSpeedAttribute()).AddUObject(this, &ThisClass::OnMaxWalkSpeedChanged);
 	}
 }
 
@@ -175,11 +180,17 @@ void AMutantCharacter::OnLocalSkillCooldownTagChanged(FGameplayTag GameplayTag, 
 void AMutantCharacter::OnLocalCharacterLevelChanged(const FOnAttributeChangeData& Data)
 {
 	if (MutationController == nullptr) MutationController = Cast<AMutationController>(Controller);
-	if (MutationController && AbilitySystemComponent)
+	if (MutationController && ASC)
 	{
 		FGameplayTag Tag = FGameplayTag::RequestGameplayTag(TAG_MUTANT_SKILL_CD);
-		MutationController->ShowHUDSkill(AbilitySystemComponent->GetTagCount(Tag) == 0 && Data.NewValue > 2.f);
+		MutationController->ShowHUDSkill(ASC->GetTagCount(Tag) == 0 && Data.NewValue > 2.f);
 	}
+}
+
+void AMutantCharacter::OnMaxWalkSpeedChanged(const FOnAttributeChangeData& Data)
+{
+	GetCharacterMovement()->MaxWalkSpeed = Data.NewValue;
+	GetCharacterMovement()->MaxWalkSpeedCrouched = Data.NewValue * 0.5f;
 }
 
 void AMutantCharacter::OnHealthChanged(const FOnAttributeChangeData& Data)
@@ -196,17 +207,17 @@ void AMutantCharacter::OnHealthChanged(const FOnAttributeChangeData& Data)
 // 处理skill功能
 void AMutantCharacter::SkillButtonPressed(const FInputActionValue& Value)
 {
-	if (AbilitySystemComponent && GetCharacterLevel() >= 2.f)
+	if (ASC && GetCharacterLevel() >= 2.f)
 	{
-		AbilitySystemComponent->TryActivateAbilityByClass(SkillAbility);
+		ASC->TryActivateAbilityByClass(SkillAbility);
 	}
 }
 
 void AMutantCharacter::Destroyed()
 {
-	if (AbilitySystemComponent)
+	if (ASC)
 	{
-		AbilitySystemComponent->CancelAllAbilities();
+		ASC->CancelAllAbilities();
 	}
 
 	Super::Destroyed();
@@ -233,10 +244,10 @@ void AMutantCharacter::MoveCompleted(const FInputActionValue& Value)
 // 恢复血量
 void AMutantCharacter::ActivateRestoreAbility()
 {
-	if (AbilitySystemComponent && AssetSubsystem && AssetSubsystem->CharacterAsset)
+	if (ASC && AssetSubsystem && AssetSubsystem->CharacterAsset)
 	{
 		bHasActivateRestoreAbility = true;
-		AbilitySystemComponent->TryActivateAbilityByClass(AssetSubsystem->CharacterAsset->MutantRestoreAbility);
+		ASC->TryActivateAbilityByClass(AssetSubsystem->CharacterAsset->MutantRestoreAbility);
 	}
 }
 
@@ -251,13 +262,13 @@ void AMutantCharacter::EndRestoreAbility()
 	if (bHasActivateRestoreAbility)
 	{
 		if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-		if (AbilitySystemComponent && AssetSubsystem && AssetSubsystem->CharacterAsset)
+		if (ASC && AssetSubsystem && AssetSubsystem->CharacterAsset)
 		{
-			if (FGameplayAbilitySpec* Spec = AbilitySystemComponent->FindAbilitySpecFromClass(AssetSubsystem->CharacterAsset->MutantRestoreAbility))
+			if (FGameplayAbilitySpec* Spec = ASC->FindAbilitySpecFromClass(AssetSubsystem->CharacterAsset->MutantRestoreAbility))
 			{
 				bHasActivateRestoreAbility = false;
 
-				AbilitySystemComponent->CancelAbility(Spec->Ability);
+				ASC->CancelAbility(Spec->Ability);
 			}
 		}
 	}
@@ -516,9 +527,19 @@ void AMutantCharacter::DropBlood(UPrimitiveComponent* OverlappedComponent, AActo
 			{
 				BloodEffectComponent->SetVariableInt(TEXT("Count"), ULibraryCommon::GetBloodParticleCount(Damage));
 				BloodEffectComponent->SetVariableLinearColor(TEXT("Color"), OverlappedCharacter->BloodColor);
-				
 				UBloodCollision* CollisionCB = NewObject<UBloodCollision>(this);
 				BloodEffectComponent->SetVariableObject(TEXT("CollisionCB"), CollisionCB);
+			}
+			
+			auto BloodSmokeEffectComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+				GetWorld(),
+				OverlappedCharacter->BloodSmokeEffect,
+				TraceResult.ImpactPoint,
+				TraceResult.ImpactNormal.Rotation()
+			);
+			if (BloodSmokeEffectComponent)
+			{
+				BloodSmokeEffectComponent->SetVariableLinearColor(TEXT("SmokeColor"), OverlappedCharacter->BloodColor);
 			}
 
 			break;

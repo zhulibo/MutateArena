@@ -1,14 +1,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Data/EquipmentType.h"
 #include "GameFramework/Actor.h"
 #include "Equipment.generated.h"
 
 enum class ETeam : uint8;
-enum class EEquipmentName : uint8;
-enum class EEquipmentCate : uint8;
-enum class EEquipmentType : uint8;
-enum class EEquipmentState : uint8;
 
 UCLASS()
 class MUTATEARENA_API AEquipment : public AActor
@@ -64,7 +61,7 @@ protected:
 public:
 	// 蓝图和DataTable都需要设置，用于相互对应。
 	UPROPERTY(EditAnywhere)
-	EEquipmentName EquipmentName;
+	EEquipmentName EquipmentName = EEquipmentName::None;
 	UPROPERTY()
 	EEquipmentName EquipmentParentName;
 	UPROPERTY()
@@ -76,6 +73,8 @@ public:
 	EEquipmentState EquipmentState;
 	UPROPERTY()
 	float WalkSpeedMul = 1.f;
+	UPROPERTY()
+	float AimingWalkSpeedMul = 1.f;
 
 	virtual void OnEquip();
 protected:

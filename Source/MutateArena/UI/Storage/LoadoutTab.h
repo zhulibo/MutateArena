@@ -10,7 +10,13 @@ class MUTATEARENA_API ULoadoutTab : public UCommonTabListWidgetBase
 	GENERATED_BODY()
 
 protected:
+	virtual void NativeOnInitialized() override;
 	virtual void NativeConstruct() override;
+
+	UPROPERTY(meta = (BindWidget))
+	class UCommonActionWidget* LeftTabAction;
+	UPROPERTY(meta = (BindWidget))
+	UCommonActionWidget* RightTabAction;
 
 	UPROPERTY(EditInstanceOnly)
 	class UCommonActivatableWidgetSwitcher* LoadoutSwitcher;

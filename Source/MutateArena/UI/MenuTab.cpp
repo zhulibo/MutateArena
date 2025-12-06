@@ -56,9 +56,11 @@ void UMenuTab::LinkSwitcher()
 				{
 					TabButton->ButtonText->SetText(LOCTEXT("Dev", "Dev"));
 				}
-				
-				UHorizontalBoxSlot* NewSlot = Cast<UHorizontalBoxSlot>(TabButtonContainer->AddChildToHorizontalBox(TabButton));
-				if (NewSlot) NewSlot->SetPadding(FMargin(10, 0, 10, 0));
+
+				if (UHorizontalBoxSlot* NewSlot = Cast<UHorizontalBoxSlot>(TabButtonContainer->AddChildToHorizontalBox(TabButton)))
+				{
+					NewSlot->SetPadding(FMargin(10, 0, 10, 0));
+				}
 			}
 		}
 		

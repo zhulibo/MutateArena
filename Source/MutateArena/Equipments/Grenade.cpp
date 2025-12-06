@@ -34,7 +34,7 @@ void AGrenade::ThrowOut()
 	}
 
 	FTimerHandle TimerHandle;
-	GetWorldTimerManager().SetTimer(TimerHandle, this, &ThisClass::Explode, 4.f);
+	GetWorldTimerManager().SetTimer(TimerHandle, this, &ThisClass::Explode, 3.f);
 }
 
 void AGrenade::Explode()

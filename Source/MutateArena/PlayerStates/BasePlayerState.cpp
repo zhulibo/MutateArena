@@ -84,7 +84,7 @@ void ABasePlayerState::InitData()
 {
 }
 
-UAbilitySystemComponent* ABasePlayerState::GetAbilitySystemComponent() const
+UAbilitySystemComponent* ABasePlayerState::GetASC() const
 {
 	return AbilitySystemComponent;
 }
