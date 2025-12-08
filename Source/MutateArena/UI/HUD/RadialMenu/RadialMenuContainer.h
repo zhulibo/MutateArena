@@ -23,16 +23,16 @@ protected:
 	UCommonTextBlock* TitlePaint;
 
 	UPROPERTY(meta = (BindWidget))
-	class URadialMenuBase* RadialMenuEquipment;
+	class URadialMenuEquipment* RadialMenuEquipment;
 	UPROPERTY(meta = (BindWidget))
-	URadialMenuBase* RadialMenuRadio;
+	class URadialMenuRadio* RadialMenuRadio;
 	UPROPERTY(meta = (BindWidget))
-	URadialMenuBase* RadialMenuPaint;
+	class URadialMenuPaint* RadialMenuPaint;
 
 	void ShowRadialMenu(bool bIsShow);
 
 	void ShowRadialMenuInternal();
-	void ChangeRadialMenu();
+	void SwitchRadialMenu();
 	void SelectRadialMenu(double X, double Y);
 	void CloseRadialMenuInternal();
 
@@ -41,7 +41,7 @@ protected:
 	void SetMutantRadialMenuText();
 
 	int32 ActiveRadialMenuIndex = 1;
-	URadialMenuBase* GetActiveRadialMenu();
+	class URadialMenuBase* GetActiveRadialMenu();
 
 	void SetSelectedItem();
 

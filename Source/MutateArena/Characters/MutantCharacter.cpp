@@ -621,6 +621,7 @@ void AMutantCharacter::RemoveMappingContext()
 		{
 			Subsystem->RemoveMappingContext(AssetSubsystem->InputAsset->BaseMappingContext);
 			Subsystem->RemoveMappingContext(AssetSubsystem->InputAsset->MutantMappingContext);
+			Subsystem->RemoveMappingContext(AssetSubsystem->InputAsset->RadialMenuMappingContext);
 		}
 	}
 }

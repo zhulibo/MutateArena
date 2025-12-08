@@ -298,6 +298,7 @@ void UCombatComponent::MulticastSwapEquipment_Implementation(EEquipmentType Equi
 		LocalSwapEquipment(EquipmentType);
 	}
 }
+
 void UCombatComponent::MulticastSwapEquipment2_Implementation(EEquipmentType EquipmentType)
 {
 	LocalSwapEquipment(EquipmentType);

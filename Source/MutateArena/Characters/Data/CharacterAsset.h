@@ -54,8 +54,4 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Flashbang")
 	UMaterialParameterCollection* MPC_Flashbang;
 
-	// 无线电文本
-	UPROPERTY(EditAnywhere, Category = "Radio")
-	TArray<FString> RadioTexts;
-
 };

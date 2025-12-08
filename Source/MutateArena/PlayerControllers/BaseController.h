@@ -16,7 +16,7 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FOnMatchCountdownChange, int32 CountdownTime
 DECLARE_MULTICAST_DELEGATE_OneParam(FShowScoreboard, bool bIsShow);
 DECLARE_MULTICAST_DELEGATE(FShowPauseMenu);
 DECLARE_MULTICAST_DELEGATE_OneParam(FShowRadialMenu, bool bIsShow);
-DECLARE_MULTICAST_DELEGATE(FChangeRadialMenu);
+DECLARE_MULTICAST_DELEGATE(FSwitchRadialMenu);
 DECLARE_MULTICAST_DELEGATE_TwoParams(FSelectRadialMenu, double X, double Y);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnKillStreakChange, int32 KillStreak);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnHumanHealthChange, float Health);
@@ -48,7 +48,7 @@ public:
 	FShowScoreboard ShowScoreboard;
 	FShowPauseMenu ShowPauseMenu;
 	FShowRadialMenu ShowRadialMenu;
-	FChangeRadialMenu ChangeRadialMenu;
+	FSwitchRadialMenu SwitchRadialMenu;
 	FSelectRadialMenu SelectRadialMenu;
 	FOnKillStreakChange OnKillStreakChange;
 	FOnHumanHealthChange OnHumanHealthChange;

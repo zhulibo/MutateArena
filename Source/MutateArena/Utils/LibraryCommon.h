@@ -1,6 +1,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Components/PanelWidget.h"
+#include "Components/Widget.h"
 #include "UObject/NoExportTypes.h"
 #include "LibraryCommon.generated.h"
 
@@ -27,4 +29,33 @@ public:
 
 	static FString GetLanguage();
 	
+	// 获取UMG子集
+	template<typename T>
+	static TArray<T*> GetAllChildrenOfClass(UWidget* Parent, bool bRecursive = false)
+	{
+		TArray<T*> Result;
+
+		if (!Parent) return Result;
+
+		UPanelWidget* Panel = Cast<UPanelWidget>(Parent);
+		if (!Panel) return Result;
+
+		for (int32 i = 0; i < Panel->GetChildrenCount(); i++)
+		{
+			UWidget* Child = Panel->GetChildAt(i);
+
+			if (T* Casted = Cast<T>(Child))
+			{
+				Result.Add(Casted);
+			}
+
+			if (bRecursive)
+			{
+				auto Sub = GetAllChildrenOfClass<T>(Child);
+				Result.Append(Sub);
+			}
+		}
+		
+		return Result;
+	}
 };

@@ -143,7 +143,7 @@ protected:
 
 	void RadialMenuButtonPressed(const FInputActionValue& Value);
 	void RadialMenuButtonReleased(const FInputActionValue& Value);
-	void RadialMenuChangeButtonPressed(const FInputActionValue& Value);
+	void RadialMenuSwitchButtonPressed(const FInputActionValue& Value);
 	void RadialMenuSelect(const FInputActionValue& Value);
 
 	void TextChat(const FInputActionValue& Value);

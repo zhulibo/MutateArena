@@ -1,10 +1,11 @@
 #include "RadialMenuContainer.h"
 #include "CommonTextBlock.h"
-#include "RadialMenuBase.h"
+#include "RadialMenuEquipment.h"
+#include "RadialMenuPaint.h"
+#include "RadialMenuRadio.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "MutateArena/Characters/Components/CombatComponent.h"
-#include "MutateArena/Equipments/Equipment.h"
 #include "MutateArena/Equipments/Data/EquipmentType.h"
 #include "MutateArena/PlayerControllers/BaseController.h"
 #include "MutateArena/PlayerControllers/MutationController.h"
@@ -21,7 +22,7 @@ void URadialMenuContainer::NativeOnInitialized()
 	if (ABaseController* BaseController = Cast<ABaseController>(GetOwningPlayer()))
 	{
 		BaseController->ShowRadialMenu.AddUObject(this, &ThisClass::ShowRadialMenu);
-		BaseController->ChangeRadialMenu.AddUObject(this, &ThisClass::ChangeRadialMenu);
+		BaseController->SwitchRadialMenu.AddUObject(this, &ThisClass::SwitchRadialMenu);
 		BaseController->SelectRadialMenu.AddUObject(this, &ThisClass::SelectRadialMenu);
 	}
 	
@@ -77,16 +78,16 @@ void URadialMenuContainer::SetSelectedItem()
 			switch (HumanCharacter->CombatComponent->CurEquipmentType)
 			{
 			case EEquipmentType::Primary:
-				RadialMenuEquipment->SetSelectedItem(1);
+				RadialMenuEquipment->SetSelectedItem(0);
 				break;
 			case EEquipmentType::Secondary:
-				RadialMenuEquipment->SetSelectedItem(2);
+				RadialMenuEquipment->SetSelectedItem(1);
 				break;
 			case EEquipmentType::Melee:
-				RadialMenuEquipment->SetSelectedItem(3);
+				RadialMenuEquipment->SetSelectedItem(2);
 				break;
 			case EEquipmentType::Throwing:
-				RadialMenuEquipment->SetSelectedItem(4);
+				RadialMenuEquipment->SetSelectedItem(3);
 				break;
 			}
 		}
@@ -98,8 +99,11 @@ void URadialMenuContainer::SetSelectedItem()
 }
 
 // 切换轮盘
-void URadialMenuContainer::ChangeRadialMenu()
+void URadialMenuContainer::SwitchRadialMenu()
 {
+	// 防止轮盘Action未触发执行操作
+	if (GetVisibility() != ESlateVisibility::Visible) return;
+	
 	if (ActiveRadialMenuIndex == 1)
 	{
 		RadialMenuEquipment->SetVisibility(ESlateVisibility::Hidden);
@@ -135,6 +139,9 @@ void URadialMenuContainer::ChangeRadialMenu()
 // 选择轮盘项
 void URadialMenuContainer::SelectRadialMenu(double X, double Y)
 {
+	// 防止轮盘Action未触发执行操作
+	if (GetVisibility() != ESlateVisibility::Visible) return;
+	
 	// UE_LOG(LogTemp, Warning, TEXT("Select %f, %f"), X, Y);
 	if (X * X + Y * Y < .6) return;
 
@@ -183,7 +190,7 @@ void URadialMenuContainer::CloseRadialMenuInternal()
 {
 	if (ActiveRadialMenuIndex == 1)
 	{
-		if (RadialMenuEquipment->LastSelectedItemIndex != RadialMenuEquipment->SelectedItemIndex)
+		if (RadialMenuEquipment->SelectedItemIndex != -1)
 		{
 			// 人类
 			if (HumanCharacter)
@@ -214,28 +221,34 @@ void URadialMenuContainer::CloseRadialMenuInternal()
 	}
 	else if (ActiveRadialMenuIndex == 2)
 	{
-		// 人类
-		if (HumanCharacter)
+		if (RadialMenuRadio->SelectedItemIndex != -1)
 		{
-			HumanCharacter->SendRadio(RadialMenuRadio->SelectedItemIndex);
-		}
-		// 突变体
-		else if (MutantCharacter)
-		{
-			MutantCharacter->SendRadio(RadialMenuRadio->SelectedItemIndex);
+			// 人类
+			if (HumanCharacter)
+			{
+				HumanCharacter->SendRadio(RadialMenuRadio->SelectedItemIndex);
+			}
+			// 突变体
+			else if (MutantCharacter)
+			{
+				MutantCharacter->SendRadio(RadialMenuRadio->SelectedItemIndex);
+			}
 		}
 	}
 	else if (ActiveRadialMenuIndex == 3)
 	{
-		// 人类
-		if (HumanCharacter)
+		if (RadialMenuPaint->SelectedItemIndex != -1)
 		{
-			HumanCharacter->SprayPaint(RadialMenuPaint->SelectedItemIndex);
-		}
-		// 突变体
-		else if (MutantCharacter)
-		{
-			MutantCharacter->SprayPaint(RadialMenuPaint->SelectedItemIndex);
+			// 人类
+			if (HumanCharacter)
+			{
+				HumanCharacter->SprayPaint(RadialMenuPaint->SelectedItemIndex);
+			}
+			// 突变体
+			else if (MutantCharacter)
+			{
+				MutantCharacter->SprayPaint(RadialMenuPaint->SelectedItemIndex);
+			}
 		}
 	}
 

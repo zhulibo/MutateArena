@@ -3,6 +3,11 @@
 #include "CommonTextBlock.h"
 #include "MutateArena/MutateArena.h"
 
+void URadialMenuBase::NativeOnInitialized()
+{
+	Super::NativeOnInitialized();
+}
+
 void URadialMenuBase::SetSelectedItem(int32 Index)
 {
 	if (Index == SelectedItemIndex) return;
@@ -63,6 +68,5 @@ void URadialMenuBase::SetSelectedItem(int32 Index)
 		break;
 	}
 	
-	LastSelectedItemIndex = SelectedItemIndex;
 	SelectedItemIndex = Index;
 }

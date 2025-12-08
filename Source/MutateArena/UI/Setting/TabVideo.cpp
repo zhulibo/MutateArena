@@ -9,19 +9,17 @@
 #include "Components/ComboBoxString.h"
 #include "GameFramework/GameUserSettings.h"
 #include "Input/CommonUIInputTypes.h"
+#include "MutateArena/Utils/LibraryCommon.h"
 
 void UTabVideo::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
 
 	// 绑定提示信息切换菜单
-	TArray<UWidget*> Tabs = SettingLeft->GetAllChildren();
+	auto Tabs = ULibraryCommon::GetAllChildrenOfClass<UCommonButtonBase>(SettingLeft);
 	for (int i = 0; i < Tabs.Num(); ++i)
 	{
-		if (UCommonButtonBase* TabButton = Cast<UCommonButtonBase>(Tabs[i]))
-		{
-			TabButton->OnHovered().AddUObject(this, &ThisClass::OnTabButtonHovered, i);
-		}
+		Tabs[i]->OnHovered().AddUObject(this, &ThisClass::OnTabButtonHovered, i);
 	}
 
 	// 设置窗口模式下拉项

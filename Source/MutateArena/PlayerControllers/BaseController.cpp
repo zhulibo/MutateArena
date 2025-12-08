@@ -54,6 +54,7 @@ void ABaseController::OnUnPossess()
 		Subsystem->RemoveMappingContext(AssetSubsystem->InputAsset->SpectatorMappingContext);
 		Subsystem->RemoveMappingContext(AssetSubsystem->InputAsset->HumanMappingContext);
 		Subsystem->RemoveMappingContext(AssetSubsystem->InputAsset->MutantMappingContext);
+		Subsystem->RemoveMappingContext(AssetSubsystem->InputAsset->RadialMenuMappingContext);
 	}
 
 	Super::OnUnPossess();

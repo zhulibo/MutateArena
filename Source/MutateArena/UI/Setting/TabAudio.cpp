@@ -7,19 +7,17 @@
 #include "MutateArena/System/Storage/DefaultConfig.h"
 #include "MutateArena/System/Storage/StorageSubsystem.h"
 #include "Input/CommonUIInputTypes.h"
+#include "MutateArena/Utils/LibraryCommon.h"
 
 void UTabAudio::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
 	
 	// 绑定提示信息切换菜单
-	TArray<UWidget*> Tabs = SettingLeft->GetAllChildren();
+	auto Tabs = ULibraryCommon::GetAllChildrenOfClass<UCommonButtonBase>(SettingLeft);
 	for (int i = 0; i < Tabs.Num(); ++i)
 	{
-		if (UCommonButtonBase* TabButton = Cast<UCommonButtonBase>(Tabs[i]))
-		{
-			TabButton->OnHovered().AddUObject(this, &ThisClass::OnTabButtonHovered, i);
-		}
+		Tabs[i]->OnHovered().AddUObject(this, &ThisClass::OnTabButtonHovered, i);
 	}
 
 	SetUISavedValue();

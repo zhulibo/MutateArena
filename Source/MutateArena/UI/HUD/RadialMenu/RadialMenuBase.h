@@ -9,6 +9,9 @@ class MUTATEARENA_API URadialMenuBase : public UCommonUserWidget
 {
 	GENERATED_BODY()
 
+protected:
+	virtual void NativeOnInitialized() override;
+	
 public:
 	UPROPERTY(meta = (BindWidget))
 	class UCommonTextBlock* Item1;
@@ -28,9 +31,7 @@ public:
 	UCommonTextBlock* Item8;
 
 	UPROPERTY()
-	int32 SelectedItemIndex;
-	UPROPERTY()
-	int32 LastSelectedItemIndex;
+	int32 SelectedItemIndex = -1;
 	UFUNCTION()
 	void SetSelectedItem(int32 Index);
 

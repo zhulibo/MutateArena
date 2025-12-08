@@ -35,13 +35,6 @@ public:
 	UInputAction* PauseMenuAction;
 
 	UPROPERTY(EditAnywhere, Category = "Base")
-	UInputAction* RadialMenuAction;
-	UPROPERTY(EditAnywhere, Category = "Base")
-	UInputAction* RadialMenuChangeAction;
-	UPROPERTY(EditAnywhere, Category = "Base")
-	UInputAction* RadialMenuSelectAction;
-
-	UPROPERTY(EditAnywhere, Category = "Base")
 	UInputAction* TextChatAction;
 
 	// Human
@@ -66,6 +59,8 @@ public:
 	UInputAction* SwapThrowingEquipmentAction;
 	UPROPERTY(EditAnywhere, Category = "Human")
 	UInputAction* SwapLastEquipmentAction;
+	UPROPERTY(EditAnywhere, Category = "Human")
+	UInputAction* SwapBetweenPrimarySecondaryEquipmentAction;
 
 	// Mutant
 	UPROPERTY(EditAnywhere, Category = "Mutant")
@@ -88,5 +83,16 @@ public:
 	UInputAction* ViewNextAction;
 	UPROPERTY(EditAnywhere, Category = "Spectator")
 	UInputAction* ViewPrevAction;
+	
+	// RadialMenu
+	UPROPERTY(EditAnywhere, Category = "RadialMenu")
+	UInputMappingContext* RadialMenuMappingContext;
+
+	UPROPERTY(EditAnywhere, Category = "RadialMenu")
+	UInputAction* RadialMenuAction;
+	UPROPERTY(EditAnywhere, Category = "RadialMenu")
+	UInputAction* RadialMenuSwitchAction;
+	UPROPERTY(EditAnywhere, Category = "RadialMenu")
+	UInputAction* RadialMenuSelectAction;
 
 };

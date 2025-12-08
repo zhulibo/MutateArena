@@ -57,6 +57,10 @@ public:
 	UPROPERTY(EditAnywhere, Category = "CombatIconSound")
 	UMetaSoundSource* BeImmuneSound;
 
+	// 无线电文本
+	UPROPERTY(EditAnywhere, Category = "Radio")
+	TArray<FString> RadioTexts;
+	
 	// 喷漆
 	UPROPERTY(EditAnywhere, Category = "SprayPaint")
 	TArray<FSprayPaint> SprayPaints;

@@ -1,17 +1,17 @@
 #include "RadialMenuRadio.h"
 
 #include "CommonTextBlock.h"
-#include "MutateArena/Characters/Data/CharacterAsset.h"
 #include "MutateArena/System/AssetSubsystem.h"
+#include "MutateArena/System/Data/CommonAsset.h"
 
 void URadialMenuRadio::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
 
 	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-	if (AssetSubsystem && AssetSubsystem->CharacterAsset)
+	if (AssetSubsystem && AssetSubsystem->CommonAsset)
 	{
-		auto RadioTexts = AssetSubsystem->CharacterAsset->RadioTexts;
+		auto RadioTexts = AssetSubsystem->CommonAsset->RadioTexts;
 		if (RadioTexts.IsValidIndex(0)) Item1->SetText(FText::FromString(RadioTexts[0]));
 		if (RadioTexts.IsValidIndex(1)) Item2->SetText(FText::FromString(RadioTexts[1]));
 		if (RadioTexts.IsValidIndex(2)) Item3->SetText(FText::FromString(RadioTexts[2]));

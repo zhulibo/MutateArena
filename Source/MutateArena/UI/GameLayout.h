@@ -20,6 +20,7 @@ class MUTATEARENA_API UGameLayout : public UCommonActivatableWidget
 	GENERATED_BODY()
 
 public:
+	// TODO 将层与标签绑定存入TMap，不用再寻找层的引用，实现解耦。
 	// 游戏层
 	UPROPERTY(meta = (BindWidget))
 	class UCommonActivatableWidgetStack* GameStack;

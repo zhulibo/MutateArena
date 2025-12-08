@@ -133,6 +133,7 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 			Subsystem->RemoveMappingContext(AssetSubsystem->InputAsset->SpectatorMappingContext);
 
 			Subsystem->AddMappingContext(AssetSubsystem->InputAsset->BaseMappingContext, 100);
+			Subsystem->AddMappingContext(AssetSubsystem->InputAsset->RadialMenuMappingContext, 1000);
 		}
 	}
 
@@ -160,7 +161,7 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 
 		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->RadialMenuAction, ETriggerEvent::Triggered, this, &ThisClass::RadialMenuButtonPressed);
 		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->RadialMenuAction, ETriggerEvent::Completed, this, &ThisClass::RadialMenuButtonReleased);
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->RadialMenuChangeAction, ETriggerEvent::Triggered, this, &ThisClass::RadialMenuChangeButtonPressed);
+		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->RadialMenuSwitchAction, ETriggerEvent::Triggered, this, &ThisClass::RadialMenuSwitchButtonPressed);
 		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->RadialMenuSelectAction, ETriggerEvent::Triggered, this, &ThisClass::RadialMenuSelect);
 
 		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->TextChatAction, ETriggerEvent::Triggered, this, &ThisClass::TextChat);
@@ -676,6 +677,7 @@ void ABaseCharacter::PauseMenuButtonPressed(const FInputActionValue& Value)
 
 void ABaseCharacter::RadialMenuButtonPressed(const FInputActionValue& Value)
 {
+	// UE_LOG(LogTemp, Warning, TEXT("111 time: %f"), GetWorld()->GetTimeSeconds());
 	if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
 	if (BaseController)
 	{
@@ -692,16 +694,16 @@ void ABaseCharacter::RadialMenuButtonReleased(const FInputActionValue& Value)
 	}
 }
 
-void ABaseCharacter::RadialMenuChangeButtonPressed(const FInputActionValue& Value)
+void ABaseCharacter::RadialMenuSwitchButtonPressed(const FInputActionValue& Value)
 {
 	if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
 	if (BaseController)
 	{
-		BaseController->ChangeRadialMenu.Broadcast();
+		BaseController->SwitchRadialMenu.Broadcast();
 	}
 }
 
-// TODO 弦操作使用IA_RadialMenu时，手柄RadialMenuButtonPressed不触发，使用了新建的IA_RadialMenuSelectChord
+// TODO RadialMenuSelect为弦操作，关联使用IA_RadialMenu时，会导致IA_RadialMenu的RadialMenuButtonPressed有时不触发（鼠标或右摇杆移动时稳定不触发），弦操作关联对象替换为新建的IA_RadialMenu2
 void ABaseCharacter::RadialMenuSelect(const FInputActionValue& Value)
 {
 	FVector2D AxisVector = Value.Get<FVector2D>();
@@ -710,6 +712,7 @@ void ABaseCharacter::RadialMenuSelect(const FInputActionValue& Value)
 	{
 		BaseController->SelectRadialMenu.Broadcast(AxisVector.X, AxisVector.Y);
 	}
+	// UE_LOG(LogTemp, Warning, TEXT("222 x y time: %f %f %f"), AxisVector.X, AxisVector.Y, GetWorld()->GetTimeSeconds());
 }
 
 void ABaseCharacter::TextChat(const FInputActionValue& Value)
@@ -950,13 +953,13 @@ void ABaseCharacter::SendRadio(int32 RadioIndex)
 	if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
 	if (BasePlayerState == nullptr) BasePlayerState = GetPlayerState<ABasePlayerState>();
 	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-	if (BaseController && BasePlayerState && AssetSubsystem&& AssetSubsystem->CharacterAsset)
+	if (BaseController && BasePlayerState && AssetSubsystem&& AssetSubsystem->CommonAsset)
 	{
 		BaseController->ServerSendMsg(
 			EMsgType::Radio,
 			BasePlayerState->Team,
 			BasePlayerState->GetPlayerName(),
-			AssetSubsystem->CharacterAsset->RadioTexts[RadioIndex]
+			AssetSubsystem->CommonAsset->RadioTexts[RadioIndex]
 		);
 	}
 

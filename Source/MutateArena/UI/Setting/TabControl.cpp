@@ -3,25 +3,44 @@
 #include "CommonButtonBase.h"
 #include "CommonHierarchicalScrollBox.h"
 #include "CommonTextBlock.h"
+#include "EnhancedActionKeyMapping.h"
+#include "InputMappingContext.h"
 #include "MutateArena/System/Storage/SaveGameSetting.h"
 #include "MutateArena/System/Storage/DefaultConfig.h"
 #include "MutateArena/System/Storage/StorageSubsystem.h"
 #include "Components/ComboBoxString.h"
 #include "Input/CommonUIInputTypes.h"
+#include "MutateArena/System/AssetSubsystem.h"
+#include "MutateArena/Utils/LibraryCommon.h"
+#include "KeyBindingLineButton.h"
+#include "Components/InputKeySelector.h"
+#include "MutateArena/Characters/Data/InputAsset.h"
+#include "CommonUserWidget.h"
+#include "EnhancedInputSubsystems.h"
+#include "Components/Border.h"
+#include "Components/ScrollBoxSlot.h"
+#include "Components/VerticalBox.h"
+#include "Components/VerticalBoxSlot.h"
+#include "MutateArena/MutateArena.h"
+#include "MutateArena/PlayerControllers/BaseController.h"
+#include "MutateArena/Utils/LibraryNotify.h"
+#include "UserSettings/EnhancedInputUserSettings.h"
+
+#define LOCTEXT_NAMESPACE "UTabControl"
 
 void UTabControl::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
+	
+	CreateKeyBindingWidgets();
 
 	// 绑定提示信息切换菜单
-	TArray<UWidget*> Tabs = SettingLeft->GetAllChildren();
+	auto Tabs = ULibraryCommon::GetAllChildrenOfClass<UCommonButtonBase>(SettingLeft);
 	for (int i = 0; i < Tabs.Num(); ++i)
 	{
-		if (UCommonButtonBase* TabButton = Cast<UCommonButtonBase>(Tabs[i]))
-		{
-			TabButton->OnHovered().AddUObject(this, &ThisClass::OnTabButtonHovered, i);
-		}
+		Tabs[i]->OnHovered().AddUObject(this, &ThisClass::OnTabButtonHovered, i);
 	}
+	
 	if (const UDefaultConfig* DefaultConfig = GetDefault<UDefaultConfig>())
 	{
 		MouseSensitivityMin = DefaultConfig->MouseSensitivity / DefaultConfig->MouseSensitivityMaxMul;
@@ -214,4 +233,154 @@ void UTabControl::SetDefault()
 			StorageSubsystem->SaveSetting();
 		}
 	}
+	
+	// 重置键位绑定
+	if (UserSettings)
+	{
+		const FString& ProfileId = UserSettings->GetActiveKeyProfileId();
+		FGameplayTagContainer FailureReason;
+		UserSettings->ResetKeyProfileIdToDefault(ProfileId, FailureReason);
+		
+		if (FailureReason.IsEmpty())
+		{
+			UserSettings->ApplySettings();
+			UserSettings->SaveSettings();
+			
+			CreateKeyBindingWidgets();
+		}
+		else
+		{
+			NOTIFY(this, C_RED, LOCTEXT("ResetKeyBindingsFailed", "Reset Key Bindings Failed"));
+			
+			UE_LOG(LogTemp, Warning, TEXT("ResetKeyBindingsFailed: %s"), *FailureReason.ToString());
+		}
+	}
 }
+
+void UTabControl::CreateKeyBindingWidgets()
+{
+	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+	if (AssetSubsystem == nullptr || AssetSubsystem->InputAsset == nullptr) return;
+	
+	SetWidgetSectionColor();
+
+	if (BaseController == nullptr) BaseController = Cast<ABaseController>(GetOwningPlayer());
+	if (BaseController == nullptr) return;
+	
+	if (EISubsystem == nullptr) EISubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(BaseController->GetLocalPlayer());
+	if (EISubsystem == nullptr) return;
+
+	if (UserSettings == nullptr) UserSettings = EISubsystem->GetUserSettings();
+	if (UserSettings == nullptr) return;
+
+	UserSettings->RegisterInputMappingContext(AssetSubsystem->InputAsset->BaseMappingContext);
+	UserSettings->RegisterInputMappingContext(AssetSubsystem->InputAsset->HumanMappingContext);
+	UserSettings->RegisterInputMappingContext(AssetSubsystem->InputAsset->MutantMappingContext);
+	UserSettings->RegisterInputMappingContext(AssetSubsystem->InputAsset->SpectatorMappingContext);
+	UserSettings->RegisterInputMappingContext(AssetSubsystem->InputAsset->RadialMenuMappingContext);
+
+	BaseSection->ClearChildren();
+	HumanSection->ClearChildren();
+	MutantSection->ClearChildren();
+	SpectatorSection->ClearChildren();
+	
+	CreateWidgetsForContext(AssetSubsystem->InputAsset->BaseMappingContext, BaseSection);
+	CreateWidgetsForContext(AssetSubsystem->InputAsset->RadialMenuMappingContext, BaseSection);
+	CreateWidgetsForContext(AssetSubsystem->InputAsset->HumanMappingContext, HumanSection);
+	CreateWidgetsForContext(AssetSubsystem->InputAsset->MutantMappingContext, MutantSection);
+	CreateWidgetsForContext(AssetSubsystem->InputAsset->SpectatorMappingContext, SpectatorSection);
+}
+
+void UTabControl::SetWidgetSectionColor()
+{
+	FColor White = C_WHITE;
+	FColor Red = C_RED;
+	FColor Green = C_GREEN;
+	FColor Gray = C_GREY;
+
+	White.A = 30;
+	Red.A = 30;
+	Green.A = 30;
+	Gray.A = 150;
+
+	BaseSectionBG->SetBrushColor(White);
+	HumanSectionBG->SetBrushColor(Red);
+	MutantSectionBG->SetBrushColor(Green);
+	SpectatorSectionBG->SetBrushColor(Gray);
+}
+
+void UTabControl::CreateWidgetsForContext(const UInputMappingContext* Context, UVerticalBox* Section)
+{
+    if (Context == nullptr) return;
+
+    const TArray<FEnhancedActionKeyMapping>& Mappings = Context->GetMappings();
+    TMap<const UInputAction*, UKeyBindingLineButton*> CreatedWidgetsMap;
+	
+    for (const FEnhancedActionKeyMapping& Mapping : Mappings)
+    {
+        const UInputAction* Action = Mapping.Action;
+
+    	// wasd 键位暂时隐藏，UI不好处理
+    	if (HiddenActions.Contains(Action)) continue;
+    	
+        UKeyBindingLineButton* RowWidget = nullptr;
+
+        if (CreatedWidgetsMap.Contains(Action))
+        {
+            RowWidget = CreatedWidgetsMap[Action];
+        }
+        else
+        {
+            RowWidget = CreateWidget<UKeyBindingLineButton>(this, KeyBindingLineButtonClass);
+            if (RowWidget)
+            {
+            	// 键鼠和手柄的DisplayName在UInputMappingContext中设置的一样
+                RowWidget->ActionName->SetText(Mapping.GetDisplayName());
+
+                if (UVerticalBoxSlot* NewSlot = Cast<UVerticalBoxSlot>(Section->AddChild(RowWidget)))
+                {
+                   NewSlot->SetPadding(FMargin(0, 10, 0, 10));
+                }
+            	
+                CreatedWidgetsMap.Add(Action, RowWidget);
+            }
+        }
+    	
+    	if (RowWidget)
+    	{
+    		// 获取绑定后的键位
+    		FKey MappedKey = Mapping.Key;
+    		if (UserSettings)
+    		{
+			    if (const FPlayerKeyMapping* PlayerKeyMapping = UserSettings->FindCurrentMappingForSlot(Mapping.GetMappingName(), EPlayerMappableKeySlot::First))
+    			{
+    				MappedKey = PlayerKeyMapping->GetCurrentKey();
+    			}
+    		}
+    		
+    		if (Mapping.Key.IsGamepadKey())
+    		{
+    			RowWidget->SetKeySilent(MappedKey, true);
+    			RowWidget->MappingName_Controller = Mapping.GetMappingName();
+    		}
+    		else if (Mapping.Key.IsTouch())
+    		{
+			    UE_LOG(LogTemp, Warning, TEXT("Mapping.Key.IsTouch()"));
+    		}
+    		else
+    		{
+    			RowWidget->SetKeySilent(MappedKey, false);
+    			RowWidget->MappingName_KBM = Mapping.GetMappingName();
+    		}
+    	}
+    	
+    	// 禁用部分键位绑定
+    	if (DisabledActions.Contains(Action))
+    	{
+    		RowWidget->KeySelector_KBM->SetIsEnabled(false);
+    		RowWidget->KeySelector_Controller->SetIsEnabled(false);
+    	}
+    }
+}
+
+#undef LOCTEXT_NAMESPACE

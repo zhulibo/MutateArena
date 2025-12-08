@@ -4,6 +4,8 @@
 #include "CommonActivatableWidget.h"
 #include "TabControl.generated.h"
 
+class UInputAction;
+
 UCLASS()
 class MUTATEARENA_API UTabControl : public UCommonActivatableWidget
 {
@@ -16,6 +18,14 @@ protected:
 
 	UPROPERTY()
 	class UStorageSubsystem* StorageSubsystem;
+	UPROPERTY()
+	class UAssetSubsystem* AssetSubsystem;
+	UPROPERTY()
+	class ABaseController* BaseController;
+	UPROPERTY()
+	class UEnhancedInputLocalPlayerSubsystem* EISubsystem;
+	UPROPERTY()
+	class UEnhancedInputUserSettings* UserSettings;
 
 	UPROPERTY(meta = (BindWidget))
 	class UCommonHierarchicalScrollBox* SettingLeft;
@@ -60,5 +70,34 @@ protected:
 	FDataTableRowHandle SetDefaultData;
 	FUIActionBindingHandle SetDefaultHandle;
 	void SetDefault();
-
+	
+	// 按键绑定
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* BaseSectionBG;
+	UPROPERTY(meta = (BindWidget))
+	UBorder* HumanSectionBG;
+	UPROPERTY(meta = (BindWidget))
+	UBorder* MutantSectionBG;
+	UPROPERTY(meta = (BindWidget))
+	UBorder* SpectatorSectionBG;
+	UPROPERTY(meta = (BindWidget))
+	class UVerticalBox* BaseSection;
+	UPROPERTY(meta = (BindWidget))
+	UVerticalBox* HumanSection;
+	UPROPERTY(meta = (BindWidget))
+	UVerticalBox* MutantSection;
+	UPROPERTY(meta = (BindWidget))
+	UVerticalBox* SpectatorSection;
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class UKeyBindingLineButton> KeyBindingLineButtonClass;
+	// 禁止修改的Actions
+	UPROPERTY(EditAnywhere)
+	TArray<UInputAction*> DisabledActions;
+	// 不显示的Actions
+	UPROPERTY(EditAnywhere)
+	TArray<UInputAction*> HiddenActions;
+	void SetWidgetSectionColor();
+	void CreateKeyBindingWidgets();
+	void CreateWidgetsForContext(const UInputMappingContext* Context, UVerticalBox* Section);
+	
 };

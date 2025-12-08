@@ -65,6 +65,7 @@ public:
 	void SwapThrowingEquipmentButtonPressed();
 protected:
 	void SwapLastEquipmentButtonPressed(const FInputActionValue& Value);
+	void SwapBetweenPrimarySecondaryEquipmentButtonPressed(const FInputActionValue& Value);
 
 public:
 	void OnServerDropEquipment();

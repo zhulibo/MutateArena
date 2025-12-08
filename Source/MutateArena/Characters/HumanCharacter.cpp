@@ -124,6 +124,7 @@ void AHumanCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->SwapMeleeEquipmentAction, ETriggerEvent::Triggered, this, &ThisClass::SwapMeleeEquipmentButtonPressed);
 		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->SwapThrowingEquipmentAction, ETriggerEvent::Triggered, this, &ThisClass::SwapThrowingEquipmentButtonPressed);
 		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->SwapLastEquipmentAction, ETriggerEvent::Triggered, this, &ThisClass::SwapLastEquipmentButtonPressed);
+		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->SwapBetweenPrimarySecondaryEquipmentAction, ETriggerEvent::Triggered, this, &ThisClass::SwapBetweenPrimarySecondaryEquipmentButtonPressed);
 	}
 }
 
@@ -461,6 +462,28 @@ void AHumanCharacter::SwapThrowingEquipmentButtonPressed()
 void AHumanCharacter::SwapLastEquipmentButtonPressed(const FInputActionValue& Value)
 {
 	if (CombatComponent) CombatComponent->SwapEquipment(CombatComponent->LastEquipmentType);
+}
+
+void AHumanCharacter::SwapBetweenPrimarySecondaryEquipmentButtonPressed(const FInputActionValue& Value)
+{
+	if (CombatComponent)
+	{
+		bool bIsPrimaryAmmoEmpty = true;
+		if (AWeapon* PrimaryWeapon = Cast<AWeapon>(CombatComponent->GetEquipmentByType(EEquipmentType::Primary)))
+		{
+			bIsPrimaryAmmoEmpty = PrimaryWeapon->IsEmpty();
+		}
+		
+		if (CombatComponent->CurEquipmentType == EEquipmentType::Primary
+			|| CombatComponent->CurEquipmentType != EEquipmentType::Primary && bIsPrimaryAmmoEmpty)
+		{
+			SwapSecondaryEquipmentButtonPressed();
+		}
+		else
+		{
+			SwapPrimaryEquipmentButtonPressed();
+		}
+	}
 }
 
 void AHumanCharacter::OnServerDropEquipment()
