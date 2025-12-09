@@ -15,6 +15,8 @@
 #include "MutateArena/Utils/LibraryCommon.h"
 #include "MutateArena/Utils/LibraryNotify.h"
 #include "Engine/UserInterfaceSettings.h"
+#include "MutateArena/System/UISubsystem.h"
+#include "MutateArena/UI/ProjectTags.h"
 
 #define LOCTEXT_NAMESPACE "UServer"
 
@@ -387,10 +389,13 @@ void UServer::OnLobbyJoined(const FLobbyJoined& LobbyJoined)
 
 void UServer::GoToLobby()
 {
-	if (MenuController == nullptr) MenuController = Cast<AMenuController>(GetOwningPlayer());
-	if (MenuController)
+	if (UISubsystem == nullptr) UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer());;
+	if (UISubsystem)
 	{
-		MenuController->ServerStack->AddWidget(LobbyClass);
+		if (auto Layer = UISubsystem->GetLayerStack(TAG_UI_LAYER_SERVER))
+		{
+			Layer->AddWidget(LobbyClass);
+		}
 	}
 }
 

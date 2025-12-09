@@ -22,6 +22,7 @@ class MUTATEARENA_API AMutationController : public ABaseController
 	GENERATED_BODY()
 
 public:
+	// TODO Move to UISubsystem
 	FOnTeamChange OnTeamChange;
 	FOnTeamNumChange OnTeamNumChange;
 	FOnCurRoundChange OnCurRoundChange;

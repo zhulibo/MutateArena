@@ -14,6 +14,8 @@
 #include "MutateArena/UI/TextChat/TextChat.h"
 #include "MutateArena/Utils/LibraryNotify.h"
 #include "Components/EditableTextBox.h"
+#include "MutateArena/System/UISubsystem.h"
+#include "MutateArena/UI/ProjectTags.h"
 
 #define LOCTEXT_NAMESPACE "ULobby"
 
@@ -683,12 +685,16 @@ void ULobby::OnLobbyMemberLeft(const FLobbyMemberLeft& LobbyMemberLeft)
 void ULobby::OnLobbyLeft(const FLobbyLeft& LobbyLeft)
 {
 	UE_LOG(LogTemp, Warning, TEXT("OnLobbyLeft"));
-	if (MenuController == nullptr) MenuController = Cast<AMenuController>(GetOwningPlayer());
-	if (MenuController)
+	
+	if (UISubsystem == nullptr) UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer());;
+	if (UISubsystem)
 	{
-		MenuController->ServerStack->RemoveWidget(*MenuController->ServerStack->GetActiveWidget());
+		if (auto Layer = UISubsystem->GetLayerStack(TAG_UI_LAYER_SERVER))
+		{
+			Layer->RemoveWidget(*Layer->GetActiveWidget());
+		}
 	}
-
+	
 	if (!bIsExitingLobby)
 	{
 		NOTIFY(this, C_WHITE, LOCTEXT("GotKicked", "Got kicked"));

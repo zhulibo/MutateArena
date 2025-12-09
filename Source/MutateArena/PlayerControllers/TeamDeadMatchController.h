@@ -14,6 +14,7 @@ class MUTATEARENA_API ATeamDeadMatchController : public ABaseController
 	GENERATED_BODY()
 
 public:
+	// TODO Move to UISubsystem
 	FOnTeamScoreChange OnTeamScoreChange;
 
 protected:

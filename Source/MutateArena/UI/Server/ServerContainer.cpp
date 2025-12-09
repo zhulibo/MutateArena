@@ -1,16 +1,19 @@
 #include "ServerContainer.h"
+
 #include "Server.h"
-#include "MutateArena/PlayerControllers/MenuController.h"
+#include "MutateArena/UI/ProjectTags.h"
 #include "Widgets/CommonActivatableWidgetContainer.h"
+
+void UServerContainer::NativeOnInitialized()
+{
+	Super::NativeOnInitialized();
+}
 
 void UServerContainer::NativeConstruct()
 {
 	Super::NativeConstruct();
-
-	if (AMenuController* MenuController = Cast<AMenuController>(GetOwningPlayer()))
-	{
-		MenuController->ServerStack = ServerStack;
-	}
+	
+	RegisterLayer(TAG_UI_LAYER_SERVER, ServerStack);
 
 	if (ServerClass)
 	{

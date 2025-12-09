@@ -7,8 +7,10 @@
 #include "MutateArena/PlayerControllers/BaseController.h"
 #include "MutateArena/System/AssetSubsystem.h"
 #include "MutateArena/System/EOSSubsystem.h"
+#include "MutateArena/System/UISubsystem.h"
 #include "MutateArena/System/Data/CommonAsset.h"
 #include "MutateArena/UI/GameLayout.h"
+#include "MutateArena/UI/ProjectTags.h"
 #include "MutateArena/UI/Common/CommonButton.h"
 #include "MutateArena/UI/Common/ConfirmScreen.h"
 #include "Widgets/CommonActivatableWidgetContainer.h"
@@ -69,34 +71,43 @@ void UPauseMenu::OnDeactivatedInternal()
 
 void UPauseMenu::OnLoadoutSelectClicked()
 {
-	if (BaseController == nullptr) BaseController = Cast<ABaseController>(GetOwningPlayer());
-	if (BaseController && BaseController->GameLayout)
+	if (UISubsystem == nullptr) UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer());;
+	if (UISubsystem)
 	{
 		bWantToBack = false;
-
-		BaseController->GameLayout->MenuStack->AddWidget(LoadoutSelectClass);
+		
+		if (auto Layer = UISubsystem->GetLayerStack(TAG_UI_LAYER_MENU))
+		{
+			Layer->AddWidget(LoadoutSelectClass);
+		}
 	}
 }
 
 void UPauseMenu::OnMutantSelectButtonClicked()
 {
-	if (BaseController == nullptr) BaseController = Cast<ABaseController>(GetOwningPlayer());
-	if (BaseController && BaseController->GameLayout)
+	if (UISubsystem == nullptr) UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer());;
+	if (UISubsystem)
 	{
 		bWantToBack = false;
 		
-		BaseController->GameLayout->MenuStack->AddWidget(MutantSelectClass);
+		if (auto Layer = UISubsystem->GetLayerStack(TAG_UI_LAYER_MENU))
+		{
+			Layer->AddWidget(MutantSelectClass);
+		}
 	}
 }
 
 void UPauseMenu::OnSettingButtonClicked()
 {
-	if (BaseController == nullptr) BaseController = Cast<ABaseController>(GetOwningPlayer());
-	if (BaseController && BaseController->GameLayout)
+	if (UISubsystem == nullptr) UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer());;
+	if (UISubsystem)
 	{
 		bWantToBack = false;
 		
-		BaseController->GameLayout->MenuStack->AddWidget(SettingClass);
+		if (auto Layer = UISubsystem->GetLayerStack(TAG_UI_LAYER_MENU))
+		{
+			Layer->AddWidget(SettingClass);
+		}
 	}
 }
 
@@ -109,35 +120,37 @@ void UPauseMenu::OnQuitButtonClicked()
 {
 	UE_LOG(LogTemp, Warning, TEXT("OnQuitButtonClicked -------------------------------------------"));
 	
-	if (BaseController == nullptr) BaseController = Cast<ABaseController>(GetOwningPlayer());
-	UAssetSubsystem* AssetSubsystem = GetWorld()->GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-	
-	if (BaseController && BaseController->GameLayout && AssetSubsystem && AssetSubsystem->CommonAsset)
+	if (UISubsystem == nullptr) UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer());;
+	if (AssetSubsystem == nullptr) AssetSubsystem = GetWorld()->GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+	if (UISubsystem && AssetSubsystem && AssetSubsystem->CommonAsset)
 	{
 		FConfirmScreenComplete ResultCallback = FConfirmScreenComplete::CreateUObject(this, &ThisClass::Quit);
 
 		if (EOSSubsystem == nullptr) EOSSubsystem = GetGameInstance()->GetSubsystem<UEOSSubsystem>();
-		if (EOSSubsystem)
+		if (EOSSubsystem && EOSSubsystem->IsLobbyHost())
 		{
-			if (EOSSubsystem->IsLobbyHost())
+			if (auto Layer = UISubsystem->GetLayerStack(TAG_UI_LAYER_MODAL))
 			{
-				BaseController->GameLayout->ModalStack->AddWidget<UConfirmScreen>(
+				Layer->AddWidget<UConfirmScreen>(
 					AssetSubsystem->CommonAsset->ConfirmScreenClass,
 					[ResultCallback](UConfirmScreen& Dialog) {
 						Dialog.Setup(LOCTEXT("SureToQuitHost", "You are host, all clients will lose connection, sure to quit?"), ResultCallback);
 					}
 				);
-
-				return;
 			}
 		}
-
-		BaseController->GameLayout->ModalStack->AddWidget<UConfirmScreen>(
-			AssetSubsystem->CommonAsset->ConfirmScreenClass,
-			[ResultCallback](UConfirmScreen& Dialog) {
-				Dialog.Setup(LOCTEXT("SureToQuit", "Sure to quit?"), ResultCallback);
+		else
+		{
+			if (auto Layer = UISubsystem->GetLayerStack(TAG_UI_LAYER_MODAL))
+			{
+				Layer->AddWidget<UConfirmScreen>(
+					AssetSubsystem->CommonAsset->ConfirmScreenClass,
+					[ResultCallback](UConfirmScreen& Dialog) {
+						Dialog.Setup(LOCTEXT("SureToQuit", "Sure to quit?"), ResultCallback);
+					}
+				);
 			}
-		);
+		}
 	}
 }
 

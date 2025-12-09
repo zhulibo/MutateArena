@@ -261,13 +261,10 @@ void UTabControl::CreateKeyBindingWidgets()
 {
 	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
 	if (AssetSubsystem == nullptr || AssetSubsystem->InputAsset == nullptr) return;
-	
-	SetWidgetSectionColor();
 
-	if (BaseController == nullptr) BaseController = Cast<ABaseController>(GetOwningPlayer());
-	if (BaseController == nullptr) return;
+	SetWidgetSectionColor();
 	
-	if (EISubsystem == nullptr) EISubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(BaseController->GetLocalPlayer());
+	if (EISubsystem == nullptr) EISubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetOwningLocalPlayer());
 	if (EISubsystem == nullptr) return;
 
 	if (UserSettings == nullptr) UserSettings = EISubsystem->GetUserSettings();
@@ -296,12 +293,12 @@ void UTabControl::SetWidgetSectionColor()
 	FColor White = C_WHITE;
 	FColor Red = C_RED;
 	FColor Green = C_GREEN;
-	FColor Gray = C_GREY;
+	FColor Gray = C_BLACK;
 
-	White.A = 30;
-	Red.A = 30;
-	Green.A = 30;
-	Gray.A = 150;
+	White.A = 40;
+	Red.A = 40;
+	Green.A = 40;
+	Gray.A = 40;
 
 	BaseSectionBG->SetBrushColor(White);
 	HumanSectionBG->SetBrushColor(Red);

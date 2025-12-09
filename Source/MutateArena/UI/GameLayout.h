@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "CommonActivatableWidget.h"
+#include "LayoutBase.h"
 #include "GameLayout.generated.h"
 
 UENUM(BlueprintType)
@@ -15,12 +15,11 @@ enum class EHUDState : uint8
 enum class ECoolLoginType : uint8;
 
 UCLASS()
-class MUTATEARENA_API UGameLayout : public UCommonActivatableWidget
+class MUTATEARENA_API UGameLayout : public ULayoutBase
 {
 	GENERATED_BODY()
 
 public:
-	// TODO 将层与标签绑定存入TMap，不用再寻找层的引用，实现解耦。
 	// 游戏层
 	UPROPERTY(meta = (BindWidget))
 	class UCommonActivatableWidgetStack* GameStack;
@@ -40,9 +39,7 @@ public:
 
 protected:
 	virtual void NativeOnInitialized() override;
-
-	UPROPERTY()
-	class ABaseController* BaseController;
+	virtual void NativeConstruct() override;
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UPauseMenu> PauseMenuClass;

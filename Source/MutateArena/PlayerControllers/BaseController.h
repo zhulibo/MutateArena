@@ -36,10 +36,7 @@ class MUTATEARENA_API ABaseController : public AModularPlayerController
 	GENERATED_BODY()
 
 public:
-	// TODO 将UI部分转移到子系统中
-	UPROPERTY()
-	class UGameLayout* GameLayout;
-
+	// TODO Move to UISubsystem
 	FChangeCrosshairSpread ChangeCrosshairSpread;
 	FOnCrosshairHidden OnCrosshairHidden;
 	FChangeAnnouncement ChangeAnnouncement;
@@ -87,7 +84,7 @@ protected:
 	float GetServerTime();
 
 	UPROPERTY(EditAnywhere)
-	TSubclassOf<UGameLayout> GameLayoutClass;
+	TSubclassOf<class UGameLayout> GameLayoutClass;
 	void AddGameLayout();
 
 public:

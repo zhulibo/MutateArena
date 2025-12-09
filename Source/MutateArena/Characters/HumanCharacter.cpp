@@ -461,6 +461,7 @@ void AHumanCharacter::SwapThrowingEquipmentButtonPressed()
 
 void AHumanCharacter::SwapLastEquipmentButtonPressed(const FInputActionValue& Value)
 {
+	UE_LOG(LogTemp, Warning, TEXT("SwapLastEquipmentButtonPressed"));
 	if (CombatComponent) CombatComponent->SwapEquipment(CombatComponent->LastEquipmentType);
 }
 

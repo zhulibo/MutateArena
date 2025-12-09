@@ -1,11 +1,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "CommonActivatableWidget.h"
+#include "LayoutBase.h"
 #include "MenuLayout.generated.h"
 
 UCLASS()
-class MUTATEARENA_API UMenuLayout : public UCommonActivatableWidget
+class MUTATEARENA_API UMenuLayout : public ULayoutBase
 {
 	GENERATED_BODY()
 
@@ -18,6 +18,7 @@ public:
 	UCommonActivatableWidgetStack* ModalStack;
 
 protected:
+	virtual void NativeOnInitialized() override;
 	virtual void NativeConstruct() override;
 
 	UPROPERTY(EditAnywhere)

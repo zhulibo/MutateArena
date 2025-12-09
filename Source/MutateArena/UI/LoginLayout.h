@@ -1,13 +1,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "CommonActivatableWidget.h"
+#include "LayoutBase.h"
 #include "LoginLayout.generated.h"
 
 enum class ECoolLoginType : uint8;
 
 UCLASS()
-class MUTATEARENA_API ULoginLayout : public UCommonActivatableWidget
+class MUTATEARENA_API ULoginLayout : public ULayoutBase
 {
 	GENERATED_BODY()
 

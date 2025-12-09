@@ -20,6 +20,8 @@ protected:
 	class AMenuController* MenuController;
 	UPROPERTY()
 	UEOSSubsystem* EOSSubsystem;
+	UPROPERTY()
+	class UUISubsystem* UISubsystem;
 
 	void SetUIAttr();
 	void SetUIButtonState();

@@ -15,9 +15,10 @@ protected:
 
 	UPROPERTY()
 	class ABaseController* BaseController;
-
 	UPROPERTY()
 	mutable class UStorageSubsystem* StorageSubsystem;
+	UPROPERTY()
+	class UUISubsystem* UISubsystem;
 
 	UPROPERTY(meta = (BindWidget))
 	class UCommonHierarchicalScrollBox* LoadoutSelectButtonContainer;

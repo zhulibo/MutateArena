@@ -20,6 +20,8 @@ protected:
 	class AMenuController* MenuController;
 	UPROPERTY()
 	UEOSSubsystem* EOSSubsystem;
+	UPROPERTY()
+	class UUISubsystem* UISubsystem;
 
 	// 创建大厅
 	UPROPERTY(meta = (BindWidget))

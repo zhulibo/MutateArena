@@ -5,9 +5,11 @@
 #include "CommonTextBlock.h"
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "MutateArena/PlayerControllers/BaseController.h"
+#include "MutateArena/System/UISubsystem.h"
 #include "MutateArena/System/Storage/SaveGameLoadout.h"
 #include "MutateArena/System/Storage/StorageSubsystem.h"
 #include "MutateArena/UI/GameLayout.h"
+#include "MutateArena/UI/ProjectTags.h"
 #include "MutateArena/UI/Common/CommonButton.h"
 #include "Widgets/CommonActivatableWidgetContainer.h"
 
@@ -58,14 +60,17 @@ void ULoadoutSelect::OnLoadoutSelectButtonClicked(int32 LoadoutIndex)
 
 void ULoadoutSelect::CloseMenu(bool bClosePauseMenu)
 {
-	if (BaseController == nullptr) BaseController = Cast<ABaseController>(GetOwningPlayer());
-	if (BaseController)
+	if (UISubsystem == nullptr) UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer());;
+	if (UISubsystem)
 	{
 		DeactivateWidget();
 		
-		if (bClosePauseMenu && BaseController->GameLayout)
+		if (bClosePauseMenu)
 		{
-			BaseController->GameLayout->MenuStack->RemoveWidget(*BaseController->GameLayout->MenuStack->GetActiveWidget());
+			if (auto Layer = UISubsystem->GetLayerStack(TAG_UI_LAYER_MENU))
+			{
+				Layer->RemoveWidget(*Layer->GetActiveWidget());
+			}
 		}
 	}
 }

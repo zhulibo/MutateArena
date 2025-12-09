@@ -10,15 +10,13 @@ class MUTATEARENA_API ALoginController : public AModularPlayerController
 	GENERATED_BODY()
 
 public:
-	UPROPERTY()
-	class ULoginLayout* LoginLayout;
 
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
 
 	UPROPERTY(EditAnywhere)
-	TSubclassOf<ULoginLayout> LoginLayoutClass;
+	TSubclassOf<class ULoginLayout> LoginLayoutClass;
 	void AddLoginLayout();
 
 };

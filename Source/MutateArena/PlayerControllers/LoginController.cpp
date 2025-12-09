@@ -26,11 +26,12 @@ void ALoginController::AddLoginLayout()
 {
 	if (IsLocalController() && LoginLayoutClass)
 	{
-		LoginLayout = CreateWidget<ULoginLayout>(this, LoginLayoutClass);
-		if (LoginLayout)
+		if (ULoginLayout* LoginLayout = CreateWidget<ULoginLayout>(this, LoginLayoutClass))
 		{
 			LoginLayout->AddToViewport();
+			
 			LoginLayout->ActivateWidget();
+			
 			FInputModeUIOnly InputModeData;
 			SetInputMode(InputModeData);
 			SetShowMouseCursor(true);

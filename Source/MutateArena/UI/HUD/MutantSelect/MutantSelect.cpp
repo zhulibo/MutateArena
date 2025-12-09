@@ -19,8 +19,10 @@
 #include "Widgets/CommonActivatableWidgetContainer.h"
 #include "MutateArena/Abilities/Mutant/GameplayAbility_MutantChange.h"
 #include "MutateArena/PlayerStates/BasePlayerState.h"
+#include "MutateArena/System/UISubsystem.h"
 #include "MutateArena/System/Storage/SaveGameLoadout.h"
 #include "MutateArena/UI/GameLayout.h"
+#include "MutateArena/UI/ProjectTags.h"
 #include "MutateArena/Utils/LibraryCommon.h"
 #include "MutateArena/Utils/LibraryNotify.h"
 
@@ -139,14 +141,17 @@ void UMutantSelect::OnRoundEnded()
 
 void UMutantSelect::CloseMenu(bool bClosePauseMenu)
 {
-	if (BaseController == nullptr) BaseController = Cast<ABaseController>(GetOwningPlayer());
-	if (BaseController)
+	if (UISubsystem == nullptr) UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer());;
+	if (UISubsystem)
 	{
 		DeactivateWidget();
-
-		if (bClosePauseMenu && BaseController->GameLayout)
+		
+		if (bClosePauseMenu)
 		{
-			BaseController->GameLayout->MenuStack->RemoveWidget(*BaseController->GameLayout->MenuStack->GetActiveWidget());
+			if (auto Layer = UISubsystem->GetLayerStack(TAG_UI_LAYER_MENU))
+			{
+				Layer->RemoveWidget(*Layer->GetActiveWidget());
+			}
 		}
 	}
 }

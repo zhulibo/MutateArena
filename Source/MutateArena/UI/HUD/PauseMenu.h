@@ -19,6 +19,10 @@ protected:
 	class ABaseController* BaseController;
 	UPROPERTY()
 	class UEOSSubsystem* EOSSubsystem;
+	UPROPERTY()
+	class UUISubsystem* UISubsystem;
+	UPROPERTY()
+	class UAssetSubsystem* AssetSubsystem;
 	
 	UPROPERTY()
 	bool bWantToBack = true;

@@ -21,7 +21,11 @@ protected:
 
 	UPROPERTY()
 	UEOSSubsystem* EOSSubsystem;
-
+	UPROPERTY()
+	class UUISubsystem* UISubsystem;
+	UPROPERTY()
+	class UAssetSubsystem* AssetSubsystem;
+	
 	UPROPERTY(meta = (BindWidget))
 	class UCommonButton* SettingButton;
 	UPROPERTY(EditAnywhere)

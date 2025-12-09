@@ -26,11 +26,12 @@ void AMenuController::AddMenuLayout()
 {
 	if (IsLocalController() && MenuLayoutClass)
 	{
-		MenuLayout = CreateWidget<UMenuLayout>(this, MenuLayoutClass);
-		if (MenuLayout)
+		if (UMenuLayout* MenuLayout = CreateWidget<UMenuLayout>(this, MenuLayoutClass))
 		{
 			MenuLayout->AddToViewport();
+			
 			MenuLayout->ActivateWidget();
+			
 			FInputModeUIOnly InputModeData;
 			SetInputMode(InputModeData);
 			SetShowMouseCursor(true);

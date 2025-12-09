@@ -1,11 +1,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "CommonActivatableWidget.h"
+#include "MutateArena/UI/LayoutBase.h"
 #include "ServerContainer.generated.h"
 
 UCLASS()
-class MUTATEARENA_API UServerContainer : public UCommonActivatableWidget
+class MUTATEARENA_API UServerContainer : public ULayoutBase
 {
 	GENERATED_BODY()
 
@@ -18,6 +18,7 @@ public:
 	TSubclassOf<class UServer> ServerClass;
 
 protected:
+	virtual void NativeOnInitialized() override;
 	virtual void NativeConstruct() override;
 
 };

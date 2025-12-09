@@ -2,6 +2,7 @@
 
 #include "CommonTextBlock.h"
 #include "MenuLayout.h"
+#include "ProjectTags.h"
 #include "MutateArena/PlayerControllers/MenuController.h"
 #include "MutateArena/System/AssetSubsystem.h"
 #include "MutateArena/System/Data/CommonAsset.h"
@@ -12,6 +13,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/System/EOSSubsystem.h"
+#include "MutateArena/System/UISubsystem.h"
 #include "MutateArena/Utils/LibraryCommon.h"
 #include "Widgets/CommonActivatableWidgetContainer.h"
 
@@ -52,28 +54,33 @@ void UMenu::NativeDestruct()
 
 void UMenu::OnSettingButtonClicked()
 {
-	if (MenuController == nullptr) MenuController = Cast<AMenuController>(GetOwningPlayer());
-	if (MenuController && MenuController->MenuLayout && SettingClass)
+	if (UISubsystem == nullptr) UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer());
+	if (UISubsystem)
 	{
-		// 本来应该添加到MenuStack, 但是为了显示Menu背景，添加到了ModalStack
-		MenuController->MenuLayout->ModalStack->AddWidget(SettingClass);
+		if (auto Layer = UISubsystem->GetLayerStack(TAG_UI_LAYER_MODAL))
+		{
+			Layer->AddWidget(SettingClass);
+		}
 	}
 }
 
 void UMenu::OnQuitButtonClicked()
 {
-	if (MenuController == nullptr) MenuController = Cast<AMenuController>(GetOwningPlayer());
-	UAssetSubsystem* AssetSubsystem = GetWorld()->GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-
-	if (MenuController && MenuController->MenuLayout && AssetSubsystem && AssetSubsystem->CommonAsset)
+	if (AssetSubsystem == nullptr) AssetSubsystem = GetWorld()->GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+	if (UISubsystem == nullptr) UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer());;
+	if (UISubsystem && AssetSubsystem && AssetSubsystem->CommonAsset)
 	{
 		FConfirmScreenComplete ResultCallback = FConfirmScreenComplete::CreateUObject(this, &ThisClass::Quit);
-		MenuController->MenuLayout->ModalStack->AddWidget<UConfirmScreen>(
-			AssetSubsystem->CommonAsset->ConfirmScreenClass,
-			[ResultCallback](UConfirmScreen& Dialog) {
-				Dialog.Setup(LOCTEXT("SureToQuit", "Sure to quit?"), ResultCallback);
-			}
-		);
+		
+		if (auto Layer = UISubsystem->GetLayerStack(TAG_UI_LAYER_MODAL))
+		{
+			Layer->AddWidget<UConfirmScreen>(
+				AssetSubsystem->CommonAsset->ConfirmScreenClass,
+				[ResultCallback](UConfirmScreen& Dialog) {
+					Dialog.Setup(LOCTEXT("SureToQuit", "Sure to quit?"), ResultCallback);
+				}
+			);
+		}
 	}
 }
 

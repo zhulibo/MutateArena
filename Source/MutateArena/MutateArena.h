@@ -11,6 +11,7 @@
 #define C_YELLOW FColor(238, 119, 0, 255)
 #define C_WHITE FColor(255, 255, 255, 255)
 #define C_GREY FColor(120, 120, 120, 255)
+#define C_BLACK FColor(50, 50, 50, 255)
 
 // Socket
 #define SOCKET_CAMERA FName(TEXT("CameraSocket"))

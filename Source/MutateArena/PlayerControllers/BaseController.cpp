@@ -95,8 +95,7 @@ float ABaseController::GetServerTime()
 
 void ABaseController::AddGameLayout()
 {
-	GameLayout = CreateWidget<UGameLayout>(this, GameLayoutClass);
-	if (GameLayout)
+	if (UGameLayout* GameLayout = CreateWidget<UGameLayout>(this, GameLayoutClass))
 	{
 		GameLayout->AddToViewport();
 
