@@ -31,8 +31,6 @@ protected:
 
 	UPROPERTY()
 	class ABaseGameState* BaseGameState;
-	UPROPERTY()
-	class UEOSSubsystem* EOSSubsystem;
 
 	UFUNCTION()
 	void SpawnHumanCharacter(AController* Controller);

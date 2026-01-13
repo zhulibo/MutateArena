@@ -29,6 +29,7 @@ public class MutateArena : ModuleRules
 				"Json",
 				"JsonUtilities",
 				"AudioModulation",
+				"GameplayMessageRuntime",
 			}
 		);
 

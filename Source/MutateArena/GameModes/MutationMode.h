@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "BaseMode.h"
 #include "MutateArena/Characters/MutantCharacter.h"
+#include "MutateArena/MutateArena.h"
 #include "MutationMode.generated.h"
 
 namespace MatchState
@@ -19,7 +20,7 @@ class MUTATEARENA_API AMutationMode : public ABaseMode
 
 public:
 	UPROPERTY(EditAnywhere)
-	int32 TotalRound = 12;
+	int32 TotalRound = DEFAULT_MATCH_ROUND;
 	UPROPERTY(EditAnywhere)
 	float WarmupTime = 10.f;
 	UPROPERTY(EditAnywhere)

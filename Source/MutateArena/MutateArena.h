@@ -43,6 +43,9 @@
 #define TEAM_DEAD_MATCH FString(TEXT("TeamDeadMatch"))
 #define MELEE FString(TEXT("Melee"))
 
+#define DEFAULT_MATCH_ROUND 12
+#define DEFAULT_MATCH_TIME 10
+
 // 角色碰撞通道
 #define ECC_MESH_TEAM1 ECollisionChannel::ECC_GameTraceChannel1
 #define ECC_MESH_TEAM2 ECollisionChannel::ECC_GameTraceChannel2
@@ -55,6 +58,8 @@
 #define LOBBY_SERVER_NAME FName(TEXT("ServerName"))
 #define LOBBY_MODE_NAME FName(TEXT("ModeName"))
 #define LOBBY_MAP_NAME FName(TEXT("MapName"))
+#define LOBBY_MATCH_ROUND FName(TEXT("MatchRound"))
+#define LOBBY_MATCH_TIME FName(TEXT("MatchTime"))
 #define LOBBY_STATUS FName(TEXT("Status"))
 
 #define LOBBY_MEMBER_NAME FName(TEXT("Name"))

@@ -84,7 +84,7 @@ void ABasePlayerState::InitData()
 {
 }
 
-UAbilitySystemComponent* ABasePlayerState::GetASC() const
+UAbilitySystemComponent* ABasePlayerState::GetAbilitySystemComponent() const
 {
 	return AbilitySystemComponent;
 }
@@ -203,6 +203,7 @@ void ABasePlayerState::OnRep_Infect()
 void ABasePlayerState::AddKillStreak()
 {
 	KillStreak++;
+	
 	OnKillStreakChange();
 
 	GetWorldTimerManager().SetTimer(ResetKillStreakTimerHandle, this, &ThisClass::ResetKillStreak, 7.f);
@@ -216,6 +217,7 @@ void ABasePlayerState::OnRep_KillStreak()
 void ABasePlayerState::ResetKillStreak()
 {
 	KillStreak = 0;
+	
 	OnKillStreakChange();
 }
 

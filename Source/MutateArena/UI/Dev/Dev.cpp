@@ -47,9 +47,10 @@ void UDev::OnEnumerateTitleFilesComplete(bool bWasSuccessful)
 	}
 }
 
-void UDev::OnReadTitleFileComplete(bool bWasSuccessful, const UE::Online::FTitleFileContentsRef& FileContents)
+void UDev::OnReadTitleFileComplete(bool bWasSuccessful, const UE::Online::FTitleFileContentsRef& FileContents, const FString& Filename)
 {
 	if (!bWasSuccessful) return;
+	if (Filename != TitleFile_KnownIssues) return;
 
 	FString JsonString;
 	FFileHelper::BufferToString(JsonString, FileContents->GetData(), FileContents->Num());
@@ -58,7 +59,6 @@ void UDev::OnReadTitleFileComplete(bool bWasSuccessful, const UE::Online::FTitle
 	TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(JsonString);
 	if (FJsonSerializer::Deserialize(Reader, JsonObject) && JsonObject.IsValid())
 	{
-		if (JsonObject->GetStringField(TEXT("FileName")) != TitleFile_KnownIssues) return;
 		// UE_LOG(LogTemp, Log, TEXT("JsonString %s"), *JsonString);
 		
 		FString Language;

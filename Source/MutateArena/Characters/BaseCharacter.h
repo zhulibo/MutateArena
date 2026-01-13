@@ -77,7 +77,7 @@ protected:
 	void InitAbilityActorInfo();
 	virtual void OnASCInit();
 public:
-	virtual UAbilitySystemComponent* GetASC() const override;
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 	UAttributeSetBase* GetAttributeSetBase();
 	float GetMaxHealth();
 	float GetHealth();

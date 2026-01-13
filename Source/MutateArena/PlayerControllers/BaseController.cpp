@@ -235,4 +235,9 @@ void ABaseController::ServerSendMsg_Implementation(EMsgType MsgType, ETeam Team,
 	}
 }
 
+void ABaseController::GiveEquipment(FString EquipmentName)
+{
+	UE_LOG(LogTemp, Warning, TEXT("GiveEquipment %s"), *EquipmentName);
+}
+
 #undef LOCTEXT_NAMESPACE

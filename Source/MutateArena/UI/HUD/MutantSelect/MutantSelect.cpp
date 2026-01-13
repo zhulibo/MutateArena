@@ -103,7 +103,7 @@ void UMutantSelect::OnMutantSelectButtonClicked(EMutantCharacterName MutantChara
 	{
 		FGameplayTag Tag = FGameplayTag::RequestGameplayTag(TAG_MUTANT_CHANGE_ACTIVE);
 
-		if (AbilitySystemComponent == nullptr) AbilitySystemComponent = MutantCharacter->GetASC();
+		if (AbilitySystemComponent == nullptr) AbilitySystemComponent = MutantCharacter->GetAbilitySystemComponent();
 		if (AbilitySystemComponent && AbilitySystemComponent->GetTagCount(Tag) > 0)
 		{
 			MutantCharacter->ServerSelectMutant(MutantCharacterName);

@@ -58,7 +58,7 @@ protected:
 	UPROPERTY()
 	FString TitleFile_Message = TEXT("Message");
 	void OnEnumerateTitleFilesComplete(bool bWasSuccessful);
-	void OnReadTitleFileComplete(bool bWasSuccessful, const FTitleFileContentsRef& FileContents);
+	void OnReadTitleFileComplete(bool bWasSuccessful, const FTitleFileContentsRef& FileContents, const FString& Filename);
 	bool IsBeijingTimeInRange(const FString& StartStr, const FString& EndStr);
 	
 };

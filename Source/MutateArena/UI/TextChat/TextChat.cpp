@@ -177,6 +177,18 @@ void UTextChat::ShowMsg(const EMsgType MsgType, const ETeam Team, const FString&
 		MsgLineButton->Msg->SetText(LOCTEXT("Left", "Left"));
 		MsgLineButton->Msg->SetColorAndOpacity(C_GREY);
 		break;
+	case EMsgType::Kicked:
+		MsgLineButton->Msg->SetText(LOCTEXT("Kicked", "Kicked"));
+		MsgLineButton->Msg->SetColorAndOpacity(C_GREY);
+		break;
+	case EMsgType::Disconnected:
+		MsgLineButton->Msg->SetText(LOCTEXT("Disconnected", "Disconnected"));
+		MsgLineButton->Msg->SetColorAndOpacity(C_GREY);
+		break;
+	case EMsgType::Closed:
+		MsgLineButton->Msg->SetText(LOCTEXT("Closed", "Closed"));
+		MsgLineButton->Msg->SetColorAndOpacity(C_GREY);
+		break;
 	case EMsgType::Start:
 		MsgLineButton->Msg->SetText(LOCTEXT("GameStart", "Game starts"));
 		MsgLineButton->Msg->SetColorAndOpacity(C_YELLOW);
@@ -195,6 +207,14 @@ void UTextChat::ShowMsg(const EMsgType MsgType, const ETeam Team, const FString&
 		break;
 	case EMsgType::MapNameChange:
 		MsgLineButton->Msg->SetText(FText::Format(LOCTEXT("MapChange", "Map change to {0}"), FText::FromString(Msg)));
+		MsgLineButton->Msg->SetColorAndOpacity(C_YELLOW);
+		break;
+	case EMsgType::MatchRoundChange:
+		MsgLineButton->Msg->SetText(FText::Format(LOCTEXT("MatchRoundChange", "Match round change to {0}"), FText::FromString(Msg)));
+		MsgLineButton->Msg->SetColorAndOpacity(C_YELLOW);
+		break;
+	case EMsgType::MatchTimeChange:
+		MsgLineButton->Msg->SetText(FText::Format(LOCTEXT("MatchTimeChange", "Match time change to {0}"), FText::FromString(Msg)));
 		MsgLineButton->Msg->SetColorAndOpacity(C_YELLOW);
 		break;
 	}

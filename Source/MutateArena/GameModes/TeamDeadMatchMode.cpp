@@ -11,6 +11,14 @@ void ATeamDeadMatchMode::BeginPlay()
 {
 	Super::BeginPlay();
 
+	if (UEOSSubsystem* EOSSubsystem = GetGameInstance()->GetSubsystem<UEOSSubsystem>())
+	{
+		if (EOSSubsystem->GetLobbyMatchTime() > 0)
+		{
+			MatchTime = 60.f * EOSSubsystem->GetLobbyMatchTime();
+		}
+	}
+
 	// 不包括Standalone
 	if (GetWorld()->WorldType == EWorldType::PIE)
 	{
@@ -108,8 +116,7 @@ void ATeamDeadMatchMode::HandleSpawn(AController* Controller)
 	{
 		ETeam Team = ETeam::NoTeam;
 
-		if (EOSSubsystem == nullptr) EOSSubsystem = GetGameInstance()->GetSubsystem<UEOSSubsystem>();
-		if (EOSSubsystem)
+		if (UEOSSubsystem* EOSSubsystem = GetGameInstance()->GetSubsystem<UEOSSubsystem>())
 		{
 			Team = EOSSubsystem->GetMemberTeam(EOSSubsystem->GetMemberByPlayerName(Controller->PlayerState->GetPlayerName()));
 		}

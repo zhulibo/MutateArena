@@ -52,6 +52,14 @@ protected:
 	UCommonComboBox* MapComboBox;
 	UFUNCTION()
 	void OnMapComboBoxChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
+	UPROPERTY(meta = (BindWidget))
+	UCommonComboBox* MatchRoundComboBox;
+	UFUNCTION()
+	void OnMatchRoundComboBoxChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
+	UPROPERTY(meta = (BindWidget))
+	UCommonComboBox* MatchTimeComboBox;
+	UFUNCTION()
+	void OnMatchTimeComboBoxChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
 
 	void OnModifyLobbyAttrComplete(bool bWasSuccessful);
 	void OnLobbyAttrChanged(const FLobbyAttributesChanged& LobbyAttributesChanged);

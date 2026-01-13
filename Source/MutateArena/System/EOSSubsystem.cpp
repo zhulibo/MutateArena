@@ -215,7 +215,9 @@ void UEOSSubsystem::CreateLobby()
 	Params.Attributes.Emplace(LOBBY_VERSION, ULibraryCommon::GetProjectVersion());
 	Params.Attributes.Emplace(LOBBY_SERVER_NAME, FString(TEXT("Default Name")));
 	Params.Attributes.Emplace(LOBBY_MODE_NAME, MUTATION);
-	Params.Attributes.Emplace(LOBBY_MAP_NAME, FString(TEXT("Colosseum")));
+	Params.Attributes.Emplace(LOBBY_MAP_NAME, FString(TEXT("Dust")));
+	Params.Attributes.Emplace(LOBBY_MATCH_ROUND, static_cast<int64>(DEFAULT_MATCH_ROUND));
+	Params.Attributes.Emplace(LOBBY_MATCH_TIME, static_cast<int64>(DEFAULT_MATCH_TIME));
 	Params.Attributes.Emplace(LOBBY_STATUS, static_cast<int64>(0));
 	Params.UserAttributes.Emplace(LOBBY_MEMBER_NAME, UserInfo->DisplayName);
 	Params.UserAttributes.Emplace(LOBBY_MEMBER_TEAM, static_cast<int64>(1));
@@ -281,7 +283,8 @@ void UEOSSubsystem::FindLobbies(FString LobbyName, FString GameMode, FString Map
 			MapName
 		});
 	}
-
+	// TODO 添加Status
+	
 	LobbyPtr->FindLobbies(MoveTemp(Params))
 	.OnComplete([this](const TOnlineResult<FFindLobbies>& Result)
 	{
@@ -647,6 +650,32 @@ FString UEOSSubsystem::GetLobbyMapName()
 	return FString();
 }
 
+int64 UEOSSubsystem::GetLobbyMatchRound()
+{
+	if (CurLobby)
+	{
+		if (const FSchemaVariant* Attr = CurLobby->Attributes.Find(LOBBY_MATCH_ROUND))
+		{
+			return Attr->GetInt64();
+		}
+	}
+	
+	return 0;
+}
+
+int64 UEOSSubsystem::GetLobbyMatchTime()
+{
+	if (CurLobby)
+	{
+		if (const FSchemaVariant* Attr = CurLobby->Attributes.Find(LOBBY_MATCH_TIME))
+		{
+			return Attr->GetInt64();
+		}
+	}
+	
+	return 0;
+}
+
 int64 UEOSSubsystem::GetLobbyStatus()
 {
 	if (CurLobby)
@@ -866,16 +895,16 @@ void UEOSSubsystem::ReadUserFile(FString Filename)
 	Params.Filename = Filename;
 
 	UserFilePtr->ReadFile(MoveTemp(Params))
-	.OnComplete([this](const TOnlineResult<FUserFileReadFile>& Result)
+	.OnComplete([this, Filename](const TOnlineResult<FUserFileReadFile>& Result)
 	{
 		if (Result.IsOk())
 		{
-			OnReadUserFileComplete.Broadcast(true, Result.GetOkValue().FileContents);
+			OnReadUserFileComplete.Broadcast(true, Result.GetOkValue().FileContents, Filename);
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("ReadUserFile %s"), *Result.GetErrorValue().GetLogString());
-			OnReadUserFileComplete.Broadcast(false, FUserFileContentsRef());
+			UE_LOG(LogTemp, Error, TEXT("ReadUserFile %s %s"), *Filename, *Result.GetErrorValue().GetLogString());
+			OnReadUserFileComplete.Broadcast(false, FUserFileContentsRef(), Filename);
 		}
 	});
 }
@@ -961,16 +990,16 @@ void UEOSSubsystem::ReadTitleFile(FString Filename)
 	Params.Filename = Filename;
 
 	TitleFilePtr->ReadFile(MoveTemp(Params))
-	.OnComplete([this](const TOnlineResult<FTitleFileReadFile>& Result)
+	.OnComplete([this, Filename](const TOnlineResult<FTitleFileReadFile>& Result)
 	{
 		if (Result.IsOk())
 		{
-			OnReadTitleFileComplete.Broadcast(true, Result.GetOkValue().FileContents);
+			OnReadTitleFileComplete.Broadcast(true, Result.GetOkValue().FileContents, Filename);
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("ReadTitleFile %s"), *Result.GetErrorValue().GetLogString());
-			OnReadTitleFileComplete.Broadcast(false, MakeShared<TArray<uint8>>());
+			UE_LOG(LogTemp, Error, TEXT("ReadTitleFile %s %s"), *Filename, *Result.GetErrorValue().GetLogString());
+			OnReadTitleFileComplete.Broadcast(false, MakeShared<TArray<uint8>>(), Filename);
 		}
 	});
 }
@@ -1065,7 +1094,6 @@ void UEOSSubsystem::QueryEntitlements()
 	CommercePtr->QueryEntitlements(MoveTemp(Params))
 	.OnComplete([this](const TOnlineResult<FCommerceQueryEntitlements>& Result)
 	{
-		
 		if (Result.IsOk())
 		{
 			OnQueryEntitlementsComplete.Broadcast(true);

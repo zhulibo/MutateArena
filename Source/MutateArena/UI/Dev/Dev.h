@@ -30,6 +30,6 @@ protected:
 	UPROPERTY()
 	FString TitleFile_KnownIssues = TEXT("KnownIssues");
 	void OnEnumerateTitleFilesComplete(bool bWasSuccessful);
-	void OnReadTitleFileComplete(bool bWasSuccessful, const UE::Online::FTitleFileContentsRef& FileContents);
+	void OnReadTitleFileComplete(bool bWasSuccessful, const UE::Online::FTitleFileContentsRef& FileContents, const FString& Filename);
 
 };

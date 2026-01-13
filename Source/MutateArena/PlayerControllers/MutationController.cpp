@@ -250,10 +250,10 @@ void AMutationController::InitMutantHUD()
 		SetHUDTeamNum(MutationGameState->GetPlayerStates(ETeam::Team2).Num(), ETeam::Team2);
 		SetHUDRage(MutationPlayerState->Rage);
 
-		if (MutationPlayerState->GetASC())
+		if (MutationPlayerState->GetAbilitySystemComponent())
 		{
 			FGameplayTag Tag = FGameplayTag::RequestGameplayTag(TAG_MUTANT_SKILL_CD);
-			int32 TagCount = MutationPlayerState->GetASC()->GetTagCount(Tag);
+			int32 TagCount = MutationPlayerState->GetAbilitySystemComponent()->GetTagCount(Tag);
 			ShowHUDSkill(TagCount == 0.f && MutationPlayerState->GetCharacterLevel() >= 2.f);
 		}
 	}

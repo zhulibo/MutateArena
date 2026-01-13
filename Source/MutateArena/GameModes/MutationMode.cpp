@@ -21,6 +21,7 @@
 #include "GameFramework/PlayerStart.h"
 #include "MutateArena/Equipments/Herbs/HerbRage.h"
 #include "MutateArena/Equipments/Herbs/HerbRepelReceived.h"
+#include "MutateArena/System/EOSSubsystem.h"
 
 namespace MatchState
 {
@@ -30,6 +31,14 @@ namespace MatchState
 void AMutationMode::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (UEOSSubsystem* EOSSubsystem = GetGameInstance()->GetSubsystem<UEOSSubsystem>())
+	{
+		if (EOSSubsystem->GetLobbyMatchRound() > 0)
+		{
+			TotalRound = EOSSubsystem->GetLobbyMatchRound();
+		}
+	}
 
 	if (GetWorld()->WorldType == EWorldType::PIE)
 	{

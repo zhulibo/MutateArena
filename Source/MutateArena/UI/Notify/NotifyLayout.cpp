@@ -18,13 +18,14 @@ void UNotifyLayout::AddNotify(const FColor DisplayColor, const FText& Msg)
 	if (NotifyLineButton == nullptr) return;
 
 	NotifyLineButton->Notify->SetText(Msg);
-	NotifyLineButton->Notify->SetColorAndOpacity(DisplayColor);
 	
 	if (UVerticalBoxSlot* NewSlot = Cast<UVerticalBoxSlot>(NotifyContainer->AddChild(NotifyLineButton)))
 	{
 		NewSlot->SetPadding(FMargin(0, 5, 0, 5));
 	}
 
+	NotifyLineButton->Notify->SetColorAndOpacity(DisplayColor);
+	
 	if (NotifyContainer->GetChildrenCount() > 6)
 	{
 		NotifyContainer->RemoveChildAt(0);

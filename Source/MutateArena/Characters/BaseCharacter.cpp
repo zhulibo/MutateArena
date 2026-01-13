@@ -333,7 +333,7 @@ void ABaseCharacter::InitAbilityActorInfo()
 	if (BasePlayerState == nullptr) BasePlayerState = GetPlayerState<ABasePlayerState>();
 	if (BasePlayerState)
 	{
-		ASC = Cast<UMAAbilitySystemComponent>(BasePlayerState->GetASC());
+		ASC = Cast<UMAAbilitySystemComponent>(BasePlayerState->GetAbilitySystemComponent());
 		if (ASC)
 		{
 			ASC->InitAbilityActorInfo(BasePlayerState, this);
@@ -351,7 +351,7 @@ void ABaseCharacter::OnASCInit()
 	}
 }
 
-UAbilitySystemComponent* ABaseCharacter::GetASC() const
+UAbilitySystemComponent* ABaseCharacter::GetAbilitySystemComponent() const
 {
 	return ASC;
 }
@@ -617,7 +617,7 @@ void ABaseCharacter::InteractTriggered(const FInputActionValue& Value)
 	}
 }
 
-// 在服务端通知交互目标被交互了，以便复制到所有客户端。
+// 在服务端通知交互目标被交互了，以便复制到所有客户端（InteractTriggered中Target不是本地不能RPC）。
 void ABaseCharacter::ServerInteractTriggered_Implementation(AActor* TempInteractTarget)
 {
 	if (IInteractableTarget* Target = Cast<IInteractableTarget>(TempInteractTarget))

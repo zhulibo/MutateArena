@@ -119,4 +119,7 @@ public:
 	UFUNCTION(Server, Reliable)
 	void ServerSendMsg(EMsgType MsgType, ETeam Team, const FString& PlayerName, const FString& Msg = FString());
 	
+	UFUNCTION()
+	void GiveEquipment(FString EquipmentName);
+	
 };

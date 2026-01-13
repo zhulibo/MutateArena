@@ -13,11 +13,16 @@ enum class EMsgType : uint8
 	Radio,
 	Join,
 	Left,
+	Kicked,
+	Disconnected,
+	Closed,
 	Start,
 	HostChange,
 	ServerNameChange,
 	ModeNameChange,
 	MapNameChange,
+	MatchRoundChange,
+	MatchTimeChange,
 };
 
 UCLASS()

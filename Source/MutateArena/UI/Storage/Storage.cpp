@@ -114,8 +114,10 @@ void UStorage::OnEnumerateUserFilesComplete(bool bWasSuccessful)
 }
 
 // 读取存档文件完成
-void UStorage::OnReadUserFileComplete(bool bWasSuccessful, const FUserFileContentsRef& FileContents)
+void UStorage::OnReadUserFileComplete(bool bWasSuccessful, const FUserFileContentsRef& FileContents, const FString& Filename)
 {
+	if (Filename != StorageSubsystem->SlotLoadout) return;
+	
 	if (StorageSubsystem == nullptr) StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
 	if (StorageSubsystem == nullptr) return;
 

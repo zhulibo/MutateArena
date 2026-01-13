@@ -30,8 +30,6 @@ ABaseMode::ABaseMode()
 void ABaseMode::BeginPlay()
 {
 	Super::BeginPlay();
-
-	EOSSubsystem = GetGameInstance()->GetSubsystem<UEOSSubsystem>();
 	
 	LevelStartTime = GetWorld()->GetTimeSeconds();
 }
@@ -276,8 +274,7 @@ void ABaseMode::AddKillLog(ABasePlayerState* AttackerState, AActor* DamageCauser
 // 修改大厅状态
 void ABaseMode::ChangeLobbyStatus(int64 Status)
 {
-	if (EOSSubsystem == nullptr) EOSSubsystem = GetGameInstance()->GetSubsystem<UEOSSubsystem>();
-	if (EOSSubsystem)
+	if (UEOSSubsystem* EOSSubsystem = GetGameInstance()->GetSubsystem<UEOSSubsystem>())
 	{
 		EOSSubsystem->ModifyLobbyAttr(TMap<UE::Online::FSchemaAttributeId, UE::Online::FSchemaVariant>{
 			{LOBBY_STATUS, Status},

@@ -54,12 +54,12 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FOnLeaveLobbyComplete, bool bWasSuccessful);
 
 // UserFile
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnEnumerateUserFilesComplete, bool bWasSuccessful);
-DECLARE_MULTICAST_DELEGATE_TwoParams(FOnReadUserFileComplete, bool bWasSuccessful, const FUserFileContentsRef& FileContents);
+DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnReadUserFileComplete, bool bWasSuccessful, const FUserFileContentsRef& FileContents, const FString& Filename);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnWriteUserFileComplete, bool bWasSuccessful);
 
 // TitleFile
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnEnumerateTitleFilesComplete, bool bWasSuccessful);
-DECLARE_MULTICAST_DELEGATE_TwoParams(FOnReadTitleFileComplete, bool bWasSuccessful, const FTitleFileContentsRef& FileContents);
+DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnReadTitleFileComplete, bool bWasSuccessful, const FTitleFileContentsRef& FileContents, const FString& Filename);
 
 // Commerce
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnQueryOffersComplete, bool bWasSuccessful);
@@ -147,6 +147,8 @@ public:
 	FString GetLobbyServerName();
 	FString GetLobbyModeName();
 	FString GetLobbyMapName();
+	int64 GetLobbyMatchRound();
+	int64 GetLobbyMatchTime();
 	// Status代表游戏当前回合数，未开始时是0
 	int64 GetLobbyStatus();
 

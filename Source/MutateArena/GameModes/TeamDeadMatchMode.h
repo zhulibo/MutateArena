@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "BaseMode.h"
+#include "MutateArena/MutateArena.h"
 #include "TeamDeadMatchMode.generated.h"
 
 UCLASS()
@@ -13,7 +14,7 @@ public:
 	UPROPERTY(EditAnywhere)
 	float WarmupTime = 10.f;
 	UPROPERTY(EditAnywhere)
-	float MatchTime = 600.f;
+	float MatchTime = 60.f * DEFAULT_MATCH_TIME;
 	UPROPERTY(EditAnywhere)
 	float CooldownTime =10.f;
 

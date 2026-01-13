@@ -224,11 +224,11 @@ void UServer::OnFindLobbiesComplete(bool bWasSuccessful, const TArray<TSharedRef
 				int64 MaxStatus = -1;
 				if (ModeName == MUTATION)
 				{
-					MaxStatus = 12; // 12回合
+					MaxStatus = Lobbies[i]->Attributes.Find(LOBBY_MATCH_ROUND)->GetInt64();
 				}
 				else if (ModeName == TEAM_DEAD_MATCH || ModeName == MELEE)
 				{
-					MaxStatus = 10; // 10分钟
+					MaxStatus = Lobbies[i]->Attributes.Find(LOBBY_MATCH_TIME)->GetInt64();
 				}
 				ServerLineButton->Status->SetText(FText::FromString(FString::Printf(TEXT("%lld/%lld"), Status, MaxStatus)));
 				

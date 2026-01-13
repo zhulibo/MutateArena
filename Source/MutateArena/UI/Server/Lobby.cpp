@@ -26,6 +26,8 @@ void ULobby::NativeOnInitialized()
 	ServerNameEditableTextBox->OnTextCommitted.AddUniqueDynamic(this, &ThisClass::OnServerNameCommitted);
 	ModeComboBox->OnSelectionChanged.AddUniqueDynamic(this, &ThisClass::OnModeComboBoxChanged);
 	MapComboBox->OnSelectionChanged.AddUniqueDynamic(this, &ThisClass::OnMapComboBoxChanged);
+	MatchRoundComboBox->OnSelectionChanged.AddUniqueDynamic(this, &ThisClass::OnMatchRoundComboBoxChanged);
+	MatchTimeComboBox->OnSelectionChanged.AddUniqueDynamic(this, &ThisClass::OnMatchTimeComboBoxChanged);
 
 	SwitchTeamButton->OnClicked().AddUObject(this, &ThisClass::OnSwitchTeamButtonClicked);
 
@@ -117,6 +119,22 @@ void ULobby::SetUIAttr()
 	GetWorld()->GetTimerManager().SetTimerForNextTick([this]() {
 		MapComboBox->SetSelectedOption(EOSSubsystem->GetLobbyMapName());
 	});
+	
+	MatchRoundComboBox->ClearOptions();
+	MatchRoundComboBox->AddOption(FString::FromInt(6));
+	MatchRoundComboBox->AddOption(FString::FromInt(9));
+	MatchRoundComboBox->AddOption(FString::FromInt(DEFAULT_MATCH_ROUND));
+	MatchRoundComboBox->AddOption(FString::FromInt(15));
+	MatchRoundComboBox->AddOption(FString::FromInt(18));
+	MatchRoundComboBox->SetSelectedOption(FString::FromInt(EOSSubsystem->GetLobbyMatchRound()));
+	
+	MatchTimeComboBox->ClearOptions();
+	MatchTimeComboBox->AddOption(FString::FromInt(6));
+	MatchTimeComboBox->AddOption(FString::FromInt(8));
+	MatchTimeComboBox->AddOption(FString::FromInt(DEFAULT_MATCH_TIME));
+	MatchTimeComboBox->AddOption(FString::FromInt(15));
+	MatchTimeComboBox->AddOption(FString::FromInt(25));
+	MatchTimeComboBox->SetSelectedOption(FString::FromInt(EOSSubsystem->GetLobbyMatchTime()));
 }
 
 // 设置按钮状态
@@ -130,6 +148,8 @@ void ULobby::SetUIButtonState()
 		ServerNameEditableTextBox->SetIsReadOnly(false);
 		ModeComboBox->SetIsEnabled(true);
 		MapComboBox->SetIsEnabled(true);
+		MatchRoundComboBox->SetIsEnabled(true);
+		MatchTimeComboBox->SetIsEnabled(true);
 
 		StartServerButton->SetIsEnabled(true);
 		// 如果之前不是房主且焦点在准备或加入按钮上，变成房主后把焦点放在开始按钮上（准备和加入按钮会被禁用）
@@ -146,6 +166,8 @@ void ULobby::SetUIButtonState()
 		ServerNameEditableTextBox->SetIsReadOnly(true);
 		ModeComboBox->SetIsEnabled(false);
 		MapComboBox->SetIsEnabled(false);
+		MatchRoundComboBox->SetIsEnabled(false);
+		MatchTimeComboBox->SetIsEnabled(false);
 
 		JoinServerButton->SetIsEnabled(EOSSubsystem->GetLobbyStatus() != 0);
 		ReadyButton->SetIsEnabled(EOSSubsystem->GetLobbyStatus() == 0);
@@ -284,6 +306,15 @@ void ULobby::InitMapComboBox()
 			FString EnumValue = ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(static_cast<EMutationMap>(i)));
 			MapComboBox->AddOption(EnumValue);
 		}
+
+		if (UPanelWidget* ParentWidget = MatchRoundComboBox->GetParent())
+		{
+			ParentWidget->SetVisibility(ESlateVisibility::Visible);
+		}
+		if (UPanelWidget* ParentWidget = MatchTimeComboBox->GetParent())
+		{
+			ParentWidget->SetVisibility(ESlateVisibility::Collapsed);
+		}
 	}
 	else if (ModeComboBox->GetSelectedOption() == MELEE)
 	{
@@ -292,6 +323,15 @@ void ULobby::InitMapComboBox()
 			FString EnumValue = ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(static_cast<EMeleeMap>(i)));
 			MapComboBox->AddOption(EnumValue);
 		}
+		
+		if (UPanelWidget* ParentWidget = MatchRoundComboBox->GetParent())
+		{
+			ParentWidget->SetVisibility(ESlateVisibility::Collapsed);
+		}
+		if (UPanelWidget* ParentWidget = MatchTimeComboBox->GetParent())
+		{
+			ParentWidget->SetVisibility(ESlateVisibility::Visible);
+		}
 	}
 	else if (ModeComboBox->GetSelectedOption() == TEAM_DEAD_MATCH)
 	{
@@ -299,6 +339,15 @@ void ULobby::InitMapComboBox()
 		{
 			FString EnumValue = ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(static_cast<ETeamDeadMatchMap>(i)));
 			MapComboBox->AddOption(EnumValue);
+		}
+		
+		if (UPanelWidget* ParentWidget = MatchRoundComboBox->GetParent())
+		{
+			ParentWidget->SetVisibility(ESlateVisibility::Collapsed);
+		}
+		if (UPanelWidget* ParentWidget = MatchTimeComboBox->GetParent())
+		{
+			ParentWidget->SetVisibility(ESlateVisibility::Visible);
 		}
 	}
 }
@@ -373,6 +422,36 @@ void ULobby::OnMapComboBoxChanged(FString SelectedItem, ESelectInfo::Type Select
 	}
 }
 
+void ULobby::OnMatchRoundComboBoxChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
+{
+	UE_LOG(LogTemp, Warning, TEXT("OnMatchRoundComboBoxChanged, %s"), *SelectedItem);
+
+	if (SelectedItem.IsEmpty()) return;
+
+	if (EOSSubsystem && EOSSubsystem->IsLobbyHost())
+	{
+		TMap<FSchemaAttributeId, FSchemaVariant> UpdatedAttributes;
+		int64 MatchRound = FCString::Atoi(*SelectedItem);
+		UpdatedAttributes.Add(LOBBY_MATCH_ROUND, MatchRound);
+		EOSSubsystem->ModifyLobbyAttr(UpdatedAttributes);
+	}
+}
+
+void ULobby::OnMatchTimeComboBoxChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
+{
+	UE_LOG(LogTemp, Warning, TEXT("OnMatchTimeComboBoxChanged, %s"), *SelectedItem);
+
+	if (SelectedItem.IsEmpty()) return;
+
+	if (EOSSubsystem && EOSSubsystem->IsLobbyHost())
+	{
+		TMap<FSchemaAttributeId, FSchemaVariant> UpdatedAttributes;
+		int64 MatchTime = FCString::Atoi(*SelectedItem);
+		UpdatedAttributes.Add(LOBBY_MATCH_TIME, MatchTime);
+		EOSSubsystem->ModifyLobbyAttr(UpdatedAttributes);
+	}
+}
+
 // 修改大厅属性完成事件
 void ULobby::OnModifyLobbyAttrComplete(bool bWasSuccessful)
 {
@@ -423,6 +502,24 @@ void ULobby::OnLobbyAttrChanged(const FLobbyAttributesChanged& LobbyAttributesCh
 			});
 			
 			TextChat->ShowMsg(EMsgType::MapNameChange, PlayerTeam, PlayerName, MapName);
+		}
+		else if (ChangedAttribute.Key == LOBBY_MATCH_ROUND)
+		{
+			FString MatchRound = FString::FromInt(ChangedAttribute.Value.Value.GetInt64());
+			GetWorld()->GetTimerManager().SetTimerForNextTick([this, MatchRound]() {
+				MatchRoundComboBox->SetSelectedOption(MatchRound);
+			});
+
+			TextChat->ShowMsg(EMsgType::MatchRoundChange, PlayerTeam, PlayerName, MatchRound);
+		}
+		else if (ChangedAttribute.Key == LOBBY_MATCH_TIME)
+		{
+			FString MatchTime = FString::FromInt(ChangedAttribute.Value.Value.GetInt64());
+			GetWorld()->GetTimerManager().SetTimerForNextTick([this, MatchTime]() {
+				MatchTimeComboBox->SetSelectedOption(MatchTime);
+			});
+
+			TextChat->ShowMsg(EMsgType::MatchTimeChange, PlayerTeam, PlayerName, MatchTime);
 		}
 		else if (ChangedAttribute.Key == LOBBY_STATUS)
 		{
@@ -673,8 +770,24 @@ void ULobby::OnLobbyMemberLeft(const FLobbyMemberLeft& LobbyMemberLeft)
 
 	if (EOSSubsystem)
 	{
+		EMsgType MsgType = EMsgType::Left;
+		switch (LobbyMemberLeft.Reason)
+		{
+		case ELobbyMemberLeaveReason::Left:
+			MsgType = EMsgType::Left;
+			break;
+		case ELobbyMemberLeaveReason::Kicked:
+			MsgType = EMsgType::Kicked;
+			break;
+		case ELobbyMemberLeaveReason::Disconnected:
+			MsgType = EMsgType::Disconnected;
+			break;
+		case ELobbyMemberLeaveReason::Closed:
+			MsgType = EMsgType::Closed;
+			break;
+		}
 		TextChat->ShowMsg(
-			EMsgType::Left,
+			MsgType,
 			EOSSubsystem->GetMemberTeam(LobbyMemberLeft.Member),
 			EOSSubsystem->GetMemberName(LobbyMemberLeft.Member)
 		);

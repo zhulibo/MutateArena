@@ -11,6 +11,14 @@ void AMeleeMode::BeginPlay()
 {
 	Super::BeginPlay();
 
+	if (UEOSSubsystem* EOSSubsystem = GetGameInstance()->GetSubsystem<UEOSSubsystem>())
+	{
+		if (EOSSubsystem->GetLobbyMatchTime() > 0)
+		{
+			MatchTime = 60.f * EOSSubsystem->GetLobbyMatchTime();
+		}
+	}
+	
 	if (GetWorld()->WorldType == EWorldType::PIE)
 	{
 		if (GetDefault<UDevSetting>()->bUseMutationSettings)
@@ -107,8 +115,7 @@ void AMeleeMode::HandleSpawn(AController* Controller)
 	{
 		ETeam Team = ETeam::NoTeam;
 
-		if (EOSSubsystem == nullptr) EOSSubsystem = GetGameInstance()->GetSubsystem<UEOSSubsystem>();
-		if (EOSSubsystem)
+		if (UEOSSubsystem* EOSSubsystem = GetGameInstance()->GetSubsystem<UEOSSubsystem>())
 		{
 			Team = EOSSubsystem->GetMemberTeam(EOSSubsystem->GetMemberByPlayerName(Controller->PlayerState->GetPlayerName()));
 		}

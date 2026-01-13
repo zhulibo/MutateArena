@@ -4,8 +4,9 @@ UENUM(BlueprintType)
 enum class ECoolGameMode : uint8
 {
 	Mutation,
+	// Cataclysm,
 	Melee,
-	TeamDeadMatch,
+	// TeamDeadMatch,
 
 	None
 };
@@ -13,9 +14,9 @@ enum class ECoolGameMode : uint8
 UENUM(BlueprintType)
 enum class EMutationMap : uint8
 {
-	Colosseum,
 	Dust,
 	Farm,
+	Playground,
 	Crossroads,
 
 	None

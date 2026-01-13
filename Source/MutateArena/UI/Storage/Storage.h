@@ -30,7 +30,7 @@ protected:
 
 	void OnQueryEntitlementsComplete(bool bWasSuccessful);
 	void OnEnumerateUserFilesComplete(bool bWasSuccessful);
-	void OnReadUserFileComplete(bool bWasSuccessful, const FUserFileContentsRef& FileContents);
+	void OnReadUserFileComplete(bool bWasSuccessful, const FUserFileContentsRef& FileContents, const FString& Filename);
 	void InitPlayerConfig(class USaveGameLoadout* SaveGameLoadout);
 	bool HasEquipment(EEquipmentName EquipmentName, EEquipmentType EquipmentType);
 	bool HasHumanCharacter(EHumanCharacterName HumanCharacterName);

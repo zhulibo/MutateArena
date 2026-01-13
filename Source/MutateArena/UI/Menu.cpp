@@ -103,9 +103,10 @@ void UMenu::OnEnumerateTitleFilesComplete(bool bWasSuccessful)
 	}
 }
 
-void UMenu::OnReadTitleFileComplete(bool bWasSuccessful, const FTitleFileContentsRef& FileContents)
+void UMenu::OnReadTitleFileComplete(bool bWasSuccessful, const FTitleFileContentsRef& FileContents, const FString& Filename)
 {
 	if (!bWasSuccessful) return;
+	if (Filename != TitleFile_Message) return;
 
 	FString JsonString;
 	FFileHelper::BufferToString(JsonString, FileContents->GetData(), FileContents->Num());
@@ -114,7 +115,6 @@ void UMenu::OnReadTitleFileComplete(bool bWasSuccessful, const FTitleFileContent
 	TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(JsonString);
 	if (FJsonSerializer::Deserialize(Reader, JsonObject) && JsonObject.IsValid())
 	{
-		if (JsonObject->GetStringField(TEXT("FileName")) != TitleFile_Message) return;
 		// UE_LOG(LogTemp, Log, TEXT("JsonString %s"), *JsonString);
 		
 		const FString StartTimeString = JsonObject->GetStringField(TEXT("StartTime"));
@@ -133,7 +133,7 @@ void UMenu::OnReadTitleFileComplete(bool bWasSuccessful, const FTitleFileContent
 
 		if (IsBeijingTimeInRange(StartTimeString, EndTimeString))
 		{
-			MessageBox->SetVisibility(ESlateVisibility::Visible);
+			MessageBox->SetVisibility(ESlateVisibility::HitTestInvisible);
 			Message->SetText(FText::FromString(Content));
 			
 			FColor Color = C_WHITE;
