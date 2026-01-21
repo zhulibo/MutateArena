@@ -61,25 +61,30 @@ void AMutationPlayerState::OnRep_Team()
 void AMutationPlayerState::AddDamage(float TempDamage)
 {
 	Super::AddDamage(TempDamage);
-
-	Show1000DamageUI();
 }
 
 void AMutationPlayerState::OnRep_Damage()
 {
 	Super::OnRep_Damage();
-
-	Show1000DamageUI();
 }
 
-void AMutationPlayerState::Show1000DamageUI()
+void AMutationPlayerState::ClientOnAddDamage_Implementation(float TempDamage)
 {
+	Super::ClientOnAddDamage_Implementation(TempDamage);
+	
+	Show1000DamageUI(TempDamage);
+}
+
+void AMutationPlayerState::Show1000DamageUI(float TempDamage)
+{
+	BaseDamage += TempDamage;
+	
 	if (MutationController == nullptr) MutationController = Cast<AMutationController>(GetOwner());
 	if (MutationController && MutationController->IsLocalController())
 	{
-		if (Damage - BaseDamage >= 1000)
+		if (BaseDamage >= 1000.f)
 		{
-			BaseDamage = FMath::FloorToInt(Damage / 1000.f) * 1000;
+			BaseDamage -= 1000.f;
 
 			MutationController->OnCause1000Damage.Broadcast();
 		}

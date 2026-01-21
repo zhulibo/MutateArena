@@ -43,4 +43,15 @@ protected:
 	class USpectator* Spectator;
 	void OnHUDStateChange(EHUDState HUDState);
 
+	UPROPERTY(Transient)
+	TArray<class UDamageLogLine*> DamageLogPool;
+	UDamageLogLine* GetPooledDamageLog();
+	void ReturnToPool(UDamageLogLine* Widget);
+	UPROPERTY(meta = (BindWidget))
+	class UVerticalBox* DamageLogContainer;
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class UDamageLogLine> DamageLogLineClass;
+	void OnCauseDamage(float Num);
+	FTimerHandle DamageLogTimerHandle;
+	
 };

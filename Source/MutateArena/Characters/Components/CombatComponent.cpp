@@ -86,6 +86,10 @@ void UCombatComponent::TraceUnderCrosshair(FHitResult& TraceHitResult)
 	{
 		FVector Start = Position + Direction * 100.f;
 		FVector End = Start + Direction * TRACE_LENGTH;
+		
+		FCollisionQueryParams Params;
+		Params.AddIgnoredActor(HumanCharacter);
+		Params.AddIgnoredActor(GetCurEquipment());
 		GetWorld()->LineTraceSingleByChannel(TraceHitResult, Start, End, ECollisionChannel::ECC_Visibility);
 		if (!TraceHitResult.bBlockingHit)
 		{

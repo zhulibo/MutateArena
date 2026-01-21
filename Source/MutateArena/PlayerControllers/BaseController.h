@@ -29,6 +29,7 @@ DECLARE_MULTICAST_DELEGATE(FOnInteractStarted);
 DECLARE_MULTICAST_DELEGATE(FOnInteractEnded);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnHUDStateChange, EHUDState HUDState);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnViewTargetChange, AActor* ViewTarget);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnCauseDamage, float TempDamage);
 
 UCLASS()
 class MUTATEARENA_API ABaseController : public AModularPlayerController
@@ -58,6 +59,7 @@ public:
 	FOnInteractEnded OnInteractEnded;
 	FOnHUDStateChange OnHUDStateChange;
 	FOnViewTargetChange OnViewTargetChange;
+	FOnCauseDamage OnCauseDamage;
 	
 protected:
 	virtual void BeginPlay() override;

@@ -347,8 +347,10 @@ void AMutationMode::HumanReceiveDamage(AHumanCharacter* DamagedCharacter, ABaseC
 	{
 		// 增加攻击者怒气值
 		AttackerState->SetRage(AttackerState->Rage + Damage * 10);
+		// 增加攻击者伤害分数
+		AttackerState->AddDamage(TakenDamage);
 	}
-
+	
 	// 人类死亡
 	if (DamagedCharacter->GetHealth() <= 0.f)
 	{
@@ -473,12 +475,11 @@ void AMutationMode::MutantReceiveDamage(AMutantCharacter* DamagedCharacter, ABas
 	DamagedCharacter->SetHealth(Health);
 	DamagedCharacter->MulticastSetHealth(Health, AttackerController);
 
-	// 增加怒气值
-	DamagedState->SetRage(DamagedState->Rage + TakenDamage);
-
-	// 增加攻击者伤害分数
 	if (AttackerState != DamagedState) // 受到跌落伤害时，AttackerController和DamageCauser传的是自己
 	{
+		// 增加怒气值
+		DamagedState->SetRage(DamagedState->Rage + TakenDamage);
+		// 增加攻击者伤害分数
 		AttackerState->AddDamage(TakenDamage);
 	}
 

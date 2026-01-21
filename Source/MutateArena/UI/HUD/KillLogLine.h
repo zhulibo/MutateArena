@@ -1,11 +1,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "CommonButtonBase.h"
+#include "CommonUserWidget.h"
 #include "KillLogLine.generated.h"
 
 UCLASS()
-class MUTATEARENA_API UKillLogLine : public UCommonButtonBase
+class MUTATEARENA_API UKillLogLine : public UCommonUserWidget
 {
 	GENERATED_BODY()
 

@@ -78,7 +78,11 @@ public:
 protected:
 	UFUNCTION()
 	virtual void OnRep_Damage();
-
+	UFUNCTION(Client, Reliable)
+	void ClientOnAddDamage(float TempDamage); // 使用RPC快速显示UI
+	virtual void ClientOnAddDamage_Implementation(float TempDamage);
+	void ShowDamageUI(float TempDamage);
+	
 public:
 	UPROPERTY(ReplicatedUsing = OnRep_Death)
 	int32 Death = 0;

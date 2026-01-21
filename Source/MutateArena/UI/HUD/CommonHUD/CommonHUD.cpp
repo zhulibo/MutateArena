@@ -2,6 +2,7 @@
 
 #include "CommonHierarchicalScrollBox.h"
 #include "CommonTextBlock.h"
+#include "DamageLogLine.h"
 #include "MutateArena/UI/HUD/KillLogLine.h"
 #include "Spectator.h"
 #include "MutateArena/MutateArena.h"
@@ -26,6 +27,7 @@ void UCommonHUD::NativeOnInitialized()
 		BaseController->ChangeAnnouncement.AddUObject(this, &ThisClass::OnAnnouncementChange);
 		BaseController->OnKillStreakChange.AddUObject(this, &ThisClass::OnKillStreakChange);
 		BaseController->OnHUDStateChange.AddUObject(this, &ThisClass::OnHUDStateChange);
+		BaseController->OnCauseDamage.AddUObject(this, &ThisClass::OnCauseDamage);
 	}
 
 	if (ABaseGameState* BaseGameState = GetWorld()->GetGameState<ABaseGameState>())
@@ -123,6 +125,99 @@ void UCommonHUD::OnHUDStateChange(EHUDState HUDState)
 	{
 		Spectator->SetVisibility(ESlateVisibility::Collapsed);
 	}
+}
+
+UDamageLogLine* UCommonHUD::GetPooledDamageLog()
+{
+	if (DamageLogPool.Num() > 0)
+	{
+		if (UDamageLogLine* PooledWidget = DamageLogPool.Pop())
+		{
+			return PooledWidget;
+		}
+	}
+	UE_LOG(LogTemp, Warning, TEXT("[UCommonHUD::GetPooledDamageLog] DamageLogPool is empty!"));
+	return CreateWidget<UDamageLogLine>(this, DamageLogLineClass);
+}
+
+void UCommonHUD::ReturnToPool(UDamageLogLine* Widget)
+{
+	if (Widget)
+	{
+		if (Widget->GetParent())
+		{
+			Widget->RemoveFromParent();
+		}
+
+		DamageLogPool.AddUnique(Widget); // 使用 AddUnique 防止重复回收
+	}
+}
+
+void UCommonHUD::OnCauseDamage(float Num)
+{
+	if (!DamageLogContainer || !DamageLogLineClass) return;
+
+    UDamageLogLine* NewDamageLog = GetPooledDamageLog();
+    if (!NewDamageLog) return;
+
+    static FNumberFormattingOptions Opts;
+    static bool bOptsInitialized = false;
+    if (!bOptsInitialized)
+    {
+        Opts.RoundingMode = ERoundingMode::ToNegativeInfinity;
+        Opts.SetUseGrouping(false);
+        Opts.SetMaximumFractionalDigits(0);
+        bOptsInitialized = true;
+    }
+    FText NumericText = FText::AsNumber(Num, &Opts);
+    NewDamageLog->Damage->SetText(FText::Format(FText::FromString(TEXT("+{0}")), NumericText));
+
+	// InsertChildAt无效，暴力重排
+    TArray<UDamageLogLine*> OldActiveWidgets;
+    int32 CurrentCount = DamageLogContainer->GetChildrenCount();
+    for (int32 i = 0; i < CurrentCount; i++)
+    {
+        if (UDamageLogLine* OldWidget = Cast<UDamageLogLine>(DamageLogContainer->GetChildAt(i)))
+        {
+            OldActiveWidgets.Add(OldWidget);
+        }
+    }
+	
+    DamageLogContainer->ClearChildren();
+	
+    DamageLogContainer->AddChild(NewDamageLog);
+    NewDamageLog->Damage->SetColorAndOpacity(C_YELLOW);
+	
+    int32 MaxOldItems = 3;
+    for (int32 i = 0; i < OldActiveWidgets.Num(); i++)
+    {
+        if (i < MaxOldItems)
+        {
+            DamageLogContainer->AddChild(OldActiveWidgets[i]);
+			OldActiveWidgets[i]->Damage->SetColorAndOpacity(C_YELLOW);
+        }
+        else
+        {
+            ReturnToPool(OldActiveWidgets[i]);
+        }
+    }
+
+    GetWorld()->GetTimerManager().SetTimer(DamageLogTimerHandle, [this]()
+    {
+        if (!DamageLogContainer) return;
+        
+        while (DamageLogContainer->GetChildrenCount() > 0)
+        {
+            if (UDamageLogLine* ActiveWidget = Cast<UDamageLogLine>(DamageLogContainer->GetChildAt(0)))
+            {
+                ReturnToPool(ActiveWidget);
+            }
+            else
+            {
+                DamageLogContainer->RemoveChildAt(0);
+            }
+        }
+    }, 3.f, false);
 }
 
 #undef LOCTEXT_NAMESPACE

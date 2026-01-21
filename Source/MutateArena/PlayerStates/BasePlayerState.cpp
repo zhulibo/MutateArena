@@ -167,10 +167,26 @@ void ABasePlayerState::SetMutantCharacterName(EMutantCharacterName Name)
 void ABasePlayerState::AddDamage(float TempDamage)
 {
 	Damage += TempDamage;
+	
+	ClientOnAddDamage(TempDamage);
 }
 
 void ABasePlayerState::OnRep_Damage()
 {
+}
+
+void ABasePlayerState::ClientOnAddDamage_Implementation(float TempDamage)
+{
+	ShowDamageUI(TempDamage);
+}
+
+void ABasePlayerState::ShowDamageUI(float TempDamage)
+{
+	if (BaseController == nullptr) BaseController = Cast<ABaseController>(GetOwner());
+	if (BaseController && BaseController->IsLocalController())
+	{
+		BaseController->OnCauseDamage.Broadcast(TempDamage);
+	}
 }
 
 void ABasePlayerState::AddDeath()

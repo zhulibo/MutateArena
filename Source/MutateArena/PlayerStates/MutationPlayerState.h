@@ -32,8 +32,9 @@ public:
 	virtual void AddDamage(float TempDamage) override;
 protected:
 	virtual void OnRep_Damage() override;
-	float BaseDamage = 0;
-	void Show1000DamageUI();
+	virtual void ClientOnAddDamage_Implementation(float TempDamage) override;
+	float BaseDamage = 0.f; 
+	void Show1000DamageUI(float TempDamage);
 	
 public:
 	UPROPERTY(ReplicatedUsing = OnRep_Rage)

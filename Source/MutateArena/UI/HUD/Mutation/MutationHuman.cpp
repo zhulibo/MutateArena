@@ -75,7 +75,7 @@ void UMutationHuman::OnCombatIconChange(ECombatIconType CombatIconType)
 		break;
 	}
 
-	GetWorld()->GetTimerManager().SetTimer(CombatIconTimerHandle, this, &ThisClass::ClearCombatIcon, 5.f);
+	GetWorld()->GetTimerManager().SetTimer(CombatIconTimerHandle, this, &ThisClass::ClearCombatIcon, 3.f);
 }
 
 void UMutationHuman::ClearCombatIcon()
