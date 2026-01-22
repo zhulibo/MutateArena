@@ -13,4 +13,7 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	class UCommonTextBlock* Damage;
 
+	UPROPERTY(meta = (BindWidgetAnim), Transient)
+	UWidgetAnimation* AppearanceAnim;
+	
 };

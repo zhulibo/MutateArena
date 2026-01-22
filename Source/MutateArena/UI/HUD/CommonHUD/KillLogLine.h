@@ -17,4 +17,7 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	UCommonTextBlock* DamagedPlayer;
 
+	UPROPERTY(meta = (BindWidgetAnim), Transient)
+	UWidgetAnimation* AppearanceAnim;
+	
 };

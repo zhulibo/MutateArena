@@ -26,7 +26,7 @@ void UNotifyLayout::AddNotify(const FColor DisplayColor, const FText& Msg)
 
 	NotifyLineButton->Notify->SetColorAndOpacity(DisplayColor);
 	
-	if (NotifyContainer->GetChildrenCount() > 6)
+	if (NotifyContainer->GetChildrenCount() > 5)
 	{
 		NotifyContainer->RemoveChildAt(0);
 	}

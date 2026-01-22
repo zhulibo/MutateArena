@@ -1,11 +1,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "CommonButtonBase.h"
+#include "CommonUserWidget.h"
 #include "NotifyLineButton.generated.h"
 
 UCLASS()
-class MUTATEARENA_API UNotifyLineButton : public UCommonButtonBase
+class MUTATEARENA_API UNotifyLineButton : public UCommonUserWidget
 {
 	GENERATED_BODY()
 
