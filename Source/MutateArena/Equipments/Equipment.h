@@ -59,15 +59,14 @@ protected:
 		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 public:
-	// 蓝图和DataTable都需要设置，用于相互对应。
 	UPROPERTY(EditAnywhere)
-	EEquipmentName EquipmentName = EEquipmentName::None;
+	EEquipmentName EquipmentName = EEquipmentName::None; // 蓝图和DataTable都需要设置，用于相互对应。
 	UPROPERTY()
-	EEquipmentName EquipmentParentName;
+	EEquipmentName EquipmentParentName = EEquipmentName::None;
 	UPROPERTY()
-	EEquipmentCate EquipmentCate;
+	EEquipmentCate EquipmentCate = EEquipmentCate::None;
 	UPROPERTY()
-	EEquipmentType EquipmentType;
+	EEquipmentType EquipmentType = EEquipmentType::None;
 
 	UPROPERTY()
 	EEquipmentState EquipmentState;

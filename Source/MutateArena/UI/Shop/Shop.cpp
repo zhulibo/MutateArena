@@ -1,4 +1,6 @@
 #include "Shop.h"
+
+#include "CommonLazyImage.h"
 #include "CommonTextBlock.h"
 #include "DataRegistrySubsystem.h"
 #include "ItemButton.h"
@@ -107,10 +109,11 @@ void UShop::AddEquipmentButton(const FOffer& Offer, const FEquipmentMain& Equipm
 	if (UItemButton* EquipmentButton = CreateWidget<UItemButton>(this, EquipmentButtonClass))
 	{
 		EquipmentButton->Offer = Offer;
-		FText ButtonText = FText();
-		FText::FindTextInLiveTable_Advanced(CULTURE_EQUIPMENT, EquipmentMain.ShowName, ButtonText);
-		EquipmentButton->ItemName->SetText(ButtonText);
+		FText TranslatedShowName = FText();
+		FText::FindTextInLiveTable_Advanced(CULTURE_EQUIPMENT, EquipmentMain.ShowName, TranslatedShowName);
+		EquipmentButton->TranslatedShowName->SetText(TranslatedShowName);
 		EquipmentButton->Price->SetText(Offer.FormattedPrice);
+		EquipmentButton->ShowImg->SetBrushFromLazyTexture(EquipmentMain.ShowImg);
 		EquipmentButton->OnClicked().AddUObject(this, &ThisClass::OnItemButtonClicked, EquipmentButton);
 		if (UWrapBoxSlot* NewSlot = Cast<UWrapBoxSlot>(ItemButtonContainer->AddChild(EquipmentButton)))
 		{
@@ -125,10 +128,11 @@ void UShop::AddCharacterButton(const FOffer& Offer, const FHumanCharacterMain& H
 	if (UItemButton* CharacterButton = CreateWidget<UItemButton>(this, CharacterButtonClass))
 	{
 		CharacterButton->Offer = Offer;
-		FText ButtonText = FText();
-		FText::FindTextInLiveTable_Advanced(CULTURE_HUMAN, HumanCharacterMain.ShowName, ButtonText);
-		CharacterButton->ItemName->SetText(ButtonText);
+		FText TranslatedShowName = FText();
+		FText::FindTextInLiveTable_Advanced(CULTURE_HUMAN, HumanCharacterMain.ShowName, TranslatedShowName);
+		CharacterButton->TranslatedShowName->SetText(TranslatedShowName);
 		CharacterButton->Price->SetText(Offer.FormattedPrice);
+		CharacterButton->ShowImg->SetBrushFromLazyTexture(HumanCharacterMain.ShowImg);
 		CharacterButton->OnClicked().AddUObject(this, &ThisClass::OnItemButtonClicked, CharacterButton);
 		if (UWrapBoxSlot* NewSlot = Cast<UWrapBoxSlot>(ItemButtonContainer->AddChild(CharacterButton)))
 		{

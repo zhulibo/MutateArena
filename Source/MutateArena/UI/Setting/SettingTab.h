@@ -28,5 +28,9 @@ protected:
 	TArray<class UCommonActivatableWidget*> TabContents;
 
 	void LinkSwitcher();
+	
+	bool bIsInitialized = true;
+	UFUNCTION()
+	void HandleOnTabSelected(FName TabId);
 
 };

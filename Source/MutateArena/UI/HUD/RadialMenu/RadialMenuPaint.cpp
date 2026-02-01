@@ -3,7 +3,7 @@
 #include "CommonTextBlock.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/System/AssetSubsystem.h"
-#include "MutateArena/System/Data/CommonAsset.h"
+#include "MutateArena/Assets/Data/CommonAsset.h"
 
 void URadialMenuPaint::NativeOnInitialized()
 {

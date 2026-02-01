@@ -29,7 +29,7 @@ void UDev::NativeConstruct()
 	int32 Major = CurVersion.GetMajor();
 	int32 Minor = CurVersion.GetMinor();
 	int32 Patch = CurVersion.GetPatch();
-	EngineVersion->SetText(FText::FromString(FString::Printf(TEXT("UE %d.%d.%d"), Major, Minor, Patch)));
+	EngineVersion->SetText(FText::FromString(FString::Printf(TEXT("UE%d.%d.%d"), Major, Minor, Patch)));
 }
 
 UWidget* UDev::NativeGetDesiredFocusTarget() const

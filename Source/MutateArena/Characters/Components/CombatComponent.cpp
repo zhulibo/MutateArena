@@ -745,7 +745,7 @@ bool UCombatComponent::CanFire()
 		if (AssetSubsystem == nullptr) AssetSubsystem = HumanCharacter->GetGameInstance()->GetSubsystem<UAssetSubsystem>();
 		if (AssetSubsystem && AssetSubsystem->EquipmentAsset)
 		{
-			UGameplayStatics::PlaySoundAtLocation(this, AssetSubsystem->EquipmentAsset->ClickSound, HumanCharacter->GetActorLocation());
+			UGameplayStatics::PlaySoundAtLocation(this, AssetSubsystem->EquipmentAsset->DryFireSound, HumanCharacter->GetActorLocation());
 		}
 
 		return false;

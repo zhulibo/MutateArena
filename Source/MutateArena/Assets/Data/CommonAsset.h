@@ -35,21 +35,23 @@ public:
 	USoundClass* DialogueSound;
 	UPROPERTY(EditAnywhere, Category = "Audio")
 	class USoundControlBus* CB_EquipmentMech;
-
+	
 	// UI
 	UPROPERTY(EditAnywhere, Category = "UI")
+	class UMetaSoundSource* TabSwitchSound;
+	
+	UPROPERTY(EditAnywhere, Category = "UI")
 	TSubclassOf<class UNotifyLayout> NotifyLayoutClass;
-
 	UPROPERTY(EditAnywhere, Category = "UI")
 	TSubclassOf<class UConfirmScreen> ConfirmScreenClass;
 
 	// 倒计时
 	UPROPERTY(EditAnywhere, Category = "CountdownSound")
-	class UMetaSoundSource* CountdownSound;
+	UMetaSoundSource* CountdownSound;
 
 	// 补给箱音效
 	UPROPERTY(EditAnywhere, Category = "SpawnPickupSound")
-	class UMetaSoundSource* SpawnPickupSound;
+	UMetaSoundSource* SpawnPickupSound;
 
 	// 战斗图标
 	UPROPERTY(EditAnywhere, Category = "CombatIconSound")

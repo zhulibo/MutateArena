@@ -56,7 +56,7 @@ void UMutantSelect::NativeOnInitialized()
 				MutantSelectButton->MutantCharacterName = ItemValue.MutantCharacterName;
 				MutantSelectButton->OnClicked().AddUObject(this, &ThisClass::OnMutantSelectButtonClicked, ItemValue.MutantCharacterName);
 				UScrollBoxSlot* NewSlot = Cast<UScrollBoxSlot>(MutantSelectButtonContainer->AddChild(MutantSelectButton));
-				if (NewSlot) NewSlot->SetPadding(FMargin(10, 0, 10, 0));
+				if (NewSlot) NewSlot->SetPadding(FMargin(0, 0, 15, 0));
 			}
 		}
 	}

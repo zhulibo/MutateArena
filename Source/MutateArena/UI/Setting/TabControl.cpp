@@ -295,7 +295,7 @@ void UTabControl::SetWidgetSectionColor()
 	FColor Green = C_GREEN;
 	FColor Gray = C_BLACK;
 
-	White.A = 40;
+	White.A = 30;
 	Red.A = 40;
 	Green.A = 40;
 	Gray.A = 40;

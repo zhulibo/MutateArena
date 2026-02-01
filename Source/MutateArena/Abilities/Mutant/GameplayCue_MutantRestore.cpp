@@ -24,7 +24,7 @@ void AGameplayCue_MutantRestore::PlaySound()
 {
 	if (MutantCharacter)
 	{
-		UGameplayStatics::PlaySoundAtLocation(this, RestoreSound, MutantCharacter->GetActorLocation());
+		UGameplayStatics::PlaySoundAtLocation(this, RestoreHealthSound, MutantCharacter->GetActorLocation());
 	}
 }
 

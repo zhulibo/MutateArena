@@ -2,8 +2,11 @@
 #include "LoadoutContent.h"
 #include "CommonActivatableWidgetSwitcher.h"
 #include "CommonHierarchicalScrollBox.h"
+#include "CommonLazyImage.h"
 #include "CommonTextBlock.h"
 #include "DataRegistrySubsystem.h"
+#include "Human.h"
+#include "LoadoutItem.h"
 #include "StorageButton.h"
 #include "MutateArena/Characters/Data/CharacterType.h"
 #include "MutateArena/System/Storage/ConfigType.h"
@@ -170,7 +173,7 @@ void UStorage::InitPlayerConfig(USaveGameLoadout* SaveGameLoadout)
 	{
 		if (ULoadoutContent* LoadoutContent = Cast<ULoadoutContent>(LoadoutSwitcher->GetChildAt(i)))
 		{
-			FText ButtonText = FText();
+			FText TranslatedShowName = FText();
 			
 			FString PrimaryShowName = FString();
 			FString SecondaryShowName = FString();
@@ -198,21 +201,43 @@ void UStorage::InitPlayerConfig(USaveGameLoadout* SaveGameLoadout)
 				}
 			}
 
-			FText::FindTextInLiveTable_Advanced(CULTURE_EQUIPMENT, PrimaryShowName, ButtonText);
-			LoadoutContent->Primary->ButtonText->SetText(ButtonText);
+			FText::FindTextInLiveTable_Advanced(CULTURE_EQUIPMENT, PrimaryShowName, TranslatedShowName);
+			LoadoutContent->Primary->TranslatedShowName->SetText(TranslatedShowName);
 			LoadoutContent->Primary->EquipmentName = SaveGameLoadout->Loadouts[i].Primary;
 			
-			FText::FindTextInLiveTable_Advanced(CULTURE_EQUIPMENT, SecondaryShowName, ButtonText);
-			LoadoutContent->Secondary->ButtonText->SetText(ButtonText);
+			FText::FindTextInLiveTable_Advanced(CULTURE_EQUIPMENT, SecondaryShowName, TranslatedShowName);
+			LoadoutContent->Secondary->TranslatedShowName->SetText(TranslatedShowName);
 			LoadoutContent->Secondary->EquipmentName = SaveGameLoadout->Loadouts[i].Secondary;
 
-			FText::FindTextInLiveTable_Advanced(CULTURE_EQUIPMENT, MeleeShowName, ButtonText);
-			LoadoutContent->Melee->ButtonText->SetText(ButtonText);
+			FText::FindTextInLiveTable_Advanced(CULTURE_EQUIPMENT, MeleeShowName, TranslatedShowName);
+			LoadoutContent->Melee->TranslatedShowName->SetText(TranslatedShowName);
 			LoadoutContent->Melee->EquipmentName = SaveGameLoadout->Loadouts[i].Melee;
 
-			FText::FindTextInLiveTable_Advanced(CULTURE_EQUIPMENT, ThrowingShowName, ButtonText);
-			LoadoutContent->Throwing->ButtonText->SetText(ButtonText);
+			FText::FindTextInLiveTable_Advanced(CULTURE_EQUIPMENT, ThrowingShowName, TranslatedShowName);
+			LoadoutContent->Throwing->TranslatedShowName->SetText(TranslatedShowName);
 			LoadoutContent->Throwing->EquipmentName = SaveGameLoadout->Loadouts[i].Throwing;
+			
+			// 显示图片
+			for (const TPair<FDataRegistryId, const uint8*>& Pair : EquipmentMains)
+			{
+				FEquipmentMain ItemValue = *reinterpret_cast<const FEquipmentMain*>(Pair.Value);
+				if (ItemValue.EquipmentName == SaveGameLoadout->Loadouts[i].Primary)
+				{
+					LoadoutContent->Primary->ShowImg->SetBrushFromLazyTexture(ItemValue.ShowImg);
+				}
+				else if (ItemValue.EquipmentName == SaveGameLoadout->Loadouts[i].Secondary)
+				{
+					LoadoutContent->Secondary->ShowImg->SetBrushFromLazyTexture(ItemValue.ShowImg);
+				}
+				else if (ItemValue.EquipmentName == SaveGameLoadout->Loadouts[i].Melee)
+				{
+					LoadoutContent->Melee->ShowImg->SetBrushFromLazyTexture(ItemValue.ShowImg);
+				}
+				else if (ItemValue.EquipmentName == SaveGameLoadout->Loadouts[i].Throwing)
+				{
+					LoadoutContent->Throwing->ShowImg->SetBrushFromLazyTexture(ItemValue.ShowImg);
+				}
+			}
 		}
 	}
 
@@ -222,19 +247,20 @@ void UStorage::InitPlayerConfig(USaveGameLoadout* SaveGameLoadout)
 		SaveGameLoadout->HumanCharacterName = DefaultConfig->HumanCharacterName;
 	}
 
-	FString ShowName = FString();
 	for (const TPair<FDataRegistryId, const uint8*>& Pair : HumanCharacterMains)
 	{
 		FHumanCharacterMain ItemValue = *reinterpret_cast<const FHumanCharacterMain*>(Pair.Value);
 		if (ItemValue.HumanCharacterName == SaveGameLoadout->HumanCharacterName)
 		{
-			ShowName = ItemValue.ShowName;
+			FText TranslatedShowName = FText();
+			FText::FindTextInLiveTable_Advanced(CULTURE_HUMAN, ItemValue.ShowName, TranslatedShowName);
+			Human->TranslatedShowName->SetText(TranslatedShowName);
+			
+			if (ItemValue.ShowImgFullBody) Human->ShowImgFullBody->SetBrushFromLazyTexture(ItemValue.ShowImgFullBody);
+			
 			break;
 		}
 	}
-	FText ButtonText = FText();
-	FText::FindTextInLiveTable_Advanced(CULTURE_HUMAN, ShowName, ButtonText);
-	Character->SetText(ButtonText);
 }
 
 // 是否拥有装备
@@ -393,6 +419,8 @@ void UStorage::AddEquipments(FString EquipmentType)
 
 		if (EquipmentType == STORAGE_TYPE_ALL || EnumValue == EquipmentType)
 		{
+			if (ItemValue.bIsSupply) continue;
+			
 			// 免费装备 || 付费装备且已拥有
 			if (ItemValue.AudienceItemId.IsEmpty() || EOSSubsystem && EOSSubsystem->OwnEntitlement(ItemValue.AudienceItemId))
 			{
@@ -421,7 +449,7 @@ void UStorage::AddEquipmentButton(FEquipmentMain EquipmentMain)
 {
 	if (UStorageButton* EquipmentButton = CreateWidget<UStorageButton>(this, EquipmentButtonClass))
 	{
-		FText ButtonText = FText();
+		FText TranslatedShowName = FText();
 		FString ShowName = FString();
 		for (const TPair<FDataRegistryId, const uint8*>& Pair : EquipmentMains)
 		{
@@ -432,10 +460,12 @@ void UStorage::AddEquipmentButton(FEquipmentMain EquipmentMain)
 				break;
 			}
 		}
-		FText::FindTextInLiveTable_Advanced(CULTURE_EQUIPMENT, ShowName, ButtonText);
-		EquipmentButton->ButtonText->SetText(ButtonText);
+		FText::FindTextInLiveTable_Advanced(CULTURE_EQUIPMENT, ShowName, TranslatedShowName);
+		EquipmentButton->TranslatedShowName->SetText(TranslatedShowName);
 
 		EquipmentButton->ShowName = ShowName;
+		EquipmentButton->ShowImg->SetBrushFromLazyTexture(EquipmentMain.ShowImg);
+		EquipmentButton->ShowImgPath = EquipmentMain.ShowImg;
 		EquipmentButton->EquipmentName = EquipmentMain.EquipmentName;
 		EquipmentButton->EquipmentType = EquipmentMain.EquipmentType;
 		EquipmentButton->OnClicked().AddUObject(this, &ThisClass::OnEquipmentButtonClicked, EquipmentButton);
@@ -463,9 +493,11 @@ void UStorage::AddCharacterButton(FHumanCharacterMain HumanCharacterMain)
 			}
 		}
 		FText::FindTextInLiveTable_Advanced(CULTURE_HUMAN, ShowName, ButtonText);
-		CharacterButton->ButtonText->SetText(ButtonText);
+		CharacterButton->TranslatedShowName->SetText(ButtonText);
 
 		CharacterButton->ShowName = ShowName;
+		CharacterButton->ShowImg->SetBrushFromLazyTexture(HumanCharacterMain.ShowImg);
+		CharacterButton->ShowImgFullBodyPath = HumanCharacterMain.ShowImgFullBody;
 		CharacterButton->HumanCharacterName = HumanCharacterMain.HumanCharacterName;
 		CharacterButton->OnClicked().AddUObject(this, &ThisClass::OnCharacterButtonClicked, CharacterButton);
 		if (UWrapBoxSlot* NewSlot = Cast<UWrapBoxSlot>(StorageButtonContainer->AddChild(CharacterButton)))
@@ -482,25 +514,29 @@ void UStorage::OnEquipmentButtonClicked(UStorageButton* EquipmentButton)
 
 	if (ULoadoutContent* LoadoutContent = Cast<ULoadoutContent>(LoadoutSwitcher->GetActiveWidget()))
 	{
-		FText ButtonText = FText();
-		FText::FindTextInLiveTable_Advanced(CULTURE_EQUIPMENT, EquipmentButton->ShowName, ButtonText);
+		FText TranslatedShowName = FText();
+		FText::FindTextInLiveTable_Advanced(CULTURE_EQUIPMENT, EquipmentButton->ShowName, TranslatedShowName);
 
 		switch (EquipmentButton->EquipmentType)
 		{
 		case EEquipmentType::Primary:
-			LoadoutContent->Primary->ButtonText->SetText(ButtonText);
+			LoadoutContent->Primary->TranslatedShowName->SetText(TranslatedShowName);
+			LoadoutContent->Primary->ShowImg->SetBrushFromLazyTexture(EquipmentButton->ShowImgPath);
 			LoadoutContent->Primary->EquipmentName = EquipmentButton->EquipmentName;
 			break;
 		case EEquipmentType::Secondary:
-			LoadoutContent->Secondary->ButtonText->SetText(ButtonText);
+			LoadoutContent->Secondary->TranslatedShowName->SetText(TranslatedShowName);
+			LoadoutContent->Secondary->ShowImg->SetBrushFromLazyTexture(EquipmentButton->ShowImgPath);
 			LoadoutContent->Secondary->EquipmentName = EquipmentButton->EquipmentName;
 			break;
 		case EEquipmentType::Melee:
-			LoadoutContent->Melee->ButtonText->SetText(ButtonText);
+			LoadoutContent->Melee->TranslatedShowName->SetText(TranslatedShowName);
+			LoadoutContent->Melee->ShowImg->SetBrushFromLazyTexture(EquipmentButton->ShowImgPath);
 			LoadoutContent->Melee->EquipmentName = EquipmentButton->EquipmentName;
 			break;
 		case EEquipmentType::Throwing:
-			LoadoutContent->Throwing->ButtonText->SetText(ButtonText);
+			LoadoutContent->Throwing->TranslatedShowName->SetText(TranslatedShowName);
+			LoadoutContent->Throwing->ShowImg->SetBrushFromLazyTexture(EquipmentButton->ShowImgPath);
 			LoadoutContent->Throwing->EquipmentName = EquipmentButton->EquipmentName;
 			break;
 		}
@@ -539,9 +575,11 @@ void UStorage::OnCharacterButtonClicked(UStorageButton* CharacterButton)
 {
 	if (CharacterButton == nullptr) return;
 
-	FText ButtonText = FText();
-	FText::FindTextInLiveTable_Advanced(CULTURE_HUMAN, CharacterButton->ShowName, ButtonText);
-	Character->SetText(ButtonText);
+	FText TranslatedShowName = FText();
+	FText::FindTextInLiveTable_Advanced(CULTURE_HUMAN, CharacterButton->ShowName, TranslatedShowName);
+	Human->TranslatedShowName->SetText(TranslatedShowName);
+	
+	if (CharacterButton->ShowImgFullBodyPath) Human->ShowImgFullBody->SetBrushFromLazyTexture(CharacterButton->ShowImgFullBodyPath);
 
 	if (StorageSubsystem == nullptr) StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
 	if (StorageSubsystem && StorageSubsystem->CacheLoadout)

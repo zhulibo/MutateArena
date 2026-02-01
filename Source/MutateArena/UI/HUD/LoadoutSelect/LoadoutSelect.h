@@ -19,7 +19,9 @@ protected:
 	mutable class UStorageSubsystem* StorageSubsystem;
 	UPROPERTY()
 	class UUISubsystem* UISubsystem;
-
+	
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class ULoadoutSelectButton> LoadoutSelectButtonClass;
 	UPROPERTY(meta = (BindWidget))
 	class UCommonHierarchicalScrollBox* LoadoutSelectButtonContainer;
 	UFUNCTION()

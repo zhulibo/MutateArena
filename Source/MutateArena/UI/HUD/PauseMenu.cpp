@@ -8,7 +8,7 @@
 #include "MutateArena/System/AssetSubsystem.h"
 #include "MutateArena/System/EOSSubsystem.h"
 #include "MutateArena/System/UISubsystem.h"
-#include "MutateArena/System/Data/CommonAsset.h"
+#include "MutateArena/Assets/Data/CommonAsset.h"
 #include "MutateArena/UI/GameLayout.h"
 #include "MutateArena/UI/ProjectTags.h"
 #include "MutateArena/UI/Common/CommonButton.h"

@@ -19,7 +19,7 @@ public:
 	UPROPERTY()
 	EEquipmentName Primary = EEquipmentName::AK47;
 	UPROPERTY()
-	EEquipmentName Secondary = EEquipmentName::Glock17;
+	EEquipmentName Secondary = EEquipmentName::DesertEagle;
 	UPROPERTY()
 	EEquipmentName Melee = EEquipmentName::Kukri;
 	UPROPERTY()

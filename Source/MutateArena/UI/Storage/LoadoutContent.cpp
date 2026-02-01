@@ -5,7 +5,4 @@
 void ULoadoutContent::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
-	
-	Tool->SetIsEnabled(false);
-	Tonic->SetIsEnabled(false);
 }

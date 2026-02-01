@@ -2,7 +2,7 @@
 
 #include "CommonTextBlock.h"
 #include "MutateArena/System/AssetSubsystem.h"
-#include "MutateArena/System/Data/CommonAsset.h"
+#include "MutateArena/Assets/Data/CommonAsset.h"
 
 void URadialMenuRadio::NativeOnInitialized()
 {

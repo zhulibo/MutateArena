@@ -14,7 +14,7 @@
 #include "Engine/SkeletalMeshSocket.h"
 #include "Kismet/GameplayStatics.h"
 #include "MutateArena/System/AssetSubsystem.h"
-#include "MutateArena/System/Data/CommonAsset.h"
+#include "MutateArena/Assets/Data/CommonAsset.h"
 
 AWeapon::AWeapon()
 {
@@ -58,15 +58,23 @@ void AWeapon::InitData()
 			AimingWalkSpeedMul = WeaponData->AimingWalkSpeedMul;
 			bIsPIP = WeaponData->bIsPIP;
 			ScopeFOV = WeaponData->ScopeFOV;
+			CarriedAmmo = WeaponData->MaxCarriedAmmo;
 			MaxCarriedAmmo = WeaponData->MaxCarriedAmmo;
+			Ammo = WeaponData->MagCapacity;
 			MagCapacity = WeaponData->MagCapacity;
 			FireRate = WeaponData->FireRate;
 			bIsAutomatic = WeaponData->bIsAutomatic;
 			WalkSpeedMul = WeaponData->WalkSpeedMul;
 			PelletNum = WeaponData->PelletNum;
-
-			CarriedAmmo = MaxCarriedAmmo;
-			Ammo = MagCapacity;
+			
+			// 补给箱中的装备 TODO
+			if (EquipmentName == EEquipmentName::AK47_Cyclone)
+			{
+				MaxCarriedAmmo = 180;
+				CarriedAmmo = 180;
+				MagCapacity = 60;
+				Ammo = 60;
+			}
 		}
 	}
 
@@ -126,10 +134,11 @@ void AWeapon::Fire(const FVector& HitTarget, float RecoilVert, float RecoilHor, 
 	SpendRound();
 
 	// 即将耗尽弹药时增大机械层声音
-	float Volume = 0.4f;
-	if (Ammo <= FireRate / 60.f * 1.2f)
+	float Volume = 0.6f;
+	float LastTime = bIsAutomatic ? 1.2f : 0.5f;
+	if (Ammo <= FireRate / 60.f * LastTime)
 	{
-		Volume = 1.f;
+		Volume = 2.f;
 	}
 	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
 	if (AssetSubsystem && AssetSubsystem->CommonAsset)

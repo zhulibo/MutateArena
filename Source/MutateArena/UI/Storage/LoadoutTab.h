@@ -27,5 +27,9 @@ protected:
 	UPROPERTY(EditInstanceOnly)
 	TArray<class ULoadoutContent*> TabContents;
 	void LinkSwitcher();
+	
+	bool bIsInitialized = true;
+	UFUNCTION()
+	void HandleOnTabSelected(FName TabId);
 
 };

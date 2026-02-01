@@ -34,7 +34,7 @@
 #include "Components/SceneCaptureComponent2D.h"
 #include "Materials/MaterialParameterCollectionInstance.h"
 #include "MutateArena/GameStates/BaseGameState.h"
-#include "MutateArena/System/Data/CommonAsset.h"
+#include "MutateArena/Assets/Data/CommonAsset.h"
 #include "MutateArena/UI/TextChat/TextChat.h"
 #include "Net/UnrealNetwork.h"
 

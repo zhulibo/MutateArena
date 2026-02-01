@@ -101,9 +101,15 @@ struct FEquipmentMain : public FTableRowBase
 
 	UPROPERTY(EditAnywhere)
 	EEquipmentType EquipmentType = EEquipmentType::None;
+	
+	UPROPERTY(EditAnywhere)
+	bool bIsSupply = false;
 
 	UPROPERTY(EditAnywhere)
 	TSoftClassPtr<class AEquipment> EquipmentClass;
+	
+	UPROPERTY(EditAnywhere)
+	TSoftObjectPtr<UTexture2D> ShowImg;
 
 	UPROPERTY(EditAnywhere)
 	TSoftObjectPtr<USkeletalMesh> DefaultSkeletalMesh;
@@ -133,9 +139,9 @@ struct FWeaponData : public FTableRowBase
 	EEquipmentName EquipmentName = EEquipmentName::None;
 
 	UPROPERTY(EditAnywhere)
-	int32 MaxCarriedAmmo = 0;
-	UPROPERTY(EditAnywhere)
 	int32 MagCapacity = 0;
+	UPROPERTY(EditAnywhere)
+	int32 MaxCarriedAmmo = 0;
 
 	UPROPERTY(EditAnywhere)
 	float FireRate = 0.f;

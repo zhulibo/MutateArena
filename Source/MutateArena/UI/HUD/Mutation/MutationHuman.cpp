@@ -4,7 +4,7 @@
 #include "MetaSoundSource.h"
 #include "MutateArena/PlayerControllers/MutationController.h"
 #include "MutateArena/System/AssetSubsystem.h"
-#include "MutateArena/System/Data/CommonAsset.h"
+#include "MutateArena/Assets/Data/CommonAsset.h"
 #include "Components/AudioComponent.h"
 #include "Kismet/GameplayStatics.h"
 

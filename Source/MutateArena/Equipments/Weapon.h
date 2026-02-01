@@ -44,13 +44,13 @@ public:
 	UPROPERTY()
 	float ScopeFOV = 90.f;
 	UPROPERTY()
-	int32 MaxCarriedAmmo; // 最大携弹量
-	UPROPERTY()
 	int32 CarriedAmmo; // 当前携弹量
 	UPROPERTY()
-	int32 MagCapacity; // 弹匣容量
+	int32 MaxCarriedAmmo; // 最大携弹量
 	UPROPERTY()
 	int32 Ammo; // 当前弹匣子弹数量
+	UPROPERTY()
+	int32 MagCapacity; // 弹匣容量
 	UPROPERTY()
 	float FireRate;
 	UPROPERTY()

@@ -17,7 +17,6 @@ protected:
 	class UCommonActionWidget* LeftTabAction;
 	UPROPERTY(meta = (BindWidget))
 	UCommonActionWidget* RightTabAction;
-
 	UPROPERTY(EditInstanceOnly)
 	class UCommonActivatableWidgetSwitcher* MenuSwitcher;
 	UPROPERTY(meta = (BindWidget))
@@ -27,5 +26,9 @@ protected:
 	UPROPERTY(EditInstanceOnly)
 	TArray<class UCommonActivatableWidget*> TabContents;
 	void LinkSwitcher();
+	
+	bool bIsInitialized = true;
+	UFUNCTION()
+	void HandleOnTabSelected(FName TabId);
 
 };

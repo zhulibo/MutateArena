@@ -46,11 +46,11 @@ protected:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UCommonButton> StorageTypeButtonClass;
 	void AddStorageTypeButton();
-
+	int32 TypeIndex = 0;
 	void OnStorageTypeButtonClicked(UCommonButton* CommonButton);
+	
 	void AddEquipments(FString EquipmentType);
 	void AddHumanCharacters();
-
 	UPROPERTY(meta = (BindWidget))
 	class UWrapBox* StorageButtonContainer;
 	UPROPERTY(EditAnywhere)
@@ -67,8 +67,6 @@ protected:
 
 	void OnCharacterButtonClicked(UStorageButton* CommonButton);
 	UPROPERTY(meta = (BindWidget))
-	class UCommonTextBlock* Character;
+	class UHuman* Human;
 
-	int32 TypeIndex = 0;
-	
 };

@@ -15,10 +15,19 @@ class MUTATEARENA_API UStorageButton : public UCommonButtonBase
 
 public:
 	UPROPERTY(meta = (BindWidget))
-	class UCommonTextBlock* ButtonText;
+	class UCommonTextBlock* TranslatedShowName;
 	UPROPERTY()
 	FString ShowName;
 
+	UPROPERTY(meta = (BindWidget))
+	class UCommonLazyImage* ShowImg;
+	// Equipment img
+	UPROPERTY()
+	TSoftObjectPtr<UTexture2D> ShowImgPath;
+	// Character full body img
+	UPROPERTY()
+	TSoftObjectPtr<UTexture2D> ShowImgFullBodyPath;
+	
 	UPROPERTY()
 	EHumanCharacterName HumanCharacterName;
 

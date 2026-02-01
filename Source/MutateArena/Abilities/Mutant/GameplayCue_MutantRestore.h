@@ -17,7 +17,7 @@ public:
 
 protected:
 	UPROPERTY(EditAnywhere)
-	class UMetaSoundSource* RestoreSound;
+	class UMetaSoundSource* RestoreHealthSound;
 	void PlaySound();
 
 	UPROPERTY()

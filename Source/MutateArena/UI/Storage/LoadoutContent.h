@@ -11,17 +11,17 @@ class MUTATEARENA_API ULoadoutContent : public UCommonUserWidget
 
 public:
 	UPROPERTY(meta = (BindWidget))
-	class UStorageButton* Primary;
+	class ULoadoutItem* Primary;
 	UPROPERTY(meta = (BindWidget))
-	UStorageButton* Secondary;
+	ULoadoutItem* Secondary;
 	UPROPERTY(meta = (BindWidget))
-	UStorageButton* Melee;
+	ULoadoutItem* Melee;
 	UPROPERTY(meta = (BindWidget))
-	UStorageButton* Throwing;
+	ULoadoutItem* Throwing;
 	UPROPERTY(meta = (BindWidget))
-	UStorageButton* Tool;
+	ULoadoutItem* Tool;
 	UPROPERTY(meta = (BindWidget))
-	UStorageButton* Tonic;
+	ULoadoutItem* Tonic;
 
 protected:
 	virtual void NativeOnInitialized() override;

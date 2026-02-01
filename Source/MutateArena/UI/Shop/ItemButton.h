@@ -14,9 +14,12 @@ class MUTATEARENA_API UItemButton : public UCommonButtonBase
 
 public:
 	UPROPERTY(meta = (BindWidget))
-	class UCommonTextBlock* ItemName;
+	class UCommonTextBlock* TranslatedShowName;
 	UPROPERTY(meta = (BindWidget))
 	UCommonTextBlock* Price;
+
+	UPROPERTY(meta = (BindWidget))
+	class UCommonLazyImage* ShowImg;
 
 	FOffer Offer;
 

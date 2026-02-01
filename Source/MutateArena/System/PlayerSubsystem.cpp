@@ -4,7 +4,7 @@
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/UI/Notify/NotifyLayout.h"
 #include "MutateArena/Utils/LibraryNotify.h"
-#include "Data/CommonAsset.h"
+#include "MutateArena/Assets/Data/CommonAsset.h"
 
 #define LOCTEXT_NAMESPACE "UPlayerSubsystem"
 

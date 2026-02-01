@@ -3,9 +3,13 @@
 #include "CommonActivatableWidget.h"
 #include "CommonActivatableWidgetSwitcher.h"
 #include "CommonTextBlock.h"
+#include "MetaSoundSource.h"
 #include "MutateArena/UI/Common/CommonButton.h"
 #include "Components/HorizontalBox.h"
 #include "Components/HorizontalBoxSlot.h"
+#include "Kismet/GameplayStatics.h"
+#include "MutateArena/Assets/Data/CommonAsset.h"
+#include "MutateArena/System/AssetSubsystem.h"
 
 #define LOCTEXT_NAMESPACE "USettingTab"
 
@@ -16,11 +20,15 @@ void USettingTab::NativeOnInitialized()
 	// 把ActionData绑定给CommonActionWidget
 	LeftTabAction->SetInputAction(PreviousTabInputActionData);
 	RightTabAction->SetInputAction(NextTabInputActionData);
+	
+	OnTabSelected.AddDynamic(this, &ThisClass::HandleOnTabSelected);
 }
 
 void USettingTab::NativeConstruct()
 {
 	Super::NativeConstruct();
+	
+	bIsInitialized = true;
 
 	LinkSwitcher();
 }
@@ -64,9 +72,27 @@ void USettingTab::LinkSwitcher()
 		}
 		
 		// SelectTabByID("Game");
-		SelectTabByID("Control");
+		// SelectTabByID("Control");
 		// SelectTabByID("Video");
 		// SelectTabByID("Audio);
+	}
+}
+
+void USettingTab::HandleOnTabSelected(FName TabId)
+{
+	if (bIsInitialized)
+	{
+		bIsInitialized = false;
+		UE_LOG(LogTemp, Warning, TEXT("USettingTab"));
+		return;
+	}
+	
+	UAssetSubsystem* AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+	if (AssetSubsystem && AssetSubsystem->CommonAsset)
+	{
+		if (UAudioComponent* AudioComponent = UGameplayStatics::SpawnSound2D(this, AssetSubsystem->CommonAsset->TabSwitchSound))
+		{
+		}
 	}
 }
 

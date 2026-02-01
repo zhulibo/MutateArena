@@ -20,4 +20,5 @@ if %errorlevel% equ 0 (
 
 echo.
 
-pause
+timeout /t 3
+exit

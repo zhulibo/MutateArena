@@ -3,25 +3,81 @@
 #include "LoadoutSelectButton.h"
 #include "CommonHierarchicalScrollBox.h"
 #include "CommonTextBlock.h"
+#include "DataRegistrySubsystem.h"
+#include "Components/ScrollBoxSlot.h"
+#include "MutateArena/MutateArena.h"
 #include "MutateArena/Characters/HumanCharacter.h"
-#include "MutateArena/PlayerControllers/BaseController.h"
 #include "MutateArena/System/UISubsystem.h"
+#include "MutateArena/System/Storage/ConfigType.h"
 #include "MutateArena/System/Storage/SaveGameLoadout.h"
 #include "MutateArena/System/Storage/StorageSubsystem.h"
 #include "MutateArena/UI/GameLayout.h"
 #include "MutateArena/UI/ProjectTags.h"
 #include "MutateArena/UI/Common/CommonButton.h"
+#include "MutateArena/Utils/LibraryCommon.h"
 #include "Widgets/CommonActivatableWidgetContainer.h"
 
 void ULoadoutSelect::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
-
-	for (int i = 0; i < LoadoutSelectButtonContainer->GetChildrenCount(); ++i)
+	
+	StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
+	if (StorageSubsystem && StorageSubsystem->CacheSetting)
 	{
-		if (ULoadoutSelectButton* LoadoutSelectButton = Cast<ULoadoutSelectButton>(LoadoutSelectButtonContainer->GetChildAt(i)))
+		for (int32 i = 0; i < StorageSubsystem->CacheLoadout->Loadouts.Num(); ++i)
 		{
-			LoadoutSelectButton->OnClicked().AddUObject(this, &ThisClass::OnLoadoutSelectButtonClicked, i);
+			if (ULoadoutSelectButton* LoadoutSelectButton = CreateWidget<ULoadoutSelectButton>(this, LoadoutSelectButtonClass))
+			{
+				{
+					FString EnumValue = ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(StorageSubsystem->CacheLoadout->Loadouts[i].Primary));
+					FDataRegistryId DataRegistryId(DR_EQUIPMENT_MAIN, FName(EnumValue));
+					if (const FEquipmentMain* EquipmentMain = UDataRegistrySubsystem::Get()->GetCachedItem<FEquipmentMain>(DataRegistryId))
+					{
+						FText TranslatedShowName = FText();
+						FText::FindTextInLiveTable_Advanced(CULTURE_EQUIPMENT, EquipmentMain->ShowName, TranslatedShowName);
+						LoadoutSelectButton->PrimaryEquipmentText->SetText(TranslatedShowName);
+					}
+				}
+				
+				{
+					FString EnumValue = ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(StorageSubsystem->CacheLoadout->Loadouts[i].Secondary));
+					FDataRegistryId DataRegistryId(DR_EQUIPMENT_MAIN, FName(EnumValue));
+					if (const FEquipmentMain* EquipmentMain = UDataRegistrySubsystem::Get()->GetCachedItem<FEquipmentMain>(DataRegistryId))
+					{
+						FText TranslatedShowName = FText();
+						FText::FindTextInLiveTable_Advanced(CULTURE_EQUIPMENT, EquipmentMain->ShowName, TranslatedShowName);
+						LoadoutSelectButton->SecondaryEquipmentText->SetText(TranslatedShowName);
+					}
+				}
+				
+				{
+					FString EnumValue = ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(StorageSubsystem->CacheLoadout->Loadouts[i].Melee));
+					FDataRegistryId DataRegistryId(DR_EQUIPMENT_MAIN, FName(EnumValue));
+					if (const FEquipmentMain* EquipmentMain = UDataRegistrySubsystem::Get()->GetCachedItem<FEquipmentMain>(DataRegistryId))
+					{
+						FText TranslatedShowName = FText();
+						FText::FindTextInLiveTable_Advanced(CULTURE_EQUIPMENT, EquipmentMain->ShowName, TranslatedShowName);
+						LoadoutSelectButton->MeleeEquipmentText->SetText(TranslatedShowName);
+					}
+				}
+				
+				{
+					FString EnumValue = ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(StorageSubsystem->CacheLoadout->Loadouts[i].Throwing));
+					FDataRegistryId DataRegistryId(DR_EQUIPMENT_MAIN, FName(EnumValue));
+					if (const FEquipmentMain* EquipmentMain = UDataRegistrySubsystem::Get()->GetCachedItem<FEquipmentMain>(DataRegistryId))
+					{
+						FText TranslatedShowName = FText();
+						FText::FindTextInLiveTable_Advanced(CULTURE_EQUIPMENT, EquipmentMain->ShowName, TranslatedShowName);
+						LoadoutSelectButton->ThrowingEquipmentText->SetText(TranslatedShowName);
+					}
+				}
+				
+				LoadoutSelectButton->OnClicked().AddUObject(this, &ThisClass::OnLoadoutSelectButtonClicked, i);
+				if (UScrollBoxSlot* NewSlot = Cast<UScrollBoxSlot>(LoadoutSelectButtonContainer->AddChild(LoadoutSelectButton)))
+				{
+					NewSlot->SetPadding(FMargin(0, 0, 15, 0));
+				}
+			}
 		}
 	}
 }

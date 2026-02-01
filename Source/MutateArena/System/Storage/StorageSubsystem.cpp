@@ -4,7 +4,7 @@
 #include "SaveGameLoadout.h"
 #include "SaveGameSetting.h"
 #include "MutateArena/UI/Setting/TabAudio.h"
-#include "MutateArena/System/Data/CommonAsset.h"
+#include "MutateArena/Assets/Data/CommonAsset.h"
 #include "Kismet/GameplayStatics.h"
 #include "Serialization/ObjectAndNameAsStringProxyArchive.h"
 

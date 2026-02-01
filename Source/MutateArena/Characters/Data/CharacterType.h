@@ -23,6 +23,22 @@ enum class EMutantCharacterName : uint8
 	None
 };
 
+UENUM(BlueprintType)
+enum class EHumanDNA : uint8
+{
+	// None,
+
+	None
+};
+
+UENUM(BlueprintType)
+enum class EHumanSkill : uint8
+{
+	// None,
+
+	None
+};
+
 USTRUCT(BlueprintType)
 struct FHumanCharacterMain : public FTableRowBase
 {
@@ -33,6 +49,12 @@ struct FHumanCharacterMain : public FTableRowBase
 
 	UPROPERTY(EditAnywhere)
 	EHumanCharacterName HumanCharacterName = EHumanCharacterName::None;
+	
+	UPROPERTY(EditAnywhere)
+	TSoftObjectPtr<UTexture2D> ShowImg;
+	
+	UPROPERTY(EditAnywhere)
+	TSoftObjectPtr<UTexture2D> ShowImgFullBody;
 
 	UPROPERTY(EditAnywhere)
 	TSoftClassPtr<class AHumanCharacter> HumanCharacterClass;
@@ -63,6 +85,12 @@ struct FMutantCharacterMain : public FTableRowBase
 
 	UPROPERTY(EditAnywhere)
 	EMutantCharacterName MutantCharacterName = EMutantCharacterName::None;
+	
+	UPROPERTY(EditAnywhere)
+	TSoftObjectPtr<UTexture2D> ShowImg;
+	
+	UPROPERTY(EditAnywhere)
+	TSoftObjectPtr<UTexture2D> ShowImgFullBody;
 
 	UPROPERTY(EditAnywhere)
 	TSoftClassPtr<class AMutantCharacter> MutantCharacterClass;

@@ -3,9 +3,13 @@
 #include "CommonActivatableWidget.h"
 #include "CommonActivatableWidgetSwitcher.h"
 #include "CommonTextBlock.h"
+#include "MetaSoundSource.h"
 #include "Common/CommonButton.h"
 #include "Components/HorizontalBox.h"
 #include "Components/HorizontalBoxSlot.h"
+#include "Kismet/GameplayStatics.h"
+#include "MutateArena/System/AssetSubsystem.h"
+#include "MutateArena/Assets/Data/CommonAsset.h"
 
 #define LOCTEXT_NAMESPACE "UMenuTab"
 
@@ -16,12 +20,16 @@ void UMenuTab::NativeOnInitialized()
 	// 把ActionData绑定给CommonActionWidget
 	LeftTabAction->SetInputAction(PreviousTabInputActionData);
 	RightTabAction->SetInputAction(NextTabInputActionData);
+	
+	OnTabSelected.AddDynamic(this, &ThisClass::HandleOnTabSelected);
 }
 
 void UMenuTab::NativeConstruct()
 {
 	Super::NativeConstruct();
 
+	bIsInitialized = true;
+	
 	LinkSwitcher();
 }
 
@@ -65,6 +73,24 @@ void UMenuTab::LinkSwitcher()
 		}
 		
 		// SelectTabByID("shop");
+	}
+}
+
+void UMenuTab::HandleOnTabSelected(FName TabId)
+{
+	if (bIsInitialized)
+	{
+		bIsInitialized = false;
+		UE_LOG(LogTemp, Warning, TEXT("MenuTab"));
+		return;
+	}
+	
+	UAssetSubsystem* AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+	if (AssetSubsystem && AssetSubsystem->CommonAsset)
+	{
+		if (UAudioComponent* AudioComponent = UGameplayStatics::SpawnSound2D(this, AssetSubsystem->CommonAsset->TabSwitchSound))
+		{
+		}
 	}
 }
 

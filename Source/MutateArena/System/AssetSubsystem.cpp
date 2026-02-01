@@ -3,7 +3,7 @@
 #include "AssetThread.h"
 #include "DataAssetManager.h"
 #include "Engine/StreamableManager.h"
-#include "MutateArena/System/Data/CommonAsset.h"
+#include "MutateArena/Assets/Data/CommonAsset.h"
 #include "MutateArena/Characters/Data/InputAsset.h"
 #include "MutateArena/Characters/Data/CharacterAsset.h"
 #include "MutateArena/Equipments/Data/EquipmentAsset.h"

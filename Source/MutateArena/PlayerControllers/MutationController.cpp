@@ -7,7 +7,7 @@
 #include "MutateArena/PlayerStates/MutationPlayerState.h"
 #include "MutateArena/PlayerStates/TeamType.h"
 #include "MutateArena/System/AssetSubsystem.h"
-#include "MutateArena/System/Data/CommonAsset.h"
+#include "MutateArena/Assets/Data/CommonAsset.h"
 #include "MutateArena/UI/HUD/Mutation/MutationMutant.h"
 #include "MutateArena/UI/HUD/RadialMenu/RadialMenuContainer.h"
 #include "Kismet/GameplayStatics.h"

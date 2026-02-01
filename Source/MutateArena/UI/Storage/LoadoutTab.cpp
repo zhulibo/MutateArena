@@ -6,7 +6,11 @@
 #include "MutateArena/UI/Common/CommonButton.h"
 #include "Components/HorizontalBox.h"
 #include "CommonTextBlock.h"
+#include "MetaSoundSource.h"
 #include "Components/SizeBox.h"
+#include "Kismet/GameplayStatics.h"
+#include "MutateArena/Assets/Data/CommonAsset.h"
+#include "MutateArena/System/AssetSubsystem.h"
 
 void ULoadoutTab::NativeOnInitialized()
 {
@@ -15,11 +19,15 @@ void ULoadoutTab::NativeOnInitialized()
 	// 把ActionData绑定给CommonActionWidget
 	LeftTabAction->SetInputAction(PreviousTabInputActionData);
 	RightTabAction->SetInputAction(NextTabInputActionData);
+	
+	OnTabSelected.AddDynamic(this, &ThisClass::HandleOnTabSelected);
 }
 
 void ULoadoutTab::NativeConstruct()
 {
 	Super::NativeConstruct();
+	
+	bIsInitialized = true;
 
 	LinkSwitcher();
 }
@@ -48,6 +56,25 @@ void ULoadoutTab::LinkSwitcher()
 				SizeBox->AddChild(TabButton);
 				TabButtonContainer->AddChild(SizeBox);
 			}
+		}
+	}
+}
+
+void ULoadoutTab::HandleOnTabSelected(FName TabId)
+{
+	if (bIsInitialized)
+	{
+		bIsInitialized = false;
+		UE_LOG(LogTemp, Warning, TEXT("ULoadoutTab"));
+		
+		return;
+	}
+	
+	UAssetSubsystem* AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+	if (AssetSubsystem && AssetSubsystem->CommonAsset)
+	{
+		if (UAudioComponent* AudioComponent = UGameplayStatics::SpawnSound2D(this, AssetSubsystem->CommonAsset->TabSwitchSound))
+		{
 		}
 	}
 }

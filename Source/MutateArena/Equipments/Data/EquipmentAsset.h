@@ -14,8 +14,8 @@ public:
 	UPROPERTY(EditAnywhere, Category = "EquipSound")
 	class UMetaSoundSource* EquipSound;
 	// 无子弹时扣动扳机的声音
-	UPROPERTY(EditAnywhere, Category = "ClickSound")
-	UMetaSoundSource* ClickSound;
+	UPROPERTY(EditAnywhere, Category = "DryFireSound")
+	UMetaSoundSource* DryFireSound;
 
 	UPROPERTY(EditAnywhere, Category = "ImpactSound")
 	UMetaSoundSource* ImpactSound_Body;

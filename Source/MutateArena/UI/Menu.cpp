@@ -5,7 +5,7 @@
 #include "ProjectTags.h"
 #include "MutateArena/PlayerControllers/MenuController.h"
 #include "MutateArena/System/AssetSubsystem.h"
-#include "MutateArena/System/Data/CommonAsset.h"
+#include "MutateArena/Assets/Data/CommonAsset.h"
 #include "Common/CommonButton.h"
 #include "Components/HorizontalBox.h"
 #include "MutateArena/UI/Setting/Setting.h"
