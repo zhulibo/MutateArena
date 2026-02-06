@@ -7,19 +7,20 @@
 #include "MutateArena/Assets/Data/CommonAsset.h"
 #include "Components/AudioComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "MutateArena/System/UISubsystem.h"
 
 void UMutationHuman::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
 
-	if (AMutationController* MutationController = Cast<AMutationController>(GetOwningPlayer()))
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer()))
 	{
-		MutationController->OnHumanHealthChange.AddUObject(this, &ThisClass::OnHumanHealthChange);
-		MutationController->OnAmmoChange.AddUObject(this, &ThisClass::OnAmmoChange);
-		MutationController->OnCarriedAmmoChange.AddUObject(this, &ThisClass::OnCarriedAmmoChange);
-		MutationController->OnDamageMulChange.AddUObject(this, &ThisClass::OnDamageMulChange);
-		MutationController->OnCause1000Damage.AddUObject(this, &ThisClass::OnCombatIconChange, ECombatIconType::Cause1000Damage);
-		MutationController->OnBeImmune.AddUObject(this, &ThisClass::OnCombatIconChange, ECombatIconType::BeImmune);
+		UISubsystem->OnHumanHealthChange.AddUObject(this, &ThisClass::OnHumanHealthChange);
+		UISubsystem->OnAmmoChange.AddUObject(this, &ThisClass::OnAmmoChange);
+		UISubsystem->OnCarriedAmmoChange.AddUObject(this, &ThisClass::OnCarriedAmmoChange);
+		UISubsystem->OnDamageMulChange.AddUObject(this, &ThisClass::OnDamageMulChange);
+		UISubsystem->OnCause1000Damage.AddUObject(this, &ThisClass::OnCombatIconChange, ECombatIconType::Cause1000Damage);
+		UISubsystem->OnBeImmune.AddUObject(this, &ThisClass::OnCombatIconChange, ECombatIconType::BeImmune);
 	}
 }
 

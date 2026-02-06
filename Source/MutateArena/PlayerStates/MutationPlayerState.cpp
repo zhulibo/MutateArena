@@ -4,6 +4,7 @@
 #include "MutateArena/Abilities/MAAbilitySystemComponent.h"
 #include "MutateArena/Characters/MutantCharacter.h"
 #include "MutateArena/PlayerControllers/MutationController.h"
+#include "MutateArena/System/UISubsystem.h"
 #include "Net/UnrealNetwork.h"
 
 AMutationPlayerState::AMutationPlayerState()
@@ -40,7 +41,10 @@ void AMutationPlayerState::SetTeam(ETeam TempTeam)
 	if (MutationController == nullptr) MutationController = Cast<AMutationController>(GetOwner());
 	if (MutationController && MutationController->IsLocalController())
 	{
-		MutationController->OnTeamChange.Broadcast(TempTeam);
+		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(MutationController->GetLocalPlayer()))
+		{
+			UISubsystem->OnTeamChange.Broadcast(TempTeam);
+		}
 	}
 }
 
@@ -51,8 +55,11 @@ void AMutationPlayerState::OnRep_Team()
 	if (MutationController == nullptr) MutationController = Cast<AMutationController>(GetOwner());
 	if (MutationController && MutationController->IsLocalController())
 	{
-		MutationController->OnTeamChange.Broadcast(Team);
-
+		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(MutationController->GetLocalPlayer()))
+		{
+			UISubsystem->OnTeamChange.Broadcast(Team);
+		}
+		
 		// AMutationController::InitHUD依赖Team，OnRep_Team后主动调一下InitHUD。
 		MutationController->InitHUD();
 	}
@@ -86,7 +93,10 @@ void AMutationPlayerState::Show1000DamageUI(float TempDamage)
 		{
 			BaseDamage -= 1000.f;
 
-			MutationController->OnCause1000Damage.Broadcast();
+			if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(MutationController->GetLocalPlayer()))
+			{
+				UISubsystem->OnCause1000Damage.Broadcast();
+			}
 		}
 	}
 }

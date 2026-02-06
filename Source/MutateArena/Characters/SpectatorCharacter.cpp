@@ -8,6 +8,7 @@
 #include "Data/InputAsset.h"
 #include "GameFramework/GameMode.h"
 #include "MutateArena/GameStates/BaseGameState.h"
+#include "MutateArena/System/UISubsystem.h"
 #include "MutateArena/System/Storage/SaveGameSetting.h"
 #include "MutateArena/System/Storage/StorageSubsystem.h"
 
@@ -121,7 +122,10 @@ void ASpectatorCharacter::ScoreboardButtonPressed(const FInputActionValue& Value
 	if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
 	if (BaseController)
 	{
-		BaseController->ShowScoreboard.Broadcast(true);
+		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
+		{
+			UISubsystem->ShowScoreboard.Broadcast(true);
+		}
 	}
 }
 
@@ -130,7 +134,10 @@ void ASpectatorCharacter::ScoreboardButtonReleased(const FInputActionValue& Valu
 	if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
 	if (BaseController)
 	{
-		BaseController->ShowScoreboard.Broadcast(false);
+		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
+		{
+			UISubsystem->ShowScoreboard.Broadcast(false);
+		}
 	}
 }
 
@@ -139,7 +146,10 @@ void ASpectatorCharacter::PauseMenuButtonPressed(const FInputActionValue& Value)
 	if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
 	if (BaseController)
 	{
-		BaseController->ShowPauseMenu.Broadcast();
+		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
+		{
+			UISubsystem->ShowPauseMenu.Broadcast();
+		}
 	}
 }
 
@@ -158,6 +168,10 @@ void ASpectatorCharacter::TextChat(const FInputActionValue& Value)
 	if (BaseController)
 	{
 		BaseController->FocusUI();
-		BaseController->ShowTextChat.Broadcast();
+		
+		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
+		{
+			UISubsystem->ShowTextChat.Broadcast();
+		}
 	}
 }

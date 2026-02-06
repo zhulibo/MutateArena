@@ -35,6 +35,7 @@
 #include "Materials/MaterialParameterCollectionInstance.h"
 #include "MutateArena/GameStates/BaseGameState.h"
 #include "MutateArena/Assets/Data/CommonAsset.h"
+#include "MutateArena/System/UISubsystem.h"
 #include "MutateArena/UI/TextChat/TextChat.h"
 #include "Net/UnrealNetwork.h"
 
@@ -562,7 +563,10 @@ void ABaseCharacter::InteractStarted(const FInputActionValue& Value)
 				if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
 				if (BaseController)
 				{
-					BaseController->OnInteractStarted.Broadcast();
+					if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
+					{
+						UISubsystem->OnInteractStarted.Broadcast();
+					}
 				}
 				
 				return;
@@ -599,7 +603,10 @@ void ABaseCharacter::InteractOngoing(const FInputActionValue& Value)
 	if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
 	if (BaseController)
 	{
-		BaseController->OnInteractEnded.Broadcast();
+		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
+		{
+			UISubsystem->OnInteractEnded.Broadcast();
+		}
 	}
 }
 
@@ -633,7 +640,10 @@ void ABaseCharacter::InteractCompleted(const FInputActionValue& Value)
 	if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
 	if (BaseController)
 	{
-		BaseController->OnInteractEnded.Broadcast();
+		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
+		{
+			UISubsystem->OnInteractEnded.Broadcast();
+		}
 	}
 }
 
@@ -644,7 +654,10 @@ void ABaseCharacter::InteractCanceled(const FInputActionValue& Value)
 	if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
 	if (BaseController)
 	{
-		BaseController->OnInteractEnded.Broadcast();
+		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
+		{
+			UISubsystem->OnInteractEnded.Broadcast();
+		}
 	}
 }
 
@@ -653,7 +666,10 @@ void ABaseCharacter::ScoreboardButtonPressed(const FInputActionValue& Value)
 	if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
 	if (BaseController)
 	{
-		BaseController->ShowScoreboard.Broadcast(true);
+		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
+		{
+			UISubsystem->ShowScoreboard.Broadcast(true);
+		}
 	}
 }
 
@@ -662,7 +678,10 @@ void ABaseCharacter::ScoreboardButtonReleased(const FInputActionValue& Value)
 	if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
 	if (BaseController)
 	{
-		BaseController->ShowScoreboard.Broadcast(false);
+		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
+		{
+			UISubsystem->ShowScoreboard.Broadcast(false);
+		}
 	}
 }
 
@@ -671,7 +690,10 @@ void ABaseCharacter::PauseMenuButtonPressed(const FInputActionValue& Value)
 	if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
 	if (BaseController)
 	{
-		BaseController->ShowPauseMenu.Broadcast();
+		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
+		{
+			UISubsystem->ShowPauseMenu.Broadcast();
+		}
 	}
 }
 
@@ -681,7 +703,10 @@ void ABaseCharacter::RadialMenuButtonPressed(const FInputActionValue& Value)
 	if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
 	if (BaseController)
 	{
-		BaseController->ShowRadialMenu.Broadcast(true);
+		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
+		{
+			UISubsystem->ShowRadialMenu.Broadcast(true);
+		}
 	}
 }
 
@@ -690,7 +715,10 @@ void ABaseCharacter::RadialMenuButtonReleased(const FInputActionValue& Value)
 	if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
 	if (BaseController)
 	{
-		BaseController->ShowRadialMenu.Broadcast(false);
+		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
+		{
+			UISubsystem->ShowRadialMenu.Broadcast(false);
+		}
 	}
 }
 
@@ -699,7 +727,10 @@ void ABaseCharacter::RadialMenuSwitchButtonPressed(const FInputActionValue& Valu
 	if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
 	if (BaseController)
 	{
-		BaseController->SwitchRadialMenu.Broadcast();
+		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
+		{
+			UISubsystem->SwitchRadialMenu.Broadcast();
+		}
 	}
 }
 
@@ -710,7 +741,10 @@ void ABaseCharacter::RadialMenuSelect(const FInputActionValue& Value)
 	if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
 	if (BaseController)
 	{
-		BaseController->SelectRadialMenu.Broadcast(AxisVector.X, AxisVector.Y);
+		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
+		{
+			UISubsystem->SelectRadialMenu.Broadcast(AxisVector.X, AxisVector.Y);
+		}
 	}
 	// UE_LOG(LogTemp, Warning, TEXT("222 x y time: %f %f %f"), AxisVector.X, AxisVector.Y, GetWorld()->GetTimeSeconds());
 }
@@ -730,7 +764,11 @@ void ABaseCharacter::TextChat(const FInputActionValue& Value)
 	if (BaseController)
 	{
 		BaseController->FocusUI();
-		BaseController->ShowTextChat.Broadcast();
+		
+		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
+		{
+			UISubsystem->ShowTextChat.Broadcast();
+		}
 	}
 }
 

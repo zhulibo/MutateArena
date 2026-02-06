@@ -20,7 +20,7 @@ protected:
 	UPROPERTY()
 	AHumanCharacter* HumanCharacter;
 	UPROPERTY()
-	class ABaseController* BaseController;
+	class UUISubsystem* UISubsystem;
 
 public:
 	float VelocityFactor = 0.f;

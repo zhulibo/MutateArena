@@ -16,6 +16,6 @@ public class MutateArenaEditorTarget : TargetRules
 
 	private void RegisterModulesCreatedByRider()
 	{
-		ExtraModuleNames.AddRange(new string[] { "Editor" });
+		ExtraModuleNames.AddRange(new string[] { "DevEditor" });
 	}
 }

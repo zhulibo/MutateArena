@@ -2,14 +2,15 @@
 
 #include "ProjectTags.h"
 #include "MutateArena/PlayerControllers/BaseController.h"
+#include "MutateArena/System/UISubsystem.h"
 #include "MutateArena/UI/HUD/PauseMenu.h"
 #include "Widgets/CommonActivatableWidgetContainer.h"
 
 void UGameLayout::NativeOnInitialized()
 {
-	if (ABaseController* BaseController = Cast<ABaseController>(GetOwningPlayer()))
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer()))
 	{
-		BaseController->ShowPauseMenu.AddUObject(this, &ThisClass::ShowPauseMenu);
+		UISubsystem->ShowPauseMenu.AddUObject(this, &ThisClass::ShowPauseMenu);
 	}
 }
 

@@ -4,34 +4,10 @@
 #include "BaseController.h"
 #include "MutationController.generated.h"
 
-enum class ETeam : uint8;
-
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnTeamChange, ETeam Team);
-DECLARE_MULTICAST_DELEGATE_TwoParams(FOnTeamNumChange, int32 TeamNum, ETeam Team);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnCurRoundChange, int32 Round);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnTotalRoundChange, int32 Round);
-DECLARE_MULTICAST_DELEGATE(FOnCause1000Damage);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnSkillChange, bool bIsShow);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnRageChange, float Rage);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnDamageMulChange, float DamageMul);
-DECLARE_MULTICAST_DELEGATE(FOnBeImmune);
-
 UCLASS()
 class MUTATEARENA_API AMutationController : public ABaseController
 {
 	GENERATED_BODY()
-
-public:
-	// TODO Move to UISubsystem
-	FOnTeamChange OnTeamChange;
-	FOnTeamNumChange OnTeamNumChange;
-	FOnCurRoundChange OnCurRoundChange;
-	FOnTotalRoundChange OnTotalRoundChange;
-	FOnCause1000Damage OnCause1000Damage;
-	FOnSkillChange OnSkillChange;
-	FOnRageChange OnRageChange;
-	FOnDamageMulChange OnDamageMulChange;
-	FOnBeImmune OnBeImmune;
 	
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;

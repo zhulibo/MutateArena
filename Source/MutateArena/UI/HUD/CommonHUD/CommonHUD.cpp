@@ -15,24 +15,21 @@
 #include "Components/EditableTextBox.h"
 #include "Components/HorizontalBox.h"
 #include "Components/VerticalBox.h"
+#include "MutateArena/System/UISubsystem.h"
 
 #define LOCTEXT_NAMESPACE "UCommonHUD"
 
 void UCommonHUD::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
-
-	if (ABaseController* BaseController = Cast<ABaseController>(GetOwningPlayer()))
+	
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer()))
 	{
-		BaseController->ChangeAnnouncement.AddUObject(this, &ThisClass::OnAnnouncementChange);
-		BaseController->OnKillStreakChange.AddUObject(this, &ThisClass::OnKillStreakChange);
-		BaseController->OnHUDStateChange.AddUObject(this, &ThisClass::OnHUDStateChange);
-		BaseController->OnCauseDamage.AddUObject(this, &ThisClass::OnCauseDamage);
-	}
-
-	if (ABaseGameState* BaseGameState = GetWorld()->GetGameState<ABaseGameState>())
-	{
-		BaseGameState->OnAddKillLog.AddUObject(this, &ThisClass::OnAddKillLog);
+		UISubsystem->ChangeAnnouncement.AddUObject(this, &ThisClass::OnAnnouncementChange);
+		UISubsystem->OnKillStreakChange.AddUObject(this, &ThisClass::OnKillStreakChange);
+		UISubsystem->OnHUDStateChange.AddUObject(this, &ThisClass::OnHUDStateChange);
+		UISubsystem->OnCauseDamage.AddUObject(this, &ThisClass::OnCauseDamage);
+		UISubsystem->OnAddKillLog.AddUObject(this, &ThisClass::OnAddKillLog);
 	}
 	
 	// 默认隐藏聊天输入框

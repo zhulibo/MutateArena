@@ -32,7 +32,7 @@ enum class EHumanDNA : uint8
 };
 
 UENUM(BlueprintType)
-enum class EHumanSkill : uint8
+enum class EHumanSpecialty : uint8
 {
 	// None,
 

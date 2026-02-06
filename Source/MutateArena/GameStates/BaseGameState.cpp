@@ -7,6 +7,7 @@
 #include "MutateArena/PlayerStates/BasePlayerState.h"
 #include "MutateArena/PlayerStates/TeamType.h"
 #include "Kismet/GameplayStatics.h"
+#include "MutateArena/System/UISubsystem.h"
 #include "Net/UnrealNetwork.h"
 
 void ABaseGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -38,12 +39,18 @@ void ABaseGameState::HandleMatchHasStarted()
 {
 	Super::HandleMatchHasStarted();
 
-	OnRoundStarted.Broadcast();
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetWorld()->GetFirstLocalPlayerFromController()))
+	{
+		UISubsystem->OnRoundStarted.Broadcast();
+	}
 }
 
 void ABaseGameState::HandleRoundHasEnded()
 {
-	OnRoundEnded.Broadcast();
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetWorld()->GetFirstLocalPlayerFromController()))
+	{
+		UISubsystem->OnRoundEnded.Broadcast();
+	}
 }
 
 void ABaseGameState::AddToPlayerStates(ABasePlayerState* BasePlayerState, ETeam Team)
@@ -96,12 +103,18 @@ TArray<ABasePlayerState*> ABaseGameState::GetPlayerStates(TOptional<ETeam> Team)
 
 void ABaseGameState::MulticastAddKillLog_Implementation(ABasePlayerState* AttackerState, const FText& CauserName, ABasePlayerState* DamagedState)
 {
-	OnAddKillLog.Broadcast(AttackerState, CauserName, DamagedState);
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetWorld()->GetFirstLocalPlayerFromController()))
+	{
+		UISubsystem->OnAddKillLog.Broadcast(AttackerState, CauserName, DamagedState);
+	}
 }
 
 void ABaseGameState::MulticastSendMsg_Implementation(const EMsgType MsgType, const ETeam Team, const FString& PlayerName, const FString& Msg)
 {
-	OnReceiveMsg.Broadcast(MsgType, Team, PlayerName, Msg);
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetWorld()->GetFirstLocalPlayerFromController()))
+	{
+		UISubsystem->OnReceiveMsg.Broadcast(MsgType, Team, PlayerName, Msg);
+	}
 }
 
 void ABaseGameState::SetAllEquipments()

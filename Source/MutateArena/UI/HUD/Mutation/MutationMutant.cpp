@@ -9,16 +9,17 @@
 #include "MutateArena/PlayerStates/TeamType.h"
 #include "MutateArena/UI/Common/CommonButton.h"
 #include "Components/HorizontalBox.h"
+#include "MutateArena/System/UISubsystem.h"
 
 void UMutationMutant::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
 	
-	if (AMutationController* MutationController = Cast<AMutationController>(GetOwningPlayer()))
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer()))
 	{
-		MutationController->OnMutantHealthChange.AddUObject(this, &ThisClass::OnMutantHealthChange);
-		MutationController->OnSkillChange.AddUObject(this, &ThisClass::OnSkillChange);
-		MutationController->OnRageChange.AddUObject(this, &ThisClass::OnRageChange);
+		UISubsystem->OnMutantHealthChange.AddUObject(this, &ThisClass::OnMutantHealthChange);
+		UISubsystem->OnSkillChange.AddUObject(this, &ThisClass::OnSkillChange);
+		UISubsystem->OnRageChange.AddUObject(this, &ThisClass::OnRageChange);
 	}
 
 	SkillButton->OnClicked().AddUObject(this, &ThisClass::OnSkillButtonClicked);

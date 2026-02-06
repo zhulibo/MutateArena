@@ -3,6 +3,7 @@
 #include "MutateArena/GameStates/MutationGameState.h"
 #include "Components/SphereComponent.h"
 #include "MutateArena/MutateArena.h"
+#include "MutateArena/System/UISubsystem.h"
 #include "Net/UnrealNetwork.h"
 
 AHerb::AHerb()
@@ -35,10 +36,9 @@ void AHerb::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	if (MutationGameState == nullptr) MutationGameState = GetWorld()->GetGameState<AMutationGameState>();
-	if (MutationGameState)
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetWorld()->GetFirstLocalPlayerFromController()))
 	{
-		MutationGameState->OnRoundStarted.AddUObject(this, &ThisClass::OnRoundStarted);
+		UISubsystem->OnRoundStarted.AddUObject(this, &ThisClass::OnRoundStarted);
 	}
 }
 

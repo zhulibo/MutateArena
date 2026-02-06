@@ -3,6 +3,7 @@
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/PlayerControllers/BaseController.h"
 #include "Components/ProgressBar.h"
+#include "MutateArena/System/UISubsystem.h"
 
 void UInteract::NativeOnInitialized()
 {
@@ -10,10 +11,10 @@ void UInteract::NativeOnInitialized()
 
 	ProgressBar->SetFillColorAndOpacity(C_GREEN);
 
-	if (ABaseController* BaseController = Cast<ABaseController>(GetOwningPlayer()))
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer()))
 	{
-		BaseController->OnInteractStarted.AddUObject(this, &ThisClass::OnInteractStarted);
-		BaseController->OnInteractEnded.AddUObject(this, &ThisClass::OnInteractEnded);
+		UISubsystem->OnInteractStarted.AddUObject(this, &ThisClass::OnInteractStarted);
+		UISubsystem->OnInteractEnded.AddUObject(this, &ThisClass::OnInteractEnded);
 	}
 }
 

@@ -2,6 +2,7 @@
 
 #include "MutateArena/GameStates/MutationGameState.h"
 #include "Components/SphereComponent.h"
+#include "MutateArena/System/UISubsystem.h"
 
 APickup::APickup()
 {
@@ -23,10 +24,9 @@ void APickup::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	if (MutationGameState == nullptr) MutationGameState = GetWorld()->GetGameState<AMutationGameState>();
-	if (MutationGameState)
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetWorld()->GetFirstLocalPlayerFromController()))
 	{
-		MutationGameState->OnRoundStarted.AddUObject(this, &ThisClass::OnRoundStarted);
+		UISubsystem->OnRoundStarted.AddUObject(this, &ThisClass::OnRoundStarted);
 	}
 }
 

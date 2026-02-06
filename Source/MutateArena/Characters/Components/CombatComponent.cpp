@@ -22,6 +22,7 @@
 #include "Materials/MaterialParameterCollectionInstance.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/Equipments/Data/EquipmentAsset.h"
+#include "MutateArena/System/UISubsystem.h"
 #include "Net/UnrealNetwork.h"
 
 UCombatComponent::UCombatComponent()
@@ -451,7 +452,10 @@ void UCombatComponent::UseEquipment(AEquipment* Equipment)
 			BaseController->SetHUDCarriedAmmo(0);
 		}
 
-		BaseController->OnCrosshairHidden.Broadcast(bIsAiming);
+		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
+		{
+			UISubsystem->OnCrosshairHidden.Broadcast(bIsAiming);
+		}
 	}
 
 	HumanCharacter->UpdateMaxWalkSpeed();
@@ -582,7 +586,10 @@ void UCombatComponent::LocalSetAiming(bool TempBIsAiming)
 		if (BaseController == nullptr) BaseController = Cast<ABaseController>(HumanCharacter->Controller);
 		if (BaseController)
 		{
-			BaseController->OnCrosshairHidden.Broadcast(bIsAiming);
+			if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
+			{
+				UISubsystem->OnCrosshairHidden.Broadcast(bIsAiming);
+			}
 		}
 		
 		// 调整FOV

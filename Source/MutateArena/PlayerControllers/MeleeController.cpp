@@ -5,6 +5,7 @@
 #include "MutateArena/PlayerStates/TeamType.h"
 #include "MutateArena/UI/HUD/TeamDeadMatch/TeamDeadMatchHUD.h"
 #include "Kismet/GameplayStatics.h"
+#include "MutateArena/System/UISubsystem.h"
 #include "Net/UnrealNetwork.h"
 
 #define LOCTEXT_NAMESPACE "AMeleeController"
@@ -110,7 +111,10 @@ void AMeleeController::SetHUDTime()
 		}
 		if (MatchState == MatchState::InProgress)
 		{
-			OnMatchCountdownChange.Broadcast(SecondsLeft);
+			if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
+			{
+				UISubsystem->OnMatchCountdownChange.Broadcast(SecondsLeft);
+			}
 		}
 		else if (MatchState == MatchState::WaitingPostMatch)
 		{
@@ -136,12 +140,18 @@ void AMeleeController::InitHUD()
 
 void AMeleeController::SetHUDHealth(float Health)
 {
-	OnHumanHealthChange.Broadcast(Health);
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
+	{
+		UISubsystem->OnHumanHealthChange.Broadcast(Health);
+	}
 }
 
 void AMeleeController::SetHUDTeamScore(float Score, ETeam Team)
 {
-	OnTeamScoreChange.Broadcast(Score, Team);
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
+	{
+		UISubsystem->OnTeamScoreChange.Broadcast(Score, Team);
+	}
 }
 
 #undef LOCTEXT_NAMESPACE

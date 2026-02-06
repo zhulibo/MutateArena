@@ -12,6 +12,7 @@
 #include "GameFramework/PlayerState.h"
 #include "MutateArena/Characters/Data/InputAsset.h"
 #include "MutateArena/System/AssetSubsystem.h"
+#include "MutateArena/System/UISubsystem.h"
 #include "Widgets/CommonActivatableWidgetContainer.h"
 
 #define LOCTEXT_NAMESPACE "ABaseController"
@@ -180,31 +181,46 @@ void ABaseController::OnRep_Pawn()
 void ABaseController::SetViewTarget(class AActor* NewViewTarget, FViewTargetTransitionParams TransitionParams)
 {
 	Super::SetViewTarget(NewViewTarget, TransitionParams);
-
-	OnViewTargetChange.Broadcast(NewViewTarget);
+	
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
+	{
+		UISubsystem->OnViewTargetChange.Broadcast(NewViewTarget);
+	}
 }
 
 void ABaseController::ClientHUDStateChanged_Implementation(EHUDState HUDState)
 {
-	OnHUDStateChange.Broadcast(HUDState);
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
+	{
+		UISubsystem->OnHUDStateChange.Broadcast(HUDState);
+	}
 }
 
 void ABaseController::SetHUDWarmupCountdown(int32 CountdownTime)
 {
 	FString String = ULibraryCommon::GetFormatTime(CountdownTime);
-	ChangeAnnouncement.Broadcast(FText::Format(LOCTEXT("GameStart", "Game starts in {0}"), FText::FromString(String)));
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
+	{
+		UISubsystem->ChangeAnnouncement.Broadcast(FText::Format(LOCTEXT("GameStart", "Game starts in {0}"), FText::FromString(String)));
+	}
 }
 
 void ABaseController::HandleMatchHasStarted()
 {
-	ChangeAnnouncement.Broadcast(FText());
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
+	{
+		UISubsystem->ChangeAnnouncement.Broadcast(FText());
+	}
 }
 
 void ABaseController::HandleMatchHasEnded()
 {
-	OnMatchEnd.Broadcast();
-	
-	ChangeAnnouncement.Broadcast(LOCTEXT("GameOver", "Game over"));
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
+	{
+		UISubsystem->OnMatchEnd.Broadcast();
+		
+		UISubsystem->ChangeAnnouncement.Broadcast(LOCTEXT("GameOver", "Game over"));
+	}
 }
 
 void ABaseController::HandleLeavingMap()
@@ -218,12 +234,18 @@ void ABaseController::HandleLeavingMap()
 
 void ABaseController::SetHUDAmmo(int32 Ammo)
 {
-	OnAmmoChange.Broadcast(Ammo);
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
+	{
+		UISubsystem->OnAmmoChange.Broadcast(Ammo);
+	}
 }
 
 void ABaseController::SetHUDCarriedAmmo(int32 CarriedAmmo)
 {
-	OnCarriedAmmoChange.Broadcast(CarriedAmmo);
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
+	{
+		UISubsystem->OnCarriedAmmoChange.Broadcast(CarriedAmmo);
+	}
 }
 
 void ABaseController::ServerSendMsg_Implementation(EMsgType MsgType, ETeam Team, const FString& PlayerName, const FString& Msg)

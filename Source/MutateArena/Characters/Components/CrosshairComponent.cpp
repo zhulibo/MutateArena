@@ -7,6 +7,7 @@
 #include "MutateArena/Equipments/Weapon.h"
 #include "MutateArena/PlayerControllers/BaseController.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "MutateArena/System/UISubsystem.h"
 
 UCrosshairComponent::UCrosshairComponent()
 {
@@ -36,9 +37,16 @@ void UCrosshairComponent::TickComponent(float DeltaSeconds, ELevelTick TickType,
 void UCrosshairComponent::SetHUDCrosshair(float DeltaSeconds)
 {
 	if (HumanCharacter == nullptr || HumanCharacter->CombatComponent == nullptr) return;
-	if (BaseController == nullptr) BaseController = Cast<ABaseController>(HumanCharacter->Controller);
-	if (BaseController == nullptr) return;
-
+	
+	if (UISubsystem == nullptr)
+	{
+		if (APlayerController* PlayerController = Cast<APlayerController>(HumanCharacter->GetController()))
+		{
+			UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(PlayerController->GetLocalPlayer());
+		}
+	}
+	if (UISubsystem == nullptr) return;
+	
 	AWeapon* Weapon = HumanCharacter->CombatComponent->GetCurWeapon();
 	if (Weapon == nullptr) return;
 
@@ -65,5 +73,5 @@ void UCrosshairComponent::SetHUDCrosshair(float DeltaSeconds)
 
 	float TotalFactor = 4.f + VelocityFactor * 1.f + JumpFactor * 2.f + ShootFactor * 2.f;
 
-	BaseController->ChangeCrosshairSpread.Broadcast(Weapon->CrosshairBaseSpread * TotalFactor);
+	UISubsystem->ChangeCrosshairSpread.Broadcast(Weapon->CrosshairBaseSpread * TotalFactor);
 }

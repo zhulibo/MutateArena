@@ -34,6 +34,7 @@
 #include "Data/InputAsset.h"
 #include "MutateArena/Abilities/AttributeSetBase.h"
 #include "MutateArena/Abilities/MAAbilitySystemComponent.h"
+#include "MutateArena/System/UISubsystem.h"
 #include "Net/UnrealNetwork.h"
 
 #define LOCTEXT_NAMESPACE "AHumanCharacter"
@@ -391,6 +392,7 @@ void AHumanCharacter::FireButtonPressed(const FInputActionValue& Value)
 
 	bCanSwitchLoadout = false;
 
+	// TODO use interface
 	switch (CombatComponent->CurEquipmentType)
 	{
 	case EEquipmentType::Primary:
@@ -667,7 +669,10 @@ void AHumanCharacter::OnInteractMutantSuccess(class AMutantCharacter* MutantChar
 
 	if (AMutationController* InteractController = Cast<AMutationController>(Controller))
 	{
-		InteractController->OnBeImmune.Broadcast();
+		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(InteractController->GetLocalPlayer()))
+		{
+			UISubsystem->OnBeImmune.Broadcast();
+		}
 	}
 
 	ServerOnImmune(MutantCharacter);

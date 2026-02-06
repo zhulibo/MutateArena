@@ -389,7 +389,7 @@ void UServer::OnLobbyJoined(const FLobbyJoined& LobbyJoined)
 
 void UServer::GoToLobby()
 {
-	if (UISubsystem == nullptr) UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer());;
+	if (UISubsystem == nullptr) UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer());
 	if (UISubsystem)
 	{
 		if (auto Layer = UISubsystem->GetLayerStack(TAG_UI_LAYER_SERVER))

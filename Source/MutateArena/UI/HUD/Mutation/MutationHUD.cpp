@@ -3,18 +3,19 @@
 #include "CommonTextBlock.h"
 #include "MutateArena/PlayerControllers/MutationController.h"
 #include "MutateArena/PlayerStates/TeamType.h"
+#include "MutateArena/System/UISubsystem.h"
 #include "MutateArena/Utils/LibraryCommon.h"
 
 void UMutationHUD::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
 	
-	if (AMutationController* MutationController = Cast<AMutationController>(GetOwningPlayer()))
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer()))
 	{
-		MutationController->OnMatchCountdownChange.AddUObject(this, &ThisClass::OnMatchCountdownChange);
-		MutationController->OnTeamNumChange.AddUObject(this, &ThisClass::OnTeamNumChange);
-		MutationController->OnCurRoundChange.AddUObject(this, &ThisClass::OnCurRoundChange);
-		MutationController->OnTotalRoundChange.AddUObject(this, &ThisClass::OnTotalRoundChange);
+		UISubsystem->OnMatchCountdownChange.AddUObject(this, &ThisClass::OnMatchCountdownChange);
+		UISubsystem->OnTeamNumChange.AddUObject(this, &ThisClass::OnTeamNumChange);
+		UISubsystem->OnCurRoundChange.AddUObject(this, &ThisClass::OnCurRoundChange);
+		UISubsystem->OnTotalRoundChange.AddUObject(this, &ThisClass::OnTotalRoundChange);
 	}
 }
 

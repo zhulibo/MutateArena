@@ -2,12 +2,12 @@
 
 #include "CoreMinimal.h"
 #include "CommonButtonBase.h"
-#include "HumanSkillButton.generated.h"
+#include "HumanSpecialtyButton.generated.h"
 
-enum class EHumanSkill : uint8;
+enum class EHumanSpecialty : uint8;
 
 UCLASS()
-class MUTATEARENA_API UHumanSkillButton : public UCommonButtonBase
+class MUTATEARENA_API UHumanSpecialtyButton : public UCommonButtonBase
 {
 	GENERATED_BODY()
 
@@ -16,6 +16,6 @@ public:
 	class UCommonLazyImage* ShowImg;
 
 	UPROPERTY()
-	EHumanSkill HumanSkill;
+	EHumanSpecialty HumanSpecialty;
 
 };

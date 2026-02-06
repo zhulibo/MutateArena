@@ -4,6 +4,7 @@
 #include "MutateArena/Characters/BaseCharacter.h"
 #include "MutateArena/PlayerControllers/BaseController.h"
 #include "MutateArena/PlayerStates/BasePlayerState.h"
+#include "MutateArena/System/UISubsystem.h"
 #include "MutateArena/UI/Common/CommonButton.h"
 
 #define LOCTEXT_NAMESPACE "USpectator"
@@ -15,7 +16,10 @@ void USpectator::NativeOnInitialized()
 	BaseController = Cast<ABaseController>(GetOwningPlayer());
 	if (BaseController)
 	{
-		BaseController->OnViewTargetChange.AddUObject(this, &ThisClass::OnViewTargetChange);
+		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer()))
+		{
+			UISubsystem->OnViewTargetChange.AddUObject(this, &ThisClass::OnViewTargetChange);
+		}
 	}
 }
 

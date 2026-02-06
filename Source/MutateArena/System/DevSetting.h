@@ -52,4 +52,6 @@ public:
 	UPROPERTY(Config, EditAnywhere, Category = "EditorMaps", meta=(AllowedClasses="/Script/Engine.World"))
 	TArray<FSoftObjectPath> EditorMaps;
 
+	virtual FText GetSectionText() const override;
+	
 };

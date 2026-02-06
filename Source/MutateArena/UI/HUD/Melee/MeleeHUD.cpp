@@ -3,19 +3,20 @@
 #include "CommonTextBlock.h"
 #include "MutateArena/PlayerControllers/MeleeController.h"
 #include "MutateArena/PlayerStates/TeamType.h"
+#include "MutateArena/System/UISubsystem.h"
 #include "MutateArena/Utils/LibraryCommon.h"
 
 void UMeleeHUD::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
 
-	if (AMeleeController* MeleeController = Cast<AMeleeController>(GetOwningPlayer()))
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer()))
 	{
-		MeleeController->OnMatchCountdownChange.AddUObject(this, &ThisClass::OnMatchCountdownChange);
-		MeleeController->OnHumanHealthChange.AddUObject(this, &ThisClass::OnHumanHealthChange);
-		MeleeController->OnAmmoChange.AddUObject(this, &ThisClass::OnAmmoChange);
-		MeleeController->OnCarriedAmmoChange.AddUObject(this, &ThisClass::OnCarriedAmmoChange);
-		MeleeController->OnTeamScoreChange.AddUObject(this, &ThisClass::OnTeamScoreChange);
+		UISubsystem->OnMatchCountdownChange.AddUObject(this, &ThisClass::OnMatchCountdownChange);
+		UISubsystem->OnHumanHealthChange.AddUObject(this, &ThisClass::OnHumanHealthChange);
+		UISubsystem->OnAmmoChange.AddUObject(this, &ThisClass::OnAmmoChange);
+		UISubsystem->OnCarriedAmmoChange.AddUObject(this, &ThisClass::OnCarriedAmmoChange);
+		UISubsystem->OnTeamScoreChange.AddUObject(this, &ThisClass::OnTeamScoreChange);
 	}
 }
 

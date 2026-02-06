@@ -4,62 +4,12 @@
 #include "ModularPlayerController.h"
 #include "BaseController.generated.h"
 
-enum class EHUDState : uint8;
 enum class EMsgType : uint8;
-enum class ETeam : uint8;
-
-DECLARE_MULTICAST_DELEGATE_OneParam(FChangeCrosshairSpread, float Spread);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnCrosshairHidden, bool bIsHidden);
-DECLARE_MULTICAST_DELEGATE_OneParam(FChangeAnnouncement, FText Text);
-DECLARE_MULTICAST_DELEGATE(FOnMatchEnd);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnMatchCountdownChange, int32 CountdownTime);
-DECLARE_MULTICAST_DELEGATE_OneParam(FShowScoreboard, bool bIsShow);
-DECLARE_MULTICAST_DELEGATE(FShowPauseMenu);
-DECLARE_MULTICAST_DELEGATE_OneParam(FShowRadialMenu, bool bIsShow);
-DECLARE_MULTICAST_DELEGATE(FSwitchRadialMenu);
-DECLARE_MULTICAST_DELEGATE_TwoParams(FSelectRadialMenu, double X, double Y);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnKillStreakChange, int32 KillStreak);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnHumanHealthChange, float Health);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnMutantHealthChange, float Health);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnAmmoChange, int32 Ammo);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnCarriedAmmoChange, int32 CarriedAmmo);
-DECLARE_MULTICAST_DELEGATE(FShowTextChat);
-DECLARE_MULTICAST_DELEGATE_FourParams(FSendRadioMsg, EMsgType MsgType, ETeam Team, const FString& PlayerName, const FString& Msg);
-DECLARE_MULTICAST_DELEGATE(FOnInteractStarted);
-DECLARE_MULTICAST_DELEGATE(FOnInteractEnded);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnHUDStateChange, EHUDState HUDState);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnViewTargetChange, AActor* ViewTarget);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnCauseDamage, float TempDamage);
 
 UCLASS()
 class MUTATEARENA_API ABaseController : public AModularPlayerController
 {
 	GENERATED_BODY()
-
-public:
-	// TODO Move to UISubsystem
-	FChangeCrosshairSpread ChangeCrosshairSpread;
-	FOnCrosshairHidden OnCrosshairHidden;
-	FChangeAnnouncement ChangeAnnouncement;
-	FOnMatchEnd OnMatchEnd;
-	FOnMatchCountdownChange OnMatchCountdownChange;
-	FShowScoreboard ShowScoreboard;
-	FShowPauseMenu ShowPauseMenu;
-	FShowRadialMenu ShowRadialMenu;
-	FSwitchRadialMenu SwitchRadialMenu;
-	FSelectRadialMenu SelectRadialMenu;
-	FOnKillStreakChange OnKillStreakChange;
-	FOnHumanHealthChange OnHumanHealthChange;
-	FOnMutantHealthChange OnMutantHealthChange;
-	FOnAmmoChange OnAmmoChange;
-	FOnCarriedAmmoChange OnCarriedAmmoChange;
-	FShowTextChat ShowTextChat;
-	FSendRadioMsg SendRadioMsg;
-	FOnInteractStarted OnInteractStarted;
-	FOnInteractEnded OnInteractEnded;
-	FOnHUDStateChange OnHUDStateChange;
-	FOnViewTargetChange OnViewTargetChange;
-	FOnCauseDamage OnCauseDamage;
 	
 protected:
 	virtual void BeginPlay() override;

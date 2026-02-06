@@ -69,7 +69,7 @@ enum class EEquipmentType : uint8 // 装备类型（装备的位置）
 	Melee,
 	Throwing,
 	// Tool,
-	// Tonic,
+	// Medicine,
 
 	None
 };

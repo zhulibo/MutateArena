@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 #include "Modules/ModuleManager.h"
 
-class FEditorModule : public IModuleInterface
+class FDevEditorModule : public IModuleInterface
 {
     
 public:

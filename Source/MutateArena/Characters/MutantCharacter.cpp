@@ -462,6 +462,8 @@ void AMutantCharacter::OnLeftHandCapsuleOverlap(UPrimitiveComponent* OverlappedC
 
 void AMutantCharacter::ServerApplyDamage_Implementation(AActor* OtherActor, float Damage)
 {
+	if (bIsDead) return;
+	
 	// 对局结束只有人类可以造成伤害
 	if (MutationMode == nullptr) MutationMode = GetWorld()->GetAuthGameMode<AMutationMode>();
 	if (MutationMode)

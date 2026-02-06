@@ -3,19 +3,20 @@
 #include "CommonTextBlock.h"
 #include "MutateArena/PlayerControllers/TeamDeadMatchController.h"
 #include "MutateArena/PlayerStates/TeamType.h"
+#include "MutateArena/System/UISubsystem.h"
 #include "MutateArena/Utils/LibraryCommon.h"
 
 void UTeamDeadMatchHUD::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
 
-	if (ATeamDeadMatchController* TeamDeadMatchController = Cast<ATeamDeadMatchController>(GetOwningPlayer()))
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer()))
 	{
-		TeamDeadMatchController->OnMatchCountdownChange.AddUObject(this, &ThisClass::OnMatchCountdownChange);
-		TeamDeadMatchController->OnHumanHealthChange.AddUObject(this, &ThisClass::OnHumanHealthChange);
-		TeamDeadMatchController->OnAmmoChange.AddUObject(this, &ThisClass::OnAmmoChange);
-		TeamDeadMatchController->OnCarriedAmmoChange.AddUObject(this, &ThisClass::OnCarriedAmmoChange);
-		TeamDeadMatchController->OnTeamScoreChange.AddUObject(this, &ThisClass::OnTeamScoreChange);
+		UISubsystem->OnMatchCountdownChange.AddUObject(this, &ThisClass::OnMatchCountdownChange);
+		UISubsystem->OnHumanHealthChange.AddUObject(this, &ThisClass::OnHumanHealthChange);
+		UISubsystem->OnAmmoChange.AddUObject(this, &ThisClass::OnAmmoChange);
+		UISubsystem->OnCarriedAmmoChange.AddUObject(this, &ThisClass::OnCarriedAmmoChange);
+		UISubsystem->OnTeamScoreChange.AddUObject(this, &ThisClass::OnTeamScoreChange);
 	}
 }
 

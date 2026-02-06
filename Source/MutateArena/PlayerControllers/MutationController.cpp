@@ -14,6 +14,7 @@
 #include "Net/UnrealNetwork.h"
 #include "MetaSoundSource.h"
 #include "Components/AudioComponent.h"
+#include "MutateArena/System/UISubsystem.h"
 
 #define LOCTEXT_NAMESPACE "AMutationController"
 
@@ -124,7 +125,10 @@ void AMutationController::HandleMatchStateChange()
 
 void AMutationController::HandleRoundHasEnded()
 {
-	ChangeAnnouncement.Broadcast(LOCTEXT("RoundEnd", "Round end"));
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
+	{
+		UISubsystem->ChangeAnnouncement.Broadcast(LOCTEXT("RoundEnd", "Round end"));
+	}
 }
 
 void AMutationController::OnRep_CurRound()
@@ -162,8 +166,11 @@ void AMutationController::SetHUDTime()
 		}
 		else if (MatchState == MatchState::InProgress)
 		{
-			OnMatchCountdownChange.Broadcast(SecondsLeft);
-
+			if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
+			{
+				UISubsystem->OnMatchCountdownChange.Broadcast(SecondsLeft);
+			}
+			
 			// 突变倒计时
 			int32 MutateCountdown = FMath::RoundToInt(MutateTime + TimeLeft - RoundTime);
 			if (MutateCountdown > 0)
@@ -171,8 +178,11 @@ void AMutationController::SetHUDTime()
 				// 玩家中途加入需待ABaseController::ReturnServerTime和AMutationController::ReturnServerMatchInfo已完成
 				// 不然MutateCountdown计算是错误的
 				if (!bServerClientDeltaTimeHasInit || TotalRound == 0) return;
-
-				ChangeAnnouncement.Broadcast(FText::FromString(FString::Printf(TEXT("%d"), MutateCountdown)));
+				
+				if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
+				{
+					UISubsystem->ChangeAnnouncement.Broadcast(FText::FromString(FString::Printf(TEXT("%d"), MutateCountdown)));
+				}
 
 				// 播放倒计时
 				if (MutateCountdown <= 10 && MutateCountdown > 0)
@@ -189,7 +199,10 @@ void AMutationController::SetHUDTime()
 			}
 			else if (MutateCountdown == 0)
 			{
-				ChangeAnnouncement.Broadcast(FText());
+				if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
+				{
+					UISubsystem->ChangeAnnouncement.Broadcast(FText());
+				}
 			}
 		}
 		else if (MatchState == MatchState::WaitingPostMatch)
@@ -217,7 +230,10 @@ void AMutationController::InitHUD()
 			InitMutantHUD();
 		}
 
-		OnTeamChange.Broadcast(MutationPlayerState->Team);
+		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
+		{
+			UISubsystem->OnTeamChange.Broadcast(MutationPlayerState->Team);
+		}
 	}
 }
 
@@ -266,43 +282,67 @@ void AMutationController::SetHUDHealth(float Health)
 	{
 		if (MutationPlayerState->Team == ETeam::Team1)
 		{
-			OnHumanHealthChange.Broadcast(Health);
+			if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
+			{
+				UISubsystem->OnHumanHealthChange.Broadcast(Health);
+			}
 		}
 		else if(MutationPlayerState->Team == ETeam::Team2)
 		{
-			OnMutantHealthChange.Broadcast(Health);
+			if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
+			{
+				UISubsystem->OnMutantHealthChange.Broadcast(Health);
+			}
 		}
 	}
 }
 
 void AMutationController::SetHUDTeamNum(int32 TeamNum, ETeam Team)
 {
-	OnTeamNumChange.Broadcast(TeamNum, Team);
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
+	{
+		UISubsystem->OnTeamNumChange.Broadcast(TeamNum, Team);
+	}
 }
 
 void AMutationController::SetHUDCurRound()
 {
-	OnCurRoundChange.Broadcast(CurRound);
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
+	{
+		UISubsystem->OnCurRoundChange.Broadcast(CurRound);
+	}
 }
 
 void AMutationController::SetHUDTotalRound()
 {
-	OnTotalRoundChange.Broadcast(TotalRound);
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
+	{
+		UISubsystem->OnTotalRoundChange.Broadcast(TotalRound);
+	}
 }
 
 void AMutationController::ShowHUDSkill(bool bIsShow)
 {
-	OnSkillChange.Broadcast(bIsShow);
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
+	{
+		UISubsystem->OnSkillChange.Broadcast(bIsShow);
+	}
 }
 
 void AMutationController::SetHUDRage(float Rage)
 {
-	OnRageChange.Broadcast(Rage);
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
+	{
+		UISubsystem->OnRageChange.Broadcast(Rage);
+	}
 }
 
 void AMutationController::SetHUDDamageMul(float DamageMul)
 {
-	OnDamageMulChange.Broadcast(DamageMul);
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
+	{
+		UISubsystem->OnDamageMulChange.Broadcast(DamageMul);
+	}
 }
 
 void AMutationController::MulticastPlaySpawnPickupSound_Implementation()

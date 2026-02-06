@@ -71,7 +71,7 @@ void UPauseMenu::OnDeactivatedInternal()
 
 void UPauseMenu::OnLoadoutSelectClicked()
 {
-	if (UISubsystem == nullptr) UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer());;
+	if (UISubsystem == nullptr) UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer());
 	if (UISubsystem)
 	{
 		bWantToBack = false;
@@ -85,7 +85,7 @@ void UPauseMenu::OnLoadoutSelectClicked()
 
 void UPauseMenu::OnMutantSelectButtonClicked()
 {
-	if (UISubsystem == nullptr) UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer());;
+	if (UISubsystem == nullptr) UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer());
 	if (UISubsystem)
 	{
 		bWantToBack = false;
@@ -99,7 +99,7 @@ void UPauseMenu::OnMutantSelectButtonClicked()
 
 void UPauseMenu::OnSettingButtonClicked()
 {
-	if (UISubsystem == nullptr) UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer());;
+	if (UISubsystem == nullptr) UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer());
 	if (UISubsystem)
 	{
 		bWantToBack = false;
@@ -120,7 +120,7 @@ void UPauseMenu::OnQuitButtonClicked()
 {
 	UE_LOG(LogTemp, Warning, TEXT("OnQuitButtonClicked -------------------------------------------"));
 	
-	if (UISubsystem == nullptr) UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer());;
+	if (UISubsystem == nullptr) UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer());
 	if (AssetSubsystem == nullptr) AssetSubsystem = GetWorld()->GetGameInstance()->GetSubsystem<UAssetSubsystem>();
 	if (UISubsystem && AssetSubsystem && AssetSubsystem->CommonAsset)
 	{

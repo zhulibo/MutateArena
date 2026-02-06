@@ -32,10 +32,9 @@ void UMutantSelect::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
 
-	if (MutationGameState == nullptr) MutationGameState = GetWorld()->GetGameState<AMutationGameState>();
-	if (MutationGameState)
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer()))
 	{
-		MutationGameState->OnRoundEnded.AddUObject(this, &ThisClass::OnRoundEnded);
+		UISubsystem->OnRoundEnded.AddUObject(this, &ThisClass::OnRoundEnded);
 	}
 
 	if (UDataRegistry* DataRegistry = UDataRegistrySubsystem::Get()->GetRegistryForType(DR_MUTANT_CHARACTER_MAIN))
@@ -141,8 +140,7 @@ void UMutantSelect::OnRoundEnded()
 
 void UMutantSelect::CloseMenu(bool bClosePauseMenu)
 {
-	if (UISubsystem == nullptr) UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer());;
-	if (UISubsystem)
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer()))
 	{
 		DeactivateWidget();
 		

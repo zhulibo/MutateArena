@@ -13,6 +13,7 @@
 #include "MutateArena/Utils/LibraryNotify.h"
 #include "Components/EditableTextBox.h"
 #include "Components/ScrollBoxSlot.h"
+#include "MutateArena/System/UISubsystem.h"
 
 #define LOCTEXT_NAMESPACE "UTextChat"
 
@@ -23,17 +24,11 @@ void UTextChat::NativeOnInitialized()
 	EOSSubsystem = GetGameInstance()->GetSubsystem<UEOSSubsystem>();
 	
 	MsgEditableTextBox->OnTextCommitted.AddUniqueDynamic(this, &ThisClass::OnMsgCommitted);
-
-	BaseController = Cast<ABaseController>(GetOwningPlayer());
-	if (BaseController)
+	
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer()))
 	{
-		BaseController->ShowTextChat.AddUObject(this, &ThisClass::ShowTextChat);
-	}
-
-	BaseGameState = GetWorld()->GetGameState<ABaseGameState>();
-	if (BaseGameState)
-	{
-		BaseGameState->OnReceiveMsg.AddUObject(this, &ThisClass::ShowMsg);
+		UISubsystem->ShowTextChat.AddUObject(this, &ThisClass::ShowTextChat);
+		UISubsystem->OnReceiveMsg.AddUObject(this, &ThisClass::ShowMsg);
 	}
 }
 

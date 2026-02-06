@@ -116,7 +116,7 @@ void ULoadoutSelect::OnLoadoutSelectButtonClicked(int32 LoadoutIndex)
 
 void ULoadoutSelect::CloseMenu(bool bClosePauseMenu)
 {
-	if (UISubsystem == nullptr) UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer());;
+	if (UISubsystem == nullptr) UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer());
 	if (UISubsystem)
 	{
 		DeactivateWidget();

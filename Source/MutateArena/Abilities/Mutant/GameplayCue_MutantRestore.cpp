@@ -22,10 +22,7 @@ bool AGameplayCue_MutantRestore::WhileActive_Implementation(AActor* MyTarget, co
 
 void AGameplayCue_MutantRestore::PlaySound()
 {
-	if (MutantCharacter)
-	{
-		UGameplayStatics::PlaySoundAtLocation(this, RestoreHealthSound, MutantCharacter->GetActorLocation());
-	}
+	UGameplayStatics::SpawnSound2D(this, RestoreHealthSound);
 }
 
 bool AGameplayCue_MutantRestore::OnRemove_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters)

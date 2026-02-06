@@ -4,18 +4,10 @@
 #include "BaseController.h"
 #include "TeamDeadMatchController.generated.h"
 
-enum class ETeam : uint8;
-
-DECLARE_MULTICAST_DELEGATE_TwoParams(FOnTeamScoreChange, float Score, ETeam Team);
-
 UCLASS()
 class MUTATEARENA_API ATeamDeadMatchController : public ABaseController
 {
 	GENERATED_BODY()
-
-public:
-	// TODO Move to UISubsystem
-	FOnTeamScoreChange OnTeamScoreChange;
 
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;

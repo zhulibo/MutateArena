@@ -15,7 +15,7 @@
 			]
 		},
 		{
-			"Name": "Editor",
+			"Name": "DevEditor",
 			"Type": "Editor",
 			"LoadingPhase": "Default"
 		}

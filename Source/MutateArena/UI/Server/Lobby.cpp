@@ -799,7 +799,7 @@ void ULobby::OnLobbyLeft(const FLobbyLeft& LobbyLeft)
 {
 	UE_LOG(LogTemp, Warning, TEXT("OnLobbyLeft"));
 	
-	if (UISubsystem == nullptr) UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer());;
+	if (UISubsystem == nullptr) UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer());
 	if (UISubsystem)
 	{
 		if (auto Layer = UISubsystem->GetLayerStack(TAG_UI_LAYER_SERVER))

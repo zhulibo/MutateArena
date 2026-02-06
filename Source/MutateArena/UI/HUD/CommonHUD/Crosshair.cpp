@@ -1,9 +1,9 @@
 #include "Crosshair.h"
 
 #include "CommonBorder.h"
-#include "MutateArena/PlayerControllers/BaseController.h"
 #include "Components/CanvasPanelSlot.h"
 #include "MutateArena/System/DevSetting.h"
+#include "MutateArena/System/UISubsystem.h"
 
 void UCrosshair::NativeOnInitialized()
 {
@@ -13,11 +13,11 @@ void UCrosshair::NativeOnInitialized()
 	Crosshair_R_Slot = Cast<UCanvasPanelSlot>(Crosshair_R->Slot);
 	Crosshair_T_Slot = Cast<UCanvasPanelSlot>(Crosshair_T->Slot);
 	Crosshair_B_Slot = Cast<UCanvasPanelSlot>(Crosshair_B->Slot);
-
-	if (ABaseController* BaseController = Cast<ABaseController>(GetOwningPlayer()))
+	
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer()))
 	{
-		BaseController->ChangeCrosshairSpread.AddUObject(this, &ThisClass::ChangeCrosshairSpread);
-		BaseController->OnCrosshairHidden.AddUObject(this, &ThisClass::OnCrosshairHidden);
+		UISubsystem->ChangeCrosshairSpread.AddUObject(this, &ThisClass::ChangeCrosshairSpread);
+		UISubsystem->OnCrosshairHidden.AddUObject(this, &ThisClass::OnCrosshairHidden);
 	}
 }
 

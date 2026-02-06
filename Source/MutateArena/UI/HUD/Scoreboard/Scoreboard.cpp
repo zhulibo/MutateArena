@@ -9,15 +9,16 @@
 #include "MutateArena/PlayerStates/BasePlayerState.h"
 #include "MutateArena/PlayerStates/TeamType.h"
 #include "MutateArena/System/EOSSubsystem.h"
+#include "MutateArena/System/UISubsystem.h"
 #include "MutateArena/Utils/LibraryCommon.h"
 
 void UScoreboard::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
 
-	if (ABaseController* BaseController = Cast<ABaseController>(GetOwningPlayer()))
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer()))
 	{
-		BaseController->ShowScoreboard.AddUObject(this, &ThisClass::ShowScoreboard);
+		UISubsystem->ShowScoreboard.AddUObject(this, &ThisClass::ShowScoreboard);
 	}
 }
 

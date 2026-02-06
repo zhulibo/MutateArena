@@ -4,14 +4,6 @@
 #include "ModularGameState.h"
 #include "BaseGameState.generated.h"
 
-enum class EMsgType : uint8;
-DECLARE_MULTICAST_DELEGATE(FOnRoundStarted);
-DECLARE_MULTICAST_DELEGATE(FOnRoundEnded);
-DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnAddKillLog, class ABasePlayerState* AttackerState, const FText& CauserName, ABasePlayerState* DamagedState);
-DECLARE_MULTICAST_DELEGATE_FourParams(FOnReceiveMsg, EMsgType MsgType, ETeam Team, const FString& PlayerName, const FString& Msg);
-
-enum class ETeam : uint8;
-
 UCLASS()
 class MUTATEARENA_API ABaseGameState : public AModularGameState
 {
@@ -27,8 +19,6 @@ protected:
 
 public:
 	virtual void OnRep_MatchState() override;
-	FOnRoundStarted OnRoundStarted;
-	FOnRoundEnded OnRoundEnded;
 protected:
 	virtual void HandleMatchHasStarted() override;
 	virtual void HandleRoundHasEnded();
@@ -48,11 +38,9 @@ public:
 
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastAddKillLog(ABasePlayerState* AttackerState, const FText& CauserName, ABasePlayerState* DamagedState);
-	FOnAddKillLog OnAddKillLog;
 	
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastSendMsg(EMsgType MsgType, ETeam Team, const FString& PlayerName, const FString& Msg = FString());
-	FOnReceiveMsg OnReceiveMsg;
 	
 	UPROPERTY()
 	TArray<AActor*> AllEquipments;

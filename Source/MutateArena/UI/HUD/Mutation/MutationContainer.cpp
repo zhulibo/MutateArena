@@ -6,6 +6,7 @@
 #include "MutateArena/PlayerStates/TeamType.h"
 #include "MutateArena/UI/GameLayout.h"
 #include "Components/DynamicEntryBox.h"
+#include "MutateArena/System/UISubsystem.h"
 
 void UMutationContainer::NativeOnInitialized()
 {
@@ -17,10 +18,10 @@ void UMutationContainer::NativeOnInitialized()
 	EntryBox_MutationHuman->Reset();
 	EntryBox_MutationMutant->Reset();
 
-	if (AMutationController* MutationController = Cast<AMutationController>(GetOwningPlayer()))
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer()))
 	{
-		MutationController->OnTeamChange.AddUObject(this, &ThisClass::OnTeamChange);
-		MutationController->OnHUDStateChange.AddUObject(this, &ThisClass::OnHUDStateChange);
+		UISubsystem->OnTeamChange.AddUObject(this, &ThisClass::OnTeamChange);
+		UISubsystem->OnHUDStateChange.AddUObject(this, &ThisClass::OnHUDStateChange);
 	}
 }
 

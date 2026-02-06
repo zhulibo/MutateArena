@@ -12,3 +12,9 @@ UDevSetting::UDevSetting()
 		ThrowingEquipment = DefaultConfig->Throwing;
 	}
 }
+
+// 置于菜单最上边
+FText UDevSetting::GetSectionText() const
+{
+	return FText::FromString("! Dev Setting");
+}

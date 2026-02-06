@@ -1,8 +1,8 @@
 ﻿using UnrealBuildTool;
 
-public class Editor : ModuleRules
+public class DevEditor : ModuleRules
 {
-    public Editor(ReadOnlyTargetRules Target) : base(Target)
+    public DevEditor(ReadOnlyTargetRules Target) : base(Target)
     {
         PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 

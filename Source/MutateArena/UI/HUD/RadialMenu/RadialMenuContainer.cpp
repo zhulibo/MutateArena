@@ -10,6 +10,7 @@
 #include "MutateArena/PlayerControllers/BaseController.h"
 #include "MutateArena/PlayerControllers/MutationController.h"
 #include "MutateArena/PlayerStates/TeamType.h"
+#include "MutateArena/System/UISubsystem.h"
 
 #define LOCTEXT_NAMESPACE "URadialMenuContainer"
 
@@ -19,16 +20,12 @@ void URadialMenuContainer::NativeOnInitialized()
 
 	SetHumanRadialMenuText();
 
-	if (ABaseController* BaseController = Cast<ABaseController>(GetOwningPlayer()))
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer()))
 	{
-		BaseController->ShowRadialMenu.AddUObject(this, &ThisClass::ShowRadialMenu);
-		BaseController->SwitchRadialMenu.AddUObject(this, &ThisClass::SwitchRadialMenu);
-		BaseController->SelectRadialMenu.AddUObject(this, &ThisClass::SelectRadialMenu);
-	}
-	
-	if (AMutationController* MutationController = Cast<AMutationController>(GetOwningPlayer()))
-	{
-		MutationController->OnTeamChange.AddUObject(this, &ThisClass::OnTeamChange);
+		UISubsystem->ShowRadialMenu.AddUObject(this, &ThisClass::ShowRadialMenu);
+		UISubsystem->SwitchRadialMenu.AddUObject(this, &ThisClass::SwitchRadialMenu);
+		UISubsystem->SelectRadialMenu.AddUObject(this, &ThisClass::SelectRadialMenu);
+		UISubsystem->OnTeamChange.AddUObject(this, &ThisClass::OnTeamChange);
 	}
 }
 

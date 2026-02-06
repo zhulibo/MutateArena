@@ -1,8 +1,8 @@
-﻿#include "Editor/Public/Editor.h"
+﻿#include "DevEditor/Public/DevEditor.h"
 
 #include "MutateArena/System/DevSetting.h"
 
-#define LOCTEXT_NAMESPACE "FEditorModule"
+#define LOCTEXT_NAMESPACE "FDevEditorModule"
 
 static bool HasPlayWorld()
 {
@@ -78,7 +78,7 @@ static void RegisterGameEditorMenus()
 	Section.AddEntry(MapEntry);
 }
 
-void FEditorModule::StartupModule()
+void FDevEditorModule::StartupModule()
 {
 	if (!IsRunningGame())
 	{
@@ -89,7 +89,7 @@ void FEditorModule::StartupModule()
 	}
 }
 
-void FEditorModule::ShutdownModule()
+void FDevEditorModule::ShutdownModule()
 {
 	if (UObjectInitialized() && ToolMenusHandle.IsValid())
 	{
@@ -99,4 +99,4 @@ void FEditorModule::ShutdownModule()
 
 #undef LOCTEXT_NAMESPACE
     
-IMPLEMENT_MODULE(FEditorModule, Editor)
+IMPLEMENT_MODULE(FDevEditorModule, DevEditor);

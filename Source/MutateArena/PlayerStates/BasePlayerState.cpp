@@ -6,6 +6,7 @@
 #include "MutateArena/Abilities/AttributeSetBase.h"
 #include "MutateArena/GameStates/BaseGameState.h"
 #include "MutateArena/PlayerControllers/BaseController.h"
+#include "MutateArena/System/UISubsystem.h"
 #include "MutateArena/System/Storage/DefaultConfig.h"
 #include "MutateArena/System/Storage/SaveGameLoadout.h"
 #include "MutateArena/System/Storage/StorageSubsystem.h"
@@ -185,7 +186,10 @@ void ABasePlayerState::ShowDamageUI(float TempDamage)
 	if (BaseController == nullptr) BaseController = Cast<ABaseController>(GetOwner());
 	if (BaseController && BaseController->IsLocalController())
 	{
-		BaseController->OnCauseDamage.Broadcast(TempDamage);
+		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
+		{
+			UISubsystem->OnCauseDamage.Broadcast(TempDamage);
+		}
 	}
 }
 
@@ -242,6 +246,9 @@ void ABasePlayerState::OnKillStreakChange()
 	if (BaseController == nullptr) BaseController = Cast<ABaseController>(GetOwner());
 	if (BaseController && BaseController->IsLocalController())
 	{
-		BaseController->OnKillStreakChange.Broadcast(KillStreak);
+		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
+		{
+			UISubsystem->OnKillStreakChange.Broadcast(KillStreak);
+		}
 	}
 }
