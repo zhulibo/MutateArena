@@ -53,12 +53,16 @@ protected:
 
 	UPROPERTY()
 	class AMutationMode* MutationMode;
+public:
 	EMutantState MutantState;
+protected:
 	UPROPERTY()
 	class AMutationController* MutationController;
 	UPROPERTY()
 	class UAnimInstance_Mutant* AnimInstance_Mutant;
-
+	
+	virtual void OnLocallyControllerReady() override;
+	
 public:
 	// GAS
 	UPROPERTY()
@@ -85,10 +89,12 @@ protected:
 	void EndRestoreAbility();
 
 	// 攻击
+public:
 	virtual void LightAttackButtonPressed(const FInputActionValue& Value);
 	virtual void LightAttackButtonReleased(const FInputActionValue& Value);
 	virtual void HeavyAttackButtonPressed(const FInputActionValue& Value);
 	virtual void HeavyAttackButtonReleased(const FInputActionValue& Value);
+protected:
 	UFUNCTION(Server, Reliable)
 	void ServerLightAttack();
 	UFUNCTION(NetMulticast, Reliable)
@@ -166,5 +172,5 @@ protected:
 	virtual void OnInteractMutantSuccess(AMutantCharacter* MutantCharacter) override;
 	UFUNCTION(Server, Reliable)
 	void ServerOnSuck(AMutantCharacter* MutantCharacter);
-
+	
 };

@@ -1,11 +1,16 @@
 #include "BasePlayerState.h"
+
+#include "MetaSoundSource.h"
 #include "Net/UnrealNetwork.h"
 #include "TeamType.h"
+#include "Kismet/GameplayStatics.h"
 #include "MutateArena/Characters/BaseCharacter.h"
 #include "MutateArena/Abilities/MAAbilitySystemComponent.h"
 #include "MutateArena/Abilities/AttributeSetBase.h"
+#include "MutateArena/Assets/Data/CommonAsset.h"
 #include "MutateArena/GameStates/BaseGameState.h"
 #include "MutateArena/PlayerControllers/BaseController.h"
+#include "MutateArena/System/AssetSubsystem.h"
 #include "MutateArena/System/UISubsystem.h"
 #include "MutateArena/System/Storage/DefaultConfig.h"
 #include "MutateArena/System/Storage/SaveGameLoadout.h"
@@ -227,6 +232,8 @@ void ABasePlayerState::AddKillStreak()
 	OnKillStreakChange();
 
 	GetWorldTimerManager().SetTimer(ResetKillStreakTimerHandle, this, &ThisClass::ResetKillStreak, 7.f);
+	
+	ClientOnKill();
 }
 
 void ABasePlayerState::OnRep_KillStreak()
@@ -250,5 +257,16 @@ void ABasePlayerState::OnKillStreakChange()
 		{
 			UISubsystem->OnKillStreakChange.Broadcast(KillStreak);
 		}
+	}
+}
+
+void ABasePlayerState::ClientOnKill_Implementation()
+{
+	UAssetSubsystem* AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+	if (AssetSubsystem == nullptr || AssetSubsystem->CommonAsset == nullptr) return;
+
+	if (UAudioComponent* AudioComponent = UGameplayStatics::SpawnSound2D(this, AssetSubsystem->CommonAsset->KillSound))
+	{
+		// AudioComponent->SetFloatParameter(TEXT("Index"), 1);
 	}
 }

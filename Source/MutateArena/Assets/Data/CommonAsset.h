@@ -55,9 +55,13 @@ public:
 
 	// 战斗图标
 	UPROPERTY(EditAnywhere, Category = "CombatIconSound")
+	UMetaSoundSource* KillSound;
+	UPROPERTY(EditAnywhere, Category = "CombatIconSound")
 	UMetaSoundSource* Cause1000DamageSound;
 	UPROPERTY(EditAnywhere, Category = "CombatIconSound")
 	UMetaSoundSource* BeImmuneSound;
+	UPROPERTY(EditAnywhere, Category = "CombatIconSound")
+	UMetaSoundSource* LevelUpSound;
 
 	// 无线电文本
 	UPROPERTY(EditAnywhere, Category = "Radio")

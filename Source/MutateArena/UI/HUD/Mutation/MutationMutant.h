@@ -29,6 +29,9 @@ protected:
 	class UHorizontalBox* SkillBox;
 	UPROPERTY(meta = (BindWidget))
 	class UCommonButton* SkillButton;
+	UPROPERTY(meta = (BindWidget))
+	UCommonTextBlock* SkillCD;
+	bool bIsSkillReady = false;
 	void OnSkillChange(bool bIsShow);
 	void OnSkillButtonClicked();
 

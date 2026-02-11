@@ -32,12 +32,21 @@
 #include "Interfaces/InteractableTarget.h"
 #include "MutateArena/Effects/BloodCollision.h"
 #include "Components/SceneCaptureComponent2D.h"
+#include "Components/StateTreeComponent.h"
 #include "Materials/MaterialParameterCollectionInstance.h"
 #include "MutateArena/GameStates/BaseGameState.h"
 #include "MutateArena/Assets/Data/CommonAsset.h"
+#include "MutateArena/System/DevSetting.h"
 #include "MutateArena/System/UISubsystem.h"
 #include "MutateArena/UI/TextChat/TextChat.h"
+#include "MutateArena/Utils/LibraryNotify.h"
 #include "Net/UnrealNetwork.h"
+#include "Perception/AIPerceptionComponent.h"
+#include "Perception/AIPerceptionStimuliSourceComponent.h"
+#include "Perception/AISenseConfig_Sight.h"
+#include "Perception/AISense_Sight.h"
+
+#define LOCTEXT_NAMESPACE "ABaseCharacter"
 
 ABaseCharacter::ABaseCharacter()
 {
@@ -78,6 +87,27 @@ ABaseCharacter::ABaseCharacter()
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 
 	Tags.Add(TAG_CHARACTER_BASE);
+	
+	StateTreeComponent = CreateDefaultSubobject<UStateTreeComponent>(TEXT("StateTreeComponent"));
+	StateTreeComponent->SetStartLogicAutomatically(false);
+	
+	AIPerceptionComponent = CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("AIPerceptionComponent"));
+	AIPerceptionComponent->SetAutoActivate(false);
+	SightConfig = CreateDefaultSubobject<UAISenseConfig_Sight>(TEXT("SightConfig"));
+	SightConfig->SightRadius = 2000.0f; // 视野半径
+	SightConfig->LoseSightRadius = 2200.0f; // 丢失视野半径
+	SightConfig->PeripheralVisionAngleDegrees = 90.0f; // 视角(90度，即前方180度范围)
+	SightConfig->SetMaxAge(3.0f); // 记忆时间 (目标消失5秒后忘记)
+	// 让感知系统能检测所有阵营（因为默认只能检测"敌人"，而PlayerController没有默认的TeamID逻辑，可能需实现队伍接口）
+	SightConfig->DetectionByAffiliation.bDetectEnemies = true;
+	SightConfig->DetectionByAffiliation.bDetectNeutrals = true;
+	SightConfig->DetectionByAffiliation.bDetectFriendlies = true;
+	AIPerceptionComponent->ConfigureSense(*SightConfig);
+	AIPerceptionComponent->SetDominantSense(SightConfig->GetSenseImplementation());
+
+	StimuliSourceComponent = CreateDefaultSubobject<UAIPerceptionStimuliSourceComponent>(TEXT("StimuliSourceComponent"));
+	StimuliSourceComponent->RegisterForSense(UAISense_Sight::StaticClass());
+	StimuliSourceComponent->RegisterWithPerceptionSystem();
 }
 
 void ABaseCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -138,34 +168,34 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		}
 	}
 
-	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
+	if (UEnhancedInputComponent* EIC = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
 	{
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->MoveAction, ETriggerEvent::Started, this, &ThisClass::MoveStarted);
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->MoveAction, ETriggerEvent::Triggered, this, &ThisClass::Move);
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->MoveAction, ETriggerEvent::Completed, this, &ThisClass::MoveCompleted);
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->LookMouseAction, ETriggerEvent::Triggered, this, &ThisClass::LookMouse);
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->LookStickAction, ETriggerEvent::Triggered, this, &ThisClass::LookStick);
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->JumpAction, ETriggerEvent::Triggered, this, &ThisClass::JumpButtonPressed);
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->CrouchAction, ETriggerEvent::Started, this, &ThisClass::CrouchButtonPressed);
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->CrouchAction, ETriggerEvent::Completed, this, &ThisClass::CrouchButtonReleased);
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->CrouchControllerAction, ETriggerEvent::Triggered, this, &ThisClass::CrouchControllerButtonPressed);
+		EIC->BindAction(AssetSubsystem->InputAsset->MoveAction, ETriggerEvent::Started, this, &ThisClass::MoveStarted);
+		EIC->BindAction(AssetSubsystem->InputAsset->MoveAction, ETriggerEvent::Triggered, this, &ThisClass::Move);
+		EIC->BindAction(AssetSubsystem->InputAsset->MoveAction, ETriggerEvent::Completed, this, &ThisClass::MoveCompleted);
+		EIC->BindAction(AssetSubsystem->InputAsset->LookMouseAction, ETriggerEvent::Triggered, this, &ThisClass::LookMouse);
+		EIC->BindAction(AssetSubsystem->InputAsset->LookStickAction, ETriggerEvent::Triggered, this, &ThisClass::LookStick);
+		EIC->BindAction(AssetSubsystem->InputAsset->JumpAction, ETriggerEvent::Triggered, this, &ThisClass::JumpButtonPressed);
+		EIC->BindAction(AssetSubsystem->InputAsset->CrouchAction, ETriggerEvent::Started, this, &ThisClass::CrouchButtonPressed);
+		EIC->BindAction(AssetSubsystem->InputAsset->CrouchAction, ETriggerEvent::Completed, this, &ThisClass::CrouchButtonReleased);
+		EIC->BindAction(AssetSubsystem->InputAsset->CrouchControllerAction, ETriggerEvent::Triggered, this, &ThisClass::CrouchControllerButtonPressed);
 		
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->InteractAction, ETriggerEvent::Started, this, &ThisClass::InteractStarted);
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->InteractAction, ETriggerEvent::Ongoing, this, &ThisClass::InteractOngoing);
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->InteractAction, ETriggerEvent::Triggered, this, &ThisClass::InteractTriggered);
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->InteractAction, ETriggerEvent::Completed, this, &ThisClass::InteractCompleted);
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->InteractAction, ETriggerEvent::Canceled, this, &ThisClass::InteractCanceled);
+		EIC->BindAction(AssetSubsystem->InputAsset->InteractAction, ETriggerEvent::Started, this, &ThisClass::InteractStarted);
+		EIC->BindAction(AssetSubsystem->InputAsset->InteractAction, ETriggerEvent::Ongoing, this, &ThisClass::InteractOngoing);
+		EIC->BindAction(AssetSubsystem->InputAsset->InteractAction, ETriggerEvent::Triggered, this, &ThisClass::InteractTriggered);
+		EIC->BindAction(AssetSubsystem->InputAsset->InteractAction, ETriggerEvent::Completed, this, &ThisClass::InteractCompleted);
+		EIC->BindAction(AssetSubsystem->InputAsset->InteractAction, ETriggerEvent::Canceled, this, &ThisClass::InteractCanceled);
 
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->ScoreboardAction, ETriggerEvent::Triggered, this, &ThisClass::ScoreboardButtonPressed);
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->ScoreboardAction, ETriggerEvent::Completed, this, &ThisClass::ScoreboardButtonReleased);
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->PauseMenuAction, ETriggerEvent::Triggered, this, &ThisClass::PauseMenuButtonPressed);
+		EIC->BindAction(AssetSubsystem->InputAsset->ScoreboardAction, ETriggerEvent::Triggered, this, &ThisClass::ScoreboardButtonPressed);
+		EIC->BindAction(AssetSubsystem->InputAsset->ScoreboardAction, ETriggerEvent::Completed, this, &ThisClass::ScoreboardButtonReleased);
+		EIC->BindAction(AssetSubsystem->InputAsset->PauseMenuAction, ETriggerEvent::Triggered, this, &ThisClass::PauseMenuButtonPressed);
 
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->RadialMenuAction, ETriggerEvent::Triggered, this, &ThisClass::RadialMenuButtonPressed);
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->RadialMenuAction, ETriggerEvent::Completed, this, &ThisClass::RadialMenuButtonReleased);
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->RadialMenuSwitchAction, ETriggerEvent::Triggered, this, &ThisClass::RadialMenuSwitchButtonPressed);
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->RadialMenuSelectAction, ETriggerEvent::Triggered, this, &ThisClass::RadialMenuSelect);
+		EIC->BindAction(AssetSubsystem->InputAsset->RadialMenuAction, ETriggerEvent::Triggered, this, &ThisClass::RadialMenuButtonPressed);
+		EIC->BindAction(AssetSubsystem->InputAsset->RadialMenuAction, ETriggerEvent::Completed, this, &ThisClass::RadialMenuButtonReleased);
+		EIC->BindAction(AssetSubsystem->InputAsset->RadialMenuSwitchAction, ETriggerEvent::Triggered, this, &ThisClass::RadialMenuSwitchButtonPressed);
+		EIC->BindAction(AssetSubsystem->InputAsset->RadialMenuSelectAction, ETriggerEvent::Triggered, this, &ThisClass::RadialMenuSelect);
 
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->TextChatAction, ETriggerEvent::Triggered, this, &ThisClass::TextChat);
+		EIC->BindAction(AssetSubsystem->InputAsset->TextChatAction, ETriggerEvent::Triggered, this, &ThisClass::TextChat);
 	}
 }
 
@@ -231,6 +261,12 @@ void ABaseCharacter::PollInit_ControllerAndPSAndTeam()
 
 void ABaseCharacter::OnLocallyControllerReady()
 {
+	// 只有本地激活感知
+	AIPerceptionComponent->Activate(true);
+	
+	// 检测挂机
+	LastActiveTime = GetWorld()->GetTimeSeconds();
+	GetWorldTimerManager().SetTimer(AFKCheckTimerHandle, this, &ThisClass::CheckIdleStatus, 1.0f, true);
 }
 
 // 计算俯仰
@@ -734,7 +770,7 @@ void ABaseCharacter::RadialMenuSwitchButtonPressed(const FInputActionValue& Valu
 	}
 }
 
-// TODO RadialMenuSelect为弦操作，关联使用IA_RadialMenu时，会导致IA_RadialMenu的RadialMenuButtonPressed有时不触发（鼠标或右摇杆移动时稳定不触发），弦操作关联对象替换为新建的IA_RadialMenu2
+// 已关闭 项目-增强输入-应只触发弦中最后操作/bShouldOnlyTriggerLastActionInChord
 void ABaseCharacter::RadialMenuSelect(const FInputActionValue& Value)
 {
 	FVector2D AxisVector = Value.Get<FVector2D>();
@@ -1080,3 +1116,113 @@ void ABaseCharacter::SprayPaint(int32 RadioIndex)
 		}
 	}
 }
+
+void ABaseCharacter::UpdateActiveTime(const FInputActionValue& Value)
+{
+	LastActiveTime = GetWorld()->GetTimeSeconds();
+ 
+	if (bIsAutoHosting)
+	{
+		StopAutoHost();
+		bIsAutoHosting = false;
+	}
+}
+
+void ABaseCharacter::CheckIdleStatus()
+{
+	const float CurrentTime = GetWorld()->GetTimeSeconds();
+	
+	float AFKHostingTime = 30.f;
+	if (GetWorld()->WorldType == EWorldType::PIE)
+	{
+		AFKHostingTime = GetDefault<UDevSetting>()->AFKHostingTime;
+	}
+	if (CurrentTime - LastActiveTime > AFKHostingTime)
+	{
+		if (!bIsAutoHosting)
+		{
+			StartAutoHost();
+			bIsAutoHosting = true;
+		}
+	}
+}
+
+void ABaseCharacter::StartAutoHost()
+{
+	bIsAutoHosting = true;
+	if (StateTreeComponent)
+	{
+		StateTreeComponent->StartLogic();
+		
+		NOTIFY(this, C_YELLOW, LOCTEXT("StartAutoHost", "Start auto hosting"));
+	}
+}
+
+void ABaseCharacter::StopAutoHost()
+{
+	bIsAutoHosting = false;
+	if (StateTreeComponent)
+	{
+		StateTreeComponent->StopLogic(TEXT("PlayerInput"));
+		
+		NOTIFY(this, C_YELLOW, LOCTEXT("StopAutoHost", "Stop auto hosting"));
+	}
+}
+
+void ABaseCharacter::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus)
+{
+	// if (Stimulus.WasSuccessfullySensed())
+	// {
+	// 	UE_LOG(LogTemp, Warning, TEXT("I see you: %s"), *Actor->GetName());
+	// }
+	// else
+	// {
+	// 	UE_LOG(LogTemp, Warning, TEXT("Lost sight of: %s"), *Actor->GetName());
+	// }
+}
+
+AActor* ABaseCharacter::GetBestPerceivedTarget()
+{
+	if (AIPerceptionComponent == nullptr) return nullptr;
+
+	TArray<AActor*> PerceivedActors;
+	// 获取当前"已知"的所有 Actor（包括看见的，和刚消失但在记忆时间内的）
+	AIPerceptionComponent->GetKnownPerceivedActors(UAISense_Sight::StaticClass(), PerceivedActors);
+
+	AActor* BestTarget = nullptr;
+	float MinDistSq = FLT_MAX;
+	FVector MyLoc = GetActorLocation();
+
+	// UE_LOG(LogTemp, Warning, TEXT("PerceivedActors.Num(): %d"), PerceivedActors.Num());
+	for (AActor* Target : PerceivedActors)
+	{
+		if (Target == nullptr || Target == this) continue;
+		
+		// 排除队友
+		ABaseCharacter* TargetBaseCharacter = Cast<ABaseCharacter>(Target);
+		if (BasePlayerState && TargetBaseCharacter)
+		{
+			if (TargetBaseCharacter->bIsDead) continue;
+			
+			if (ABasePlayerState* TargetBasePlayerState = TargetBaseCharacter->GetPlayerState<ABasePlayerState>())
+			{
+				if (BasePlayerState->Team == TargetBasePlayerState->Team)
+				{
+					continue;
+				}
+			}
+		}
+		
+		// 简单的距离检查
+		float DistSq = FVector::DistSquared(MyLoc, Target->GetActorLocation());
+		if (DistSq < MinDistSq)
+		{
+			MinDistSq = DistSq;
+			BestTarget = Target;
+		}
+	}
+	
+	return BestTarget;
+}
+
+#undef LOCTEXT_NAMESPACE

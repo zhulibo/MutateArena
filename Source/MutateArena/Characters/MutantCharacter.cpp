@@ -26,6 +26,7 @@
 #include "MutateArena/Effects/BloodCollision.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
+#include "Perception/AIPerceptionComponent.h"
 
 #define LOCTEXT_NAMESPACE "AMutantCharacter"
 
@@ -66,6 +67,11 @@ void AMutantCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 void AMutantCharacter::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
+	
+	if (AIPerceptionComponent)
+	{
+		AIPerceptionComponent->OnTargetPerceptionUpdated.AddDynamic(this, &ThisClass::OnTargetPerceptionUpdated);
+	}
 }
 
 void AMutantCharacter::BeginPlay()
@@ -103,13 +109,19 @@ void AMutantCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		}
 	}
 
-	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
+	if (UEnhancedInputComponent* EIC = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
 	{
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->LightAttackAction, ETriggerEvent::Started, this, &ThisClass::LightAttackButtonPressed);
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->LightAttackAction, ETriggerEvent::Completed, this, &ThisClass::LightAttackButtonReleased);
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->HeavyAttackAction, ETriggerEvent::Started, this, &ThisClass::HeavyAttackButtonPressed);
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->HeavyAttackAction, ETriggerEvent::Completed, this, &ThisClass::HeavyAttackButtonReleased);
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->SkillAction, ETriggerEvent::Triggered, this, &ThisClass::SkillButtonPressed);
+		EIC->BindAction(AssetSubsystem->InputAsset->MoveAction, ETriggerEvent::Triggered, this, &ThisClass::UpdateActiveTime);
+		EIC->BindAction(AssetSubsystem->InputAsset->LookMouseAction, ETriggerEvent::Triggered, this, &ThisClass::UpdateActiveTime);
+		EIC->BindAction(AssetSubsystem->InputAsset->LookStickAction, ETriggerEvent::Triggered, this, &ThisClass::UpdateActiveTime);
+		EIC->BindAction(AssetSubsystem->InputAsset->LightAttackAction, ETriggerEvent::Started, this, &ThisClass::UpdateActiveTime);
+		EIC->BindAction(AssetSubsystem->InputAsset->HeavyAttackAction, ETriggerEvent::Started, this, &ThisClass::UpdateActiveTime);
+		
+		EIC->BindAction(AssetSubsystem->InputAsset->LightAttackAction, ETriggerEvent::Started, this, &ThisClass::LightAttackButtonPressed);
+		EIC->BindAction(AssetSubsystem->InputAsset->LightAttackAction, ETriggerEvent::Completed, this, &ThisClass::LightAttackButtonReleased);
+		EIC->BindAction(AssetSubsystem->InputAsset->HeavyAttackAction, ETriggerEvent::Started, this, &ThisClass::HeavyAttackButtonPressed);
+		EIC->BindAction(AssetSubsystem->InputAsset->HeavyAttackAction, ETriggerEvent::Completed, this, &ThisClass::HeavyAttackButtonReleased);
+		EIC->BindAction(AssetSubsystem->InputAsset->SkillAction, ETriggerEvent::Triggered, this, &ThisClass::SkillButtonPressed);
 	}
 }
 
@@ -172,7 +184,7 @@ void AMutantCharacter::OnLocalSkillCooldownTagChanged(FGameplayTag GameplayTag, 
 	if (MutationController == nullptr) MutationController = Cast<AMutationController>(Controller);
 	if (MutationController)
 	{
-		MutationController->ShowHUDSkill(TagCount == 0 && GetCharacterLevel() >= 2.f);
+		MutationController->SetHUDSkill(TagCount == 0 && GetCharacterLevel() >= 2.f);
 	}
 }
 
@@ -183,7 +195,7 @@ void AMutantCharacter::OnLocalCharacterLevelChanged(const FOnAttributeChangeData
 	if (MutationController && ASC)
 	{
 		FGameplayTag Tag = FGameplayTag::RequestGameplayTag(TAG_MUTANT_SKILL_CD);
-		MutationController->ShowHUDSkill(ASC->GetTagCount(Tag) == 0 && Data.NewValue > 2.f);
+		MutationController->SetHUDSkill(ASC->GetTagCount(Tag) == 0 && Data.NewValue > 2.f);
 	}
 }
 
@@ -215,12 +227,24 @@ void AMutantCharacter::SkillButtonPressed(const FInputActionValue& Value)
 
 void AMutantCharacter::Destroyed()
 {
+	// TODO 是否移到PossessedBy中更合适
 	if (ASC)
 	{
-		ASC->CancelAllAbilities();
+		if (HasAuthority())
+		{
+			ASC->ClearAllAbilities();
+		}
+
+		FGameplayEffectQuery Query; // 未指定tag则移除全部
+		ASC->RemoveActiveEffects(Query);
 	}
 
 	Super::Destroyed();
+}
+
+void AMutantCharacter::OnLocallyControllerReady()
+{
+	Super::OnLocallyControllerReady();
 }
 
 void AMutantCharacter::MoveStarted(const FInputActionValue& Value)
@@ -268,7 +292,7 @@ void AMutantCharacter::EndRestoreAbility()
 			{
 				bHasActivateRestoreAbility = false;
 
-				ASC->CancelAbility(Spec->Ability);
+				ASC->CancelAbilityHandle(Spec->Handle);
 			}
 		}
 	}

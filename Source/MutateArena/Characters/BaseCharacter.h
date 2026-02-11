@@ -6,6 +6,7 @@
 #include "ModularCharacter.h"
 #include "BaseCharacter.generated.h"
 
+struct FAIStimulus;
 enum class ECommonInputType : uint8;
 
 UCLASS()
@@ -177,7 +178,7 @@ protected:
 	// 无线电
 	UPROPERTY(EditAnywhere)
 	TArray<UMetaSoundSource*> RadioSounds;
-	// 样式：射击游戏中的无线电语音，类似于cs中的无线电
+	// https://aistudio.google.com/generate-speech 提示语：我在制作一款射击游戏，我需要生成游戏中的无线电语音，类似于cs中的无线电
 	// 文本：Storm the front / Good job / Affirmative / Enemy spotted / Keep front line team / Stick together team / Negative / Follow me
 	// 嗓音：Solider 萨达奇比亚 Tank 土卫二 Ghost 带领
 public:
@@ -193,5 +194,27 @@ protected:
 	UDecalComponent* SprayPaintDecal;
 public:
 	void SprayPaint(int32 RadioIndex);
+
+	// AFK
+	UPROPERTY(EditAnywhere)
+	class UStateTreeComponent* StateTreeComponent;
+	UPROPERTY(EditAnywhere)
+	class UAIPerceptionComponent* AIPerceptionComponent;
+	UPROPERTY(EditAnywhere)
+	class UAIPerceptionStimuliSourceComponent* StimuliSourceComponent;
+	UPROPERTY(EditAnywhere)
+	class UAISenseConfig_Sight* SightConfig;
+	float LastActiveTime;
+	FTimerHandle AFKCheckTimerHandle;
+	bool bIsAutoHosting = false;
+	void UpdateActiveTime(const FInputActionValue& Value);
+	UFUNCTION()
+	void CheckIdleStatus();
+	void StartAutoHost();
+	void StopAutoHost();
+	AActor* GetBestPerceivedTarget();
+protected:
+	UFUNCTION()
+	void OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus);
 	
 };

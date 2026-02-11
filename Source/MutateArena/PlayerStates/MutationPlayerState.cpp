@@ -1,9 +1,13 @@
 #include "MutationPlayerState.h"
 
+#include "MetaSoundSource.h"
+#include "Kismet/GameplayStatics.h"
 #include "MutateArena/Abilities/AttributeSetBase.h"
 #include "MutateArena/Abilities/MAAbilitySystemComponent.h"
+#include "MutateArena/Assets/Data/CommonAsset.h"
 #include "MutateArena/Characters/MutantCharacter.h"
 #include "MutateArena/PlayerControllers/MutationController.h"
+#include "MutateArena/System/AssetSubsystem.h"
 #include "MutateArena/System/UISubsystem.h"
 #include "Net/UnrealNetwork.h"
 
@@ -150,5 +154,16 @@ void AMutationPlayerState::OnRep_Rage()
 	if (MutationController && MutationController->IsLocalController())
 	{
 		MutationController->SetHUDRage(Rage);
+	}
+}
+
+void AMutationPlayerState::ClientOnLevelUp_Implementation()
+{
+	UAssetSubsystem* AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+	if (AssetSubsystem == nullptr || AssetSubsystem->CommonAsset == nullptr) return;
+
+	if (UAudioComponent* AudioComponent = UGameplayStatics::SpawnSound2D(this, AssetSubsystem->CommonAsset->LevelUpSound))
+	{
+		// AudioComponent->SetFloatParameter(TEXT("Index"), 1);
 	}
 }

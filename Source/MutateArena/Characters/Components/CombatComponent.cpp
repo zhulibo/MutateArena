@@ -44,6 +44,8 @@ void UCombatComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
+	HumanCharacter = Cast<AHumanCharacter>(GetOwner());
+	
 	if (HumanCharacter)
 	{
 		if (HumanCharacter->Camera)

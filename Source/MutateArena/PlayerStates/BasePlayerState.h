@@ -117,7 +117,10 @@ protected:
 	UFUNCTION()
 	void OnRep_KillStreak();
 	FTimerHandle ResetKillStreakTimerHandle;
-
+	UFUNCTION(Client, Reliable)
+	void ClientOnKill(); // 使用RPC快速播放音效
+	virtual void ClientOnKill_Implementation();
+	
 public:
 	FORCEINLINE EHumanCharacterName GetHumanCharacterName() const { return HumanCharacterName; }
 	FORCEINLINE EMutantCharacterName GetMutantCharacterName() const { return MutantCharacterName; }

@@ -49,6 +49,9 @@ public:
 	UPROPERTY(Config, EditAnywhere, Category = "Mutation")
 	int32 MutateClientIndex = 2;
 	
+	UPROPERTY(Config, EditAnywhere, Category = "AFK")
+	float AFKHostingTime = 30.f;
+	
 	UPROPERTY(Config, EditAnywhere, Category = "EditorMaps", meta=(AllowedClasses="/Script/Engine.World"))
 	TArray<FSoftObjectPath> EditorMaps;
 

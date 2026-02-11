@@ -136,7 +136,7 @@ UDamageLogLine* UCommonHUD::GetPooledDamageLog()
 		}
 	}
 	
-	UE_LOG(LogTemp, Warning, TEXT("[UCommonHUD::GetPooledDamageLog] DamageLogPool is empty!"));
+	UE_LOG(LogTemp, Warning, TEXT("DamageLogPool is empty! Create a new widget"));
 	return CreateWidget<UDamageLogLine>(this, DamageLogLineClass);
 }
 

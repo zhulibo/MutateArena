@@ -24,18 +24,34 @@ void UMutationMutant::NativeOnInitialized()
 
 	SkillButton->OnClicked().AddUObject(this, &ThisClass::OnSkillButtonClicked);
 
-	// CooldownTag = FGameplayTag::RequestGameplayTag(TAG_Mutant_SKILL_CD);
+	CooldownTag = FGameplayTag::RequestGameplayTag(TAG_MUTANT_SKILL_CD);
 }
 
 void UMutationMutant::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
-	// TODO CD图标
-	// if (MutantCharacter == nullptr) MutantCharacter = Cast<AMutantCharacter>(GetOwningPlayerPawn());
-	// if (MutantCharacter && MutantCharacter->GetAbilitySystemComponent())
-	// {
-	// 	FGameplayEffectQuery Query = FGameplayEffectQuery::MakeQuery_MatchAnyOwningTags(CooldownTag.GetSingleTagContainer());
-	// 	TArray<float> Times = MutantCharacter->GetAbilitySystemComponent()->GetActiveEffectsTimeRemaining(Query);
-	// }
+	if (bIsSkillReady) return;
+
+	if (MutantCharacter == nullptr) MutantCharacter = Cast<AMutantCharacter>(GetOwningPlayerPawn());
+	if (MutantCharacter && MutantCharacter->GetAbilitySystemComponent())
+	{
+		FGameplayEffectQuery Query = FGameplayEffectQuery::MakeQuery_MatchAnyOwningTags(CooldownTag.GetSingleTagContainer());
+		TArray<float> Times = MutantCharacter->GetAbilitySystemComponent()->GetActiveEffectsTimeRemaining(Query);
+		if (Times.Num() > 0)
+		{
+			float TimeRemaining = Times[0];
+			if (TimeRemaining > 1.0f)
+			{
+				SkillCD->SetText(FText::AsNumber(FMath::CeilToInt(TimeRemaining)));
+			}
+			else
+			{
+				FNumberFormattingOptions Opts;
+				Opts.SetMaximumFractionalDigits(1);
+				Opts.SetMinimumFractionalDigits(1);
+				SkillCD->SetText(FText::AsNumber(TimeRemaining, &Opts));
+			}
+		}
+	}
 }
 
 void UMutationMutant::OnMutantHealthChange(float TempHealth)
@@ -47,16 +63,24 @@ void UMutationMutant::OnMutantHealthChange(float TempHealth)
 	Health->SetText(FText::AsNumber(TempHealth, &Opts));
 }
 
-void UMutationMutant::OnSkillChange(bool bIsShow)
+void UMutationMutant::OnSkillChange(bool bIsReady)
 {
-	SkillBox->SetVisibility(bIsShow ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+	// 设置透明度
+	SkillButton->SetRenderOpacity(bIsReady ? 1.f : .2f);
+	
+	bIsSkillReady = bIsReady;
+	
+	if (bIsReady)
+	{
+		SkillCD->SetText(FText::FromString(""));
+	}
 }
 
-// TODO 想要CommonUI配合增强输入来触发这个按键，但是ABaseController::FocusGame后，SkillButton无法被点击，增强输入无法触发这个按键
+// TODO 想要CommonUI配合增强输入来触发这个按键，但是不知道为什么增强输入无法触发这个按键
 // 技能逻辑通过增强输入的BindAction处理了，这个按钮现在只有显示作用，待把技能逻辑移到按钮点击上
 void UMutationMutant::OnSkillButtonClicked()
 {
-	UE_LOG(LogTemp, Warning, TEXT("OnSkillButtonClicked"));
+	UE_LOG(LogTemp, Warning, TEXT("UMutationMutant::OnSkillButtonClicked"));
 }
 
 void UMutationMutant::OnRageChange(float TempRage)

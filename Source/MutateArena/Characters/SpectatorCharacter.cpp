@@ -33,19 +33,19 @@ void ASpectatorCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
 		}
 	}
 
-	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
+	if (UEnhancedInputComponent* EIC = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
 	{
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->LookMouseAction, ETriggerEvent::Triggered, this, &ThisClass::LookMouse);
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->LookStickAction, ETriggerEvent::Triggered, this, &ThisClass::LookStick);
+		EIC->BindAction(AssetSubsystem->InputAsset->LookMouseAction, ETriggerEvent::Triggered, this, &ThisClass::LookMouse);
+		EIC->BindAction(AssetSubsystem->InputAsset->LookStickAction, ETriggerEvent::Triggered, this, &ThisClass::LookStick);
 		
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->ScoreboardAction, ETriggerEvent::Triggered, this, &ThisClass::ScoreboardButtonPressed);
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->ScoreboardAction, ETriggerEvent::Completed, this, &ThisClass::ScoreboardButtonReleased);
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->PauseMenuAction, ETriggerEvent::Triggered, this, &ThisClass::PauseMenuButtonPressed);
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->TextChatAction, ETriggerEvent::Triggered, this, &ThisClass::TextChat);
+		EIC->BindAction(AssetSubsystem->InputAsset->ScoreboardAction, ETriggerEvent::Triggered, this, &ThisClass::ScoreboardButtonPressed);
+		EIC->BindAction(AssetSubsystem->InputAsset->ScoreboardAction, ETriggerEvent::Completed, this, &ThisClass::ScoreboardButtonReleased);
+		EIC->BindAction(AssetSubsystem->InputAsset->PauseMenuAction, ETriggerEvent::Triggered, this, &ThisClass::PauseMenuButtonPressed);
+		EIC->BindAction(AssetSubsystem->InputAsset->TextChatAction, ETriggerEvent::Triggered, this, &ThisClass::TextChat);
 		
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->SwitchPerspectiveAction, ETriggerEvent::Triggered, this, &ThisClass::SwitchPerspective);
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->ViewNextAction, ETriggerEvent::Triggered, this, &ThisClass::ViewNextPlayer);
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->ViewPrevAction, ETriggerEvent::Triggered, this, &ThisClass::ViewPrevPlayer);
+		EIC->BindAction(AssetSubsystem->InputAsset->SwitchPerspectiveAction, ETriggerEvent::Triggered, this, &ThisClass::SwitchPerspective);
+		EIC->BindAction(AssetSubsystem->InputAsset->ViewNextAction, ETriggerEvent::Triggered, this, &ThisClass::ViewNextPlayer);
+		EIC->BindAction(AssetSubsystem->InputAsset->ViewPrevAction, ETriggerEvent::Triggered, this, &ThisClass::ViewPrevPlayer);
 	}
 }
 

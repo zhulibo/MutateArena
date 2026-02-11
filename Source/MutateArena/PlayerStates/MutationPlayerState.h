@@ -51,5 +51,8 @@ protected:
 	UFUNCTION()
 	void OnRep_Rage();
 	void ApplyLevelUpEffect();
+	UFUNCTION(Client, Reliable)
+	void ClientOnLevelUp();
+	virtual void ClientOnLevelUp_Implementation();
 
 };

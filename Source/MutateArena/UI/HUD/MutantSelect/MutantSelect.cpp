@@ -113,7 +113,7 @@ void UMutantSelect::OnMutantSelectButtonClicked(EMutantCharacterName MutantChara
 			{
 				if (FGameplayAbilitySpec* Spec = AbilitySystemComponent->FindAbilitySpecFromClass(AssetSubsystem->CharacterAsset->MutantChangeAbility))
 				{
-					AbilitySystemComponent->CancelAbility(Spec->Ability);
+					AbilitySystemComponent->CancelAbilityHandle(Spec->Handle);
 				}
 			}
 		}

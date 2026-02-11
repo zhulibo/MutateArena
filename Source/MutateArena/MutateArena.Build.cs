@@ -29,6 +29,10 @@ public class MutateArena : ModuleRules
 				"Json",
 				"JsonUtilities",
 				"AudioModulation",
+				"StateTreeModule",
+				"GameplayStateTreeModule",
+				"AIModule",
+				"NavigationSystem",
 			}
 		);
 

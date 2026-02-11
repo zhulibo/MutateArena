@@ -4,6 +4,8 @@
 #include "BaseController.h"
 #include "MutationController.generated.h"
 
+enum class ETeam : uint8;
+
 UCLASS()
 class MUTATEARENA_API AMutationController : public ABaseController
 {
@@ -75,7 +77,7 @@ public:
 	virtual void InitHUD() override;
 	virtual void SetHUDHealth(float Health) override;
 	void SetHUDTeamNum(int32 TeamNum, ETeam Team);
-	void ShowHUDSkill(bool bIsShow);
+	void SetHUDSkill(bool bIsReady);
 	void SetHUDRage(float UpdateRageUI);
 	void SetHUDDamageMul(float DamageMul);
 protected:

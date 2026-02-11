@@ -6,7 +6,7 @@ set "SOURCE_DIR=%~dp0"
 
 set "DEST_FILE=C:\Users\yoyoy\OneDrive\Backup\MutateArena\MutateArena.zip"
 
-set "EXCLUDE_ITEMS='.git', '.idea', 'Binaries', 'Build', 'Intermediate', 'Saved'"
+set "EXCLUDE_ITEMS='.git', '.idea', 'Binaries', 'Build', 'DerivedDataCache', 'Intermediate', 'Saved'"
 
 echo Starting backup...
 

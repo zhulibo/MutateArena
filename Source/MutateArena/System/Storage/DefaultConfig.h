@@ -59,7 +59,7 @@ public:
 	float Brightness = 2.2f;
 
 	UPROPERTY()
-	float MasterVolume = 0.8f;
+	float MasterVolume = 0.6f;
 	UPROPERTY()
 	float EffectsVolume = 1.f;
 	UPROPERTY()

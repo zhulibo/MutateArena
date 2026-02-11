@@ -17,6 +17,8 @@ UCrosshairComponent::UCrosshairComponent()
 void UCrosshairComponent::BeginPlay()
 {
 	Super::BeginPlay();
+	
+	HumanCharacter = Cast<AHumanCharacter>(GetOwner());
 
 	if (HumanCharacter)
 	{

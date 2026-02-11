@@ -25,7 +25,7 @@ public:
 	class URecoilComponent* RecoilComponent;
 	UPROPERTY(VisibleAnywhere)
 	class UCrosshairComponent* CrosshairComponent;
-
+	
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void PostInitializeComponents() override;
@@ -42,7 +42,6 @@ protected:
 	UPROPERTY()
 	class AMeleeGameState* MeleeGameState;
 
-	
 public:
 	virtual void OnASCInit() override;
 	void OnMaxWalkSpeedChanged(const FOnAttributeChangeData& Data);
@@ -53,10 +52,9 @@ protected:
 	void AimButtonReleased(const FInputActionValue& Value);
 public:
 	void FireButtonPressed(const FInputActionValue& Value);
-
-protected:
 	void FireButtonReleased(const FInputActionValue& Value);
 	void ReloadButtonPressed(const FInputActionValue& Value);
+protected:
 	void DropButtonPressed(const FInputActionValue& Value);
 public:
 	void SwapPrimaryEquipmentButtonPressed();
@@ -124,5 +122,8 @@ protected:
 	void ServerOnImmune(AMutantCharacter* MutantCharacter);
 	UFUNCTION()
 	void OnRep_bIsImmune();
+	
+public:
+	UCombatComponent* GetCombatComponent() const { return CombatComponent; }
 	
 };

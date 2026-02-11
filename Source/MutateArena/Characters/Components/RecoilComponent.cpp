@@ -14,6 +14,8 @@ URecoilComponent::URecoilComponent()
 void URecoilComponent::BeginPlay()
 {
 	Super::BeginPlay();
+	
+	HumanCharacter = Cast<AHumanCharacter>(GetOwner());
 }
 
 void URecoilComponent::TickComponent(float DeltaSeconds, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)

@@ -36,6 +36,7 @@
 #include "MutateArena/Abilities/MAAbilitySystemComponent.h"
 #include "MutateArena/System/UISubsystem.h"
 #include "Net/UnrealNetwork.h"
+#include "Perception/AIPerceptionComponent.h"
 
 #define LOCTEXT_NAMESPACE "AHumanCharacter"
 
@@ -46,7 +47,7 @@ AHumanCharacter::AHumanCharacter()
 	CombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
 	RecoilComponent = CreateDefaultSubobject<URecoilComponent>(TEXT("RecoilComponent"));
 	CrosshairComponent = CreateDefaultSubobject<UCrosshairComponent>(TEXT("CrosshairComponent"));
-
+	
 	BloodColor = C_RED;
 	
 	DefaultMaxWalkSpeed = 600.f;
@@ -70,18 +71,10 @@ void AHumanCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 void AHumanCharacter::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
-
-	if (CombatComponent && CombatComponent->HumanCharacter == nullptr)
+	
+	if (AIPerceptionComponent)
 	{
-		CombatComponent->HumanCharacter = this;
-	}
-	if (RecoilComponent && RecoilComponent->HumanCharacter == nullptr)
-	{
-		RecoilComponent->HumanCharacter = this;
-	}
-	if (CrosshairComponent && CrosshairComponent->HumanCharacter == nullptr)
-	{
-		CrosshairComponent->HumanCharacter = this;
+		AIPerceptionComponent->OnTargetPerceptionUpdated.AddDynamic(this, &ThisClass::OnTargetPerceptionUpdated);
 	}
 }
 
@@ -111,21 +104,26 @@ void AHumanCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 	}
 
 	// Set up action bindings
-	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
+	if (UEnhancedInputComponent* EIC = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
 	{
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->AimAction, ETriggerEvent::Started, this, &ThisClass::AimButtonPressed);
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->AimAction, ETriggerEvent::Completed, this, &ThisClass::AimButtonReleased);
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->FireAction, ETriggerEvent::Started, this, &ThisClass::FireButtonPressed);
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->FireAction, ETriggerEvent::Completed, this, &ThisClass::FireButtonReleased);
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->ReloadAction, ETriggerEvent::Triggered, this, &ThisClass::ReloadButtonPressed);
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->DropAction, ETriggerEvent::Triggered, this, &ThisClass::DropButtonPressed);
+		EIC->BindAction(AssetSubsystem->InputAsset->MoveAction, ETriggerEvent::Triggered, this, &ThisClass::UpdateActiveTime);
+		EIC->BindAction(AssetSubsystem->InputAsset->LookMouseAction, ETriggerEvent::Triggered, this, &ThisClass::UpdateActiveTime);
+		EIC->BindAction(AssetSubsystem->InputAsset->LookStickAction, ETriggerEvent::Triggered, this, &ThisClass::UpdateActiveTime);
+		EIC->BindAction(AssetSubsystem->InputAsset->FireAction, ETriggerEvent::Started, this, &ThisClass::UpdateActiveTime);
+		
+		EIC->BindAction(AssetSubsystem->InputAsset->AimAction, ETriggerEvent::Started, this, &ThisClass::AimButtonPressed);
+		EIC->BindAction(AssetSubsystem->InputAsset->AimAction, ETriggerEvent::Completed, this, &ThisClass::AimButtonReleased);
+		EIC->BindAction(AssetSubsystem->InputAsset->FireAction, ETriggerEvent::Started, this, &ThisClass::FireButtonPressed);
+		EIC->BindAction(AssetSubsystem->InputAsset->FireAction, ETriggerEvent::Completed, this, &ThisClass::FireButtonReleased);
+		EIC->BindAction(AssetSubsystem->InputAsset->ReloadAction, ETriggerEvent::Triggered, this, &ThisClass::ReloadButtonPressed);
+		EIC->BindAction(AssetSubsystem->InputAsset->DropAction, ETriggerEvent::Triggered, this, &ThisClass::DropButtonPressed);
 
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->SwapPrimaryEquipmentAction, ETriggerEvent::Triggered, this, &ThisClass::SwapPrimaryEquipmentButtonPressed);
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->SwapSecondaryEquipmentAction, ETriggerEvent::Triggered, this, &ThisClass::SwapSecondaryEquipmentButtonPressed);
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->SwapMeleeEquipmentAction, ETriggerEvent::Triggered, this, &ThisClass::SwapMeleeEquipmentButtonPressed);
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->SwapThrowingEquipmentAction, ETriggerEvent::Triggered, this, &ThisClass::SwapThrowingEquipmentButtonPressed);
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->SwapLastEquipmentAction, ETriggerEvent::Triggered, this, &ThisClass::SwapLastEquipmentButtonPressed);
-		EnhancedInputComponent->BindAction(AssetSubsystem->InputAsset->SwapBetweenPrimarySecondaryEquipmentAction, ETriggerEvent::Triggered, this, &ThisClass::SwapBetweenPrimarySecondaryEquipmentButtonPressed);
+		EIC->BindAction(AssetSubsystem->InputAsset->SwapPrimaryEquipmentAction, ETriggerEvent::Triggered, this, &ThisClass::SwapPrimaryEquipmentButtonPressed);
+		EIC->BindAction(AssetSubsystem->InputAsset->SwapSecondaryEquipmentAction, ETriggerEvent::Triggered, this, &ThisClass::SwapSecondaryEquipmentButtonPressed);
+		EIC->BindAction(AssetSubsystem->InputAsset->SwapMeleeEquipmentAction, ETriggerEvent::Triggered, this, &ThisClass::SwapMeleeEquipmentButtonPressed);
+		EIC->BindAction(AssetSubsystem->InputAsset->SwapThrowingEquipmentAction, ETriggerEvent::Triggered, this, &ThisClass::SwapThrowingEquipmentButtonPressed);
+		EIC->BindAction(AssetSubsystem->InputAsset->SwapLastEquipmentAction, ETriggerEvent::Triggered, this, &ThisClass::SwapLastEquipmentButtonPressed);
+		EIC->BindAction(AssetSubsystem->InputAsset->SwapBetweenPrimarySecondaryEquipmentAction, ETriggerEvent::Triggered, this, &ThisClass::SwapBetweenPrimarySecondaryEquipmentButtonPressed);
 	}
 }
 
@@ -392,7 +390,7 @@ void AHumanCharacter::FireButtonPressed(const FInputActionValue& Value)
 
 	bCanSwitchLoadout = false;
 
-	// TODO use interface
+	// TODO 移入各自的类
 	switch (CombatComponent->CurEquipmentType)
 	{
 	case EEquipmentType::Primary:
@@ -463,7 +461,6 @@ void AHumanCharacter::SwapThrowingEquipmentButtonPressed()
 
 void AHumanCharacter::SwapLastEquipmentButtonPressed(const FInputActionValue& Value)
 {
-	UE_LOG(LogTemp, Warning, TEXT("SwapLastEquipmentButtonPressed"));
 	if (CombatComponent) CombatComponent->SwapEquipment(CombatComponent->LastEquipmentType);
 }
 

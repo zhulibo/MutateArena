@@ -270,7 +270,7 @@ void AMutationController::InitMutantHUD()
 		{
 			FGameplayTag Tag = FGameplayTag::RequestGameplayTag(TAG_MUTANT_SKILL_CD);
 			int32 TagCount = MutationPlayerState->GetAbilitySystemComponent()->GetTagCount(Tag);
-			ShowHUDSkill(TagCount == 0.f && MutationPlayerState->GetCharacterLevel() >= 2.f);
+			SetHUDSkill(TagCount == 0.f && MutationPlayerState->GetCharacterLevel() >= 2.f);
 		}
 	}
 }
@@ -321,11 +321,11 @@ void AMutationController::SetHUDTotalRound()
 	}
 }
 
-void AMutationController::ShowHUDSkill(bool bIsShow)
+void AMutationController::SetHUDSkill(bool bIsReady)
 {
 	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
 	{
-		UISubsystem->OnSkillChange.Broadcast(bIsShow);
+		UISubsystem->OnSkillChange.Broadcast(bIsReady);
 	}
 }
 
