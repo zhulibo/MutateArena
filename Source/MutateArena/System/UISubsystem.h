@@ -36,6 +36,7 @@ DECLARE_MULTICAST_DELEGATE(FOnRoundStarted);
 DECLARE_MULTICAST_DELEGATE(FOnRoundEnded);
 DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnAddKillLog, ABasePlayerState* AttackerState, const FText& CauserName, ABasePlayerState* DamagedState);
 DECLARE_MULTICAST_DELEGATE_FourParams(FOnReceiveMsg, EMsgType MsgType, ETeam Team, const FString& PlayerName, const FString& Msg);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnAFKHosting, bool bIsHosting);
 
 // Mutation
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnTeamChange, ETeam Team);
@@ -96,6 +97,7 @@ public:
 	FOnRoundEnded OnRoundEnded;
 	FOnAddKillLog OnAddKillLog;
 	FOnReceiveMsg OnReceiveMsg;
+	FOnAFKHosting OnAFKHosting;
 	
 	// Mutation
 	FOnTeamChange OnTeamChange;

@@ -6,8 +6,8 @@ Mutate Arena is an online multiplayer first-person shooter game, the main gamepl
 
 Built with Unreal Engine 5.6
 
-Currently, first-person and third-person perspectives use the same model, this can reduce workload and keep consistency(may be good for gameplay in the future).  
-However, due to some issues with this approach, may consider separating them in the future.
+Currently, first-person and third-person perspectives use the same models and animations, which reduces workload and maintains consistency (potentially beneficial for gameplay in the future).  
+This approach has some issues, and if not properly addressed in the future, they may need to be separated.
 
 ## Binary files
 
@@ -18,14 +18,14 @@ This repository does not include binary files. You can download the complete pro
 .blender and .ssp files are available on [OneDrive](https://1drv.ms/f/c/c8d6dc43bb25e3ee/IgDu4yW7Q9zWIIDIowoAAAAAAZE-GKmT3dQX2dS5ddXecZM?e=KLbs87).
 The version is Blender 5.0 and Substance 3D Painter 11.1
 
-The traditional High-to-Low Poly workflow was not used (I used Nanite🤪), and many parts of the model remain unbeveled to allow for easier change later.
+The traditional High-to-Low Poly workflow was not used (I used Nanite), and many parts of the model remain unbeveled to allow for easier change later.
 
 If you want import fbx to UE, you need change source code
 form  
 bIsBlenderArmatureBone = (GrandFather == nullptr || GrandFather == SDKScene->GetRootNode()) && (RootBoneParentName.Compare(TEXT("armature"), ESearchCase::IgnoreCase) == 0);  
 to  
 bIsBlenderArmatureBone = (GrandFather == nullptr || GrandFather == SDKScene->GetRootNode()) && (RootBoneParentName.Compare(TEXT("￩ﾪﾨ￦ﾞﾶ"), ESearchCase::IgnoreCase) == 0);  
-(The "armature" is hardcoded, and the Chinese version .blender file is named "骨架", and it will be garbled when imported into UE.)  
+(The "armature" is hardcoded, and my Chinese version .blender file is named "骨架", and it will be garbled when imported into UE.)  
 Otherwise, your root bone will have an extra bone named "骨架".
 
 ## Setup
@@ -45,6 +45,6 @@ It's currently in its earliest playable state and will remain in development for
 
 ## Links
 
-[mutate.icu](https://www.mutate.icu/)
+[www.mutatearena.com](https://www.mutatearena.com/)
 
 [哔哩哔哩](https://space.bilibili.com/11741743/)

@@ -1154,7 +1154,10 @@ void ABaseCharacter::StartAutoHost()
 	{
 		StateTreeComponent->StartLogic();
 		
-		NOTIFY(this, C_YELLOW, LOCTEXT("StartAutoHost", "Start auto hosting"));
+		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
+		{
+			UISubsystem->OnAFKHosting.Broadcast(true);
+		}
 	}
 }
 
@@ -1165,7 +1168,10 @@ void ABaseCharacter::StopAutoHost()
 	{
 		StateTreeComponent->StopLogic(TEXT("PlayerInput"));
 		
-		NOTIFY(this, C_YELLOW, LOCTEXT("StopAutoHost", "Stop auto hosting"));
+		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
+		{
+			UISubsystem->OnAFKHosting.Broadcast(false);
+		}
 	}
 }
 

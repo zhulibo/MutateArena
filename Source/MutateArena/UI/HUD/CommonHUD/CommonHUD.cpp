@@ -30,6 +30,7 @@ void UCommonHUD::NativeOnInitialized()
 		UISubsystem->OnHUDStateChange.AddUObject(this, &ThisClass::OnHUDStateChange);
 		UISubsystem->OnCauseDamage.AddUObject(this, &ThisClass::OnCauseDamage);
 		UISubsystem->OnAddKillLog.AddUObject(this, &ThisClass::OnAddKillLog);
+		UISubsystem->OnAFKHosting.AddUObject(this, &ThisClass::OnAFKHosting);
 	}
 	
 	// 默认隐藏聊天输入框
@@ -202,6 +203,11 @@ void UCommonHUD::OnCauseDamage(float Num)
 			}
 		}
 	}, 5.f, false);
+}
+
+void UCommonHUD::OnAFKHosting(bool bIsHosting)
+{
+	HostingBox->SetVisibility(bIsHosting ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 }
 
 #undef LOCTEXT_NAMESPACE

@@ -1,11 +1,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "CommonUserWidget.h"
+#include "CommonButtonBase.h"
 #include "Human.generated.h"
 
 UCLASS()
-class MUTATEARENA_API UHuman : public UCommonUserWidget
+class MUTATEARENA_API UHuman : public UCommonButtonBase
 {
 	GENERATED_BODY()
 

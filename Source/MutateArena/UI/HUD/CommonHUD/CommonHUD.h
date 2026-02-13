@@ -5,6 +5,8 @@
 #include "MutateArena/PlayerControllers/BaseController.h"
 #include "CommonHUD.generated.h"
 
+enum class EHUDState : uint8;
+
 UCLASS()
 class MUTATEARENA_API UCommonHUD : public UCommonUserWidget
 {
@@ -53,5 +55,9 @@ protected:
 	TSubclassOf<class UDamageLogLine> DamageLogLineClass;
 	void OnCauseDamage(float Num);
 	FTimerHandle DamageLogTimerHandle;
+	
+	UPROPERTY(meta = (BindWidget))
+	class UHorizontalBox* HostingBox;
+	void OnAFKHosting(bool bIsHosting);
 	
 };

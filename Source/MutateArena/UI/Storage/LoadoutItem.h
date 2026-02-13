@@ -1,13 +1,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "CommonUserWidget.h"
+#include "CommonButtonBase.h"
 #include "LoadoutItem.generated.h"
 
 enum class EEquipmentName : uint8;
 
 UCLASS()
-class MUTATEARENA_API ULoadoutItem : public UCommonUserWidget
+class MUTATEARENA_API ULoadoutItem : public UCommonButtonBase
 {
 	GENERATED_BODY()
 
