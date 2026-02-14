@@ -14,7 +14,9 @@ UDevSetting::UDevSetting()
 }
 
 // 置于菜单最上边
+#if WITH_EDITOR
 FText UDevSetting::GetSectionText() const
 {
 	return FText::FromString("! Dev Setting");
 }
+# endif

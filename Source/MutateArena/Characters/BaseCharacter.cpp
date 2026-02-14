@@ -1124,7 +1124,6 @@ void ABaseCharacter::UpdateActiveTime(const FInputActionValue& Value)
 	if (bIsAutoHosting)
 	{
 		StopAutoHost();
-		bIsAutoHosting = false;
 	}
 }
 
@@ -1142,7 +1141,6 @@ void ABaseCharacter::CheckIdleStatus()
 		if (!bIsAutoHosting)
 		{
 			StartAutoHost();
-			bIsAutoHosting = true;
 		}
 	}
 }

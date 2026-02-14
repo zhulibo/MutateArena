@@ -22,7 +22,7 @@ public:
 	UPROPERTY(EditAnywhere)
 	int32 TotalRound = DEFAULT_MATCH_ROUND;
 	UPROPERTY(EditAnywhere)
-	float WarmupTime = 10.f;
+	float WarmupTime = 15.f;
 	UPROPERTY(EditAnywhere)
 	float RoundTime = 180.f;
 	UPROPERTY(EditAnywhere)

@@ -86,14 +86,14 @@ void ULoginLayout::ShowDevContainer()
 	Login1Button->ButtonText->SetText(FText::FromString(TEXT("dust9923")));
 	Login1Button->OnClicked().AddUObject(this, &ThisClass::OnLoginButtonClicked, ECoolLoginType::DevAuth, FString(TEXT("127.0.0.1:2333")), FString(TEXT("dust9923")));
 
-	Login2Button->ButtonText->SetText(FText::FromString(TEXT("dev10001")));
-	Login2Button->OnClicked().AddUObject(this, &ThisClass::OnLoginButtonClicked, ECoolLoginType::DevAuth, FString(TEXT("127.0.0.1:2333")), FString(TEXT("dev10001")));
+	Login2Button->ButtonText->SetText(FText::FromString(TEXT("MutateArena-g")));
+	Login2Button->OnClicked().AddUObject(this, &ThisClass::OnLoginButtonClicked, ECoolLoginType::DevAuth, FString(TEXT("127.0.0.1:2333")), FString(TEXT("MutateArena-g")));
 
-	Login3Button->ButtonText->SetText(FText::FromString(TEXT("dev10002")));
-	Login3Button->OnClicked().AddUObject(this, &ThisClass::OnLoginButtonClicked, ECoolLoginType::DevAuth, FString(TEXT("127.0.0.1:2333")), FString(TEXT("dev10002")));
+	Login3Button->ButtonText->SetText(FText::FromString(TEXT("MutateArena-qq")));
+	Login3Button->OnClicked().AddUObject(this, &ThisClass::OnLoginButtonClicked, ECoolLoginType::DevAuth, FString(TEXT("127.0.0.1:2333")), FString(TEXT("MutateArena-qq")));
 	
-	Login4Button->ButtonText->SetText(FText::FromString(TEXT("dev10003")));
-	Login4Button->OnClicked().AddUObject(this, &ThisClass::OnLoginButtonClicked, ECoolLoginType::DevAuth, FString(TEXT("127.0.0.1:2333")), FString(TEXT("dev10003")));
+	Login4Button->ButtonText->SetText(FText::FromString(TEXT("MutateArena-163")));
+	Login4Button->OnClicked().AddUObject(this, &ThisClass::OnLoginButtonClicked, ECoolLoginType::DevAuth, FString(TEXT("127.0.0.1:2333")), FString(TEXT("MutateArena-163")));
 }
 
 void ULoginLayout::OnDevButtonClicked()
