@@ -4,7 +4,7 @@
 #include "BaseCharacter.h"
 #include "GameplayEffectTypes.h"
 #include "GameplayTagContainer.h"
-#include "Interfaces/InteractableTarget.h"
+#include "MutateArena/System/Interfaces/Interactable.h"
 #include "MutantCharacter.generated.h"
 
 UENUM(BlueprintType)
@@ -19,7 +19,7 @@ enum class EMutantCharacterName : uint8;
 enum class ESpawnMutantReason : uint8;
 
 UCLASS()
-class MUTATEARENA_API AMutantCharacter : public ABaseCharacter, public IInteractableTarget
+class MUTATEARENA_API AMutantCharacter : public ABaseCharacter, public IInteractable
 {
 	GENERATED_BODY()
 

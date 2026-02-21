@@ -127,40 +127,55 @@ void UCommonHUD::OnHUDStateChange(EHUDState HUDState)
 	}
 }
 
-UDamageLogLine* UCommonHUD::GetPooledDamageLog()
-{
-	if (DamageLogPool.Num() > 0)
-	{
-		if (UDamageLogLine* PooledWidget = DamageLogPool.Pop())
-		{
-			return PooledWidget;
-		}
-	}
-	
-	UE_LOG(LogTemp, Warning, TEXT("DamageLogPool is empty! Create a new widget"));
-	return CreateWidget<UDamageLogLine>(this, DamageLogLineClass);
-}
-
-void UCommonHUD::ReturnToPool(UDamageLogLine* Widget)
-{
-	if (Widget)
-	{
-		if (Widget->GetParent())
-		{
-			Widget->RemoveFromParent();
-		}
-
-		DamageLogPool.AddUnique(Widget); // 使用 AddUnique 防止重复回收
-	}
-}
-
+// DamageLogContainer被旋转了180度，文字又倒转180度
 void UCommonHUD::OnCauseDamage(float Num)
 {
 	if (DamageLogContainer == nullptr || DamageLogLineClass == nullptr) return;
-	
-	if (UDamageLogLine* DamageLogLine = GetPooledDamageLog())
+
+	UDamageLogLine* DamageLogLine = nullptr;
+	int32 MaxDamageLogCount = 5;
+
+	// 1. 优先从容器内部寻找闲置（被隐藏）的 Widget 复用
+	for (int32 i = 0; i < DamageLogContainer->GetChildrenCount(); ++i)
 	{
-		DamageLogContainer->AddChild(DamageLogLine);
+		UDamageLogLine* Child = Cast<UDamageLogLine>(DamageLogContainer->GetChildAt(i));
+		if (Child && Child->GetVisibility() == ESlateVisibility::Collapsed)
+		{
+			DamageLogLine = Child;
+			// 移出再加入，它会被放到数组末尾
+			DamageLogContainer->RemoveChild(Child);
+			DamageLogContainer->AddChild(Child);
+			break;
+		}
+	}
+
+	// 如果没有找到闲置的 Widget
+	if (!DamageLogLine)
+	{
+		if (DamageLogContainer->GetChildrenCount() >= MaxDamageLogCount)
+		{
+			// 如果已经达到数量上限，强制复用最老的
+			DamageLogLine = Cast<UDamageLogLine>(DamageLogContainer->GetChildAt(0));
+			if (DamageLogLine)
+			{
+				DamageLogContainer->RemoveChild(DamageLogLine);
+				DamageLogContainer->AddChild(DamageLogLine);
+			}
+		}
+		else
+		{
+			// 还没达到上限，直接创建新的
+			DamageLogLine = CreateWidget<UDamageLogLine>(this, DamageLogLineClass);
+			if (DamageLogLine)
+			{
+				DamageLogContainer->AddChild(DamageLogLine);
+			}
+		}
+	}
+
+	if (DamageLogLine)
+	{
+		DamageLogLine->SetVisibility(ESlateVisibility::Visible);
 
 		static FNumberFormattingOptions Opts;
 		static bool bOptsInitialized = false;
@@ -179,30 +194,18 @@ void UCommonHUD::OnCauseDamage(float Num)
 		DamageLogLine->PlayAnimation(DamageLogLine->AppearanceAnim);
 	}
 
-	if (DamageLogContainer->GetChildrenCount() > 4)
-	{
-		if (UDamageLogLine* OldWidget = Cast<UDamageLogLine>(DamageLogContainer->GetChildAt(0)))
-		{
-			ReturnToPool(OldWidget);
-		}
-	}
-
-	GetWorld()->GetTimerManager().SetTimer(DamageLogTimerHandle, [this]()
+	GetWorld()->GetTimerManager().SetTimer(DamageLogTimerHandle, FTimerDelegate::CreateWeakLambda(this, [this]()
 	{
 		if (!DamageLogContainer) return;
 
-		while (DamageLogContainer->GetChildrenCount() > 0)
+		for (int32 i = 0; i < DamageLogContainer->GetChildrenCount(); ++i)
 		{
-			if (UDamageLogLine* ActiveWidget = Cast<UDamageLogLine>(DamageLogContainer->GetChildAt(0)))
+			if (UWidget* Child = DamageLogContainer->GetChildAt(i))
 			{
-				ReturnToPool(ActiveWidget);
-			}
-			else
-			{
-				DamageLogContainer->RemoveChildAt(0);
+				Child->SetVisibility(ESlateVisibility::Collapsed);
 			}
 		}
-	}, 5.f, false);
+	}), 5.f, false);
 }
 
 void UCommonHUD::OnAFKHosting(bool bIsHosting)

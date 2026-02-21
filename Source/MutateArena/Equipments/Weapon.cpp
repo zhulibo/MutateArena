@@ -15,6 +15,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "MutateArena/System/AssetSubsystem.h"
 #include "MutateArena/Assets/Data/CommonAsset.h"
+#include "MutateArena/System/Interfaces/ObjectPoolSubsystem.h"
 
 AWeapon::AWeapon()
 {
@@ -111,23 +112,22 @@ void AWeapon::Fire(const FVector& HitTarget, float RecoilVert, float RecoilHor, 
 		{
 			FTransform SocketTransform = ShellEjectSocket->GetSocketTransform(EquipmentMesh);
 
-			FActorSpawnParameters SpawnParams;
-			SpawnParams.bDeferConstruction = true;
-
-			AShell* Shell = GetWorld()->SpawnActor<AShell>(
-				ShellClass,
-				SocketTransform.GetLocation(),
-				SocketTransform.GetRotation().Rotator(),
-				SpawnParams
-			);
-
-			if (HumanCharacter == nullptr) HumanCharacter = Cast<AHumanCharacter>(GetOwner());
-			if (HumanCharacter)
+			if (UObjectPoolSubsystem* PoolSubsystem = GetWorld()->GetSubsystem<UObjectPoolSubsystem>())
 			{
-				Shell->InitVelocity = HumanCharacter->GetVelocity();
-			}
+				AActor* SpawnedActor = PoolSubsystem->AcquireObject(ShellClass, SocketTransform);
 
-			UGameplayStatics::FinishSpawningActor(Shell, SocketTransform);
+				if (AShell* Shell = Cast<AShell>(SpawnedActor))
+				{
+					if (HumanCharacter == nullptr)
+					{
+						HumanCharacter = Cast<AHumanCharacter>(GetOwner());
+					}
+
+					FVector CharVelocity = HumanCharacter ? HumanCharacter->GetVelocity() : FVector::ZeroVector;
+
+					Shell->LaunchShell(CharVelocity);
+				}
+			}
 		}
 	}
 

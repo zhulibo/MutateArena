@@ -684,7 +684,7 @@ bool AMutantCharacter::CanInteract()
 
 void AMutantCharacter::OnInteract(ABaseCharacter* BaseCharacter)
 {
-	if (IInteractableTarget* Interactor = Cast<IInteractableTarget>(BaseCharacter))
+	if (IInteractable* Interactor = Cast<IInteractable>(BaseCharacter))
 	{
 		SetIsSuckedDry(true);
 		

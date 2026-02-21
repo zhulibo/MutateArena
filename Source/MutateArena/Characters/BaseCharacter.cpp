@@ -29,7 +29,6 @@
 #include "Data/CharacterAsset.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Data/InputAsset.h"
-#include "Interfaces/InteractableTarget.h"
 #include "MutateArena/Effects/BloodCollision.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include "Components/StateTreeComponent.h"
@@ -38,6 +37,7 @@
 #include "MutateArena/Assets/Data/CommonAsset.h"
 #include "MutateArena/System/DevSetting.h"
 #include "MutateArena/System/UISubsystem.h"
+#include "MutateArena/System/Interfaces/Interactable.h"
 #include "MutateArena/UI/TextChat/TextChat.h"
 #include "MutateArena/Utils/LibraryNotify.h"
 #include "Net/UnrealNetwork.h"
@@ -590,7 +590,7 @@ void ABaseCharacter::InteractStarted(const FInputActionValue& Value)
 	
 	if (OutHit.bBlockingHit)
 	{
-		if (IInteractableTarget* Target = Cast<IInteractableTarget>(OutHit.GetActor()))
+		if (IInteractable* Target = Cast<IInteractable>(OutHit.GetActor()))
 		{
 			if (Target->CanInteract())
 			{
@@ -623,7 +623,7 @@ void ABaseCharacter::InteractOngoing(const FInputActionValue& Value)
 		{
 			if (InteractTarget == OutHit.GetActor())
 			{
-				if (IInteractableTarget* Target = Cast<IInteractableTarget>(OutHit.GetActor()))
+				if (IInteractable* Target = Cast<IInteractable>(OutHit.GetActor()))
 				{
 					if (Target->CanInteract())
 					{
@@ -651,7 +651,7 @@ void ABaseCharacter::InteractTriggered(const FInputActionValue& Value)
 	if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
 	if (BaseController && InteractTarget)
 	{
-		if (IInteractableTarget* Target = Cast<IInteractableTarget>(InteractTarget))
+		if (IInteractable* Target = Cast<IInteractable>(InteractTarget))
 		{
 			Target->OnInteract(this);
 
@@ -663,7 +663,7 @@ void ABaseCharacter::InteractTriggered(const FInputActionValue& Value)
 // 在服务端通知交互目标被交互了，以便复制到所有客户端（InteractTriggered中Target不是本地不能RPC）。
 void ABaseCharacter::ServerInteractTriggered_Implementation(AActor* TempInteractTarget)
 {
-	if (IInteractableTarget* Target = Cast<IInteractableTarget>(TempInteractTarget))
+	if (IInteractable* Target = Cast<IInteractable>(TempInteractTarget))
 	{
 		Target->OnInteract_Server();
 	}

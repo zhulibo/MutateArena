@@ -2,10 +2,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "MutateArena/System/Interfaces/Poolable.h"
 #include "Shell.generated.h"
 
 UCLASS()
-class MUTATEARENA_API AShell : public AActor
+class MUTATEARENA_API AShell : public AActor, public IPoolable
 {
 	GENERATED_BODY()
 
@@ -14,8 +15,16 @@ public:
 
 	UPROPERTY()
 	FVector InitVelocity;
-
+	
+	virtual void OnSpawnedFromPool() override;
+	virtual void OnReturnedToPool() override;
+	void LaunchShell(const FVector& CharacterVelocity);
 protected:
+	FTimerHandle LifeSpanTimer;
+	FTimerHandle CollisionDelayTimer;
+	UFUNCTION()
+	void ReturnToPool();
+	
 	virtual void BeginPlay() override;
 	
 	UPROPERTY()
@@ -34,5 +43,5 @@ protected:
 	UMetaSoundSource* ShellSound_Metal;
 	UPROPERTY(EditAnywhere)
 	UMetaSoundSource* ShellSound_Wood;
-
+	
 };

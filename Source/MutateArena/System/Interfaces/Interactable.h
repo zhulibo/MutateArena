@@ -2,15 +2,15 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
-#include "InteractableTarget.generated.h"
+#include "Interactable.generated.h"
 
 UINTERFACE(MinimalAPI)
-class UInteractableTarget : public UInterface
+class UInteractable : public UInterface
 {
 	GENERATED_BODY()
 };
 
-class MUTATEARENA_API IInteractableTarget
+class MUTATEARENA_API IInteractable
 {
 	GENERATED_BODY()
 

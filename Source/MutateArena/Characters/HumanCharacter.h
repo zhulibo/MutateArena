@@ -4,7 +4,6 @@
 #include "BaseCharacter.h"
 #include "MutantCharacter.h"
 #include "Data/CharacterType.h"
-#include "Interfaces/InteractableTarget.h"
 #include "HumanCharacter.generated.h"
 
 enum class EEquipmentName : uint8;
@@ -12,7 +11,7 @@ enum class EEquipmentType : uint8;
 enum class ECombatState : uint8;
 
 UCLASS()
-class MUTATEARENA_API AHumanCharacter : public ABaseCharacter, public IInteractableTarget
+class MUTATEARENA_API AHumanCharacter : public ABaseCharacter, public IInteractable
 {
 	GENERATED_BODY()
 
