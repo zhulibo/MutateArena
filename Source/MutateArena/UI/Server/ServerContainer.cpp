@@ -1,7 +1,7 @@
 #include "ServerContainer.h"
 
 #include "Server.h"
-#include "MutateArena/UI/ProjectTags.h"
+#include "MutateArena/System/Tags/ProjectTags.h"
 #include "Widgets/CommonActivatableWidgetContainer.h"
 
 void UServerContainer::NativeOnInitialized()

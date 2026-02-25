@@ -15,7 +15,7 @@
 #include "MutateArena/Utils/LibraryNotify.h"
 #include "Components/EditableTextBox.h"
 #include "MutateArena/System/UISubsystem.h"
-#include "MutateArena/UI/ProjectTags.h"
+#include "MutateArena/System/Tags/ProjectTags.h"
 
 #define LOCTEXT_NAMESPACE "ULobby"
 

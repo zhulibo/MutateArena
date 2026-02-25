@@ -13,12 +13,11 @@ AGameplayCue_MutantSmokerSkill::AGameplayCue_MutantSmokerSkill()
 
 bool AGameplayCue_MutantSmokerSkill::WhileActive_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters)
 {
-	if (MutantSmoker == nullptr) MutantSmoker = Cast<AMutantSmoker>(MyTarget);
-	if (MutantSmoker && MutantSmoker->SmokeEffect)
+	if (AMutantSmoker* MutantSmoker = Cast<AMutantSmoker>(MyTarget))
 	{
 		SmokeEffectComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
 			GetWorld(),
-			MutantSmoker->SmokeEffect,
+			SmokerEffect,
 			MutantSmoker->GetActorLocation(),
 			MutantSmoker->GetActorRotation()
 		);
@@ -60,5 +59,5 @@ bool AGameplayCue_MutantSmokerSkill::OnRemove_Implementation(AActor* MyTarget, c
 	// 	SmokeEffectComponent->DestroyComponent();
 	// }
 
-	return Super::OnExecute_Implementation(MyTarget, Parameters);
+	return Super::OnRemove_Implementation(MyTarget, Parameters);
 }

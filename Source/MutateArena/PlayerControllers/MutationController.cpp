@@ -15,6 +15,7 @@
 #include "MetaSoundSource.h"
 #include "Components/AudioComponent.h"
 #include "MutateArena/System/UISubsystem.h"
+#include "MutateArena/System/Tags/ProjectTags.h"
 
 #define LOCTEXT_NAMESPACE "AMutationController"
 
@@ -268,8 +269,7 @@ void AMutationController::InitMutantHUD()
 
 		if (MutationPlayerState->GetAbilitySystemComponent())
 		{
-			FGameplayTag Tag = FGameplayTag::RequestGameplayTag(TAG_MUTANT_SKILL_CD);
-			int32 TagCount = MutationPlayerState->GetAbilitySystemComponent()->GetTagCount(Tag);
+			int32 TagCount = MutationPlayerState->GetAbilitySystemComponent()->GetTagCount(TAG_MUTANT_SKILL_CD);
 			SetHUDSkill(TagCount == 0.f && MutationPlayerState->GetCharacterLevel() >= 2.f);
 		}
 	}

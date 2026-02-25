@@ -7,6 +7,7 @@
 enum class ECombatState : uint8;
 enum class EEquipmentType : uint8;
 
+// TODO Refactor the hard-coded state machine into a GAS-based architecture.
 UCLASS()
 class MUTATEARENA_API UCombatComponent : public UActorComponent
 {

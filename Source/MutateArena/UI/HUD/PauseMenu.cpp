@@ -10,7 +10,7 @@
 #include "MutateArena/System/UISubsystem.h"
 #include "MutateArena/Assets/Data/CommonAsset.h"
 #include "MutateArena/UI/GameLayout.h"
-#include "MutateArena/UI/ProjectTags.h"
+#include "MutateArena/System/Tags/ProjectTags.h"
 #include "MutateArena/UI/Common/CommonButton.h"
 #include "MutateArena/UI/Common/ConfirmScreen.h"
 #include "Widgets/CommonActivatableWidgetContainer.h"

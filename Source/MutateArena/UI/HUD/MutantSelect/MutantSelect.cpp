@@ -22,7 +22,7 @@
 #include "MutateArena/System/UISubsystem.h"
 #include "MutateArena/System/Storage/SaveGameLoadout.h"
 #include "MutateArena/UI/GameLayout.h"
-#include "MutateArena/UI/ProjectTags.h"
+#include "MutateArena/System/Tags/ProjectTags.h"
 #include "MutateArena/Utils/LibraryCommon.h"
 #include "MutateArena/Utils/LibraryNotify.h"
 
@@ -100,22 +100,15 @@ void UMutantSelect::OnMutantSelectButtonClicked(EMutantCharacterName MutantChara
 	// 切换角色
 	if (AMutantCharacter* MutantCharacter = Cast<AMutantCharacter>(GetOwningPlayerPawn()))
 	{
-		FGameplayTag Tag = FGameplayTag::RequestGameplayTag(TAG_MUTANT_CHANGE_ACTIVE);
-
 		if (AbilitySystemComponent == nullptr) AbilitySystemComponent = MutantCharacter->GetAbilitySystemComponent();
-		if (AbilitySystemComponent && AbilitySystemComponent->GetTagCount(Tag) > 0)
+		if (AbilitySystemComponent && AbilitySystemComponent->GetTagCount(TAG_MUTANT_CHANGE_ACTIVE) > 0)
 		{
 			MutantCharacter->ServerSelectMutant(MutantCharacterName);
 
 			// 终止切换角色技能
-			if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-			if (AssetSubsystem && AssetSubsystem->CharacterAsset)
-			{
-				if (FGameplayAbilitySpec* Spec = AbilitySystemComponent->FindAbilitySpecFromClass(AssetSubsystem->CharacterAsset->MutantChangeAbility))
-				{
-					AbilitySystemComponent->CancelAbilityHandle(Spec->Handle);
-				}
-			}
+			FGameplayTagContainer CancelTags;
+			CancelTags.AddTag(TAG_MUTANT_CHANGE); 
+			AbilitySystemComponent->CancelAbilities(&CancelTags);
 		}
 		else
 		{

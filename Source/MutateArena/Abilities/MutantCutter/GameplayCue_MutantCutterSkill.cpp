@@ -10,11 +10,10 @@ AGameplayCue_MutantCutterSkill::AGameplayCue_MutantCutterSkill()
 
 bool AGameplayCue_MutantCutterSkill::WhileActive_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters)
 {
-	if (MutantCutter == nullptr) MutantCutter = Cast<AMutantCutter>(MyTarget);
-	if (MutantCutter)
+	if (AMutantCutter* MutantCutter = Cast<AMutantCutter>(MyTarget))
 	{
 		// 更改皮肤颜色
-		MutantCutter->GetMesh()->SetOverlayMaterial(MutantCutter->MI_Overlay_Skill);
+		MutantCutter->GetMesh()->SetOverlayMaterial(MI_Overlay_Skill);
 	}
 
 	return Super::WhileActive_Implementation(MyTarget, Parameters);
@@ -22,14 +21,13 @@ bool AGameplayCue_MutantCutterSkill::WhileActive_Implementation(AActor* MyTarget
 
 bool AGameplayCue_MutantCutterSkill::OnRemove_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters)
 {
-	if (MutantCutter == nullptr) MutantCutter = Cast<AMutantCutter>(MyTarget);
-	if (MutantCutter)
+	if (AMutantCutter* MutantCutter = Cast<AMutantCutter>(MyTarget))
 	{
-		if (MutantCutter->GetMesh()->GetOverlayMaterial() == MutantCutter->MI_Overlay_Skill)
+		if (MutantCutter->GetMesh()->GetOverlayMaterial() == MI_Overlay_Skill)
 		{
 			MutantCutter->GetMesh()->SetOverlayMaterial(nullptr);
 		}
 	}
 
-	return Super::OnExecute_Implementation(MyTarget, Parameters);
+	return Super::OnRemove_Implementation(MyTarget, Parameters);
 }

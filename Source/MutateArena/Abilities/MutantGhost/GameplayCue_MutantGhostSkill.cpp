@@ -9,8 +9,7 @@ AGameplayCue_MutantGhostSkill::AGameplayCue_MutantGhostSkill()
 
 bool AGameplayCue_MutantGhostSkill::WhileActive_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters)
 {
-	if (MutantGhost == nullptr) MutantGhost = Cast<AMutantGhost>(MyTarget);
-	if (MutantGhost)
+	if (AMutantGhost* MutantGhost = Cast<AMutantGhost>(MyTarget))
 	{
 		// 更改材质透明度
 		TArray<UMaterialInterface*> MaterialInterfaces = MutantGhost->GetMesh()->GetMaterials();
@@ -35,8 +34,7 @@ bool AGameplayCue_MutantGhostSkill::WhileActive_Implementation(AActor* MyTarget,
 
 bool AGameplayCue_MutantGhostSkill::OnRemove_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters)
 {
-	if (MutantGhost == nullptr) MutantGhost = Cast<AMutantGhost>(MyTarget);
-	if (MutantGhost)
+	if (AMutantGhost* MutantGhost = Cast<AMutantGhost>(MyTarget))
 	{
 		TArray<UMaterialInterface*> MaterialInterfaces = MutantGhost->GetMesh()->GetMaterials();
 		for (int32 i = 0; i < MaterialInterfaces.Num(); ++i)

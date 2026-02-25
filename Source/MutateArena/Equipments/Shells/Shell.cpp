@@ -5,7 +5,7 @@
 #include "MetaSoundSource.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/System/AssetSubsystem.h"
-#include "MutateArena/System/Interfaces/ObjectPoolSubsystem.h"
+#include "MutateArena/System/ObjectPoolSubsystem.h"
 
 AShell::AShell()
 {

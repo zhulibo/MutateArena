@@ -987,9 +987,14 @@ void UCombatComponent::MulticastDropEquipment2_Implementation(EEquipmentType Equ
 
 void UCombatComponent::LocalDropEquipment(EEquipmentType EquipmentType)
 {
-	if (GetEquipmentByType(EquipmentType))
+	if (AEquipment* Equipment = GetEquipmentByType(EquipmentType))
 	{
-		GetEquipmentByType(EquipmentType)->Drop();
+		if (Equipment->GetEquipmentAnimInstance())
+		{
+			Equipment->GetEquipmentAnimInstance()->Montage_Stop(0.1f);
+		}
+		
+		Equipment->Drop();
 
 		switch (EquipmentType)
 		{

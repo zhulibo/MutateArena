@@ -10,6 +10,7 @@
 #include "MutateArena/UI/Common/CommonButton.h"
 #include "Components/HorizontalBox.h"
 #include "MutateArena/System/UISubsystem.h"
+#include "MutateArena/System/Tags/ProjectTags.h"
 
 void UMutationMutant::NativeOnInitialized()
 {
@@ -23,8 +24,6 @@ void UMutationMutant::NativeOnInitialized()
 	}
 
 	SkillButton->OnClicked().AddUObject(this, &ThisClass::OnSkillButtonClicked);
-
-	CooldownTag = FGameplayTag::RequestGameplayTag(TAG_MUTANT_SKILL_CD);
 }
 
 void UMutationMutant::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
@@ -34,7 +33,7 @@ void UMutationMutant::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 	if (MutantCharacter == nullptr) MutantCharacter = Cast<AMutantCharacter>(GetOwningPlayerPawn());
 	if (MutantCharacter && MutantCharacter->GetAbilitySystemComponent())
 	{
-		FGameplayEffectQuery Query = FGameplayEffectQuery::MakeQuery_MatchAnyOwningTags(CooldownTag.GetSingleTagContainer());
+		FGameplayEffectQuery Query = FGameplayEffectQuery::MakeQuery_MatchAnyOwningTags(FGameplayTagContainer(TAG_MUTANT_SKILL_CD));
 		TArray<float> Times = MutantCharacter->GetAbilitySystemComponent()->GetActiveEffectsTimeRemaining(Query);
 		if (Times.Num() > 0)
 		{

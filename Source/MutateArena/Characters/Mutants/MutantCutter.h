@@ -12,9 +12,6 @@ class MUTATEARENA_API AMutantCutter : public AMutantCharacter
 public:
 	AMutantCutter();
 
-	UPROPERTY(EditAnywhere)
-	UMaterialInterface* MI_Overlay_Skill;
-
 protected:
 	virtual void BeginPlay() override;
 

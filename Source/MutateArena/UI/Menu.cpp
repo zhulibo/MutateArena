@@ -2,7 +2,6 @@
 
 #include "CommonTextBlock.h"
 #include "MenuLayout.h"
-#include "ProjectTags.h"
 #include "MutateArena/PlayerControllers/MenuController.h"
 #include "MutateArena/System/AssetSubsystem.h"
 #include "MutateArena/Assets/Data/CommonAsset.h"
@@ -14,6 +13,7 @@
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/System/EOSSubsystem.h"
 #include "MutateArena/System/UISubsystem.h"
+#include "MutateArena/System/Tags/ProjectTags.h"
 #include "MutateArena/Utils/LibraryCommon.h"
 #include "Widgets/CommonActivatableWidgetContainer.h"
 

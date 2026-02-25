@@ -18,8 +18,6 @@ protected:
 
 	UPROPERTY()
 	class AMutantCharacter* MutantCharacter;
-	UPROPERTY()
-	FGameplayTag CooldownTag;
 
 	UPROPERTY(meta = (BindWidget))
 	class UCommonTextBlock* Health;

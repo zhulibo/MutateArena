@@ -9,11 +9,10 @@ AGameplayCue_MutantTankSkill::AGameplayCue_MutantTankSkill()
 
 bool AGameplayCue_MutantTankSkill::WhileActive_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters)
 {
-	if (MutantTank == nullptr) MutantTank = Cast<AMutantTank>(MyTarget);
-	if (MutantTank)
+	if (AMutantTank* MutantTank = Cast<AMutantTank>(MyTarget))
 	{
 		// 更改皮肤颜色
-		MutantTank->GetMesh()->SetOverlayMaterial(MutantTank->MI_Overlay_Skill);
+		MutantTank->GetMesh()->SetOverlayMaterial(MI_Overlay_Skill);
 	}
 
 	return Super::WhileActive_Implementation(MyTarget, Parameters);
@@ -21,14 +20,13 @@ bool AGameplayCue_MutantTankSkill::WhileActive_Implementation(AActor* MyTarget, 
 
 bool AGameplayCue_MutantTankSkill::OnRemove_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters)
 {
-	if (MutantTank == nullptr) MutantTank = Cast<AMutantTank>(MyTarget);
-	if (MutantTank)
+	if (AMutantTank* MutantTank = Cast<AMutantTank>(MyTarget))
 	{
-		if (MutantTank->GetMesh()->GetOverlayMaterial() == MutantTank->MI_Overlay_Skill)
+		if (MutantTank->GetMesh()->GetOverlayMaterial() == MI_Overlay_Skill)
 		{
 			MutantTank->GetMesh()->SetOverlayMaterial(nullptr);
 		}
 	}
 
-	return Super::OnExecute_Implementation(MyTarget, Parameters);
+	return Super::OnRemove_Implementation(MyTarget, Parameters);
 }

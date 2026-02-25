@@ -12,9 +12,6 @@ class MUTATEARENA_API AMutantSmoker : public AMutantCharacter
 public:
 	AMutantSmoker();
 
-	UPROPERTY(EditAnywhere)
-	class UNiagaraSystem* SmokeEffect;
-
 protected:
 	virtual void BeginPlay() override;
 

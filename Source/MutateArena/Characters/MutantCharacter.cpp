@@ -25,6 +25,7 @@
 #include "Data/CharacterAsset.h"
 #include "MutateArena/Effects/BloodCollision.h"
 #include "Kismet/GameplayStatics.h"
+#include "MutateArena/System/Tags/ProjectTags.h"
 #include "Net/UnrealNetwork.h"
 #include "Perception/AIPerceptionComponent.h"
 
@@ -164,9 +165,8 @@ void AMutantCharacter::OnASCInit()
 
 	if (ASC && AttributeSetBase && IsLocallyControlled())
 	{
-		FGameplayTag SkillCooldownTag = FGameplayTag::RequestGameplayTag(TAG_MUTANT_SKILL_CD);
 		ASC->RegisterGameplayTagEvent(
-			SkillCooldownTag, EGameplayTagEventType::NewOrRemoved).AddUObject(this, &ThisClass::OnLocalSkillCooldownTagChanged);
+			TAG_MUTANT_SKILL_CD, EGameplayTagEventType::NewOrRemoved).AddUObject(this, &ThisClass::OnLocalSkillCooldownTagChanged);
 
 		ASC->GetGameplayAttributeValueChangeDelegate(
 			AttributeSetBase->GetCharacterLevelAttribute()).AddUObject(this, &ThisClass::OnLocalCharacterLevelChanged);
@@ -194,8 +194,7 @@ void AMutantCharacter::OnLocalCharacterLevelChanged(const FOnAttributeChangeData
 	if (MutationController == nullptr) MutationController = Cast<AMutationController>(Controller);
 	if (MutationController && ASC)
 	{
-		FGameplayTag Tag = FGameplayTag::RequestGameplayTag(TAG_MUTANT_SKILL_CD);
-		MutationController->SetHUDSkill(ASC->GetTagCount(Tag) == 0 && Data.NewValue > 2.f);
+		MutationController->SetHUDSkill(ASC->GetTagCount(TAG_MUTANT_SKILL_CD) == 0 && Data.NewValue > 2.f);
 	}
 }
 
@@ -221,6 +220,7 @@ void AMutantCharacter::SkillButtonPressed(const FInputActionValue& Value)
 {
 	if (ASC && GetCharacterLevel() >= 2.f)
 	{
+		FScopedPredictionWindow PredictionWindow(ASC, IsLocallyControlled() && !HasAuthority());
 		ASC->TryActivateAbilityByClass(SkillAbility);
 	}
 }
@@ -271,6 +271,8 @@ void AMutantCharacter::ActivateRestoreAbility()
 	if (ASC && AssetSubsystem && AssetSubsystem->CharacterAsset)
 	{
 		bHasActivateRestoreAbility = true;
+		
+		FScopedPredictionWindow PredictionWindow(ASC, IsLocallyControlled() && !HasAuthority());
 		ASC->TryActivateAbilityByClass(AssetSubsystem->CharacterAsset->MutantRestoreAbility);
 	}
 }

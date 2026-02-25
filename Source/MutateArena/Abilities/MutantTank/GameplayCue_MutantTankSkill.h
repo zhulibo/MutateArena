@@ -16,7 +16,7 @@ public:
 	virtual bool OnRemove_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters) override;
 
 protected:
-	UPROPERTY()
-	class AMutantTank* MutantTank;
+	UPROPERTY(EditAnywhere)
+	UMaterialInterface* MI_Overlay_Skill;
 
 };

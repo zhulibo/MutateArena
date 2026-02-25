@@ -9,25 +9,19 @@ AGameplayCue_MutantRestore::AGameplayCue_MutantRestore()
 	bAutoDestroyOnRemove = true;
 }
 
-bool AGameplayCue_MutantRestore::WhileActive_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters)
+bool AGameplayCue_MutantRestore::OnExecute_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters)
 {
-	if (MutantCharacter == nullptr) MutantCharacter = Cast<AMutantCharacter>(MyTarget);
+	UE_LOG(LogTemp, Warning, TEXT("OnExecute_Implementation"));
+	AMutantCharacter* MutantCharacter = Cast<AMutantCharacter>(MyTarget);
 	if (MutantCharacter && MutantCharacter->IsLocallyControlled())
 	{
-		GetWorldTimerManager().SetTimer(TimerHandle, this, &ThisClass::PlaySound, 2.f, true, 0.f);
+		UGameplayStatics::SpawnSound2D(this, RestoreHealthSound);
 	}
-
-	return Super::WhileActive_Implementation(MyTarget, Parameters);
-}
-
-void AGameplayCue_MutantRestore::PlaySound()
-{
-	UGameplayStatics::SpawnSound2D(this, RestoreHealthSound);
+	
+	return Super::OnExecute_Implementation(MyTarget, Parameters);
 }
 
 bool AGameplayCue_MutantRestore::OnRemove_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters)
 {
-	GetWorldTimerManager().ClearTimer(TimerHandle);
-
-	return Super::OnExecute_Implementation(MyTarget, Parameters);
+	return Super::OnRemove_Implementation(MyTarget, Parameters);
 }

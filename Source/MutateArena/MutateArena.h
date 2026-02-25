@@ -68,10 +68,6 @@
 #define LOBBY_MEMBER_MSG FName(TEXT("Msg"))
 #define LOBBY_MEMBER_TICK_NUM FName(TEXT("TickNum"))
 
-// GAS
-#define TAG_MUTANT_SKILL_CD FName(TEXT("Mutant.Skill.CD"))
-#define TAG_MUTANT_CHANGE_ACTIVE FName(TEXT("Mutant.Change.Active"))
-
 // 数据注册表
 #define DR_HUMAN_CHARACTER_MAIN FName(TEXT("DR_HumanCharacterMain"))
 #define DR_MUTANT_CHARACTER_MAIN FName(TEXT("DR_MutantCharacterMain"))

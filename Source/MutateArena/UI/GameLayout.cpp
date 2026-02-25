@@ -1,8 +1,8 @@
 ﻿#include "GameLayout.h"
 
-#include "ProjectTags.h"
 #include "MutateArena/PlayerControllers/BaseController.h"
 #include "MutateArena/System/UISubsystem.h"
+#include "MutateArena/System/Tags/ProjectTags.h"
 #include "MutateArena/UI/HUD/PauseMenu.h"
 #include "Widgets/CommonActivatableWidgetContainer.h"
 

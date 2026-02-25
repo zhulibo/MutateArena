@@ -16,7 +16,7 @@
 #include "MutateArena/Utils/LibraryNotify.h"
 #include "Engine/UserInterfaceSettings.h"
 #include "MutateArena/System/UISubsystem.h"
-#include "MutateArena/UI/ProjectTags.h"
+#include "MutateArena/System/Tags/ProjectTags.h"
 
 #define LOCTEXT_NAMESPACE "UServer"
 

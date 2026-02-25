@@ -15,7 +15,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "MutateArena/System/AssetSubsystem.h"
 #include "MutateArena/Assets/Data/CommonAsset.h"
-#include "MutateArena/System/Interfaces/ObjectPoolSubsystem.h"
+#include "MutateArena/System/ObjectPoolSubsystem.h"
 
 AWeapon::AWeapon()
 {

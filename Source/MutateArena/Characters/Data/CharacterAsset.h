@@ -34,8 +34,6 @@ public:
 	
 	UPROPERTY(EditAnywhere, Category = "GAS")
 	TSubclassOf<class UGameplayAbilityBase> MutantRestoreAbility;
-	UPROPERTY(EditAnywhere, Category = "GAS")
-	TSubclassOf<class UGameplayEffect> MutantRestoreEffect;
 
 	UPROPERTY(EditAnywhere, Category = "Character")
 	UMaterialInterface* MI_BloodDecal;

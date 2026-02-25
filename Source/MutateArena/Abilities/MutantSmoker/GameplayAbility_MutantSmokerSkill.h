@@ -15,23 +15,13 @@ public:
 protected:
 	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
 		const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
-
-	virtual bool CommitAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
-		const FGameplayAbilityActivationInfo ActivationInfo, OUT FGameplayTagContainer* OptionalRelevantTags = nullptr) override;
-
-	virtual void CancelAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
-		const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateCancelAbility) override;
-
+	
 	virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
 		const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
 
-	UPROPERTY()
-	FActiveGameplayEffectHandle EffectHandle;
-
-	UPROPERTY()
-	class UAbilityTask_MutantSmokerSkill* Task;
-
-	UFUNCTION()
-	void OnSkillEnd();
-
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<UGameplayEffect> SkillEffectClass;
+	
+	FActiveGameplayEffectHandle ActiveEffectHandle;
+	
 };
