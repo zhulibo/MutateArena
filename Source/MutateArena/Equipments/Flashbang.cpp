@@ -16,6 +16,7 @@
 #include "Components/WidgetComponent.h"
 #include "Materials/MaterialParameterCollectionInstance.h"
 #include "MutateArena/MutateArena.h"
+#include "MutateArena/System/Tags/ProjectTags.h"
 
 AFlashbang::AFlashbang()
 {
@@ -27,153 +28,143 @@ void AFlashbang::ThrowOut()
 {
 	Super::ThrowOut();
 
-	if (HumanCharacter == nullptr) HumanCharacter = Cast<AHumanCharacter>(GetOwner());
-	if (HumanCharacter)
+	if (HasAuthority())
 	{
-		if (UCameraComponent* CameraComponent = HumanCharacter->FindComponentByClass<UCameraComponent>())
-		{
-			FVector ThrowVector = CameraComponent->GetForwardVector();
-			ThrowVector.Z += 0.1;
-			ProjectileMovement->Velocity = ThrowVector * 1500.f;
-			ProjectileMovement->Activate();
-		}
-	}
+		FTimerHandle TimerHandleSound;
+		GetWorldTimerManager().SetTimer(TimerHandleSound, this, &ThisClass::ServerPlaySound, 1.8f);
 
-	FTimerHandle TimerHandle;
-	GetWorldTimerManager().SetTimer(TimerHandle, this, &ThisClass::Explode, 2.f);
-	FTimerHandle TimerHandle2;
-	GetWorldTimerManager().SetTimer(TimerHandle2, this, &ThisClass::PlayExplodeSound, 1.8f);
+		FTimerHandle TimerHandleExplode;
+		GetWorldTimerManager().SetTimer(TimerHandleExplode, this, &ThisClass::ServerExplode, 2.0f);
+	}
 }
 
-void AFlashbang::Explode()
+void AFlashbang::ServerPlaySound()
 {
-	// 不能直接销毁，同步到模拟端无法执行
-	SetLifeSpan(1.f);
-
-	if (BaseController == nullptr)
-	{
-		if (HumanCharacter == nullptr) HumanCharacter = Cast<AHumanCharacter>(GetOwner());
-		if (HumanCharacter) BaseController = Cast<ABaseController>(HumanCharacter->GetController());
-	}
-
-	ExplodeEffectComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
-		GetWorld(),
-		ExplodeEffect,
-		GetActorLocation(),
-		GetActorRotation()
-	);
-
-	// 检测周围玩家
-	TArray<AActor*> DamagedActors;
-	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
-	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Pawn));
-	UKismetSystemLibrary::SphereOverlapActors(
-		GetWorld(),
-		GetActorLocation(),
-		Radius,
-		ObjectTypes,
-		ABaseCharacter::StaticClass(),
-		TArray<AActor*>(),
-		DamagedActors
-	);
-
-	for (AActor* Actor : DamagedActors)
-	{
-		if (ABaseCharacter* DamagedCharacter = Cast<ABaseCharacter>(Actor))
-		{
-			if (!DamagedCharacter->IsLocallyControlled()) continue;
-
-			// 射线检测是否有阻挡
-			FHitResult HitResult;
-			
-			FCollisionQueryParams QueryParams;
-			
-			TArray<AActor*> AllPlayers;
-			UGameplayStatics::GetAllActorsWithTag(GetWorld(), TAG_CHARACTER_BASE, AllPlayers);
-			QueryParams.AddIgnoredActors(AllPlayers);
-			
-			TArray<AActor*> AllEquipments;
-			UGameplayStatics::GetAllActorsWithTag(GetWorld(), TAG_EQUIPMENT, AllEquipments);
-			QueryParams.AddIgnoredActors(AllEquipments);
-			
-			bool bHit = GetWorld()->LineTraceSingleByChannel(
-				HitResult,
-				GetActorLocation(),
-				DamagedCharacter->Camera->GetComponentLocation(),
-				ECollisionChannel::ECC_Visibility,
-				QueryParams
-			);
-			
-			if (bHit)
-			{
-				continue;
-			}
-			
-			// 应用闪光
-			float Distance = DamagedCharacter->GetDistanceTo(this);
-			
-			FVector A = DamagedCharacter->Camera->GetForwardVector();
-			FVector B = GetActorLocation() - DamagedCharacter->Camera->GetComponentLocation();
-			A.Normalize();
-			B.Normalize();
-			float DotProduct = FVector::DotProduct(A, B);
-			DotProduct = FMath::Clamp(DotProduct, -1.f, 1.f);
-			float AngleInRadians = FMath::Acos(DotProduct);
-			float Angle = FMath::RadiansToDegrees(AngleInRadians);
-
-			// if (DamagedCharacter->HasAuthority())
-			// {
-			// 	if (DamagedCharacter->IsLocallyControlled())
-			// 	{
-			// 		UE_LOG(LogTemp, Warning, TEXT("Server Angle %f"), Angle);
-			// 	}
-			// 	else
-			// 	{
-			// 		UE_LOG(LogTemp, Warning, TEXT("Angle %f"), Angle);
-			// 	}
-			// }
-
-			if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-			if (AssetSubsystem && AssetSubsystem->CharacterAsset)
-			{
-				if (UMaterialParameterCollectionInstance* MPCI = GetWorld()->GetParameterCollectionInstance(AssetSubsystem->CharacterAsset->MPC_Flashbang))
-				{
-					MPCI->SetScalarParameterValue(FName("Radius"), Radius);
-					MPCI->SetScalarParameterValue(FName("MaxFlashTime"), MaxFlashTime);
-					MPCI->SetScalarParameterValue(FName("MaxCapTime"), MaxCapTime);
-					MPCI->SetScalarParameterValue(FName("FlashTime"), GetWorld()->GetTimeSeconds());
-					MPCI->SetScalarParameterValue(FName("Distance"), Distance);
-					MPCI->SetScalarParameterValue(FName("Angle"), Angle);
-				}
-			}
-
-			// 隐藏OverheadWidget
-			float Speed = 1 / (FMath::Clamp(Distance / Radius, .5f, 1.f) * MaxCapTime);
-			for (AActor* Player : AllPlayers)
-			{
-				if (ABaseCharacter* PlayerCharacter = Cast<ABaseCharacter>(Player))
-				{
-					if (UWidgetComponent* OverheadWidget = PlayerCharacter->OverheadWidget)
-					{
-						if (UOverheadWidget* OverheadWidgetClass = Cast<UOverheadWidget>(OverheadWidget->GetUserWidgetObject()))
-						{
-							OverheadWidgetClass->PlayFlashbangEffect(Speed);
-						}
-					}
-				}
-			}
-
-			GetWorldTimerManager().SetTimerForNextTick([this, DamagedCharacter]() {
-				DamagedCharacter->SceneCapture->CaptureScene();
-			});
-		}
-	}
+	MulticastPlaySound();
 }
 
-void AFlashbang::PlayExplodeSound()
+void AFlashbang::MulticastPlaySound_Implementation()
 {
 	if (ExplodeSound)
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, ExplodeSound, GetActorLocation());
+	}
+}
+
+void AFlashbang::ServerExplode()
+{
+	MulticastExplode();
+
+	if (ProjectileMovement)
+	{
+		ProjectileMovement->StopMovementImmediately();
+	}
+
+	// 延迟销毁，保证多播RPC顺利到达且特效播放完毕
+	SetLifeSpan(2.0f);
+}
+
+void AFlashbang::MulticastExplode_Implementation()
+{
+	// 播放闪光特效
+	if (ExplodeEffect)
+	{
+		ExplodeEffectComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+			GetWorld(),
+			ExplodeEffect,
+			GetActorLocation(),
+			GetActorRotation()
+		);
+	}
+
+	// 遍历本地玩家控制器
+	for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
+	{
+		APlayerController* PC = Iterator->Get();
+		if (PC && PC->IsLocalController())
+		{
+			ABaseCharacter* LocalCharacter = Cast<ABaseCharacter>(PC->GetPawn());
+			if (!LocalCharacter || !LocalCharacter->Camera) continue;
+
+			// 仅当该本地玩家在爆炸半径内时，才进行检测和应用
+			float Distance = LocalCharacter->GetDistanceTo(this);
+			if (Distance <= Radius)
+			{
+				// 射线检测是否有阻挡
+				FHitResult HitResult;
+				FCollisionQueryParams QueryParams;
+
+				TArray<AActor*> AllPlayers;
+				UGameplayStatics::GetAllActorsWithTag(GetWorld(), TAG_CHARACTER_BASE, AllPlayers);
+				QueryParams.AddIgnoredActors(AllPlayers);
+
+				TArray<AActor*> AllEquipments;
+				UGameplayStatics::GetAllActorsWithTag(GetWorld(), TAG_EQUIPMENT, AllEquipments);
+				QueryParams.AddIgnoredActors(AllEquipments);
+
+				bool bHit = GetWorld()->LineTraceSingleByChannel(
+					HitResult,
+					GetActorLocation(),
+					LocalCharacter->Camera->GetComponentLocation(),
+					ECollisionChannel::ECC_Visibility,
+					QueryParams
+				);
+
+				// 如果没有阻挡，才被致盲
+				if (!bHit)
+				{
+					FVector A = LocalCharacter->Camera->GetForwardVector();
+					FVector B = GetActorLocation() - LocalCharacter->Camera->GetComponentLocation();
+					A.Normalize();
+					B.Normalize();
+					float DotProduct = FVector::DotProduct(A, B);
+					DotProduct = FMath::Clamp(DotProduct, -1.f, 1.f);
+					float AngleInRadians = FMath::Acos(DotProduct);
+					float Angle = FMath::RadiansToDegrees(AngleInRadians);
+
+					UAssetSubsystem* Subsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+					if (Subsystem && Subsystem->CharacterAsset)
+					{
+						if (UMaterialParameterCollectionInstance* MPCI = GetWorld()->GetParameterCollectionInstance(
+							Subsystem->CharacterAsset->MPC_Flashbang))
+						{
+							MPCI->SetScalarParameterValue(FName("Radius"), Radius);
+							MPCI->SetScalarParameterValue(FName("MaxFlashTime"), MaxFlashTime);
+							MPCI->SetScalarParameterValue(FName("MaxCapTime"), MaxCapTime);
+							MPCI->SetScalarParameterValue(FName("FlashTime"), GetWorld()->GetTimeSeconds());
+							MPCI->SetScalarParameterValue(FName("Distance"), Distance);
+							MPCI->SetScalarParameterValue(FName("Angle"), Angle);
+						}
+					}
+
+					// 隐藏所有其他玩家的 OverheadWidget
+					float Speed = 1 / (FMath::Clamp(Distance / Radius, .5f, 1.f) * MaxCapTime);
+					for (AActor* Player : AllPlayers)
+					{
+						if (ABaseCharacter* PlayerCharacter = Cast<ABaseCharacter>(Player))
+						{
+							if (UWidgetComponent* OverheadWidget = PlayerCharacter->OverheadWidget)
+							{
+								if (UOverheadWidget* OverheadWidgetClass = Cast<UOverheadWidget>(
+									OverheadWidget->GetUserWidgetObject()))
+								{
+									OverheadWidgetClass->PlayFlashbangEffect(Speed);
+								}
+							}
+						}
+					}
+
+					TWeakObjectPtr<AFlashbang> WeakThis = this;
+					TWeakObjectPtr<ABaseCharacter> WeakCharacter = LocalCharacter;
+					GetWorldTimerManager().SetTimerForNextTick([WeakThis, WeakCharacter]()
+					{
+						if (WeakThis.IsValid() && WeakCharacter.IsValid() && WeakCharacter->SceneCapture)
+						{
+							WeakCharacter->SceneCapture->CaptureScene();
+						}
+					});
+				}
+			}
+		}
 	}
 }

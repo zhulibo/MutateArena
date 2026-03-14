@@ -182,9 +182,9 @@ void UPauseMenu::Quit(EMsgResult MsgResult)
 
 			// 销毁装备
 			AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(GetOwningPlayer()->GetPawn());
-			if (HumanCharacter && HumanCharacter->CombatComponent)
+			if (HumanCharacter && HumanCharacter->CombatComp)
 			{
-				HumanCharacter->CombatComponent->ServerDestroyEquipments();
+				HumanCharacter->CombatComp->ServerDestroyEquipments();
 			}
 
 			BaseController->ClientTravel(MAP_MENU, ETravelType::TRAVEL_Absolute);

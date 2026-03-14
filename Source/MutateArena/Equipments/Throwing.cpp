@@ -2,6 +2,8 @@
 
 #include "Components/SphereComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
+#include "MutateArena/MutateArena.h"
+#include "MutateArena/Characters/HumanCharacter.h"
 
 AThrowing::AThrowing()
 {
@@ -16,6 +18,11 @@ AThrowing::AThrowing()
 	ProjectileMovement->SetAutoActivate(false);
 }
 
+void AThrowing::BeginPlay()
+{
+	Super::BeginPlay();
+}
+
 void AThrowing::ThrowOut()
 {
 	EquipmentState = EEquipmentState::Thrown;
@@ -24,4 +31,30 @@ void AThrowing::ThrowOut()
 
 	FDetachmentTransformRules DetachRules(EDetachmentRule::KeepWorld, true);
 	CollisionSphere->DetachFromComponent(DetachRules);
+
+	if (AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(GetOwner()))
+	{
+		if (HumanCharacter->HasAuthority() || HumanCharacter->IsLocallyControlled())
+		{
+			FVector ThrowVector = HumanCharacter->GetViewRotation().Vector();
+			ThrowVector.Z += 0.1f;
+			ProjectileMovement->Velocity = ThrowVector * 1500.f;
+			ProjectileMovement->Activate();
+		}
+	}
+	
+	SetReplicateMovement(true);
+}
+
+void AThrowing::OnRep_EquipmentState(EEquipmentState OldState)
+{
+	Super::OnRep_EquipmentState(OldState);
+	
+	if (EquipmentState == EEquipmentState::Thrown)
+	{
+		if (GetLocalRole() == ROLE_SimulatedProxy)
+		{
+			ThrowOut();
+		}
+	}
 }

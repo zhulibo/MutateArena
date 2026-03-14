@@ -11,17 +11,18 @@
 #include "MutateArena/PlayerControllers/BaseController.h"
 #include "Components/AudioComponent.h"
 #include "Components/SphereComponent.h"
-#include "Data/DamageTypeEquipment.h"
+#include "MutateArena/Equipments/Data/DamageTypeEquipment.h"
+#include "MutateArena/System/Tags/ProjectTags.h"
 
 AFireBottle::AFireBottle()
 {
 	CollisionSphere->SetNotifyRigidBodyCollision(true);
-	
-	FireSphere = CreateDefaultSubobject<USphereComponent>(TEXT("SmokeSphere"));
+
+	FireSphere = CreateDefaultSubobject<USphereComponent>(TEXT("FireSphere")); // 修改了这里的名字以防跟SmokeSphere混淆
 	FireSphere->SetupAttachment(RootComponent);
 	FireSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	FireSphere->SetSphereRadius(FireRadius);
-	
+
 	ProjectileMovement->Bounciness = 0.1f;
 	ProjectileMovement->Friction = 0.9f;
 }
@@ -29,62 +30,41 @@ AFireBottle::AFireBottle()
 void AFireBottle::ThrowOut()
 {
 	Super::ThrowOut();
-
-	if (HumanCharacter == nullptr) HumanCharacter = Cast<AHumanCharacter>(GetOwner());
-	if (HumanCharacter)
-	{
-		if (UCameraComponent* CameraComponent = HumanCharacter->FindComponentByClass<UCameraComponent>())
-		{
-			FVector ThrowVector = CameraComponent->GetForwardVector();
-			ThrowVector.Z += 0.1;
-			ProjectileMovement->Velocity = ThrowVector * 1500.f;
-			ProjectileMovement->Activate();
-		}
-	}
 }
 
 void AFireBottle::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	CollisionSphere->OnComponentHit.AddDynamic(this, &ThisClass::OnHit);
+
+	// 只有服务器需要关心碰撞逻辑来触发爆炸
+	if (HasAuthority())
+	{
+		CollisionSphere->OnComponentHit.AddDynamic(this, &ThisClass::OnHit);
+	}
 }
 
 void AFireBottle::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	if (HasAuthority())
+	if (HasAuthority() && !bHasExploded)
 	{
-		ProjectileMovement->StopMovementImmediately();
+		bHasExploded = true;
+
+		MulticastExplodeEffects();
+
+		FireSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 		
-		MulticastOnHit();
+		// 开启服务器伤害循环定时器
+		GetWorldTimerManager().SetTimer(DetectTimerHandle, this, &ThisClass::ServerDetectActors, 1.f, true);
+
+		SetLifeSpan(Time);
 	}
 }
 
-void AFireBottle::MulticastOnHit_Implementation()
+void AFireBottle::MulticastExplodeEffects_Implementation()
 {
-	CollisionSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	
-	EquipmentMesh->SetHiddenInGame(true);
-	
-	Explode();
-}
-
-void AFireBottle::Explode()
-{
-	float Time = 10.f;
-
-	SetLifeSpan(Time);
-
-	auto ExplodeEffectComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
-		GetWorld(),
-		ExplodeEffect,
-		GetActorLocation(),
-		FRotator(0.f, 0.f, 0.f)
-	);
-	if (ExplodeEffectComponent)
+	if (ProjectileMovement)
 	{
-		ExplodeEffectComponent->SetVariableFloat(TEXT("FireRadius"), FireRadius);
-		ExplodeEffectComponent->SetVariableFloat(TEXT("Time"), Time);
+		ProjectileMovement->StopMovementImmediately();
 	}
 
 	if (ExplodeSound)
@@ -92,85 +72,105 @@ void AFireBottle::Explode()
 		UGameplayStatics::PlaySoundAtLocation(this, ExplodeSound, GetActorLocation());
 	}
 
-	AudioComponent = UGameplayStatics::SpawnSoundAttached(
+	SpawnedFireEffect = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+		GetWorld(),
+		ExplodeEffect,
+		GetActorLocation(),
+		FRotator::ZeroRotator
+	);
+	if (SpawnedFireEffect)
+	{
+		SpawnedFireEffect->SetVariableFloat(TEXT("FireRadius"), FireRadius);
+		SpawnedFireEffect->SetVariableFloat(TEXT("Time"), Time);
+	}
+
+	SpawnedFireSound = UGameplayStatics::SpawnSoundAttached(
 		BurnSound,
 		GetRootComponent(),
 		NAME_None,
 		GetActorLocation(),
 		EAttachLocation::KeepWorldPosition
 	);
-
-	FireSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-	
-	GetWorldTimerManager().SetTimer(DetectTimerHandle, this, &ThisClass::DetectActors, 1.f, true);
 }
 
-void AFireBottle::DetectActors()
+void AFireBottle::ServerDetectActors()
 {
-	if (BaseController == nullptr)
-	{
-		if (HumanCharacter == nullptr) HumanCharacter = Cast<AHumanCharacter>(GetOwner());
-		if (HumanCharacter) BaseController = Cast<ABaseController>(HumanCharacter->GetController());
-	}
-	if (BaseController)
-	{
-		TArray<AActor*> OverlappingActors;
-		FireSphere->GetOverlappingActors(OverlappingActors, AActor::StaticClass());
-		for (AActor* OverlapActor : OverlappingActors)
-		{
-			if (OverlapActor == nullptr) continue;
-			
-			// 烟雾可以灭火
-			if (OverlapActor->ActorHasTag(TAG_SMOKE_ACTOR))
-			{
-				if (ExtinguishSound)
-				{
-					UGameplayStatics::PlaySoundAtLocation(this, ExtinguishSound, GetActorLocation());
-				}
+	if (!HasAuthority()) return;
 
-				Destroy();
-			}
-			else if (HasAuthority())
+	TArray<AActor*> OverlappingActors;
+	FireSphere->GetOverlappingActors(OverlappingActors, AActor::StaticClass());
+
+	// 只要范围内有烟雾，直接灭火并销毁，彻底跳过伤害判定
+	for (AActor* OverlapActor : OverlappingActors)
+	{
+		if (OverlapActor && OverlapActor->ActorHasTag(TAG_SMOKE_ACTOR))
+		{
+			MulticastExtinguishEffects();
+			
+			SetLifeSpan(0.5f);
+			return;
+		}
+	}
+
+	AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(GetOwner());
+	ABaseController* BaseController = HumanCharacter ? Cast<ABaseController>(HumanCharacter->GetController()) : nullptr;
+
+	for (AActor* OverlapActor : OverlappingActors)
+	{
+		if (OverlapActor == nullptr) continue;
+
+		if (OverlapActor->ActorHasTag(TAG_CHARACTER_MUTANT))
+		{
+			if (ABaseCharacter* BaseCharacter = Cast<ABaseCharacter>(OverlapActor))
 			{
-				if (OverlapActor->ActorHasTag(TAG_CHARACTER_MUTANT))
-				{
-					if (ABaseCharacter* BaseCharacter = Cast<ABaseCharacter>(OverlapActor))
-					{
-						UGameplayStatics::ApplyDamage(
-							BaseCharacter,
-							BaseCharacter->GetMaxHealth() * 0.05f,
-							BaseController,
-							this,
-							UDamageTypeEquipment::StaticClass()
-						);
-					}
-				}
-				else if (OverlapActor->ActorHasTag(TAG_CHARACTER_HUMAN))
-				{
-					if (ABaseCharacter* BaseCharacter = Cast<ABaseCharacter>(OverlapActor))
-					{
-						UGameplayStatics::ApplyDamage(
-							BaseCharacter,
-							BaseCharacter->GetMaxHealth() * 0.02f,
-							BaseController,
-							this,
-							UDamageTypeEquipment::StaticClass()
-						);
-					}
-				}
+				UGameplayStatics::ApplyDamage(
+					BaseCharacter,
+					BaseCharacter->GetMaxHealth() * 0.05f,
+					BaseController, // 即使 Controller 为空，ApplyDamage 也允许执行环境伤害
+					this,
+					UDamageTypeEquipment::StaticClass()
+				);
+			}
+		}
+		else if (OverlapActor->ActorHasTag(TAG_CHARACTER_HUMAN))
+		{
+			if (ABaseCharacter* BaseCharacter = Cast<ABaseCharacter>(OverlapActor))
+			{
+				UGameplayStatics::ApplyDamage(
+					BaseCharacter,
+					BaseCharacter->GetMaxHealth() * 0.02f,
+					BaseController,
+					this,
+					UDamageTypeEquipment::StaticClass()
+				);
 			}
 		}
 	}
 }
 
+void AFireBottle::MulticastExtinguishEffects_Implementation()
+{
+	if (ExtinguishSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, ExtinguishSound, GetActorLocation());
+	}
+}
+
 void AFireBottle::Destroyed()
 {
+	// 清理定时器
 	GetWorldTimerManager().ClearTimer(DetectTimerHandle);
 
-	// GC应该足够智能，播放完后会回收AudioComponent
-	if (AudioComponent)
+	if (SpawnedFireEffect)
 	{
-		AudioComponent->FadeOut(1.f, 0.f);
+		SpawnedFireEffect->DestroyComponent();
+		SpawnedFireEffect = nullptr;
+	}
+	
+	// 平滑淡出燃烧音效
+	if (SpawnedFireSound)
+	{
+		SpawnedFireSound->FadeOut(1.f, 0.f);
 	}
 
 	Super::Destroyed();

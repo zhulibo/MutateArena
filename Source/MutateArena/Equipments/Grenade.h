@@ -28,6 +28,11 @@ protected:
 	float DamageInnerRadius = 100.f;
 	UPROPERTY()
 	float DamageOuterRadius = 400.f;
-	void Explode();
 
+	UFUNCTION()
+	void ServerExplode();
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastExplodeEffects();
+	
 };

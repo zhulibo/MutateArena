@@ -4,7 +4,7 @@
 #include "Pickup.h"
 #include "PickupAmmo.generated.h"
 
-UCLASS()
+UCLASS(Abstract)
 class MUTATEARENA_API APickupAmmo : public APickup
 {
 	GENERATED_BODY()

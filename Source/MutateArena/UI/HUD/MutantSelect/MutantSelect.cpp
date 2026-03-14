@@ -17,7 +17,7 @@
 #include "MutateArena/UI/HUD/Mutation/MutationContainer.h"
 #include "Components/ScrollBoxSlot.h"
 #include "Widgets/CommonActivatableWidgetContainer.h"
-#include "MutateArena/Abilities/Mutant/GameplayAbility_MutantChange.h"
+#include "MutateArena/Abilities/Mutants/GA_MutantChange.h"
 #include "MutateArena/PlayerStates/BasePlayerState.h"
 #include "MutateArena/System/UISubsystem.h"
 #include "MutateArena/System/Storage/SaveGameLoadout.h"
@@ -100,15 +100,16 @@ void UMutantSelect::OnMutantSelectButtonClicked(EMutantCharacterName MutantChara
 	// 切换角色
 	if (AMutantCharacter* MutantCharacter = Cast<AMutantCharacter>(GetOwningPlayerPawn()))
 	{
-		if (AbilitySystemComponent == nullptr) AbilitySystemComponent = MutantCharacter->GetAbilitySystemComponent();
-		if (AbilitySystemComponent && AbilitySystemComponent->GetTagCount(TAG_MUTANT_CHANGE_ACTIVE) > 0)
+		UAbilitySystemComponent* ASC = MutantCharacter->GetAbilitySystemComponent();
+		if (ASC && ASC->GetTagCount(TAG_STATE_MUTANT_CHANGING) > 0)
 		{
 			MutantCharacter->ServerSelectMutant(MutantCharacterName);
 
 			// 终止切换角色技能
+			FScopedPredictionWindow PredictionWindow(ASC, MutantCharacter->IsLocallyControlled() && !MutantCharacter->HasAuthority());
 			FGameplayTagContainer CancelTags;
-			CancelTags.AddTag(TAG_MUTANT_CHANGE); 
-			AbilitySystemComponent->CancelAbilities(&CancelTags);
+			CancelTags.AddTag(TAG_ABILITY_MUTANT_CHANGE); 
+			ASC->CancelAbilities(&CancelTags);
 		}
 		else
 		{

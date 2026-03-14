@@ -19,6 +19,14 @@ public:
 	TSubclassOf<class AShell> ShellClass;
 	
 	UPROPERTY(EditAnywhere)
+	class UNiagaraSystem* MuzzleFlashEffect;
+	
+	UPROPERTY(EditAnywhere)
+	class UMetaSoundSource* FireSound;
+	UPROPERTY(EditAnywhere)
+	UMetaSoundSource* MechSound;
+	
+	UPROPERTY(EditAnywhere)
 	UAnimMontage* FireMontage_C;
 	UPROPERTY(EditAnywhere)
 	UAnimMontage* FireMontage_E;
@@ -43,11 +51,11 @@ public:
 	bool bIsPIP = false;
 	UPROPERTY()
 	float ScopeFOV = 90.f;
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing = OnRep_CarriedAmmo)
 	int32 CarriedAmmo; // 当前携弹量
 	UPROPERTY()
 	int32 MaxCarriedAmmo; // 最大携弹量
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing = OnRep_Ammo)
 	int32 Ammo; // 当前弹匣子弹数量
 	UPROPERTY()
 	int32 MagCapacity; // 弹匣容量
@@ -88,23 +96,26 @@ public:
 	void SetScopeActive(bool bIsActive);
 
 protected:
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void BeginPlay() override;
 	
 	void InitData();
-
-	UPROPERTY(EditAnywhere)
-	class UMetaSoundSource* MechSound;
+	
+	UFUNCTION()
+	void OnRep_Ammo();
+	UFUNCTION()
+	void OnRep_CarriedAmmo();
+	
 public:
+	float LastFireTime = 0.f;
 	virtual void Fire(const FVector& HitTarget, float RecoilVert, float RecoilHor, float SpreadPitch, float SpreadYaw);
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastFire(FVector HitTarget, float RecoilVert, float RecoilHor, float SpreadX, float SpreadY);
 	virtual void SetAmmo(int32 AmmoNum);
 	virtual void SetCarriedAmmo(int32 AmmoNum);
 protected:
 	void SpendRound();
 	void SetHUDAmmo();
 	void SetHUDCarriedAmmo();
-	
-public:
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastSetFullAmmo();
 	
 };

@@ -4,7 +4,7 @@
 #include "GameFramework/Actor.h"
 #include "Pickup.generated.h"
 
-UCLASS()
+UCLASS(Abstract)
 class MUTATEARENA_API APickup : public AActor
 {
 	GENERATED_BODY()

@@ -18,7 +18,7 @@ void AWeaponGeneric::Fire(const FVector& HitTarget, float RecoilVert, float Reco
 {
 	Super::Fire(HitTarget, RecoilVert, RecoilHor, SpreadPitch, SpreadYaw);
 
-	if (HumanCharacter == nullptr) HumanCharacter = Cast<AHumanCharacter>(GetOwner());
+	AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(GetOwner());
 	if (OwnerTeam == ETeam::NoTeam) SetOwnerTeam();
 	const USkeletalMeshSocket* MuzzleSocket = EquipmentMesh->GetSocketByName(SOCKET_MUZZLE);
 

@@ -4,6 +4,8 @@
 #include "ModularGameState.h"
 #include "BaseGameState.generated.h"
 
+enum class EMsgType : uint8;
+
 UCLASS()
 class MUTATEARENA_API ABaseGameState : public AModularGameState
 {

@@ -143,7 +143,7 @@ void AMutationPlayerState::ApplyLevelUpEffect()
 		FGameplayEffectSpecHandle SpecHandle = AbilitySystemComponent->MakeOutgoingSpec(MutantCharacter->LevelUpEffect, GetCharacterLevel(), EffectContext);
 		if (SpecHandle.IsValid())
 		{
-			AbilitySystemComponent->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), AbilitySystemComponent);
+			AbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
 		}
 	}
 }

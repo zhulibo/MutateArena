@@ -30,7 +30,11 @@ public:
 
 	void ClearHitEnemies();
 	
+	UPROPERTY(Replicated)
+	bool bIsLightAttack = false;
+	
 protected:
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void BeginPlay() override;
 
 	UPROPERTY()
@@ -39,7 +43,7 @@ protected:
 	float HeavyAttackDamage;
 	
 public:
-	virtual void OnEquip() override;
+	virtual void OnEquip(class AHumanCharacter* HumanChar) override;
 protected:
 	void SetAttackCapsuleCollision();
 

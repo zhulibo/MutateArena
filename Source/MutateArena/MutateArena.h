@@ -21,6 +21,15 @@
 #define SOCKET_SCOPE_END FName(TEXT("ScopeEndSocket"))
 #define SOCKET_HAND_RIGHT FName(TEXT("RightHandCapsule"))
 #define SOCKET_HAND_LEFT FName(TEXT("LeftHandCapsule"))
+#define SOCKET_SUFFIX_R FName(TEXT("_R"))
+#define SOCKET_SUFFIX_L FName(TEXT("_L"))
+#define SOCKET_SHOULDER_R FName(TEXT("Shoulder_R"))
+#define SOCKET_SHOULDER_L FName(TEXT("Shoulder_L"))
+#define SOCKET_THIGH_R FName(TEXT("Thigh_R"))
+#define SOCKET_THIGH_L FName(TEXT("Thigh_L"))
+
+// 蒙太奇片段
+#define SECTION_RELOAD_END FName(TEXT("ReloadEnd"))
 
 // tag
 #define TAG_CHARACTER_BASE FName(TEXT("BaseCharacter"))

@@ -4,7 +4,7 @@
 #include "Abilities/GameplayAbility.h"
 #include "GameplayAbilityBase.generated.h"
 
-UCLASS()
+UCLASS(Abstract)
 class MUTATEARENA_API UGameplayAbilityBase : public UGameplayAbility
 {
 	GENERATED_BODY()

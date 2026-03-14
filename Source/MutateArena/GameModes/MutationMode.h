@@ -95,7 +95,7 @@ public:
 		float Damage, const UDamageType* DamageType, AController* AttackerController, AActor* DamageCauser) override;
 
 	void GetInfect(AHumanCharacter* DamagedCharacter, ABaseController* DamagedController,
-		AMutantCharacter* AttackerCharacter, ABaseController* AttackerController, EMutantState MutantState);
+		AMutantCharacter* AttackerCharacter, ABaseController* AttackerController);
 
 	void MutantReceiveDamage(AMutantCharacter* DamagedCharacter, ABaseController* DamagedController,
 		float Damage, const UDamageType* DamageType, AController* AttackerController, AActor* DamageCauser);

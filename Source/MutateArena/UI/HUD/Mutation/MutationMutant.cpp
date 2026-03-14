@@ -33,7 +33,7 @@ void UMutationMutant::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 	if (MutantCharacter == nullptr) MutantCharacter = Cast<AMutantCharacter>(GetOwningPlayerPawn());
 	if (MutantCharacter && MutantCharacter->GetAbilitySystemComponent())
 	{
-		FGameplayEffectQuery Query = FGameplayEffectQuery::MakeQuery_MatchAnyOwningTags(FGameplayTagContainer(TAG_MUTANT_SKILL_CD));
+		FGameplayEffectQuery Query = FGameplayEffectQuery::MakeQuery_MatchAnyOwningTags(FGameplayTagContainer(TAG_CD_MUTANT_SKILL));
 		TArray<float> Times = MutantCharacter->GetAbilitySystemComponent()->GetActiveEffectsTimeRemaining(Query);
 		if (Times.Num() > 0)
 		{

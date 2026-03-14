@@ -184,9 +184,9 @@ protected:
 public:
 	void SendRadio(int32 RadioIndex);
 protected:
-	UFUNCTION(Server, Reliable)
+	UFUNCTION(Server, Unreliable)
 	void ServerPlayRadioSound(int32 RadioIndex);
-	UFUNCTION(NetMulticast, Reliable)
+	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastPlayRadioSound(int32 RadioIndex);
 	void LocalPlayRadioSound(int32 RadioIndex);
 

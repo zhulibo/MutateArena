@@ -6,7 +6,6 @@
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "MutateArena/Characters/Components/CombatComponent.h"
-#include "..\Characters\Components\CombatStateType.h"
 #include "MutateArena/Effects/BloodCollision.h"
 #include "MutateArena/PlayerStates/TeamType.h"
 #include "MutateArena/Utils/LibraryCommon.h"
@@ -14,6 +13,7 @@
 #include "Data/DamageTypeMelee.h"
 #include "Kismet/GameplayStatics.h"
 #include "Herbs/Herb.h"
+#include "Net/UnrealNetwork.h"
 
 AMelee::AMelee()
 {
@@ -23,6 +23,13 @@ AMelee::AMelee()
 	AttackCapsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	AttackCapsule->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	AttackCapsule->OnComponentBeginOverlap.AddUniqueDynamic(this, &ThisClass::OnAttackCapsuleOverlap);
+}
+
+void AMelee::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	
+	DOREPLIFETIME(ThisClass, bIsLightAttack);
 }
 
 void AMelee::BeginPlay()
@@ -41,17 +48,16 @@ void AMelee::BeginPlay()
 	SetAttackCapsuleCollision();
 }
 
-void AMelee::OnEquip()
+void AMelee::OnEquip(class AHumanCharacter* HumanChar)
 {
-	Super::OnEquip();
+	Super::OnEquip(HumanChar);
 
 	SetAttackCapsuleCollision();
 }
 
 void AMelee::SetAttackCapsuleCollision()
 {
-	if (HumanCharacter == nullptr) HumanCharacter = Cast<AHumanCharacter>(GetOwner());
-	if (HumanCharacter)
+	if (AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(GetOwner()))
 	{
 		switch (OwnerTeam)
 		{
@@ -98,15 +104,7 @@ void AMelee::OnAttackCapsuleOverlap(UPrimitiveComponent* OverlappedComponent, AA
 
 		if (OtherActor->ActorHasTag(TAG_CHARACTER_BASE))
 		{
-			float Damage;
-			if (InstigatorCharacter->CombatComponent && InstigatorCharacter->CombatComponent->CombatState == ECombatState::LightAttacking)
-			{
-				Damage = LightAttackDamage;
-			}
-			else
-			{
-				Damage = HeavyAttackDamage;
-			}
+			float Damage = bIsLightAttack ? LightAttackDamage : HeavyAttackDamage;
 			
 			DropBlood(OverlappedComponent, OtherActor, OtherComp, Damage);
 		

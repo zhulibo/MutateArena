@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Throwing.h"
+#include "MutateArena/Equipments/Throwing.h"
 #include "Flashbang.generated.h"
 
 UCLASS()
@@ -12,9 +12,9 @@ class MUTATEARENA_API AFlashbang : public AThrowing
 public:
 	AFlashbang();
 
+protected:
 	virtual void ThrowOut() override;
 
-protected:
 	UPROPERTY()
 	class ABaseGameState* BaseGameState;
 
@@ -31,7 +31,17 @@ protected:
 	float MaxFlashTime = 6.f;
 	UPROPERTY()
 	float MaxCapTime = 8.f;
-	void Explode();
-	void PlayExplodeSound();
 
+	UFUNCTION()
+	void ServerExplode();
+
+	UFUNCTION()
+	void ServerPlaySound();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastExplode();
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastPlaySound();
+	
 };

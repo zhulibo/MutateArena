@@ -16,6 +16,8 @@
 #include "MutateArena/System/AssetSubsystem.h"
 #include "MutateArena/Assets/Data/CommonAsset.h"
 #include "MutateArena/System/ObjectPoolSubsystem.h"
+#include "MutateArena/System/UISubsystem.h"
+#include "Net/UnrealNetwork.h"
 
 AWeapon::AWeapon()
 {
@@ -104,6 +106,14 @@ void AWeapon::SetScopeActive(bool bIsActive)
 	}
 }
 
+void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	
+	DOREPLIFETIME(ThisClass, Ammo);
+	DOREPLIFETIME(ThisClass, CarriedAmmo);
+}
+
 void AWeapon::Fire(const FVector& HitTarget, float RecoilVert, float RecoilHor, float SpreadPitch, float SpreadYaw)
 {
 	if (ShellClass)
@@ -118,37 +128,24 @@ void AWeapon::Fire(const FVector& HitTarget, float RecoilVert, float RecoilHor, 
 
 				if (AShell* Shell = Cast<AShell>(SpawnedActor))
 				{
-					if (HumanCharacter == nullptr)
+					if (AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(GetOwner()))
 					{
-						HumanCharacter = Cast<AHumanCharacter>(GetOwner());
+						Shell->LaunchShell(HumanCharacter->GetVelocity());
 					}
-
-					FVector CharVelocity = HumanCharacter ? HumanCharacter->GetVelocity() : FVector::ZeroVector;
-
-					Shell->LaunchShell(CharVelocity);
 				}
 			}
 		}
 	}
 
 	SpendRound();
+}
 
-	// 即将耗尽弹药时增大机械层声音
-	float Volume = 0.6f;
-	float LastTime = bIsAutomatic ? 1.2f : 0.5f;
-	if (Ammo <= FireRate / 60.f * LastTime)
+void AWeapon::MulticastFire_Implementation(FVector HitTarget, float RecoilVert, float RecoilHor, float SpreadX, float SpreadY)
+{
+	AHumanCharacter* HumanChar = Cast<AHumanCharacter>(GetOwner());
+	if (HumanChar && !HumanChar->IsLocallyControlled())
 	{
-		Volume = 2.f;
-	}
-	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-	if (AssetSubsystem && AssetSubsystem->CommonAsset)
-	{
-		UAudioModulationStatics::SetGlobalBusMixValue(
-			this, 
-			AssetSubsystem->CommonAsset->CB_EquipmentMech, 
-			Volume, 
-			0.f
-		);
+		Fire(HitTarget, RecoilVert, RecoilHor, SpreadX, SpreadY);
 	}
 }
 
@@ -156,18 +153,29 @@ void AWeapon::SpendRound()
 {
 	Ammo = FMath::Clamp(Ammo - 1, 0, MagCapacity);
 
-	if (HumanCharacter == nullptr) HumanCharacter = Cast<AHumanCharacter>(GetOwner());
+	AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(GetOwner());
 	if (HumanCharacter && HumanCharacter->IsLocallyControlled())
 	{
 		SetHUDAmmo();
 	}
 }
 
+void AWeapon::OnRep_Ammo()
+{
+	SetHUDAmmo();
+}
+
+// 新增：实现 CarriedAmmo 的同步回调
+void AWeapon::OnRep_CarriedAmmo()
+{
+	SetHUDCarriedAmmo();
+}
+
 void AWeapon::SetAmmo(int32 AmmoNum)
 {
 	Ammo = AmmoNum;
 
-	if (HumanCharacter == nullptr) HumanCharacter = Cast<AHumanCharacter>(GetOwner());
+	AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(GetOwner());
 	if (HumanCharacter && HumanCharacter->IsLocallyControlled())
 	{
 		SetHUDAmmo();
@@ -178,7 +186,7 @@ void AWeapon::SetCarriedAmmo(int32 AmmoNum)
 {
 	CarriedAmmo = AmmoNum;
 
-	if (HumanCharacter == nullptr) HumanCharacter = Cast<AHumanCharacter>(GetOwner());
+	AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(GetOwner());
 	if (HumanCharacter && HumanCharacter->IsLocallyControlled())
 	{
 		SetHUDCarriedAmmo();
@@ -187,32 +195,28 @@ void AWeapon::SetCarriedAmmo(int32 AmmoNum)
 
 void AWeapon::SetHUDAmmo()
 {
-	if (HumanCharacter == nullptr) HumanCharacter = Cast<AHumanCharacter>(GetOwner());
-	if (HumanCharacter)
+	if (AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(GetOwner()))
 	{
-		if (BaseController == nullptr) BaseController = Cast<ABaseController>(HumanCharacter->Controller);
-		if (BaseController)
+		if (ABaseController* BaseController = Cast<ABaseController>(HumanCharacter->Controller))
 		{
-			BaseController->SetHUDAmmo(Ammo);
+			if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
+			{
+				UISubsystem->OnAmmoChange.Broadcast(Ammo);
+			}
 		}
 	}
 }
 
 void AWeapon::SetHUDCarriedAmmo()
 {
-	if (HumanCharacter == nullptr) HumanCharacter = Cast<AHumanCharacter>(GetOwner());
-	if (HumanCharacter)
+	if (AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(GetOwner()))
 	{
-		if (BaseController == nullptr) BaseController = Cast<ABaseController>(HumanCharacter->Controller);
-		if (BaseController)
+		if (ABaseController* BaseController = Cast<ABaseController>(HumanCharacter->Controller))
 		{
-			BaseController->SetHUDCarriedAmmo(CarriedAmmo);
+			if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
+			{
+				UISubsystem->OnCarriedAmmoChange.Broadcast(CarriedAmmo);
+			}
 		}
 	}
-}
-
-void AWeapon::MulticastSetFullAmmo_Implementation()
-{
-	SetAmmo(MagCapacity);
-	SetCarriedAmmo(MaxCarriedAmmo);
 }

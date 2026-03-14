@@ -19,11 +19,11 @@ void AWeaponShotgun::Fire(const FVector& HitTarget, float RecoilVert, float Reco
 {
 	Super::Fire(HitTarget, RecoilVert, RecoilHor, SpreadPitch, SpreadYaw);
 
-	if (HumanCharacter == nullptr) HumanCharacter = Cast<AHumanCharacter>(GetOwner());
+	AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(GetOwner());
 	if (OwnerTeam == ETeam::NoTeam) SetOwnerTeam();
 	const USkeletalMeshSocket* MuzzleSocket = EquipmentMesh->GetSocketByName(SOCKET_MUZZLE);
 
-	if (ProjectileClass && HumanCharacter && HumanCharacter->CombatComponent && RecoilCurve && OwnerTeam != ETeam::NoTeam && MuzzleSocket)
+	if (ProjectileClass && HumanCharacter && HumanCharacter->CombatComp && RecoilCurve && OwnerTeam != ETeam::NoTeam && MuzzleSocket)
 	{
 		FTransform SocketTransform = MuzzleSocket->GetSocketTransform(EquipmentMesh);
 		FRotator TargetRotation = (HitTarget - SocketTransform.GetLocation()).Rotation();
@@ -38,7 +38,7 @@ void AWeaponShotgun::Fire(const FVector& HitTarget, float RecoilVert, float Reco
 			SpawnParams.Owner = this;
 			SpawnParams.Instigator = HumanCharacter;
 			
-			FVector RecoilKick = RecoilCurve->GetVectorValue(HumanCharacter->CombatComponent->CurShotCount);
+			FVector RecoilKick = RecoilCurve->GetVectorValue(HumanCharacter->CombatComp->CurShotCount);
 
 			for (int32 i = 0; i < PelletNum; ++i)
 			{

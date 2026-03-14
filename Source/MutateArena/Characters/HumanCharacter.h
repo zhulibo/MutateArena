@@ -8,7 +8,6 @@
 
 enum class EEquipmentName : uint8;
 enum class EEquipmentType : uint8;
-enum class ECombatState : uint8;
 
 UCLASS()
 class MUTATEARENA_API AHumanCharacter : public ABaseCharacter, public IInteractable
@@ -19,11 +18,11 @@ public:
 	AHumanCharacter();
 
 	UPROPERTY(VisibleAnywhere)
-	class UCombatComponent* CombatComponent;
+	class UCombatComponent* CombatComp;
 	UPROPERTY(VisibleAnywhere)
-	class URecoilComponent* RecoilComponent;
+	class URecoilComponent* RecoilComp;
 	UPROPERTY(VisibleAnywhere)
-	class UCrosshairComponent* CrosshairComponent;
+	class UCrosshairComponent* CrosshairComp;
 	
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -31,19 +30,13 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 	virtual void Tick(float DeltaSeconds) override;
-	
-	UPROPERTY()
-	class AMutationMode* MutationMode;
-	UPROPERTY()
-	class AMeleeMode* MeleeMode;
-	UPROPERTY()
-	class ATeamDeadMatchMode* TeamDeadMatchMode;
-	UPROPERTY()
-	class AMeleeGameState* MeleeGameState;
+	virtual void PossessedBy(AController* NewController) override;
 
 public:
 	virtual void OnASCInit() override;
 	void OnMaxWalkSpeedChanged(const FOnAttributeChangeData& Data);
+	void OnSwappingTagChanged(FGameplayTag GameplayTag, int NewCount);
+	void OnAimingTagChanged(FGameplayTag GameplayTag, int NewCount);
 	void UpdateMaxWalkSpeed();
 	
 protected:
@@ -55,18 +48,14 @@ public:
 	void ReloadButtonPressed(const FInputActionValue& Value);
 protected:
 	void DropButtonPressed(const FInputActionValue& Value);
-public:
-	void SwapPrimaryEquipmentButtonPressed();
-	void SwapSecondaryEquipmentButtonPressed();
-	void SwapMeleeEquipmentButtonPressed();
-	void SwapThrowingEquipmentButtonPressed();
-protected:
 	void SwapLastEquipmentButtonPressed(const FInputActionValue& Value);
 	void SwapBetweenPrimarySecondaryEquipmentButtonPressed(const FInputActionValue& Value);
-
 public:
-	void OnServerDropEquipment();
-	void EquipOverlappingEquipment(class AEquipment* Equipment);
+	void SendSwapEquipmentEvent(EEquipmentType TargetEquipmentType);
+	
+	UFUNCTION(Client, Reliable)
+	void ClientSwapEquipmentWhenPickupFailed(EEquipmentType FallbackEquipmentType);
+	void ServerEquipOverlappingEquipment(class AEquipment* Equipment);
 	UFUNCTION(Server, Reliable)
 	void ServerGivePickupEquipment(class APickupEquipment* PickupEquipment);
 
@@ -81,23 +70,6 @@ protected:
 	UFUNCTION(Server, Reliable)
 	void ServerSpawnEquipments(EEquipmentName Primary, EEquipmentName Secondary, EEquipmentName Melee, EEquipmentName Throwing);
 	EEquipmentName GetEquipmentName(int32 LoadoutIndex, EEquipmentType EquipmentType);
-
-	UPROPERTY(ReplicatedUsing = OnRep_DefaultPrimary)
-	class AWeapon* DefaultPrimary;
-	UPROPERTY(ReplicatedUsing = OnRep_DefaultSecondary)
-	AWeapon* DefaultSecondary;
-	UPROPERTY(ReplicatedUsing = OnRep_DefaultMelee)
-	class AMelee* DefaultMelee;
-	UPROPERTY(ReplicatedUsing = OnRep_DefaultThrowing)
-	class AThrowing* DefaultThrowing;
-	UFUNCTION()
-	void OnRep_DefaultPrimary();
-	UFUNCTION()
-	void OnRep_DefaultSecondary();
-	UFUNCTION()
-	void OnRep_DefaultMelee();
-	UFUNCTION()
-	void OnRep_DefaultThrowing();
 
 	UFUNCTION()
 	void HumanReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* AttackerController, AActor* DamageCauser);
@@ -121,8 +93,5 @@ protected:
 	void ServerOnImmune(AMutantCharacter* MutantCharacter);
 	UFUNCTION()
 	void OnRep_bIsImmune();
-	
-public:
-	UCombatComponent* GetCombatComponent() const { return CombatComponent; }
 	
 };

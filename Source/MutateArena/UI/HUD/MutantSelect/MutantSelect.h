@@ -26,8 +26,6 @@ protected:
 	class UStorageSubsystem* StorageSubsystem;
 	UPROPERTY()
 	class UAssetSubsystem* AssetSubsystem;
-	UPROPERTY()
-	class UAbilitySystemComponent* AbilitySystemComponent;
 
 	TMap<FDataRegistryId, const uint8*> MutantCharacterMain;
 

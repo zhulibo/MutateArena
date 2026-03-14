@@ -5,7 +5,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "HumanCharacter.h"
 #include "MetaSoundSource.h"
-#include "MutateArena/Characters/AnimInstance_Mutant.h"
+#include "MutateArena/Characters/AnimInstMutant.h"
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "MutateArena/Abilities/AttributeSetBase.h"
@@ -37,8 +37,6 @@ AMutantCharacter::AMutantCharacter()
 
 	BloodColor = C_GREEN;
 
-	MutantState = EMutantState::Ready;
-
 	RightHandCapsule = CreateDefaultSubobject<UCapsuleComponent>(TEXT("RightHandCapsule"));
 	RightHandCapsule->SetupAttachment(GetMesh(), SOCKET_HAND_RIGHT);
 	RightHandCapsule->SetGenerateOverlapEvents(true);
@@ -63,6 +61,7 @@ void AMutantCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ThisClass, bSuckedDry);
+	DOREPLIFETIME(ThisClass, bIsLightAttack);
 }
 
 void AMutantCharacter::PostInitializeComponents()
@@ -143,19 +142,23 @@ void AMutantCharacter::PossessedBy(AController* NewController)
 
 	if (ASC)
 	{
-		ASC->GiveAbility(FGameplayAbilitySpec(SkillAbility));
-
 		if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
 		if (AssetSubsystem && AssetSubsystem->CharacterAsset)
 		{
-			ASC->GiveAbility(FGameplayAbilitySpec(AssetSubsystem->CharacterAsset->MutantChangeAbility));
-			ASC->GiveAbility(FGameplayAbilitySpec(AssetSubsystem->CharacterAsset->MutantRestoreAbility));
-
+			for (TSubclassOf<UGameplayAbility> AbilityClass : AssetSubsystem->CharacterAsset->MutantDefaultAbilities)
+			{
+				FGameplayAbilitySpec AbilitySpec(AbilityClass, 1, INDEX_NONE, this);
+				ASC->GiveAbility(AbilitySpec);
+			}
+			
 			if (SpawnMutantReason != ESpawnMutantReason::SelectMutant)
 			{
-				ASC->TryActivateAbilityByClass(AssetSubsystem->CharacterAsset->MutantChangeAbility);
+				FScopedPredictionWindow PredictionWindow(ASC, IsLocallyControlled() && !HasAuthority());
+				ASC->TryActivateAbilitiesByTag(FGameplayTagContainer(TAG_ABILITY_MUTANT_CHANGE));
 			}
 		}
+		
+		ASC->GiveAbility(FGameplayAbilitySpec(SkillAbility, 1, INDEX_NONE, this));
 	}
 }
 
@@ -166,7 +169,7 @@ void AMutantCharacter::OnASCInit()
 	if (ASC && AttributeSetBase && IsLocallyControlled())
 	{
 		ASC->RegisterGameplayTagEvent(
-			TAG_MUTANT_SKILL_CD, EGameplayTagEventType::NewOrRemoved).AddUObject(this, &ThisClass::OnLocalSkillCooldownTagChanged);
+			TAG_CD_MUTANT_SKILL, EGameplayTagEventType::NewOrRemoved).AddUObject(this, &ThisClass::OnLocalSkillCooldownTagChanged);
 
 		ASC->GetGameplayAttributeValueChangeDelegate(
 			AttributeSetBase->GetCharacterLevelAttribute()).AddUObject(this, &ThisClass::OnLocalCharacterLevelChanged);
@@ -194,7 +197,7 @@ void AMutantCharacter::OnLocalCharacterLevelChanged(const FOnAttributeChangeData
 	if (MutationController == nullptr) MutationController = Cast<AMutationController>(Controller);
 	if (MutationController && ASC)
 	{
-		MutationController->SetHUDSkill(ASC->GetTagCount(TAG_MUTANT_SKILL_CD) == 0 && Data.NewValue > 2.f);
+		MutationController->SetHUDSkill(ASC->GetTagCount(TAG_CD_MUTANT_SKILL) == 0 && Data.NewValue > 2.f);
 	}
 }
 
@@ -268,12 +271,12 @@ void AMutantCharacter::MoveCompleted(const FInputActionValue& Value)
 // 恢复血量
 void AMutantCharacter::ActivateRestoreAbility()
 {
-	if (ASC && AssetSubsystem && AssetSubsystem->CharacterAsset)
+	if (ASC)
 	{
 		bHasActivateRestoreAbility = true;
 		
 		FScopedPredictionWindow PredictionWindow(ASC, IsLocallyControlled() && !HasAuthority());
-		ASC->TryActivateAbilityByClass(AssetSubsystem->CharacterAsset->MutantRestoreAbility);
+		ASC->TryActivateAbilitiesByTag(FGameplayTagContainer(TAG_ABILITY_MUTANT_RESTORE));
 	}
 }
 
@@ -285,148 +288,56 @@ void AMutantCharacter::EndRestoreAbility()
 		GetWorldTimerManager().ClearTimer(StillTimerHandle);
 	}
 
-	if (bHasActivateRestoreAbility)
+	if (bHasActivateRestoreAbility && ASC)
 	{
-		if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-		if (ASC && AssetSubsystem && AssetSubsystem->CharacterAsset)
-		{
-			if (FGameplayAbilitySpec* Spec = ASC->FindAbilitySpecFromClass(AssetSubsystem->CharacterAsset->MutantRestoreAbility))
-			{
-				bHasActivateRestoreAbility = false;
-
-				ASC->CancelAbilityHandle(Spec->Handle);
-			}
-		}
+		bHasActivateRestoreAbility = false;
+		
+		FScopedPredictionWindow PredictionWindow(ASC, IsLocallyControlled() && !HasAuthority());
+		FGameplayTagContainer CancelTags;
+		CancelTags.AddTag(TAG_ABILITY_MUTANT_RESTORE);
+		ASC->CancelAbilities(&CancelTags);
 	}
 }
 
 void AMutantCharacter::LightAttackButtonPressed(const FInputActionValue& Value)
 {
-	if (MutantState != EMutantState::Ready) return;
-	
-	bIsCombo = true;
-	
-	LocalLightAttack();
-	ServerLightAttack();
-}
-
-void AMutantCharacter::ServerLightAttack_Implementation()
-{
-	MulticastLightAttack();
-}
-
-void AMutantCharacter::MulticastLightAttack_Implementation()
-{
-	if (!IsLocallyControlled())
+	if (ASC)
 	{
-		bIsCombo = true;
-		LocalLightAttack();
-	}
-}
-
-void AMutantCharacter::LocalLightAttack()
-{
-	if (AnimInstance_Mutant == nullptr) AnimInstance_Mutant = Cast<UAnimInstance_Mutant>(GetMesh()->GetAnimInstance());
-	if (AnimInstance_Mutant)
-	{
-		MutantState = EMutantState::LightAttacking;
-		AnimInstance_Mutant->Montage_Play(LightAttackMontage);
-
-		// 动画结束后，重置状态
-		FOnMontageEnded OnMontageEnded;
-		OnMontageEnded.BindWeakLambda(this, [this](UAnimMontage* AnimMontage, bool bInterrupted)
-		{
-			MutantState = EMutantState::Ready;
-			RightHandHitEnemies.Empty();
-			LeftHandHitEnemies.Empty();
-			
-			if (IsLocallyControlled() && bIsCombo)
-			{
-				LightAttackButtonPressed(FInputActionValue());
-			}
-		});
-		AnimInstance_Mutant->Montage_SetEndDelegate(OnMontageEnded, LightAttackMontage);
+		FScopedPredictionWindow PredictionWindow(ASC, IsLocallyControlled() && !HasAuthority());
+		FGameplayEventData Payload;
+		Payload.EventMagnitude = 1.f; // 轻击
+		ASC->HandleGameplayEvent(TAG_EVENT_MUTANT_ATTACK_START, &Payload);
 	}
 }
 
 void AMutantCharacter::LightAttackButtonReleased(const FInputActionValue& Value)
 {
-	bIsCombo = false;
-	ServerSetIsCombo(false);
+	if (ASC)
+	{
+		FScopedPredictionWindow PredictionWindow(ASC, IsLocallyControlled() && !HasAuthority());
+		FGameplayEventData Payload;
+		ASC->HandleGameplayEvent(TAG_EVENT_MUTANT_ATTACK_RELEASED, &Payload);
+	}
 }
 
 void AMutantCharacter::HeavyAttackButtonPressed(const FInputActionValue& Value)
 {
-	if (MutantState != EMutantState::Ready) return;
-
-	LocalHeavyAttack();
-	ServerHeavyAttack();
-}
-
-void AMutantCharacter::ServerHeavyAttack_Implementation()
-{
-	MulticastHeavyAttack();
-}
-
-void AMutantCharacter::MulticastHeavyAttack_Implementation()
-{
-	if (!IsLocallyControlled())
+	if (ASC)
 	{
-		LocalHeavyAttack();
-	}
-}
-
-void AMutantCharacter::LocalHeavyAttack()
-{
-	if (AnimInstance_Mutant == nullptr) AnimInstance_Mutant = Cast<UAnimInstance_Mutant>(GetMesh()->GetAnimInstance());
-	if (AnimInstance_Mutant)
-	{
-		MutantState = EMutantState::HeavyAttacking;
-		AnimInstance_Mutant->Montage_Play(HeavyAttackMontage);
-
-		// 动画结束后，重置状态
-		FOnMontageEnded OnMontageEnded;
-		OnMontageEnded.BindWeakLambda(this, [this](UAnimMontage* AnimMontage, bool bInterrupted)
-		{
-			MutantState = EMutantState::Ready;
-			RightHandHitEnemies.Empty();
-			LeftHandHitEnemies.Empty();
-		});
-		AnimInstance_Mutant->Montage_SetEndDelegate(OnMontageEnded, HeavyAttackMontage);
+		FScopedPredictionWindow PredictionWindow(ASC, IsLocallyControlled() && !HasAuthority());
+		FGameplayEventData Payload;
+		Payload.EventMagnitude = 2.f; // 重击
+		ASC->HandleGameplayEvent(TAG_EVENT_MUTANT_ATTACK_START, &Payload);
 	}
 }
 
 void AMutantCharacter::HeavyAttackButtonReleased(const FInputActionValue& Value)
 {
-}
-
-void AMutantCharacter::ServerSetIsCombo_Implementation(bool TempBIsCombo)
-{
-	MulticastSetIsCombo(TempBIsCombo);
-}
-
-void AMutantCharacter::MulticastSetIsCombo_Implementation(bool TempBIsCombo)
-{
-	if (!IsLocallyControlled())
+	if (ASC)
 	{
-		bIsCombo = TempBIsCombo;
-	}
-}
-
-void AMutantCharacter::AttackFirstSectionEnd()
-{
-	if (bIsCombo)
-	{
-		RightHandHitEnemies.Empty();
-		LeftHandHitEnemies.Empty();
-	}
-	else
-	{
-		if (AnimInstance_Mutant == nullptr) AnimInstance_Mutant = Cast<UAnimInstance_Mutant>(GetMesh()->GetAnimInstance());
-		if (AnimInstance_Mutant)
-		{
-			AnimInstance_Mutant->Montage_Stop(.25, LightAttackMontage);
-		}
+		FScopedPredictionWindow PredictionWindow(ASC, IsLocallyControlled() && !HasAuthority());
+		FGameplayEventData Payload;
+		ASC->HandleGameplayEvent(TAG_EVENT_MUTANT_ATTACK_RELEASED, &Payload);
 	}
 }
 
@@ -457,7 +368,7 @@ void AMutantCharacter::OnRightHandCapsuleOverlap(UPrimitiveComponent* Overlapped
 	{
 		RightHandHitEnemies.Add(OtherActor);
 
-		float Damage = MutantState == EMutantState::LightAttacking ? LightAttackDamage : HeavyAttackDamage;
+		float Damage = bIsLightAttack ? LightAttackDamage : HeavyAttackDamage;
 
 		DropBlood(OverlappedComponent, OtherActor, OtherComp, Damage);
 
@@ -474,8 +385,8 @@ void AMutantCharacter::OnLeftHandCapsuleOverlap(UPrimitiveComponent* OverlappedC
 	if (!LeftHandHitEnemies.Contains(OtherActor))
 	{
 		LeftHandHitEnemies.Add(OtherActor);
-
-		float Damage = MutantState == EMutantState::LightAttacking ? LightAttackDamage : HeavyAttackDamage;
+		
+		float Damage = bIsLightAttack ? LightAttackDamage : HeavyAttackDamage;
 
 		DropBlood(OverlappedComponent, OtherActor, OtherComp, Damage);
 
@@ -514,7 +425,7 @@ void AMutantCharacter::ServerApplyDamage_Implementation(AActor* OtherActor, floa
 		if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
 		if (MutationMode)
 		{
-			MutationMode->GetInfect(DamagedCharacter, DamagedController, this, BaseController, MutantState);
+			MutationMode->GetInfect(DamagedCharacter, DamagedController, this, BaseController);
 		}
 	}
 }

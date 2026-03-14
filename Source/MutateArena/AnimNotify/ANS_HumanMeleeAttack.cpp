@@ -9,9 +9,9 @@ void UANS_HumanMeleeAttack::NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimS
 	Super::NotifyBegin(MeshComp, Animation, TotalDuration, EventReference);
 
 	AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(MeshComp->GetOwner());
-	if (HumanCharacter && HumanCharacter->CombatComponent)
+	if (HumanCharacter && HumanCharacter->CombatComp)
 	{
-		HumanCharacter->CombatComponent->SetAttackCollisionEnabled(true);
+		HumanCharacter->CombatComp->SetAttackCollisionEnabled(true);
 	}
 }
 
@@ -27,8 +27,8 @@ void UANS_HumanMeleeAttack::NotifyEnd(USkeletalMeshComponent* MeshComp, UAnimSeq
 	Super::NotifyEnd(MeshComp, Animation, EventReference);
 
 	AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(MeshComp->GetOwner());
-	if (HumanCharacter && HumanCharacter->CombatComponent)
+	if (HumanCharacter && HumanCharacter->CombatComp)
 	{
-		HumanCharacter->CombatComponent->SetAttackCollisionEnabled(false);
+		HumanCharacter->CombatComp->SetAttackCollisionEnabled(false);
 	}
 }

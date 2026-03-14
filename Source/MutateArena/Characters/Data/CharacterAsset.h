@@ -30,11 +30,11 @@ public:
 
 	// GAS
 	UPROPERTY(EditAnywhere, Category = "GAS")
-	TSubclassOf<class UGameplayAbilityBase> MutantChangeAbility;
-	
+	TArray<TSubclassOf<class UGameplayAbilityBase>> HumanDefaultAbilities;
 	UPROPERTY(EditAnywhere, Category = "GAS")
-	TSubclassOf<class UGameplayAbilityBase> MutantRestoreAbility;
+	TArray<TSubclassOf<class UGameplayAbilityBase>> MutantDefaultAbilities;
 
+	// Character
 	UPROPERTY(EditAnywhere, Category = "Character")
 	UMaterialInterface* MI_BloodDecal;
 	UPROPERTY(EditAnywhere, Category = "Character")

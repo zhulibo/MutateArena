@@ -1,14 +1,12 @@
 #include "Smoke.h"
-#include "MutateArena/Characters/BaseCharacter.h"
-#include "MutateArena/Characters/HumanCharacter.h"
-#include "Camera/CameraComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "MetaSoundSource.h"
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
-#include "MutateArena/MutateArena.h"
+#include "Components/AudioComponent.h"
 #include "Components/SphereComponent.h"
+#include "Sub/SmokeBlocker.h"
 
 ASmoke::ASmoke()
 {
@@ -20,59 +18,80 @@ void ASmoke::ThrowOut()
 {
 	Super::ThrowOut();
 
-	if (HumanCharacter == nullptr) HumanCharacter = Cast<AHumanCharacter>(GetOwner());
-	if (HumanCharacter)
+	if (HasAuthority())
 	{
-		if (UCameraComponent* CameraComponent = HumanCharacter->FindComponentByClass<UCameraComponent>())
-		{
-			FVector ThrowVector = CameraComponent->GetForwardVector();
-			ThrowVector.Z += 0.1;
-			ProjectileMovement->Velocity = ThrowVector * 1500.f;
-			ProjectileMovement->Activate();
-		}
+		FTimerHandle TimerHandle;
+		GetWorldTimerManager().SetTimer(TimerHandle, this, &ThisClass::ServerExplode, 2.f);
 	}
-
-	FTimerHandle TimerHandle;
-	GetWorldTimerManager().SetTimer(TimerHandle, this, &ThisClass::Explode, 2.f);
 }
 
-void ASmoke::Explode()
+void ASmoke::ServerExplode()
 {
-	// 不能直接销毁，同步到模拟端无法执行
-	SetLifeSpan(1.f);
+	MulticastExplodeEffects();
+	
+	SetLifeSpan(Time);
+}
 
-	float Time = 15.f;
-	auto ExplodeEffectComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+void ASmoke::MulticastExplodeEffects_Implementation()
+{
+	if (ProjectileMovement)
+	{
+		ProjectileMovement->StopMovementImmediately();
+	}
+
+	// 播放特效和声音
+	SpawnedSmokeEffect= UNiagaraFunctionLibrary::SpawnSystemAtLocation(
 		GetWorld(),
 		ExplodeEffect,
 		GetActorLocation(),
 		GetActorRotation()
 	);
-	if (ExplodeEffectComponent)
+
+	if (SpawnedSmokeEffect)
 	{
-		ExplodeEffectComponent->SetVariableFloat(TEXT("Time"), Time);
+		SpawnedSmokeEffect->SetVariableFloat(TEXT("Time"), Time);
 	}
 
-	// 创建一个Actor，阻挡ECC_Visibility
-	if (AActor* SmokeActor = GetWorld()->SpawnActor<AActor>(AActor::StaticClass(), GetActorLocation(), GetActorRotation()))
+	SpawnedSmokeSound = UGameplayStatics::SpawnSoundAtLocation(
+		this, 
+		ExplodeSound, 
+		GetActorLocation()
+	);
+	
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	SpawnedSmokeBlocker = GetWorld()->SpawnActor<ASmokeBlocker>(
+		ASmokeBlocker::StaticClass(), 
+		GetActorLocation(), 
+		GetActorRotation(), 
+		SpawnParams
+	);
+	if (SpawnedSmokeBlocker)
 	{
-		SmokeActor->SetLifeSpan(Time);
-		if (USphereComponent* SphereComponent = NewObject<USphereComponent>(SmokeActor, TEXT("SphereComponent")))
-		{
-			SphereComponent->RegisterComponent();
-			SmokeActor->SetRootComponent(SphereComponent);
-			SphereComponent->SetSphereRadius(400.f);
-			SphereComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-			SphereComponent->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
+		SpawnedSmokeBlocker->SetLifeSpan(Time);
+	}
+}
 
-			// SphereComponent根组件影响力SmokeActor位置，重新设置下
-			SmokeActor->SetActorLocation(GetActorLocation());
-			SmokeActor->Tags.Add(TAG_SMOKE_ACTOR);
-		}
+void ASmoke::Destroyed()
+{
+	if (SpawnedSmokeEffect)
+	{
+		SpawnedSmokeEffect->DestroyComponent();
+		SpawnedSmokeEffect = nullptr;
 	}
 
-	if (ExplodeSound)
+	if (SpawnedSmokeSound)
 	{
-		UGameplayStatics::PlaySoundAtLocation(this, ExplodeSound, GetActorLocation());
+		SpawnedSmokeSound->Stop();
+		SpawnedSmokeSound->DestroyComponent();
+		SpawnedSmokeSound = nullptr;
 	}
+	
+	if (SpawnedSmokeBlocker)
+	{
+		SpawnedSmokeBlocker->Destroy();
+		SpawnedSmokeBlocker = nullptr;
+	}
+	
+	Super::Destroyed();
 }

@@ -910,6 +910,11 @@ void ABaseCharacter::Landed(const FHitResult& Hit)
 		// 应用伤害
 		UGameplayStatics::ApplyDamage(this, GetMaxHealth() * DamageRate, Controller, this, UDamageTypeFall::StaticClass());
 	}
+	
+	if (IsLocallyControlled())
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, OuchSound, GetActorLocation());
+	}
 }
 
 // 计算跌落伤害比例
@@ -943,7 +948,10 @@ float ABaseCharacter::CalcFallDamageRate()
 
 void ABaseCharacter::MulticastPlayOuchSound_Implementation(float DamageRate)
 {
-	UGameplayStatics::PlaySoundAtLocation(this, OuchSound, GetActorLocation());
+	if (!IsLocallyControlled())
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, OuchSound, GetActorLocation());
+	}
 }
 
 // 根据地形播放不同脚步声

@@ -38,7 +38,7 @@ void UCrosshairComponent::TickComponent(float DeltaSeconds, ELevelTick TickType,
 
 void UCrosshairComponent::SetHUDCrosshair(float DeltaSeconds)
 {
-	if (HumanCharacter == nullptr || HumanCharacter->CombatComponent == nullptr) return;
+	if (HumanCharacter == nullptr || HumanCharacter->CombatComp == nullptr) return;
 	
 	if (UISubsystem == nullptr)
 	{
@@ -49,7 +49,7 @@ void UCrosshairComponent::SetHUDCrosshair(float DeltaSeconds)
 	}
 	if (UISubsystem == nullptr) return;
 	
-	AWeapon* Weapon = HumanCharacter->CombatComponent->GetCurWeapon();
+	AWeapon* Weapon = HumanCharacter->CombatComp->GetCurWeapon();
 	if (Weapon == nullptr) return;
 
 	// 水平速度
@@ -68,7 +68,7 @@ void UCrosshairComponent::SetHUDCrosshair(float DeltaSeconds)
 	}
 
 	// 射击
-	if (URecoilComponent* RecoilComponent = HumanCharacter->RecoilComponent)
+	if (URecoilComponent* RecoilComponent = HumanCharacter->RecoilComp)
 	{
 		ShootFactor = FMath::Clamp(RecoilComponent->RecoilVertTotal / Weapon->RecoilVertRef_Crosshair, 0.f, 1.f);
 	}

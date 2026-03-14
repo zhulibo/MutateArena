@@ -26,17 +26,19 @@
 #include "MutateArena/Utils/LibraryCommon.h"
 #include "MutateArena/Utils/LibraryNotify.h"
 #include "Components/CapsuleComponent.h"
-#include "Components/CombatStateType.h"
 #include "Components/CrosshairComponent.h"
 #include "Components/RecoilComponent.h"
+#include "Data/CharacterAsset.h"
 #include "Data/CharacterType.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Data/InputAsset.h"
 #include "MutateArena/Abilities/AttributeSetBase.h"
 #include "MutateArena/Abilities/MAAbilitySystemComponent.h"
 #include "MutateArena/System/UISubsystem.h"
+#include "MutateArena/System/Tags/ProjectTags.h"
 #include "Net/UnrealNetwork.h"
 #include "Perception/AIPerceptionComponent.h"
+#include "MutateArena/Abilities/GameplayAbilityBase.h"
 
 #define LOCTEXT_NAMESPACE "AHumanCharacter"
 
@@ -44,9 +46,9 @@ AHumanCharacter::AHumanCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	CombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
-	RecoilComponent = CreateDefaultSubobject<URecoilComponent>(TEXT("RecoilComponent"));
-	CrosshairComponent = CreateDefaultSubobject<UCrosshairComponent>(TEXT("CrosshairComponent"));
+	CombatComp = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
+	RecoilComp = CreateDefaultSubobject<URecoilComponent>(TEXT("RecoilComponent"));
+	CrosshairComp = CreateDefaultSubobject<UCrosshairComponent>(TEXT("CrosshairComponent"));
 	
 	BloodColor = C_RED;
 	
@@ -61,10 +63,6 @@ void AHumanCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(ThisClass, DefaultPrimary);
-	DOREPLIFETIME(ThisClass, DefaultSecondary);
-	DOREPLIFETIME(ThisClass, DefaultMelee);
-	DOREPLIFETIME(ThisClass, DefaultThrowing);
 	DOREPLIFETIME(ThisClass, bIsImmune);
 }
 
@@ -117,11 +115,11 @@ void AHumanCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 		EIC->BindAction(AssetSubsystem->InputAsset->FireAction, ETriggerEvent::Completed, this, &ThisClass::FireButtonReleased);
 		EIC->BindAction(AssetSubsystem->InputAsset->ReloadAction, ETriggerEvent::Triggered, this, &ThisClass::ReloadButtonPressed);
 		EIC->BindAction(AssetSubsystem->InputAsset->DropAction, ETriggerEvent::Triggered, this, &ThisClass::DropButtonPressed);
-
-		EIC->BindAction(AssetSubsystem->InputAsset->SwapPrimaryEquipmentAction, ETriggerEvent::Triggered, this, &ThisClass::SwapPrimaryEquipmentButtonPressed);
-		EIC->BindAction(AssetSubsystem->InputAsset->SwapSecondaryEquipmentAction, ETriggerEvent::Triggered, this, &ThisClass::SwapSecondaryEquipmentButtonPressed);
-		EIC->BindAction(AssetSubsystem->InputAsset->SwapMeleeEquipmentAction, ETriggerEvent::Triggered, this, &ThisClass::SwapMeleeEquipmentButtonPressed);
-		EIC->BindAction(AssetSubsystem->InputAsset->SwapThrowingEquipmentAction, ETriggerEvent::Triggered, this, &ThisClass::SwapThrowingEquipmentButtonPressed);
+		
+		EIC->BindAction(AssetSubsystem->InputAsset->SwapPrimaryEquipmentAction, ETriggerEvent::Triggered, this, &ThisClass::SendSwapEquipmentEvent, EEquipmentType::Primary);
+		EIC->BindAction(AssetSubsystem->InputAsset->SwapSecondaryEquipmentAction, ETriggerEvent::Triggered, this, &ThisClass::SendSwapEquipmentEvent, EEquipmentType::Secondary);
+		EIC->BindAction(AssetSubsystem->InputAsset->SwapMeleeEquipmentAction, ETriggerEvent::Triggered, this, &ThisClass::SendSwapEquipmentEvent, EEquipmentType::Melee);
+		EIC->BindAction(AssetSubsystem->InputAsset->SwapThrowingEquipmentAction, ETriggerEvent::Triggered, this, &ThisClass::SendSwapEquipmentEvent, EEquipmentType::Throwing);
 		EIC->BindAction(AssetSubsystem->InputAsset->SwapLastEquipmentAction, ETriggerEvent::Triggered, this, &ThisClass::SwapLastEquipmentButtonPressed);
 		EIC->BindAction(AssetSubsystem->InputAsset->SwapBetweenPrimarySecondaryEquipmentAction, ETriggerEvent::Triggered, this, &ThisClass::SwapBetweenPrimarySecondaryEquipmentButtonPressed);
 	}
@@ -132,6 +130,21 @@ void AHumanCharacter::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 }
 
+void AHumanCharacter::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+	
+	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+	if (AssetSubsystem && AssetSubsystem->CharacterAsset && ASC)
+	{
+		for (TSubclassOf<UGameplayAbility> AbilityClass : AssetSubsystem->CharacterAsset->HumanDefaultAbilities)
+		{
+			FGameplayAbilitySpec AbilitySpec(AbilityClass, 1, INDEX_NONE, this);
+			ASC->GiveAbility(AbilitySpec);
+		}
+	}
+}
+
 void AHumanCharacter::OnASCInit()
 {
 	Super::OnASCInit();
@@ -139,6 +152,9 @@ void AHumanCharacter::OnASCInit()
 	if (ASC && AttributeSetBase)
 	{
 		ASC->GetGameplayAttributeValueChangeDelegate(AttributeSetBase->GetMaxWalkSpeedAttribute()).AddUObject(this, &ThisClass::OnMaxWalkSpeedChanged);
+
+		ASC->RegisterGameplayTagEvent(TAG_STATE_COMBAT_SWAPPING, EGameplayTagEventType::NewOrRemoved).AddUObject(this, &AHumanCharacter::OnSwappingTagChanged);
+		ASC->RegisterGameplayTagEvent(TAG_STATE_COMBAT_AIMING, EGameplayTagEventType::NewOrRemoved).AddUObject(this, &AHumanCharacter::OnAimingTagChanged);
 	}
 }
 
@@ -148,11 +164,32 @@ void AHumanCharacter::OnMaxWalkSpeedChanged(const FOnAttributeChangeData& Data)
 	GetCharacterMovement()->MaxWalkSpeedCrouched = Data.NewValue * 0.5f;
 }
 
+void AHumanCharacter::OnSwappingTagChanged(FGameplayTag GameplayTag, int NewCount)
+{
+	UpdateMaxWalkSpeed();
+	
+	if (IsLocallyControlled() && NewCount > 0 && CombatComp)
+	{
+		CombatComp->StartInterpFOV(CombatComp->DefaultFOV, 0.2f);
+		CombatComp->AimingProgress = 0.f;
+	}
+}
+
+void AHumanCharacter::OnAimingTagChanged(FGameplayTag GameplayTag, int NewCount)
+{
+	UpdateMaxWalkSpeed();
+	
+	if (CombatComp)
+	{
+		CombatComp->LocalSetAiming(NewCount > 0);
+	}
+}
+
 void AHumanCharacter::UpdateMaxWalkSpeed()
 {
-	if (CombatComponent && CombatComponent->GetCurEquipment())
+	if (CombatComp && CombatComp->GetCurEquipment())
 	{
-		float TempMaxWalkSpeed = GetMaxWalkSpeed() * (CombatComponent->bIsAiming ? CombatComponent->GetCurEquipment()->AimingWalkSpeedMul : CombatComponent->GetCurEquipment()->WalkSpeedMul);
+		float TempMaxWalkSpeed = GetMaxWalkSpeed() * (CombatComp->IsAiming() ? CombatComp->GetCurEquipment()->AimingWalkSpeedMul : CombatComp->GetCurEquipment()->WalkSpeedMul);
 		GetCharacterMovement()->MaxWalkSpeed = TempMaxWalkSpeed;
 		GetCharacterMovement()->MaxWalkSpeedCrouched = TempMaxWalkSpeed * 0.5f;
 	}
@@ -190,7 +227,7 @@ void AHumanCharacter::ApplyLoadout()
 
 void AHumanCharacter::ServerSpawnEquipments_Implementation(EEquipmentName Primary, EEquipmentName Secondary, EEquipmentName Melee, EEquipmentName Throwing)
 {
-	if (CombatComponent == nullptr) return;
+	if (CombatComp == nullptr) return;
 
 	TSubclassOf<AEquipment> PrimaryClass = nullptr;
 	TSubclassOf<AEquipment> SecondaryClass = nullptr;
@@ -203,8 +240,7 @@ void AHumanCharacter::ServerSpawnEquipments_Implementation(EEquipmentName Primar
 	FName ThrowingName = FName(ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(Throwing)));
 
 	// 近战模式只生成近战装备
-	if (MeleeGameState == nullptr) MeleeGameState = GetWorld()->GetGameState<AMeleeGameState>();
-	if (MeleeGameState)
+	if (AMeleeGameState* MeleeGameState = GetWorld()->GetGameState<AMeleeGameState>())
 	{
 		PrimaryName = FName();
 		SecondaryName = FName();
@@ -250,34 +286,39 @@ void AHumanCharacter::ServerSpawnEquipments_Implementation(EEquipmentName Primar
 			ThrowingClass = UDataAssetManager::Get().GetSubclass(EquipmentMain->EquipmentClass);
 		}
 	}
-
-	if (PrimaryClass && PrimaryClass->IsChildOf<AWeapon>())
-	{
-		DefaultPrimary = GetWorld()->SpawnActor<AWeapon>(PrimaryClass);
-		CombatComponent->LocalEquipEquipment(DefaultPrimary);
-		CombatComponent->LocalSwapEquipment(EEquipmentType::Primary);
-	}
+	
+	// 先装备副武器，以便被置为LastEquipmentType
 	if (SecondaryClass && SecondaryClass->IsChildOf<AWeapon>())
 	{
-		DefaultSecondary = GetWorld()->SpawnActor<AWeapon>(SecondaryClass);
-		CombatComponent->LocalEquipEquipment(DefaultSecondary);
+		AWeapon* SpawnedActor = GetWorld()->SpawnActor<AWeapon>(SecondaryClass);
+		CombatComp->SecondaryEquipment = SpawnedActor;
+		CombatComp->EquipEquipment(SpawnedActor);
+	}
+	if (PrimaryClass && PrimaryClass->IsChildOf<AWeapon>())
+	{
+		AWeapon* SpawnedActor = GetWorld()->SpawnActor<AWeapon>(PrimaryClass);
+		CombatComp->PrimaryEquipment = SpawnedActor;
+		CombatComp->EquipEquipment(SpawnedActor);
+		
+		CombatComp->InstantSwap(EEquipmentType::Primary);
 	}
 	if (MeleeClass && MeleeClass->IsChildOf<AMelee>())
 	{
-		DefaultMelee = GetWorld()->SpawnActor<AMelee>(MeleeClass);
-		CombatComponent->LocalEquipEquipment(DefaultMelee);
-
+		AMelee* SpawnedActor = GetWorld()->SpawnActor<AMelee>(MeleeClass);
+		CombatComp->MeleeEquipment = SpawnedActor;
+		CombatComp->EquipEquipment(SpawnedActor);
+		
 		// 近战模式默认切到近战武器
-		if (MeleeGameState == nullptr) MeleeGameState = GetWorld()->GetGameState<AMeleeGameState>();
-		if (MeleeGameState)
+		if (AMeleeGameState* MeleeGameState = GetWorld()->GetGameState<AMeleeGameState>())
 		{
-			CombatComponent->LocalSwapEquipment(EEquipmentType::Melee);
+			CombatComp->InstantSwap(EEquipmentType::Melee);
 		}
 	}
 	if (ThrowingClass && ThrowingClass->IsChildOf<AThrowing>())
 	{
-		DefaultThrowing = GetWorld()->SpawnActor<AThrowing>(ThrowingClass);
-		CombatComponent->LocalEquipEquipment(DefaultThrowing);
+		AThrowing* SpawnedActor = GetWorld()->SpawnActor<AThrowing>(ThrowingClass);
+		CombatComp->ThrowingEquipment = SpawnedActor;
+		CombatComp->EquipEquipment(SpawnedActor);
 	}
 }
 
@@ -287,7 +328,7 @@ EEquipmentName AHumanCharacter::GetEquipmentName(int32 LoadoutIndex, EEquipmentT
 	EEquipmentName EquipmentName = EEquipmentName::None;
 
 	if (StorageSubsystem == nullptr) StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
-	if (StorageSubsystem == nullptr || StorageSubsystem->CacheLoadout->Loadouts.IsEmpty())
+	if (StorageSubsystem == nullptr || StorageSubsystem->CacheLoadout->Loadouts.Num() < LoadoutIndex + 1)
 	{
 		return EquipmentName;
 	}
@@ -311,56 +352,21 @@ EEquipmentName AHumanCharacter::GetEquipmentName(int32 LoadoutIndex, EEquipmentT
 	return EquipmentName;
 }
 
-void AHumanCharacter::OnRep_DefaultPrimary()
-{
-	if (CombatComponent)
-	{
-		CombatComponent->LocalEquipEquipment(DefaultPrimary);
-		CombatComponent->LocalSwapEquipment(EEquipmentType::Primary);
-	}
-}
-
-void AHumanCharacter::OnRep_DefaultSecondary()
-{
-	if (CombatComponent)
-	{
-		CombatComponent->LocalEquipEquipment(DefaultSecondary);
-	}
-}
-
-void AHumanCharacter::OnRep_DefaultMelee()
-{
-	if (CombatComponent)
-	{
-		CombatComponent->LocalEquipEquipment(DefaultMelee);
-		
-		if (MeleeGameState == nullptr) MeleeGameState = GetWorld()->GetGameState<AMeleeGameState>();
-		if (MeleeGameState)
-		{
-			CombatComponent->LocalSwapEquipment(EEquipmentType::Melee);
-		}
-	}
-}
-
-void AHumanCharacter::OnRep_DefaultThrowing()
-{
-	if (CombatComponent)
-	{
-		CombatComponent->LocalEquipEquipment(DefaultThrowing);
-	}
-}
-
 void AHumanCharacter::AimButtonPressed(const FInputActionValue& Value)
 {
-	if (CombatComponent == nullptr) return;
+	if (CombatComp == nullptr || !ASC) return;
+	
+	FScopedPredictionWindow PredictionWindow(ASC, IsLocallyControlled() && !HasAuthority());
 
-	if (CombatComponent->GetCurWeapon())
+	if (CombatComp->GetCurWeapon())
 	{
-		CombatComponent->SetAiming(true);
+		ASC->TryActivateAbilitiesByTag(FGameplayTagContainer(TAG_ABILITY_EQUIPMENT_AIM));
 	}
-	else if (CombatComponent->CurEquipmentType == EEquipmentType::Melee)
+	else if (CombatComp->CurEquipmentType == EEquipmentType::Melee)
 	{
-		CombatComponent->MeleeAttack(ECombatState::HeavyAttacking);
+		FGameplayEventData Payload;
+		Payload.EventMagnitude = 2.f; // 重击
+		ASC->HandleGameplayEvent(TAG_EVENT_MELEE_ATTACK, &Payload);
 	}
 }
 
@@ -371,189 +377,194 @@ void AHumanCharacter::AimButtonReleased(const FInputActionValue& Value)
 		if (GetDefault<UDevSetting>()->bIsAdjustEquipmentSocketTransform) return;
 	}
 
-	if (CombatComponent && CombatComponent->GetCurWeapon())
+	if (!CombatComp) return;
+	
+	if (CombatComp->GetCurWeapon()) // 目前限制只有主副武器可瞄准
 	{
-		if (CombatComponent->bIsAiming)
-		{
-			CombatComponent->SetAiming(false);
-		}
-		else
-		{
-			// 瞄准时切枪，切枪完成后退出瞄准
-		}
+		FScopedPredictionWindow PredictionWindow(ASC, IsLocallyControlled() && !HasAuthority());
+		FGameplayTagContainer CancelTags;
+		CancelTags.AddTag(TAG_ABILITY_EQUIPMENT_AIM); 
+		ASC->CancelAbilities(&CancelTags);
+	}
+	
+	if (CombatComp->GetCurMelee())
+	{
+		FScopedPredictionWindow PredictionWindow(ASC, IsLocallyControlled() && !HasAuthority());
+		FGameplayEventData Payload;
+		ASC->HandleGameplayEvent(TAG_EVENT_MELEE_RELEASED, &Payload);
 	}
 }
 
 void AHumanCharacter::FireButtonPressed(const FInputActionValue& Value)
 {
-	if (CombatComponent == nullptr) return;
-
+	if (!ASC) return;
+	
 	bCanSwitchLoadout = false;
-
-	// TODO 移入各自的类
-	switch (CombatComponent->CurEquipmentType)
+	
+	FScopedPredictionWindow PredictionWindow(ASC, IsLocallyControlled() && !HasAuthority());
+	
+	switch (CombatComp->CurEquipmentType)
 	{
 	case EEquipmentType::Primary:
-		CombatComponent->StartFire();
 	case EEquipmentType::Secondary:
-		CombatComponent->StartFire();
+		ASC->TryActivateAbilitiesByTag(FGameplayTagContainer(TAG_ABILITY_WEAPON_FIRE));
+		break;
 	case EEquipmentType::Melee:
-		CombatComponent->MeleeAttack(ECombatState::LightAttacking);
+		{
+			FGameplayEventData Payload;
+			Payload.EventMagnitude = 1.f; // 轻击
+			ASC->HandleGameplayEvent(TAG_EVENT_MELEE_ATTACK, &Payload);
+		}
+		break;
 	case EEquipmentType::Throwing:
-		CombatComponent->Throw();
+		ASC->TryActivateAbilitiesByTag(FGameplayTagContainer(TAG_ABILITY_THROWING_THROW));
+		break;
 	}
 }
 
 void AHumanCharacter::FireButtonReleased(const FInputActionValue& Value)
 {
-	if (CombatComponent == nullptr) return;
-
-	switch (CombatComponent->CurEquipmentType)
+	FScopedPredictionWindow PredictionWindow(ASC, IsLocallyControlled() && !HasAuthority());
+	
+	switch (CombatComp->CurEquipmentType)
 	{
 	case EEquipmentType::Primary:
-		CombatComponent->StopFire();
 	case EEquipmentType::Secondary:
-		CombatComponent->StopFire();
+		{
+			FGameplayTagContainer AbilityTags;
+			AbilityTags.AddTag(TAG_ABILITY_WEAPON_FIRE);
+			ASC->CancelAbilities(&AbilityTags);
+		}
+		break;
 	case EEquipmentType::Melee:
-		CombatComponent->bIsCombo = false;
-		CombatComponent->ServerSetIsCombo(false);
+		{
+			FGameplayEventData Payload;
+			ASC->HandleGameplayEvent(TAG_EVENT_MELEE_RELEASED, &Payload);
+		}
+		break;
 	}
+	
 }
 
 void AHumanCharacter::ReloadButtonPressed(const FInputActionValue& Value)
 {
-	if (CombatComponent && CombatComponent->GetCurWeapon())
-	{
-		CombatComponent->Reload();
-	}
+	FScopedPredictionWindow PredictionWindow(ASC, IsLocallyControlled() && !HasAuthority());
+	ASC->TryActivateAbilitiesByTag(FGameplayTagContainer(TAG_ABILITY_WEAPON_RELOAD));
 }
 
 void AHumanCharacter::DropButtonPressed(const FInputActionValue& Value)
 {
-	// 只有主副武器可以丢弃
-	if (CombatComponent && CombatComponent->GetCurWeapon())
-	{
-		CombatComponent->DropEquipment(CombatComponent->CurEquipmentType);
+	if (!CombatComp || !CombatComp->GetCurWeapon()) return; // 只有主副武器可以丢弃
 
-		bCanSwitchLoadout = false;
-	}
-}
-
-void AHumanCharacter::SwapPrimaryEquipmentButtonPressed()
-{
-	if (CombatComponent) CombatComponent->SwapEquipment(EEquipmentType::Primary);
-}
-
-void AHumanCharacter::SwapSecondaryEquipmentButtonPressed()
-{
-	if (CombatComponent) CombatComponent->SwapEquipment(EEquipmentType::Secondary);
-}
-
-void AHumanCharacter::SwapMeleeEquipmentButtonPressed()
-{
-	if (CombatComponent) CombatComponent->SwapEquipment(EEquipmentType::Melee);
-}
-
-void AHumanCharacter::SwapThrowingEquipmentButtonPressed()
-{
-	if (CombatComponent) CombatComponent->SwapEquipment(EEquipmentType::Throwing);
+	FScopedPredictionWindow PredictionWindow(ASC, IsLocallyControlled() && !HasAuthority());
+	FGameplayEventData Payload;
+	Payload.EventMagnitude = static_cast<float>(CombatComp->CurEquipmentType); 
+	ASC->HandleGameplayEvent(TAG_EVENT_EQUIPMENT_DROP, &Payload);
+	
+	bCanSwitchLoadout = false;
 }
 
 void AHumanCharacter::SwapLastEquipmentButtonPressed(const FInputActionValue& Value)
 {
-	if (CombatComponent) CombatComponent->SwapEquipment(CombatComponent->LastEquipmentType);
+	if (!CombatComp) return;
+	
+	if (CombatComp->CurEquipmentType != CombatComp->DesiredEquipmentType)
+    {
+        // 玩家在切枪中途又按了切枪，把目标改回我原本手里的这把枪（TargetEquipmentType技能触发就会改变，CurEquipmentType切出动画完成才会改变）
+        SendSwapEquipmentEvent(CombatComp->CurEquipmentType);
+    }
+    else
+    {
+        // 正常状态，没在切枪，直接切向上一把武器
+        SendSwapEquipmentEvent(CombatComp->LastEquipmentType);
+    }
 }
 
 void AHumanCharacter::SwapBetweenPrimarySecondaryEquipmentButtonPressed(const FInputActionValue& Value)
 {
-	if (CombatComponent)
+	if (CombatComp)
 	{
-		bool bIsPrimaryAmmoEmpty = true;
-		if (AWeapon* PrimaryWeapon = Cast<AWeapon>(CombatComponent->GetEquipmentByType(EEquipmentType::Primary)))
+		if (AWeapon* PrimaryWeapon = Cast<AWeapon>(CombatComp->GetEquipmentByType(EEquipmentType::Primary)))
 		{
-			bIsPrimaryAmmoEmpty = PrimaryWeapon->IsEmpty();
-		}
-		
-		if (CombatComponent->CurEquipmentType == EEquipmentType::Primary
-			|| CombatComponent->CurEquipmentType != EEquipmentType::Primary && bIsPrimaryAmmoEmpty)
-		{
-			SwapSecondaryEquipmentButtonPressed();
-		}
-		else
-		{
-			SwapPrimaryEquipmentButtonPressed();
+			EEquipmentType EquipmentType = EEquipmentType::Primary;
+			if (CombatComp->CurEquipmentType == EEquipmentType::Primary ||
+				CombatComp->CurEquipmentType != EEquipmentType::Primary && PrimaryWeapon->IsEmpty())
+			{
+				EquipmentType = EEquipmentType::Secondary;
+			}
+			SendSwapEquipmentEvent(EquipmentType);
 		}
 	}
 }
 
-void AHumanCharacter::OnServerDropEquipment()
+void AHumanCharacter::SendSwapEquipmentEvent(EEquipmentType TargetEquipmentType)
 {
-	if (bIsDead || CombatComponent == nullptr) return;
-
-	// 如果脚下有同类型武器直接拾取使用
-	TArray<AActor*> OverlappingActors;
-	GetOverlappingActors(OverlappingActors, AEquipment::StaticClass());
-	for (AActor* OverlappingActor : OverlappingActors)
+	// 如果玩家想切的目标，就是他现在使用的或正在努力切过去的装备，直接返回
+	if (CombatComp && CombatComp->DesiredEquipmentType == TargetEquipmentType)
 	{
-		if (AEquipment* Equipment = Cast<AEquipment>(OverlappingActor))
-		{
-			if (CombatComponent->CurEquipmentType == Equipment->EquipmentType)
-			{
-				CombatComponent->MulticastReplaceCurEquipment(Equipment);
-			}
-
-			return;
-		}
+		return;
 	}
+	
+	if (ASC)
+	{
+		FScopedPredictionWindow PredictionWindow(ASC, IsLocallyControlled() && !HasAuthority());
+		FGameplayEventData Payload;
+		Payload.EventMagnitude = static_cast<float>(TargetEquipmentType); 
+		ASC->HandleGameplayEvent(TAG_EVENT_EQUIPMENT_SWAP, &Payload);
+	}
+}
 
-	// 否则切换至其它装备
-	CombatComponent->MulticastSwapEquipment2(CombatComponent->GetLastEquipment() ? CombatComponent->LastEquipmentType : EEquipmentType::Melee);
+void AHumanCharacter::ClientSwapEquipmentWhenPickupFailed_Implementation(EEquipmentType FallbackEquipmentType)
+{
+	if (bIsDead || CombatComp == nullptr) return;
+	if (CombatComp->CurEquipmentType == FallbackEquipmentType) return; // 如果本地客户端已经通过预测切到了目标武器，就不需要再切一次了，防止打断动画
+	
+	SendSwapEquipmentEvent(CombatComp->GetLastEquipment() ? CombatComp->LastEquipmentType : EEquipmentType::Melee);
 }
 
 // 装备检测到的重叠装备
-void AHumanCharacter::EquipOverlappingEquipment(AEquipment* Equipment)
+void AHumanCharacter::ServerEquipOverlappingEquipment(AEquipment* Equipment)
 {
-	if (bIsDead || Equipment == nullptr || Equipment->GetOwner() || CombatComponent == nullptr) return;
-	if (CombatComponent->HasEquippedThisTypeEquipment(Equipment->EquipmentType)) return;
-	if (CombatComponent->MeleeEquipment) // 排除玩家刚重生还没有装备好武器（近战武器装备后无法丢弃）
+	if (bIsDead || Equipment == nullptr || Equipment->GetOwner() || CombatComp == nullptr) return;
+	if (CombatComp->HasEquippedEquipment(Equipment->EquipmentType)) return;
+	if (CombatComp->MeleeEquipment) // HACK 排除玩家刚重生还没有装备好武器（近战武器装备后无法丢弃）
 	{
-		CombatComponent->MulticastEquipEquipment2(Equipment);
+		CombatComp->EquipEquipment(Equipment);
+		
+		CombatComp->ClientPlayEquipSound();
 	}
 }
 
 // 给予补给箱装备
 void AHumanCharacter::ServerGivePickupEquipment_Implementation(APickupEquipment* PickupEquipment)
 {
-	if (bIsDead || CombatComponent == nullptr || PickupEquipment == nullptr) return;
+	if (bIsDead || CombatComp == nullptr || PickupEquipment == nullptr) return;
 
 	AEquipment* Equipment = PickupEquipment->Equipment;
 	if (Equipment == nullptr) return;
 
+	if (Equipment->EquipmentType !=EEquipmentType::Primary && Equipment->EquipmentType != EEquipmentType::Secondary)
+	{
+		UE_LOG(LogTemp, Error, TEXT("PickupEquipment EquipmentType is not Primary or Secondary"));
+		return;
+	}
+	
 	// 丢弃旧装备
-	CombatComponent->MulticastDropEquipment2(Equipment->EquipmentType);
-
-	// 装备类型使用中，替换
-	if (CombatComponent->CurEquipmentType == Equipment->EquipmentType)
-	{
-		CombatComponent->MulticastReplaceCurEquipment(Equipment);
-	}
-	// 装备类型非使用中，装备
-	else
-	{
-		CombatComponent->MulticastEquipEquipment2(Equipment);
-	}
-
-	PickupEquipment->Destroy();
+	FScopedPredictionWindow PredictionWindow(ASC, IsLocallyControlled() && !HasAuthority());
+	FGameplayEventData Payload;
+	Payload.EventMagnitude = static_cast<float>(Equipment->EquipmentType);
+	Payload.OptionalObject = PickupEquipment;
+	ASC->HandleGameplayEvent(TAG_EVENT_EQUIPMENT_DROP, &Payload);
 }
 
 void AHumanCharacter::TrySwitchLoadout()
 {
-	if (CombatComponent == nullptr) return;
+	if (CombatComp == nullptr) return;
 	
 	if (bCanSwitchLoadout)
 	{
-		CombatComponent->LocalDestroyEquipments();
-		CombatComponent->ServerDestroyEquipments();
+		CombatComp->LocalDestroyEquipments();
+		CombatComp->ServerDestroyEquipments();
 
 		ApplyLoadout();
 	}
@@ -588,8 +599,7 @@ void AHumanCharacter::MulticastMutationDead_Implementation(bool bNeedSpawn, ESpa
 		FTimerHandle TimerHandle;
 		FTimerDelegate TimerDelegate;
 		TimerDelegate.BindWeakLambda(this, [this, SpawnMutantReason]() {
-			if (MutationMode == nullptr) MutationMode = GetWorld()->GetAuthGameMode<AMutationMode>();
-			if (MutationMode)
+			if (AMutationMode* MutationMode = GetWorld()->GetAuthGameMode<AMutationMode>())
 			{
 				MutationMode->Mutate(this, Controller, SpawnMutantReason);
 			}
@@ -608,8 +618,7 @@ void AHumanCharacter::MulticastMeleeDead_Implementation()
 		FTimerHandle TimerHandle;
 		FTimerDelegate TimerDelegate;
 		TimerDelegate.BindWeakLambda(this, [this]() {
-			if (MeleeMode == nullptr) MeleeMode = GetWorld()->GetAuthGameMode<AMeleeMode>();
-			if (MeleeMode)
+			if (AMeleeMode* MeleeMode = GetWorld()->GetAuthGameMode<AMeleeMode>())
 			{
 				MeleeMode->HumanRespawn(this, Controller);
 			}
@@ -628,8 +637,7 @@ void AHumanCharacter::MulticastTeamDeadMatchDead_Implementation()
 		FTimerHandle TimerHandle;
 		FTimerDelegate TimerDelegate;
 		TimerDelegate.BindWeakLambda(this, [this]() {
-			if (TeamDeadMatchMode == nullptr) TeamDeadMatchMode = GetWorld()->GetAuthGameMode<ATeamDeadMatchMode>();
-			if (TeamDeadMatchMode)
+			if (ATeamDeadMatchMode* TeamDeadMatchMode = GetWorld()->GetAuthGameMode<ATeamDeadMatchMode>())
 			{
 				TeamDeadMatchMode->HumanRespawn(this, Controller);
 			}
@@ -642,10 +650,19 @@ void AHumanCharacter::HandleDead()
 {
 	bIsDead = true;
 
-	if (CombatComponent)
+	if (CombatComp)
 	{
-		CombatComponent->LocalDropEquipment(EEquipmentType::Primary);
-		CombatComponent->LocalDestroyEquipments();
+		// 直接在服务端丢弃主武器不走GA
+		if (HasAuthority())
+		{
+			if (AEquipment* PrimaryEquip = CombatComp->GetEquipmentByType(EEquipmentType::Primary))
+			{
+				PrimaryEquip->ClearAbilities(ASC);
+				PrimaryEquip->Drop(); 
+			}
+		}
+		
+		CombatComp->LocalDestroyEquipments(false);
 	}
 
 	GetCharacterMovement()->DisableMovement();

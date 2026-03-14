@@ -269,7 +269,7 @@ void AMutationController::InitMutantHUD()
 
 		if (MutationPlayerState->GetAbilitySystemComponent())
 		{
-			int32 TagCount = MutationPlayerState->GetAbilitySystemComponent()->GetTagCount(TAG_MUTANT_SKILL_CD);
+			int32 TagCount = MutationPlayerState->GetAbilitySystemComponent()->GetTagCount(TAG_CD_MUTANT_SKILL);
 			SetHUDSkill(TagCount == 0.f && MutationPlayerState->GetCharacterLevel() >= 2.f);
 		}
 	}

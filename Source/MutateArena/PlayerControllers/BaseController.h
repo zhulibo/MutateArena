@@ -4,6 +4,7 @@
 #include "ModularPlayerController.h"
 #include "BaseController.generated.h"
 
+enum class ETeam : uint8;
 enum class EMsgType : uint8;
 
 UCLASS()
@@ -61,8 +62,6 @@ protected:
 public:
 	virtual void SetHUDHealth(float Health) {}
 
-	virtual void SetHUDAmmo(int32 Ammo);
-	virtual void SetHUDCarriedAmmo(int32 CarriedAmmo);
 	virtual void InitHUD() {}
 protected:
 	virtual void SetHUDTime() {}

@@ -85,7 +85,7 @@ protected:
 	void SetHUDTotalRound();
 
 public:
-	UFUNCTION(NetMulticast, Reliable)
+	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastPlaySpawnPickupSound();
 	
 };

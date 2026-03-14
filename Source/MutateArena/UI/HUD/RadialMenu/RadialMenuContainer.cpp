@@ -70,9 +70,9 @@ void URadialMenuContainer::SetSelectedItem()
 {
 	if (HumanCharacter)
 	{
-		if (HumanCharacter->CombatComponent)
+		if (HumanCharacter->CombatComp)
 		{
-			switch (HumanCharacter->CombatComponent->CurEquipmentType)
+			switch (HumanCharacter->CombatComp->CurEquipmentType)
 			{
 			case EEquipmentType::Primary:
 				RadialMenuEquipment->SetSelectedItem(0);
@@ -194,19 +194,19 @@ void URadialMenuContainer::CloseRadialMenuInternal()
 			{
 				if (RadialMenuEquipment->SelectedItemIndex == 0)
 				{
-					HumanCharacter->SwapPrimaryEquipmentButtonPressed();
+					HumanCharacter->SendSwapEquipmentEvent(EEquipmentType::Primary);
 				}
 				else if (RadialMenuEquipment->SelectedItemIndex == 1)
 				{
-					HumanCharacter->SwapSecondaryEquipmentButtonPressed();
+					HumanCharacter->SendSwapEquipmentEvent(EEquipmentType::Secondary);
 				}
 				else if (RadialMenuEquipment->SelectedItemIndex == 2)
 				{
-					HumanCharacter->SwapMeleeEquipmentButtonPressed();
+					HumanCharacter->SendSwapEquipmentEvent(EEquipmentType::Melee);
 				}
 				else if (RadialMenuEquipment->SelectedItemIndex == 3)
 				{
-					HumanCharacter->SwapThrowingEquipmentButtonPressed();
+					HumanCharacter->SendSwapEquipmentEvent(EEquipmentType::Throwing);
 				}
 			}
 			// 突变体

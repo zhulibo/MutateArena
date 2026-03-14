@@ -1,5 +1,6 @@
 #include "StateTreeTask_Mutant.h"
 
+#include "AbilitySystemComponent.h"
 #include "InputActionValue.h"
 #include "StateTreeExecutionContext.h"
 #include "NavigationSystem.h"
@@ -9,6 +10,7 @@
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "MutateArena/Characters/MutantCharacter.h"
 #include "MutateArena/PlayerStates/BasePlayerState.h"
+#include "MutateArena/System/Tags/ProjectTags.h"
 
 // 追逐目标
 EStateTreeRunStatus FStateTreeTask_MutantChase::EnterState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const
@@ -195,11 +197,17 @@ EStateTreeRunStatus FStateTreeTask_MutantAttack::Tick(FStateTreeExecutionContext
 
 		PC->SetControlRotation(NewRot);
 	}
-
-	// 当动画蒙太奇结束（通过AnimNotify将状态重置为Ready）时，任务成功
-	if (MyMutantCharacter->MutantState == EMutantState::Ready)
+	
+	if (UAbilitySystemComponent* ASC = MyMutantCharacter->GetAbilitySystemComponent())
 	{
-		return EStateTreeRunStatus::Succeeded;
+		if (!ASC->HasMatchingGameplayTag(TAG_ABILITY_MUTANT_ATTACK))
+		{
+			return EStateTreeRunStatus::Succeeded;
+		}
+	}
+	else
+	{
+		return EStateTreeRunStatus::Failed;
 	}
 
 	return EStateTreeRunStatus::Running;

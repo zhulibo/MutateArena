@@ -7,14 +7,6 @@
 #include "MutateArena/System/Interfaces/Interactable.h"
 #include "MutantCharacter.generated.h"
 
-UENUM(BlueprintType)
-enum class EMutantState : uint8
-{
-	Ready,
-	LightAttacking,
-	HeavyAttacking,
-};
-
 enum class EMutantCharacterName : uint8;
 enum class ESpawnMutantReason : uint8;
 
@@ -53,13 +45,10 @@ protected:
 
 	UPROPERTY()
 	class AMutationMode* MutationMode;
-public:
-	EMutantState MutantState;
-protected:
 	UPROPERTY()
 	class AMutationController* MutationController;
 	UPROPERTY()
-	class UAnimInstance_Mutant* AnimInstance_Mutant;
+	class UAnimInstMutant* AnimInstMutant;
 	
 	virtual void OnLocallyControllerReady() override;
 	
@@ -69,8 +58,6 @@ public:
 	ESpawnMutantReason SpawnMutantReason;
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UGameplayAbilityBase> SkillAbility;
-	UPROPERTY(EditAnywhere)
-	TSubclassOf<UGameplayEffect> SkillEffect;
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<UGameplayEffect> LevelUpEffect;
 protected:
@@ -94,35 +81,18 @@ public:
 	virtual void LightAttackButtonReleased(const FInputActionValue& Value);
 	virtual void HeavyAttackButtonPressed(const FInputActionValue& Value);
 	virtual void HeavyAttackButtonReleased(const FInputActionValue& Value);
-protected:
-	UFUNCTION(Server, Reliable)
-	void ServerLightAttack();
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastLightAttack();
-	void LocalLightAttack();
-	UFUNCTION(Server, Reliable)
-	void ServerHeavyAttack();
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastHeavyAttack();
-	void LocalHeavyAttack();
-	
-	bool bIsCombo = false;
-	UFUNCTION(Server, Reliable)
-	void ServerSetIsCombo(bool TempBIsCombo);
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastSetIsCombo(bool TempBIsCombo);
-public:
-	void AttackFirstSectionEnd();
+	UPROPERTY(Replicated)
+	bool bIsLightAttack = false;
 protected:
 	UPROPERTY()
 	float LightAttackDamage = 0.f;
 	UPROPERTY()
 	float HeavyAttackDamage = 0.f;
+public:
 	UPROPERTY()
 	TArray<AActor*> RightHandHitEnemies;
 	UPROPERTY()
 	TArray<AActor*> LeftHandHitEnemies;
-public:
 	virtual void RightHandAttackBegin();
 	virtual void RightHandAttackEnd();
 	virtual void LeftHandAttackBegin();

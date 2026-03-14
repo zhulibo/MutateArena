@@ -232,22 +232,6 @@ void ABaseController::HandleLeavingMap()
 	}
 }
 
-void ABaseController::SetHUDAmmo(int32 Ammo)
-{
-	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
-	{
-		UISubsystem->OnAmmoChange.Broadcast(Ammo);
-	}
-}
-
-void ABaseController::SetHUDCarriedAmmo(int32 CarriedAmmo)
-{
-	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
-	{
-		UISubsystem->OnCarriedAmmoChange.Broadcast(CarriedAmmo);
-	}
-}
-
 void ABaseController::ServerSendMsg_Implementation(EMsgType MsgType, ETeam Team, const FString& PlayerName, const FString& Msg)
 {
 	if (BaseGameState == nullptr) BaseGameState = GetWorld()->GetGameState<ABaseGameState>();

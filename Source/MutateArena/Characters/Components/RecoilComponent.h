@@ -4,7 +4,6 @@
 #include "Components/ActorComponent.h"
 #include "RecoilComponent.generated.h"
 
-enum class ECombatState : uint8;
 enum class EEquipmentType : uint8;
 
 /**

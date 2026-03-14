@@ -1,5 +1,7 @@
 #include "StateTreeTask_Human.h"
 
+#include "AbilitySystemComponent.h"
+#include "AbilitySystemGlobals.h"
 #include "InputActionValue.h"
 #include "StateTreeExecutionContext.h"
 #include "NavigationSystem.h"
@@ -8,9 +10,9 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "MutateArena/Characters/Components/CombatComponent.h"
-#include "MutateArena/Characters/Components/CombatStateType.h"
 #include "MutateArena/Equipments/Weapon.h"
 #include "MutateArena/PlayerStates/BasePlayerState.h"
+#include "MutateArena/System/Tags/ProjectTags.h"
 
 // 追逐目标
 EStateTreeRunStatus FStateTreeTask_HumanChase::EnterState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const
@@ -159,9 +161,9 @@ EStateTreeRunStatus FStateTreeTask_HumanFire::EnterState(FStateTreeExecutionCont
 		}
 	}
 	
-	if (MyHumanCharacter->CombatComponent)
+	if (MyHumanCharacter->CombatComp)
 	{
-		if (AWeapon* Weapon = MyHumanCharacter->CombatComponent->GetCurWeapon())
+		if (AWeapon* Weapon = MyHumanCharacter->CombatComp->GetCurWeapon())
 		{
 			if (Weapon->Ammo != 0)
 			{
@@ -204,9 +206,9 @@ EStateTreeRunStatus FStateTreeTask_HumanFire::Tick(FStateTreeExecutionContext& C
 	}
 	
 	// 没有弹药了
-	if (MyHumanCharacter->CombatComponent)
+	if (MyHumanCharacter->CombatComp)
 	{
-		if (AWeapon* Weapon = MyHumanCharacter->CombatComponent->GetCurWeapon())
+		if (AWeapon* Weapon = MyHumanCharacter->CombatComp->GetCurWeapon())
 		{
 			if (Weapon->Ammo == 0)
 			{
@@ -264,12 +266,12 @@ void FStateTreeTask_HumanFire::ExitState(FStateTreeExecutionContext& Context, co
 EStateTreeRunStatus FStateTreeTask_HumanReload::EnterState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const
 {
 	AHumanCharacter* MyHumanCharacter = Cast<AHumanCharacter>(Context.GetOwner());
-	if (MyHumanCharacter ==nullptr || MyHumanCharacter->CombatComponent == nullptr)
+	if (MyHumanCharacter ==nullptr || MyHumanCharacter->CombatComp == nullptr)
 	{
 		return EStateTreeRunStatus::Failed;
 	}
 	
-	if (AWeapon* Weapon = MyHumanCharacter->CombatComponent->GetCurWeapon())
+	if (AWeapon* Weapon = MyHumanCharacter->CombatComp->GetCurWeapon())
 	{
 		if (Weapon->Ammo == 0)
 		{
@@ -285,17 +287,22 @@ EStateTreeRunStatus FStateTreeTask_HumanReload::EnterState(FStateTreeExecutionCo
 EStateTreeRunStatus FStateTreeTask_HumanReload::Tick(FStateTreeExecutionContext& Context, const float DeltaTime) const
 {
 	AHumanCharacter* MyHumanCharacter = Cast<AHumanCharacter>(Context.GetOwner());
-	if (MyHumanCharacter == nullptr || MyHumanCharacter->CombatComponent == nullptr)
+	if (MyHumanCharacter == nullptr || MyHumanCharacter->CombatComp == nullptr)
 	{
 		return EStateTreeRunStatus::Failed;
 	}
-
-	if (MyHumanCharacter->CombatComponent->CombatState == ECombatState::Reloading)
+	
+	UAbilitySystemComponent* ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(MyHumanCharacter);
+	if (ASC == nullptr)
 	{
-		return EStateTreeRunStatus::Running;
+		return EStateTreeRunStatus::Failed;
+	}
+	if (ASC->HasMatchingGameplayTag(TAG_STATE_COMBAT_RELOADING))
+	{
+	   return EStateTreeRunStatus::Running;
 	}
 
-	if (AWeapon* Weapon = MyHumanCharacter->CombatComponent->GetCurWeapon())
+	if (AWeapon* Weapon = MyHumanCharacter->CombatComp->GetCurWeapon())
 	{
 		if (Weapon->Ammo > 0 || Weapon->CarriedAmmo == 0)
 		{

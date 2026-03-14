@@ -20,5 +20,10 @@ public:
 	UPROPERTY(EditAnywhere)
 	UAnimMontage* ThrowMontage_E;
 	virtual void ThrowOut();
-
+	
+protected:
+	virtual void BeginPlay() override;
+	
+	virtual void OnRep_EquipmentState(EEquipmentState OldState) override;
+	
 };

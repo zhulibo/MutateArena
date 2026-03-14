@@ -14,7 +14,8 @@ void APickupEquipment::BeginPlay()
 	if (HasAuthority())
 	{
 		Equipment = GetWorld()->SpawnActor<AEquipment>(EquipmentClass);
-		Equipment->MulticastHiddenMesh();
+		
+		Equipment->SetHiddenMesh(true);
 	}
 }
 
@@ -22,9 +23,9 @@ void APickupEquipment::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	// 取消补给箱装备隐藏
-	if (Equipment)
+	if (HasAuthority() && Equipment)
 	{
-		Equipment->EquipmentMesh->SetVisibility(true);
+		Equipment->SetHiddenMesh(false);
 	}
 
 	AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(OtherActor);
@@ -33,4 +34,6 @@ void APickupEquipment::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent,
 		HumanCharacter->bCanSwitchLoadout = false;
 		HumanCharacter->ServerGivePickupEquipment(this);
 	}
+	
+	// 此处未销毁，在赋予枪械逻辑里销毁
 }

@@ -1,4 +1,6 @@
 #include "AN_AttachToLeftHand.h"
+
+#include "MutateArena/MutateArena.h"
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "MutateArena/Characters/Components/CombatComponent.h"
 
@@ -8,8 +10,8 @@ void UAN_AttachToLeftHand::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenc
 	Super::Notify(MeshComp, Animation, EventReference);
 
 	AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(MeshComp->GetOwner());
-	if (HumanCharacter && HumanCharacter->CombatComponent)
+	if (HumanCharacter && HumanCharacter->CombatComp)
 	{
-		HumanCharacter->CombatComponent->AttachToLeftHand(HumanCharacter->CombatComponent->GetCurEquipment());
+		HumanCharacter->CombatComp->AttachToHand(HumanCharacter->CombatComp->GetCurEquipment(), SOCKET_SUFFIX_L);
 	}
 }

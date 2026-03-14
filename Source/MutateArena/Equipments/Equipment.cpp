@@ -1,7 +1,9 @@
 #include "Equipment.h"
 
+#include "AbilitySystemComponent.h"
 #include "DataRegistrySubsystem.h"
-#include "AnimInstance_Equipment.h"
+#include "AnimInstEquipment.h"
+#include "GameplayAbilitySpec.h"
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "Animation/AnimationAsset.h"
 #include "MutateArena/MutateArena.h"
@@ -27,6 +29,8 @@ AEquipment::AEquipment()
 	CollisionSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	CollisionSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
 	CollisionSphere->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore); // 忽略角色胶囊体
+	CollisionSphere->SetCollisionResponseToChannel(ECC_MESH_TEAM1, ECollisionResponse::ECR_Ignore);
+	CollisionSphere->SetCollisionResponseToChannel(ECC_MESH_TEAM2, ECollisionResponse::ECR_Ignore);
 	CollisionSphere->SetLinearDamping(1.f);
 	CollisionSphere->SetSphereRadius(20.f); // 离地面的距离
 
@@ -55,13 +59,13 @@ void AEquipment::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifeti
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ThisClass, OwnerTeam);
+	DOREPLIFETIME(ThisClass, bIsHidden);
+	DOREPLIFETIME(ThisClass, EquipmentState);
 }
 
 void AEquipment::BeginPlay()
 {
 	Super::BeginPlay();
-
-	SetReplicateMovement(true);
 
 	FString EnumValue = ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(EquipmentName));
 	FDataRegistryId DataRegistryId(DR_EQUIPMENT_MAIN, FName(EnumValue));
@@ -99,25 +103,44 @@ void AEquipment::OnAreaSphereOverlap(UPrimitiveComponent* OverlappedComponent, A
 
 	if (AHumanCharacter* OverlapHumanCharacter = Cast<AHumanCharacter>(OtherActor))
 	{
-		OverlapHumanCharacter->EquipOverlappingEquipment(this);
+		OverlapHumanCharacter->ServerEquipOverlappingEquipment(this);
 	}
 }
 
-UAnimInstance_Equipment* AEquipment::GetEquipmentAnimInstance()
+UAnimInstEquipment* AEquipment::GetEquipmentAnimInst()
 {
-	if (EquipmentAnimInstance == nullptr) EquipmentAnimInstance = Cast<UAnimInstance_Equipment>(EquipmentMesh->GetAnimInstance());
-	return EquipmentAnimInstance;
+	if (EquipmentAnimInst == nullptr) EquipmentAnimInst = Cast<UAnimInstEquipment>(EquipmentMesh->GetAnimInstance());
+	return EquipmentAnimInst;
 }
 
-void AEquipment::MulticastHiddenMesh_Implementation()
+void AEquipment::SetHiddenMesh(bool TempbIsHidden)
 {
-	EquipmentMesh->SetVisibility(false);
+	bIsHidden = TempbIsHidden;
+
+	OnRep_IsHidden(); 
 }
 
-void AEquipment::OnEquip()
+void AEquipment::OnRep_IsHidden()
+{
+	if (EquipmentMesh)
+	{
+		EquipmentMesh->SetVisibility(!bIsHidden);
+	}
+}
+
+void AEquipment::OnEquip(class AHumanCharacter* HumanChar)
 {
 	EquipmentState = EEquipmentState::Equipped;
 
+	if (HumanChar->HasAuthority())
+	{
+		SetReplicateMovement(false);
+		
+		SetOwner(HumanChar);
+	}
+
+	SetOwnerTeam();
+	
 	// 清除销毁定时器
 	GetWorldTimerManager().ClearTimer(DestroyEquipmentTimerHandle);
 
@@ -126,58 +149,78 @@ void AEquipment::OnEquip()
 	CollisionSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	OverlapSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-
-	SetOwnerTeam();
-
-	// 缓存BaseController
-	if (HumanCharacter == nullptr) HumanCharacter = Cast<AHumanCharacter>(GetOwner());
-	if (HumanCharacter) BaseController = Cast<ABaseController>(HumanCharacter->GetController());
-}
-
-void AEquipment::SetOwnerTeam()
-{
-	if (HumanCharacter == nullptr) HumanCharacter = Cast<AHumanCharacter>(GetOwner());
-	if (HumanCharacter)
-	{
-		if (ABasePlayerState* PlayerState = Cast<ABasePlayerState>(HumanCharacter->GetPlayerState()))
-		{
-			OwnerTeam = PlayerState->Team;
-		}
-	}
 }
 
 void AEquipment::Drop()
 {
 	EquipmentState = EEquipmentState::Dropped;
 
+	if (HasAuthority())
+	{
+		SetReplicateMovement(true);
+	}
+	
+	HandleDrop();
+}
+
+
+void AEquipment::OnRep_EquipmentState(EEquipmentState OldState)
+{
+	if (EquipmentState == EEquipmentState::Dropped)
+	{
+		HandleDrop();
+	}
+	else if (EquipmentState == EEquipmentState::Equipped)
+	{
+		// OnEquip 在所有端都调用了，这里不用处理
+	}
+}
+
+void AEquipment::HandleDrop()
+{
+	FDetachmentTransformRules DetachRules(EDetachmentRule::KeepWorld, true);
+	CollisionSphere->DetachFromComponent(DetachRules);
+	
+	// 重置旋转，确保掉落时始终朝上平躺
+	FRotator CurrentRotation = GetActorRotation();
+	CurrentRotation.Pitch = 0.f;
+	CurrentRotation.Roll = 0.f;
+	SetActorRotation(CurrentRotation);
+	
 	CollisionSphere->SetSimulatePhysics(true);
 	CollisionSphere->SetEnableGravity(true);
 	CollisionSphere->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 
+	// 丢弃武器时，给予一个向前的冲量
+	if (AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(GetOwner()))
+	{
+		if (UCameraComponent* CameraComponent = HumanCharacter->FindComponentByClass<UCameraComponent>())
+		{
+			float Impulse = HumanCharacter->bIsDead ? 100.f : 400.f;
+			CollisionSphere->AddImpulse(CameraComponent->GetForwardVector() * Impulse, NAME_None, true);
+		}
+	}
+	
 	// HACK 延迟开启AreaSphere碰撞 确保武器已被丢出当前角色的Overlap区域
 	FTimerHandle TimerHandle;
 	GetWorldTimerManager().SetTimer(TimerHandle, this, &ThisClass::SetAreaSphereCollision, .4f);
 
 	// 丢弃一定时间后销毁
-	GetWorldTimerManager().SetTimer(DestroyEquipmentTimerHandle, this, &ThisClass::DestroyEquipment, 20.f);
+	GetWorldTimerManager().SetTimer(DestroyEquipmentTimerHandle, this, &ThisClass::DestroyEquipment, 15.f);
+	
+	SetOwner(nullptr);
+	OwnerTeam = ETeam::NoTeam;
+}
 
-	FDetachmentTransformRules DetachRules(EDetachmentRule::KeepWorld, true);
-	CollisionSphere->DetachFromComponent(DetachRules);
-	// 丢弃武器时，给予一个向前的冲量
-	if (HumanCharacter == nullptr) HumanCharacter = Cast<AHumanCharacter>(GetOwner());
-	if (HumanCharacter)
+void AEquipment::SetOwnerTeam()
+{
+	if (AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(GetOwner()))
 	{
-		if (UCameraComponent* CameraComponent = HumanCharacter->FindComponentByClass<UCameraComponent>())
+		if (ABasePlayerState* PlayerState = Cast<ABasePlayerState>(HumanCharacter->GetPlayerState()))
 		{
-			float Impulse = HumanCharacter->bIsDead ? 100.f : 300.f;
-			CollisionSphere->AddImpulse(CameraComponent->GetForwardVector() * Impulse, NAME_None, true);
+			OwnerTeam = PlayerState->Team;
 		}
 	}
-
-	SetOwner(nullptr);
-	HumanCharacter = nullptr;
-	BaseController = nullptr;
-	OwnerTeam = ETeam::NoTeam;
 }
 
 void AEquipment::SetAreaSphereCollision()
@@ -188,4 +231,32 @@ void AEquipment::SetAreaSphereCollision()
 void AEquipment::DestroyEquipment()
 {
 	Destroy();
+}
+
+void AEquipment::GiveAbilities(UAbilitySystemComponent* ASC)
+{
+	if (!ASC || !HasAuthority()) return; 
+
+	for (TSubclassOf<UGameplayAbility> AbilityClass :Abilities)
+	{
+		if (AbilityClass)
+		{
+			FGameplayAbilitySpec Spec(AbilityClass, 1, INDEX_NONE, this);
+            
+			FGameplayAbilitySpecHandle Handle = ASC->GiveAbility(Spec);
+			GrantedAbilityHandles.Add(Handle);
+		}
+	}
+}
+
+void AEquipment::ClearAbilities(UAbilitySystemComponent* ASC)
+{
+	if (!ASC || !HasAuthority()) return;
+
+	for (FGameplayAbilitySpecHandle Handle : GrantedAbilityHandles)
+	{
+		ASC->ClearAbility(Handle);
+	}
+    
+	GrantedAbilityHandles.Empty();
 }

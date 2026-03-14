@@ -38,9 +38,9 @@ void FStateTreeEvaluator_HumanAmmo::Tick(FStateTreeExecutionContext& Context, co
 	FInstanceDataType& InstanceData = Context.GetInstanceData<FInstanceDataType>(*this);
 	
 	AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(Context.GetOwner());
-	if (HumanCharacter == nullptr || HumanCharacter->CombatComponent == nullptr) return;
+	if (HumanCharacter == nullptr || HumanCharacter->CombatComp == nullptr) return;
 
-	if (AWeapon* Weapon = HumanCharacter->CombatComponent->GetCurWeapon())
+	if (AWeapon* Weapon = HumanCharacter->CombatComp->GetCurWeapon())
 	{
 		InstanceData.Ammo = Weapon->Ammo;
 		InstanceData.CarriedAmmo = Weapon->CarriedAmmo;

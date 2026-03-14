@@ -323,7 +323,7 @@ void AMutationMode::RoundStartMutate()
 	GetWorldTimerManager().SetTimer(SpawnPickupTimerHandle, this, &ThisClass::SpawnPickups, 40.f, true, 35.f);
 	// 定时生成草药
 	GetWorldTimerManager().SetTimer(SpawnHerbRageTimerHandle, this, &ThisClass::SpawnHerbRages, FMath::FRandRange(10.f, 20.f));
-	GetWorldTimerManager().SetTimer(SpawnHerbRepelReceivedTimerHandle, this, &ThisClass::SpawnHerbRepelReceived, 10.f);
+	GetWorldTimerManager().SetTimer(SpawnHerbRepelReceivedTimerHandle, this, &ThisClass::SpawnHerbRepelReceived, 100.f);
 }
 
 // 人类受到伤害
@@ -385,7 +385,7 @@ void AMutationMode::HumanReceiveDamage(AHumanCharacter* DamagedCharacter, ABaseC
 
 // 人类受到感染
 void AMutationMode::GetInfect(AHumanCharacter* DamagedCharacter, ABaseController* DamagedController,
-	AMutantCharacter* AttackerCharacter, ABaseController* AttackerController, EMutantState MutantState)
+	AMutantCharacter* AttackerCharacter, ABaseController* AttackerController)
 {
 	if (DamagedCharacter == nullptr || DamagedController == nullptr || AttackerController == nullptr) return;
 
@@ -608,7 +608,7 @@ void AMutationMode::SpawnPickups()
 		if (SelectedStartPoints[i] == nullptr) continue;
 		// 生成
 		FActorSpawnParameters SpawnParams;
-		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::DontSpawnIfColliding;
 		GetWorld()->SpawnActor<APickup>(
 			PickupClasses[FMath::RandRange(0, PickupClasses.Num() - 1)],
 			SelectedStartPoints[i]->GetActorLocation(),
@@ -655,7 +655,7 @@ void AMutationMode::SpawnHerbRages()
 		if (SelectedStartPoints[i] == nullptr) continue;
 		// 生成
 		FActorSpawnParameters SpawnParams;
-		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::DontSpawnIfColliding;
 		GetWorld()->SpawnActor<AHerbRage>(
 			HerbRageClasses[FMath::RandRange(0, HerbRageClasses.Num() - 1)],
 			SelectedStartPoints[i]->GetActorLocation(),
@@ -693,7 +693,7 @@ void AMutationMode::SpawnHerbRepelReceived()
 		if (SelectedStartPoints[i] == nullptr) continue;
 		// 生成
 		FActorSpawnParameters SpawnParams;
-		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::DontSpawnIfColliding;
 		GetWorld()->SpawnActor<AHerbRepelReceived>(
 			HerbRepelReceivedClasses[FMath::RandRange(0, HerbRepelReceivedClasses.Num() - 1)],
 			SelectedStartPoints[i]->GetActorLocation(),
