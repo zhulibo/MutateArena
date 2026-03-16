@@ -22,8 +22,10 @@
 #include "MutateArena/System/Storage/SaveGameSetting.h"
 #include "MutateArena/Utils/LibraryCommon.h"
 #include "Camera/CameraComponent.h"
+#include "Components/AutoHostComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/DecalComponent.h"
+#include "Components/InteractorComponent.h"
 #include "Components/OverheadWidget.h"
 #include "Components/WidgetComponent.h"
 #include "Data/CharacterAsset.h"
@@ -37,7 +39,6 @@
 #include "MutateArena/Assets/Data/CommonAsset.h"
 #include "MutateArena/System/DevSetting.h"
 #include "MutateArena/System/UISubsystem.h"
-#include "MutateArena/System/Interfaces/Interactable.h"
 #include "MutateArena/UI/TextChat/TextChat.h"
 #include "MutateArena/Utils/LibraryNotify.h"
 #include "Net/UnrealNetwork.h"
@@ -88,11 +89,13 @@ ABaseCharacter::ABaseCharacter()
 
 	Tags.Add(TAG_CHARACTER_BASE);
 	
-	StateTreeComponent = CreateDefaultSubobject<UStateTreeComponent>(TEXT("StateTreeComponent"));
-	StateTreeComponent->SetStartLogicAutomatically(false);
+	InteractorComp = CreateDefaultSubobject<UInteractorComponent>(TEXT("InteractorComponent"));
 	
-	AIPerceptionComponent = CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("AIPerceptionComponent"));
-	AIPerceptionComponent->SetAutoActivate(false);
+	StateTreeComp = CreateDefaultSubobject<UStateTreeComponent>(TEXT("StateTreeComponent"));
+	StateTreeComp->SetStartLogicAutomatically(false);
+	
+	AIPerceptionComp = CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("AIPerceptionComponent"));
+	AIPerceptionComp->SetAutoActivate(false);
 	SightConfig = CreateDefaultSubobject<UAISenseConfig_Sight>(TEXT("SightConfig"));
 	SightConfig->SightRadius = 2000.0f; // 视野半径
 	SightConfig->LoseSightRadius = 2200.0f; // 丢失视野半径
@@ -102,12 +105,14 @@ ABaseCharacter::ABaseCharacter()
 	SightConfig->DetectionByAffiliation.bDetectEnemies = true;
 	SightConfig->DetectionByAffiliation.bDetectNeutrals = true;
 	SightConfig->DetectionByAffiliation.bDetectFriendlies = true;
-	AIPerceptionComponent->ConfigureSense(*SightConfig);
-	AIPerceptionComponent->SetDominantSense(SightConfig->GetSenseImplementation());
+	AIPerceptionComp->ConfigureSense(*SightConfig);
+	AIPerceptionComp->SetDominantSense(SightConfig->GetSenseImplementation());
 
-	StimuliSourceComponent = CreateDefaultSubobject<UAIPerceptionStimuliSourceComponent>(TEXT("StimuliSourceComponent"));
-	StimuliSourceComponent->RegisterForSense(UAISense_Sight::StaticClass());
-	StimuliSourceComponent->RegisterWithPerceptionSystem();
+	StimuliSourceComp = CreateDefaultSubobject<UAIPerceptionStimuliSourceComponent>(TEXT("StimuliSourceComponent"));
+	StimuliSourceComp->RegisterForSense(UAISense_Sight::StaticClass());
+	StimuliSourceComp->RegisterWithPerceptionSystem();
+	
+	AutoHostComp = CreateDefaultSubobject<UAutoHostComponent>(TEXT("AutoHostComponent"));
 }
 
 void ABaseCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -115,6 +120,7 @@ void ABaseCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ThisClass, ControllerPitch);
+	DOREPLIFETIME(ThisClass, bIsDead);
 }
 
 void ABaseCharacter::PostInitializeComponents()
@@ -180,22 +186,11 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		EIC->BindAction(AssetSubsystem->InputAsset->CrouchAction, ETriggerEvent::Completed, this, &ThisClass::CrouchButtonReleased);
 		EIC->BindAction(AssetSubsystem->InputAsset->CrouchControllerAction, ETriggerEvent::Triggered, this, &ThisClass::CrouchControllerButtonPressed);
 		
-		EIC->BindAction(AssetSubsystem->InputAsset->InteractAction, ETriggerEvent::Started, this, &ThisClass::InteractStarted);
-		EIC->BindAction(AssetSubsystem->InputAsset->InteractAction, ETriggerEvent::Ongoing, this, &ThisClass::InteractOngoing);
-		EIC->BindAction(AssetSubsystem->InputAsset->InteractAction, ETriggerEvent::Triggered, this, &ThisClass::InteractTriggered);
-		EIC->BindAction(AssetSubsystem->InputAsset->InteractAction, ETriggerEvent::Completed, this, &ThisClass::InteractCompleted);
-		EIC->BindAction(AssetSubsystem->InputAsset->InteractAction, ETriggerEvent::Canceled, this, &ThisClass::InteractCanceled);
-
-		EIC->BindAction(AssetSubsystem->InputAsset->ScoreboardAction, ETriggerEvent::Triggered, this, &ThisClass::ScoreboardButtonPressed);
-		EIC->BindAction(AssetSubsystem->InputAsset->ScoreboardAction, ETriggerEvent::Completed, this, &ThisClass::ScoreboardButtonReleased);
-		EIC->BindAction(AssetSubsystem->InputAsset->PauseMenuAction, ETriggerEvent::Triggered, this, &ThisClass::PauseMenuButtonPressed);
-
-		EIC->BindAction(AssetSubsystem->InputAsset->RadialMenuAction, ETriggerEvent::Triggered, this, &ThisClass::RadialMenuButtonPressed);
-		EIC->BindAction(AssetSubsystem->InputAsset->RadialMenuAction, ETriggerEvent::Completed, this, &ThisClass::RadialMenuButtonReleased);
-		EIC->BindAction(AssetSubsystem->InputAsset->RadialMenuSwitchAction, ETriggerEvent::Triggered, this, &ThisClass::RadialMenuSwitchButtonPressed);
-		EIC->BindAction(AssetSubsystem->InputAsset->RadialMenuSelectAction, ETriggerEvent::Triggered, this, &ThisClass::RadialMenuSelect);
-
-		EIC->BindAction(AssetSubsystem->InputAsset->TextChatAction, ETriggerEvent::Triggered, this, &ThisClass::TextChat);
+		EIC->BindAction(AssetSubsystem->InputAsset->InteractAction, ETriggerEvent::Started, InteractorComp, &UInteractorComponent::InteractStarted);
+		EIC->BindAction(AssetSubsystem->InputAsset->InteractAction, ETriggerEvent::Ongoing, InteractorComp, &UInteractorComponent::InteractOngoing);
+		EIC->BindAction(AssetSubsystem->InputAsset->InteractAction, ETriggerEvent::Triggered, InteractorComp, &UInteractorComponent::InteractTriggered);
+		EIC->BindAction(AssetSubsystem->InputAsset->InteractAction, ETriggerEvent::Completed, InteractorComp, &UInteractorComponent::InteractCompleted);
+		EIC->BindAction(AssetSubsystem->InputAsset->InteractAction, ETriggerEvent::Canceled, InteractorComp, &UInteractorComponent::InteractCanceled);
 	}
 }
 
@@ -262,11 +257,13 @@ void ABaseCharacter::PollInit_ControllerAndPSAndTeam()
 void ABaseCharacter::OnLocallyControllerReady()
 {
 	// 只有本地激活感知
-	AIPerceptionComponent->Activate(true);
+	AIPerceptionComp->Activate(true);
 	
 	// 检测挂机
-	LastActiveTime = GetWorld()->GetTimeSeconds();
-	GetWorldTimerManager().SetTimer(AFKCheckTimerHandle, this, &ThisClass::CheckIdleStatus, 1.0f, true);
+	if (AutoHostComp)
+	{
+		AutoHostComp->StartAFKCheck();
+	}
 }
 
 // 计算俯仰
@@ -300,7 +297,6 @@ float ABaseCharacter::MappingAimPitch(float TempAimPitch)
 		FVector2D OutRange(0.f, -90.f);
 		TempAimPitch = FMath::GetMappedRangeValueClamped(InRange, OutRange, TempAimPitch);
 	}
-
 	return TempAimPitch;
 }
 
@@ -352,7 +348,6 @@ void ABaseCharacter::Destroyed()
 void ABaseCharacter::OnInputMethodChanged(ECommonInputType TempInputType)
 {
 	UE_LOG(LogTemp, Warning, TEXT("OnInputMethodChanged: %d"), TempInputType);
-
 	ServerSetInputType(TempInputType);
 }
 
@@ -546,266 +541,8 @@ void ABaseCharacter::CrouchControllerButtonPressed(const FInputActionValue& Valu
 	}
 }
 
-void ABaseCharacter::TraceInteractTarget(FHitResult& OutHit)
+void ABaseCharacter::OnRep_bIsDead()
 {
-	FVector Start = Camera->GetComponentLocation();
-	FVector End = Start + Camera->GetForwardVector() * 160.f;
-
-	// DrawDebugLine(GetWorld(), Start, End, C_YELLOW, true);
-
-	FCollisionQueryParams QueryParams;
-	TArray<AActor*> TeamPlayers;
-	
-	if (BaseGameState == nullptr) BaseGameState = GetWorld()->GetGameState<ABaseGameState>();
-	if (BaseGameState)
-	{
-		QueryParams.AddIgnoredActors(BaseGameState->AllEquipments);
-
-		TArray<ABasePlayerState*> PlayerStates = BaseGameState->GetPlayerStates({});
-		for (int32 i = 0; i < PlayerStates.Num(); ++i)
-		{
-			if (PlayerStates[i] && PlayerStates[i]->GetHealth() > 0.f)
-			{
-				TeamPlayers.AddUnique(PlayerStates[i]->GetPawn());
-			}
-		}
-	}
-	QueryParams.AddIgnoredActors(TeamPlayers);
-	
-	GetWorld()->SweepSingleByChannel(
-		OutHit,
-		Start,
-		End,
-		FQuat::Identity,
-		ECollisionChannel::ECC_Visibility,
-		FCollisionShape::MakeSphere(10.f),
-		QueryParams
-	);
-}
-
-void ABaseCharacter::InteractStarted(const FInputActionValue& Value)
-{
-	FHitResult OutHit;
-	TraceInteractTarget(OutHit);
-	
-	if (OutHit.bBlockingHit)
-	{
-		if (IInteractable* Target = Cast<IInteractable>(OutHit.GetActor()))
-		{
-			if (Target->CanInteract())
-			{
-				InteractTarget = OutHit.GetActor();
-
-				if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
-				if (BaseController)
-				{
-					if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
-					{
-						UISubsystem->OnInteractStarted.Broadcast();
-					}
-				}
-				
-				return;
-			}
-		}
-	}
-
-	InteractTarget = nullptr;
-}
-
-void ABaseCharacter::InteractOngoing(const FInputActionValue& Value)
-{
-	if (InteractTarget != nullptr)
-	{
-		FHitResult OutHit;
-		TraceInteractTarget(OutHit);
-		if (OutHit.bBlockingHit)
-		{
-			if (InteractTarget == OutHit.GetActor())
-			{
-				if (IInteractable* Target = Cast<IInteractable>(OutHit.GetActor()))
-				{
-					if (Target->CanInteract())
-					{
-						return;
-					}
-				}
-			}
-		}
-	}
-
-	// 停止交互
-	InteractTarget = nullptr;
-	if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
-	if (BaseController)
-	{
-		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
-		{
-			UISubsystem->OnInteractEnded.Broadcast();
-		}
-	}
-}
-
-void ABaseCharacter::InteractTriggered(const FInputActionValue& Value)
-{
-	if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
-	if (BaseController && InteractTarget)
-	{
-		if (IInteractable* Target = Cast<IInteractable>(InteractTarget))
-		{
-			Target->OnInteract(this);
-
-			ServerInteractTriggered(InteractTarget);
-		}
-	}
-}
-
-// 在服务端通知交互目标被交互了，以便复制到所有客户端（InteractTriggered中Target不是本地不能RPC）。
-void ABaseCharacter::ServerInteractTriggered_Implementation(AActor* TempInteractTarget)
-{
-	if (IInteractable* Target = Cast<IInteractable>(TempInteractTarget))
-	{
-		Target->OnInteract_Server();
-	}
-}
-
-void ABaseCharacter::InteractCompleted(const FInputActionValue& Value)
-{
-	InteractTarget = nullptr;
-
-	if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
-	if (BaseController)
-	{
-		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
-		{
-			UISubsystem->OnInteractEnded.Broadcast();
-		}
-	}
-}
-
-void ABaseCharacter::InteractCanceled(const FInputActionValue& Value)
-{
-	InteractTarget = nullptr;
-
-	if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
-	if (BaseController)
-	{
-		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
-		{
-			UISubsystem->OnInteractEnded.Broadcast();
-		}
-	}
-}
-
-void ABaseCharacter::ScoreboardButtonPressed(const FInputActionValue& Value)
-{
-	if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
-	if (BaseController)
-	{
-		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
-		{
-			UISubsystem->ShowScoreboard.Broadcast(true);
-		}
-	}
-}
-
-void ABaseCharacter::ScoreboardButtonReleased(const FInputActionValue& Value)
-{
-	if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
-	if (BaseController)
-	{
-		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
-		{
-			UISubsystem->ShowScoreboard.Broadcast(false);
-		}
-	}
-}
-
-void ABaseCharacter::PauseMenuButtonPressed(const FInputActionValue& Value)
-{
-	if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
-	if (BaseController)
-	{
-		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
-		{
-			UISubsystem->ShowPauseMenu.Broadcast();
-		}
-	}
-}
-
-void ABaseCharacter::RadialMenuButtonPressed(const FInputActionValue& Value)
-{
-	// UE_LOG(LogTemp, Warning, TEXT("111 time: %f"), GetWorld()->GetTimeSeconds());
-	if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
-	if (BaseController)
-	{
-		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
-		{
-			UISubsystem->ShowRadialMenu.Broadcast(true);
-		}
-	}
-}
-
-void ABaseCharacter::RadialMenuButtonReleased(const FInputActionValue& Value)
-{
-	if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
-	if (BaseController)
-	{
-		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
-		{
-			UISubsystem->ShowRadialMenu.Broadcast(false);
-		}
-	}
-}
-
-void ABaseCharacter::RadialMenuSwitchButtonPressed(const FInputActionValue& Value)
-{
-	if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
-	if (BaseController)
-	{
-		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
-		{
-			UISubsystem->SwitchRadialMenu.Broadcast();
-		}
-	}
-}
-
-// 已关闭 项目-增强输入-应只触发弦中最后操作/bShouldOnlyTriggerLastActionInChord
-void ABaseCharacter::RadialMenuSelect(const FInputActionValue& Value)
-{
-	FVector2D AxisVector = Value.Get<FVector2D>();
-	if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
-	if (BaseController)
-	{
-		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
-		{
-			UISubsystem->SelectRadialMenu.Broadcast(AxisVector.X, AxisVector.Y);
-		}
-	}
-	// UE_LOG(LogTemp, Warning, TEXT("222 x y time: %f %f %f"), AxisVector.X, AxisVector.Y, GetWorld()->GetTimeSeconds());
-}
-
-void ABaseCharacter::TextChat(const FInputActionValue& Value)
-{
-	// TODO 手柄暂未处理
-	if (UCommonInputSubsystem* CommonInputSubsystem = UCommonInputSubsystem::Get(GetWorld()->GetFirstLocalPlayerFromController()))
-	{
-		if (CommonInputSubsystem->GetCurrentInputType() != ECommonInputType::MouseAndKeyboard)
-		{
-			return;
-		}
-	}
-
-	if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
-	if (BaseController)
-	{
-		BaseController->FocusUI();
-		
-		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
-		{
-			UISubsystem->ShowTextChat.Broadcast();
-		}
-	}
 }
 
 void ABaseCharacter::SetHealth(float TempHealth)
@@ -1123,118 +860,6 @@ void ABaseCharacter::SprayPaint(int32 RadioIndex)
 			}
 		}
 	}
-}
-
-void ABaseCharacter::UpdateActiveTime(const FInputActionValue& Value)
-{
-	LastActiveTime = GetWorld()->GetTimeSeconds();
- 
-	if (bIsAutoHosting)
-	{
-		StopAutoHost();
-	}
-}
-
-void ABaseCharacter::CheckIdleStatus()
-{
-	const float CurrentTime = GetWorld()->GetTimeSeconds();
-	
-	float AFKHostingTime = 30.f;
-	if (GetWorld()->WorldType == EWorldType::PIE)
-	{
-		AFKHostingTime = GetDefault<UDevSetting>()->AFKHostingTime;
-	}
-	if (CurrentTime - LastActiveTime > AFKHostingTime)
-	{
-		if (!bIsAutoHosting)
-		{
-			StartAutoHost();
-		}
-	}
-}
-
-void ABaseCharacter::StartAutoHost()
-{
-	bIsAutoHosting = true;
-	if (StateTreeComponent)
-	{
-		StateTreeComponent->StartLogic();
-		
-		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
-		{
-			UISubsystem->OnAFKHosting.Broadcast(true);
-		}
-	}
-}
-
-void ABaseCharacter::StopAutoHost()
-{
-	bIsAutoHosting = false;
-	if (StateTreeComponent)
-	{
-		StateTreeComponent->StopLogic(TEXT("PlayerInput"));
-		
-		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
-		{
-			UISubsystem->OnAFKHosting.Broadcast(false);
-		}
-	}
-}
-
-void ABaseCharacter::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus)
-{
-	// if (Stimulus.WasSuccessfullySensed())
-	// {
-	// 	UE_LOG(LogTemp, Warning, TEXT("I see you: %s"), *Actor->GetName());
-	// }
-	// else
-	// {
-	// 	UE_LOG(LogTemp, Warning, TEXT("Lost sight of: %s"), *Actor->GetName());
-	// }
-}
-
-AActor* ABaseCharacter::GetBestPerceivedTarget()
-{
-	if (AIPerceptionComponent == nullptr) return nullptr;
-
-	TArray<AActor*> PerceivedActors;
-	// 获取当前"已知"的所有 Actor（包括看见的，和刚消失但在记忆时间内的）
-	AIPerceptionComponent->GetKnownPerceivedActors(UAISense_Sight::StaticClass(), PerceivedActors);
-
-	AActor* BestTarget = nullptr;
-	float MinDistSq = FLT_MAX;
-	FVector MyLoc = GetActorLocation();
-
-	// UE_LOG(LogTemp, Warning, TEXT("PerceivedActors.Num(): %d"), PerceivedActors.Num());
-	for (AActor* Target : PerceivedActors)
-	{
-		if (Target == nullptr || Target == this) continue;
-		
-		// 排除队友
-		ABaseCharacter* TargetBaseCharacter = Cast<ABaseCharacter>(Target);
-		if (BasePlayerState && TargetBaseCharacter)
-		{
-			if (TargetBaseCharacter->bIsDead) continue;
-			
-			if (ABasePlayerState* TargetBasePlayerState = TargetBaseCharacter->GetPlayerState<ABasePlayerState>())
-			{
-				if (BasePlayerState->Team == TargetBasePlayerState->Team)
-				{
-					continue;
-				}
-			}
-		}
-		
-		// 简单的距离检查
-		float DistSq = FVector::DistSquared(MyLoc, Target->GetActorLocation());
-		if (DistSq < MinDistSq)
-		{
-			MinDistSq = DistSq;
-			BestTarget = Target;
-		}
-	}
-	
-	return BestTarget;
 }
 
 #undef LOCTEXT_NAMESPACE

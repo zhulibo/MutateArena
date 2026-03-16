@@ -1,6 +1,7 @@
 #include "ObjectPoolSubsystem.h"
 
-#include "Interfaces/Poolable.h"
+#include "MutateArena/Interfaces/Poolable.h"
+
 
 AActor* UObjectPoolSubsystem::AcquireObject(TSubclassOf<AActor> ClassToSpawn, const FTransform& Transform)
 {

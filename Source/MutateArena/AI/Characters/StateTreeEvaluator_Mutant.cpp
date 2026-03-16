@@ -2,6 +2,7 @@
 
 #include "StateTreeExecutionContext.h"
 #include "MutateArena/Characters/MutantCharacter.h"
+#include "MutateArena/Characters/Components/AutoHostComponent.h"
 
 // 查找目标
 void FStateTreeTask_MutantFindTarget::TreeStart(FStateTreeExecutionContext& Context) const
@@ -13,16 +14,23 @@ void FStateTreeTask_MutantFindTarget::Tick(FStateTreeExecutionContext& Context, 
 {
 	FInstanceDataType& InstanceData = Context.GetInstanceData<FInstanceDataType>(*this);
 
-	AMutantCharacter* MyMutantCharacter = Cast<AMutantCharacter>(Context.GetOwner());
-	if (MyMutantCharacter == nullptr)
+	AMutantCharacter* MyHumanCharacter = Cast<AMutantCharacter>(Context.GetOwner());
+	if (MyHumanCharacter == nullptr)
 	{
 		InstanceData.TargetActor = nullptr;
 		return;
 	}
 
-	if (AActor* FoundTarget = MyMutantCharacter->GetBestPerceivedTarget())
+	if (MyHumanCharacter->AutoHostComp)
 	{
-		InstanceData.TargetActor = FoundTarget;
+		if (AActor* FoundTarget = MyHumanCharacter->AutoHostComp->GetBestPerceivedTarget())
+		{
+			InstanceData.TargetActor = FoundTarget;
+		}
+		else
+		{
+			InstanceData.TargetActor = nullptr;
+		}
 	}
 	else
 	{

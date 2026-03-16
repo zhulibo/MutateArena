@@ -4,6 +4,8 @@
 #include "ModularPlayerController.h"
 #include "BaseController.generated.h"
 
+enum class EHUDState : uint8;
+struct FInputActionValue;
 enum class ETeam : uint8;
 enum class EMsgType : uint8;
 
@@ -14,18 +16,29 @@ class MUTATEARENA_API ABaseController : public AModularPlayerController
 	
 protected:
 	virtual void BeginPlay() override;
+	virtual void SetupInputComponent() override;
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void OnUnPossess() override;
 	virtual void SetPawn (APawn* InPawn) override;
 	virtual void OnRep_Pawn() override;
 	virtual void SetViewTarget(class AActor* NewViewTarget, FViewTargetTransitionParams TransitionParams) override;
-	
 	UPROPERTY()
 	class ABaseMode* BaseMode;
 	UPROPERTY()
 	class ABaseGameState* BaseGameState;
-	UPROPERTY()
-	class UAssetSubsystem* AssetSubsystem;
+
+	void ScoreboardButtonPressed(const FInputActionValue& Value);
+	void ScoreboardButtonReleased(const FInputActionValue& Value);
+	
+	void PauseMenuButtonPressed(const FInputActionValue& Value);
+
+	void RadialMenuButtonPressed(const FInputActionValue& Value);
+	void RadialMenuButtonReleased(const FInputActionValue& Value);
+	void RadialMenuSwitchButtonPressed(const FInputActionValue& Value);
+	void RadialMenuSelect(const FInputActionValue& Value);
+
+	void TextChat(const FInputActionValue& Value);
+	
 	// Diff between client and server WORLD TIME, not network delay.
 	float ServerClientDeltaTime = 0.f;
 	void HandleServerClientDeltaTime();

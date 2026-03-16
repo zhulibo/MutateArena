@@ -2,6 +2,7 @@
 
 #include "StateTreeExecutionContext.h"
 #include "MutateArena/Characters/HumanCharacter.h"
+#include "MutateArena/Characters/Components/AutoHostComponent.h"
 #include "MutateArena/Characters/Components/CombatComponent.h"
 #include "MutateArena/Equipments/Weapon.h"
 
@@ -22,9 +23,16 @@ void FStateTreeTask_HumanFindTarget::Tick(FStateTreeExecutionContext& Context, c
 		return;
 	}
 
-	if (AActor* FoundTarget = MyHumanCharacter->GetBestPerceivedTarget())
+	if (MyHumanCharacter->AutoHostComp)
 	{
-		InstanceData.TargetActor = FoundTarget;
+		if (AActor* FoundTarget = MyHumanCharacter->AutoHostComp->GetBestPerceivedTarget())
+		{
+			InstanceData.TargetActor = FoundTarget;
+		}
+		else
+		{
+			InstanceData.TargetActor = nullptr;
+		}
 	}
 	else
 	{

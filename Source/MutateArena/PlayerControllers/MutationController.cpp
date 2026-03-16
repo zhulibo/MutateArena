@@ -188,7 +188,7 @@ void AMutationController::SetHUDTime()
 				// 播放倒计时
 				if (MutateCountdown <= 10 && MutateCountdown > 0)
 				{
-					if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+					UAssetSubsystem* AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
 					if (AssetSubsystem && AssetSubsystem->CommonAsset)
 					{
 						if (UAudioComponent* AudioComponent = UGameplayStatics::SpawnSound2D(this, AssetSubsystem->CommonAsset->CountdownSound))
@@ -349,7 +349,7 @@ void AMutationController::MulticastPlaySpawnPickupSound_Implementation()
 {
 	if (!IsLocalController()) return;
 	
-	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+	UAssetSubsystem* AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
 	if (AssetSubsystem && AssetSubsystem->CommonAsset)
 	{
 		if (UAudioComponent* AudioComponent = UGameplayStatics::SpawnSound2D(this, AssetSubsystem->CommonAsset->SpawnPickupSound))

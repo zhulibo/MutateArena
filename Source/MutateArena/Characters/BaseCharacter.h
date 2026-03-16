@@ -6,7 +6,6 @@
 #include "ModularCharacter.h"
 #include "BaseCharacter.generated.h"
 
-struct FAIStimulus;
 enum class ECommonInputType : uint8;
 
 UCLASS()
@@ -27,6 +26,19 @@ public:
 	class UWidgetComponent* OverheadWidget;
 	UPROPERTY()
 	class UOverheadWidget* OverheadWidgetClass;
+	UPROPERTY(VisibleAnywhere)
+	class UInteractorComponent* InteractorComp;
+	UPROPERTY(VisibleAnywhere)
+	class UAutoHostComponent* AutoHostComp;
+	// AFK
+	UPROPERTY(EditAnywhere)
+	class UStateTreeComponent* StateTreeComp;
+	UPROPERTY(EditAnywhere)
+	class UAIPerceptionComponent* AIPerceptionComp;
+	UPROPERTY(EditAnywhere)
+	class UAIPerceptionStimuliSourceComponent* StimuliSourceComp;
+	UPROPERTY(EditAnywhere)
+	class UAISenseConfig_Sight* SightConfig;
 
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -37,6 +49,19 @@ protected:
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void OnRep_PlayerState() override;
 	virtual void Destroyed() override;
+	
+	UPROPERTY()
+	class UAssetSubsystem* AssetSubsystem;
+	UPROPERTY()
+	class UStorageSubsystem* StorageSubsystem;
+	UPROPERTY()
+	class ABaseMode* BaseMode;
+	UPROPERTY()
+	class ABaseGameState* BaseGameState;
+	UPROPERTY()
+	class ABasePlayerState* BasePlayerState;
+	UPROPERTY()
+	class ABaseController* BaseController;
 	
 	UFUNCTION()
 	void OnInputMethodChanged(ECommonInputType TempInputType);
@@ -88,21 +113,6 @@ public:
 	float GetMaxWalkSpeed();
 	float GetJumpZVelocity();
 
-protected:
-	UPROPERTY()
-	class UAssetSubsystem* AssetSubsystem;
-	UPROPERTY()
-	class UStorageSubsystem* StorageSubsystem;
-	UPROPERTY()
-	class ABaseMode* BaseMode;
-	UPROPERTY()
-	class ABaseGameState* BaseGameState;
-	UPROPERTY()
-	class ABasePlayerState* BasePlayerState;
-	UPROPERTY()
-	class ABaseController* BaseController;
-
-public:
 	UPROPERTY()
 	FColor BloodColor;
 	UPROPERTY(EditAnywhere)
@@ -125,33 +135,12 @@ protected:
 	void CrouchButtonReleased(const FInputActionValue& Value);
 	void CrouchControllerButtonPressed(const FInputActionValue& Value);
 
-	// 交互
-	UPROPERTY()
-	AActor* InteractTarget;
-	void TraceInteractTarget(FHitResult& OutHit);
-	void InteractStarted(const FInputActionValue& Value);
-	void InteractOngoing(const FInputActionValue& Value);
-	void InteractTriggered(const FInputActionValue& Value);
-	UFUNCTION(Server, Reliable)
-	void ServerInteractTriggered(AActor* TempInteractTarget);
-	void InteractCompleted(const FInputActionValue& Value);
-	void InteractCanceled(const FInputActionValue& Value);
-
-	void ScoreboardButtonPressed(const FInputActionValue& Value);
-	void ScoreboardButtonReleased(const FInputActionValue& Value);
-	
-	void PauseMenuButtonPressed(const FInputActionValue& Value);
-
-	void RadialMenuButtonPressed(const FInputActionValue& Value);
-	void RadialMenuButtonReleased(const FInputActionValue& Value);
-	void RadialMenuSwitchButtonPressed(const FInputActionValue& Value);
-	void RadialMenuSelect(const FInputActionValue& Value);
-
-	void TextChat(const FInputActionValue& Value);
-
 	// 血量
 public:
+	UPROPERTY(ReplicatedUsing = OnRep_bIsDead)
 	bool bIsDead = false;
+	UFUNCTION()
+	virtual void OnRep_bIsDead();
 	void SetHealth(float TempHealth);
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastSetHealth(float TempHealth, AController* AttackerController);
@@ -194,27 +183,5 @@ protected:
 	UDecalComponent* SprayPaintDecal;
 public:
 	void SprayPaint(int32 RadioIndex);
-
-	// AFK
-	UPROPERTY(EditAnywhere)
-	class UStateTreeComponent* StateTreeComponent;
-	UPROPERTY(EditAnywhere)
-	class UAIPerceptionComponent* AIPerceptionComponent;
-	UPROPERTY(EditAnywhere)
-	class UAIPerceptionStimuliSourceComponent* StimuliSourceComponent;
-	UPROPERTY(EditAnywhere)
-	class UAISenseConfig_Sight* SightConfig;
-	float LastActiveTime;
-	FTimerHandle AFKCheckTimerHandle;
-	bool bIsAutoHosting = false;
-	void UpdateActiveTime(const FInputActionValue& Value);
-	UFUNCTION()
-	void CheckIdleStatus();
-	void StartAutoHost();
-	void StopAutoHost();
-	AActor* GetBestPerceivedTarget();
-protected:
-	UFUNCTION()
-	void OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus);
 	
 };

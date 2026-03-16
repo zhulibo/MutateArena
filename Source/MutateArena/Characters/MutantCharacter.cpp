@@ -8,6 +8,7 @@
 #include "MutateArena/Characters/AnimInstMutant.h"
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
+#include "Components/AutoHostComponent.h"
 #include "MutateArena/Abilities/AttributeSetBase.h"
 #include "MutateArena/Abilities/MAAbilitySystemComponent.h"
 #include "MutateArena/Abilities/GameplayAbilityBase.h"
@@ -62,16 +63,12 @@ void AMutantCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 
 	DOREPLIFETIME(ThisClass, bSuckedDry);
 	DOREPLIFETIME(ThisClass, bIsLightAttack);
+	DOREPLIFETIME(ThisClass, bKilledByMelee);
 }
 
 void AMutantCharacter::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
-	
-	if (AIPerceptionComponent)
-	{
-		AIPerceptionComponent->OnTargetPerceptionUpdated.AddDynamic(this, &ThisClass::OnTargetPerceptionUpdated);
-	}
 }
 
 void AMutantCharacter::BeginPlay()
@@ -111,11 +108,11 @@ void AMutantCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 	if (UEnhancedInputComponent* EIC = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
 	{
-		EIC->BindAction(AssetSubsystem->InputAsset->MoveAction, ETriggerEvent::Triggered, this, &ThisClass::UpdateActiveTime);
-		EIC->BindAction(AssetSubsystem->InputAsset->LookMouseAction, ETriggerEvent::Triggered, this, &ThisClass::UpdateActiveTime);
-		EIC->BindAction(AssetSubsystem->InputAsset->LookStickAction, ETriggerEvent::Triggered, this, &ThisClass::UpdateActiveTime);
-		EIC->BindAction(AssetSubsystem->InputAsset->LightAttackAction, ETriggerEvent::Started, this, &ThisClass::UpdateActiveTime);
-		EIC->BindAction(AssetSubsystem->InputAsset->HeavyAttackAction, ETriggerEvent::Started, this, &ThisClass::UpdateActiveTime);
+		EIC->BindAction(AssetSubsystem->InputAsset->MoveAction, ETriggerEvent::Triggered, AutoHostComp, &UAutoHostComponent::UpdateActiveTime);
+		EIC->BindAction(AssetSubsystem->InputAsset->LookMouseAction, ETriggerEvent::Triggered, AutoHostComp, &UAutoHostComponent::UpdateActiveTime);
+		EIC->BindAction(AssetSubsystem->InputAsset->LookStickAction, ETriggerEvent::Triggered, AutoHostComp, &UAutoHostComponent::UpdateActiveTime);
+		EIC->BindAction(AssetSubsystem->InputAsset->LightAttackAction, ETriggerEvent::Started, AutoHostComp, &UAutoHostComponent::UpdateActiveTime);
+		EIC->BindAction(AssetSubsystem->InputAsset->HeavyAttackAction, ETriggerEvent::Started, AutoHostComp, &UAutoHostComponent::UpdateActiveTime);
 		
 		EIC->BindAction(AssetSubsystem->InputAsset->LightAttackAction, ETriggerEvent::Started, this, &ThisClass::LightAttackButtonPressed);
 		EIC->BindAction(AssetSubsystem->InputAsset->LightAttackAction, ETriggerEvent::Completed, this, &ThisClass::LightAttackButtonReleased);
@@ -502,50 +499,53 @@ void AMutantCharacter::MutantReceiveDamage(AActor* DamagedActor, float Damage, c
 	}
 }
 
-void AMutantCharacter::MulticastDead_Implementation(bool bKilledByMelee)
+void AMutantCharacter::OnRep_bIsDead()
 {
-	bIsDead = true;
-	
-	EndRestoreAbility();
-	
-	GetCharacterMovement()->DisableMovement();
-	GetCharacterMovement()->StopMovementImmediately();
+	Super::OnRep_bIsDead();
 
-	if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
-	if (BaseController == nullptr) DisableInput(BaseController);
+	if (bIsDead)
+	{
+		EndRestoreAbility();
 
-	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	GetMesh()->SetSimulatePhysics(true);
-	GetMesh()->SetEnableGravity(true);
-	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	RightHandCapsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	LeftHandCapsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		GetCharacterMovement()->DisableMovement();
+		GetCharacterMovement()->StopMovementImmediately();
 
-	FTimerHandle TimerHandle;
-	FTimerDelegate TimerDelegate;
-	TimerDelegate.BindWeakLambda(this, [this, bKilledByMelee]() {
-		MutantRespawn(bKilledByMelee);
-	});
-	GetWorld()->GetTimerManager().SetTimer(TimerHandle, TimerDelegate, 3.f, false);
+		if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
+		if (BaseController) DisableInput(BaseController);
+
+		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		GetMesh()->SetSimulatePhysics(true);
+		GetMesh()->SetEnableGravity(true);
+		GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		RightHandCapsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		LeftHandCapsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		
+		FTimerHandle TimerHandle;
+		FTimerDelegate TimerDelegate;
+		TimerDelegate.BindWeakLambda(this, [this]() {
+			
+			// 被刀死不会销毁角色，Character不销毁的话不触发客户端的ABaseController::OnUnPossess, 主动RemoveMappingContext
+			if (bIsDead && bKilledByMelee && IsLocallyControlled()) // bIsDead 判断，防止因延迟导致复活后才执行此操作，误删新角色的输入
+			{
+				RemoveMappingContext();
+			}
+			
+			if (MutationMode == nullptr) MutationMode = GetWorld()->GetAuthGameMode<AMutationMode>();
+			if (MutationMode && HasAuthority())
+			{
+				MutationMode->MutantRespawn(this, BaseController, bKilledByMelee);
+			}
+			
+		});
+		GetWorld()->GetTimerManager().SetTimer(TimerHandle, TimerDelegate, 3.f, false);
+	}
 }
 
-void AMutantCharacter::MutantRespawn(bool bKilledByMelee)
+void AMutantCharacter::MutantDead(bool bTempKilledByMelee)
 {
-	// 被刀死不会销毁角色，Character不销毁的话不触发客户端的ABaseController::OnUnPossess, 主动RemoveMappingContext
-	if (bKilledByMelee)
-	{
-		RemoveMappingContext();
-	}
-
-	// 重生
-	if (HasAuthority())
-	{
-		if (MutationMode == nullptr) MutationMode = GetWorld()->GetAuthGameMode<AMutationMode>();
-		if (MutationMode)
-		{
-			MutationMode->MutantRespawn(this, BaseController, bKilledByMelee);
-		}
-	}
+	bKilledByMelee = bTempKilledByMelee;
+	bIsDead = true;
+	OnRep_bIsDead();
 }
 
 void AMutantCharacter::RemoveMappingContext()
@@ -590,24 +590,43 @@ void AMutantCharacter::MulticastRepel_Implementation(FVector ImpulseVector)
 	GetCharacterMovement()->ApplyRootMotionSource(RootMotionSource);
 }
 
-bool AMutantCharacter::CanInteract()
+bool AMutantCharacter::CanInteract(ABaseCharacter* Interactor)
 {
-	return bIsDead && !bSuckedDry;
+	if (!bIsDead || bSuckedDry)
+	{
+		return false;
+	}
+
+	if (!Interactor || Interactor->bIsDead)
+	{
+		return false;
+	}
+
+	return true; 
 }
 
-void AMutantCharacter::OnInteract(ABaseCharacter* BaseCharacter)
+void AMutantCharacter::OnInteract_Server(ABaseCharacter* Interactor)
 {
-	if (IInteractable* Interactor = Cast<IInteractable>(BaseCharacter))
+	if (!HasAuthority()) return;
+
+	SetIsSuckedDry(true);
+
+	if (AHumanCharacter* Human = Cast<AHumanCharacter>(Interactor))
 	{
-		SetIsSuckedDry(true);
-		
-		Interactor->OnInteractMutantSuccess(this);
+		Human->BecomeImmune();
+	}
+	else if (AMutantCharacter* Mutant = Cast<AMutantCharacter>(Interactor))
+	{
+		Mutant->AddRageOnSuck();
 	}
 }
 
-void AMutantCharacter::OnInteract_Server()
+void AMutantCharacter::AddRageOnSuck()
 {
-	SetIsSuckedDry(true);
+	if (AMutationPlayerState* MutationPlayerState = GetPlayerState<AMutationPlayerState>())
+	{
+		MutationPlayerState->SetRage(MutationPlayerState->Rage + 4000.f);
+	}
 }
 
 void AMutantCharacter::SetIsSuckedDry(bool TempBSuckedDry)
@@ -629,19 +648,6 @@ void AMutantCharacter::SetDeadMaterial()
 	if (AssetSubsystem && AssetSubsystem->CharacterAsset)
 	{
 		GetMesh()->SetOverlayMaterial(AssetSubsystem->CharacterAsset->MI_Overlay_Dead);
-	}
-}
-
-void AMutantCharacter::OnInteractMutantSuccess(AMutantCharacter* MutantCharacter)
-{
-	ServerOnSuck(MutantCharacter);
-}
-
-void AMutantCharacter::ServerOnSuck_Implementation(AMutantCharacter* MutantCharacter)
-{
-	if (AMutationPlayerState* MutationPlayerState = GetPlayerState<AMutationPlayerState>())
-	{
-		MutationPlayerState->SetRage(MutationPlayerState->Rage + 2000.f);
 	}
 }
 

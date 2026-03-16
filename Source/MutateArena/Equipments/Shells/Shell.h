@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "MutateArena/System/Interfaces/Poolable.h"
+#include "MutateArena/Interfaces/Poolable.h"
 #include "Shell.generated.h"
 
 UCLASS()

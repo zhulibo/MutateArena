@@ -189,7 +189,7 @@ void AMeleeMode::HumanReceiveDamage(AHumanCharacter* DamagedCharacter, ABaseCont
 		DamagedState->AddDeath();
 
 		// 处理受伤者死亡流程
-		DamagedCharacter->MulticastMeleeDead();
+		DamagedCharacter->MeleeDead();
 	}
 }
 

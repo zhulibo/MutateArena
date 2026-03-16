@@ -190,7 +190,7 @@ void ATeamDeadMatchMode::HumanReceiveDamage(AHumanCharacter* DamagedCharacter, A
 		DamagedState->AddDeath();
 
 		// 处理受伤者死亡流程
-		DamagedCharacter->MulticastTeamDeadMatchDead();
+		DamagedCharacter->TeamDeadMatchDead();
 	}
 }
 

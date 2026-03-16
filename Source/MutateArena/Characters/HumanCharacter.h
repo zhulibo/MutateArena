@@ -55,7 +55,7 @@ public:
 	
 	UFUNCTION(Client, Reliable)
 	void ClientSwapEquipmentWhenPickupFailed(EEquipmentType FallbackEquipmentType);
-	void ServerEquipOverlappingEquipment(class AEquipment* Equipment);
+	void EquipOverlappingEquipment_Server(class AEquipment* Equipment);
 	UFUNCTION(Server, Reliable)
 	void ServerGivePickupEquipment(class APickupEquipment* PickupEquipment);
 
@@ -74,12 +74,10 @@ protected:
 	UFUNCTION()
 	void HumanReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* AttackerController, AActor* DamageCauser);
 public:
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastMutationDead(bool bNeedSpawn, ESpawnMutantReason SpawnMutantReason = ESpawnMutantReason::Fall);
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastMeleeDead();
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastTeamDeadMatchDead();
+	virtual void OnRep_bIsDead() override;
+	void MutationDead(bool bNeedSpawn, ESpawnMutantReason SpawnMutantReason = ESpawnMutantReason::Fall);
+	void MeleeDead();
+	void TeamDeadMatchDead();
 protected:
 	void HandleDead();
 
@@ -87,10 +85,7 @@ public:
 	UPROPERTY(ReplicatedUsing = OnRep_bIsImmune)
 	bool bIsImmune = false;
 	UFUNCTION()
-	virtual void OnInteractMutantSuccess(class AMutantCharacter* MutantCharacter) override;
-protected:
-	UFUNCTION(Server, Reliable)
-	void ServerOnImmune(AMutantCharacter* MutantCharacter);
+	void BecomeImmune();
 	UFUNCTION()
 	void OnRep_bIsImmune();
 	

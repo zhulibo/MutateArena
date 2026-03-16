@@ -41,15 +41,17 @@ void UTextChat::ShowTextChat()
 
 void UTextChat::OnMsgCommitted(const FText& Text, ETextCommit::Type CommitMethod)
 {
-	UE_LOG(LogTemp, Warning, TEXT("OnMsgCommitted"));
+	// UE_LOG(LogTemp, Warning, TEXT("OnMsgCommitted"));
 
 	if (CommitMethod == ETextCommit::OnEnter)
 	{
 		SendMsg();
 	}
-	else if (CommitMethod == ETextCommit::OnCleared)
+	
+	// 无论是回车发送完毕，还是玩家点击了屏幕其他地方导致失去焦点
+	if (CommitMethod == ETextCommit::OnEnter || CommitMethod == ETextCommit::OnCleared)
 	{
-		// 游戏内失去焦点
+		// 如果是在游戏中，不是菜单界面
 		if (BaseController == nullptr) BaseController = Cast<ABaseController>(GetOwningPlayer());
 		if (BaseController)
 		{

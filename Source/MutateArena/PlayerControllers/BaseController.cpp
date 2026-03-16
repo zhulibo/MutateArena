@@ -1,5 +1,8 @@
 #include "BaseController.h"
 
+#include "CommonInputSubsystem.h"
+#include "CommonInputTypeEnum.h"
+#include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/PlayerStates/TeamType.h"
@@ -34,6 +37,29 @@ void ABaseController::BeginPlay()
 	}
 }
 
+void ABaseController::SetupInputComponent()
+{
+	Super::SetupInputComponent();
+	
+	if (UAssetSubsystem* AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>())
+	{
+		if (UEnhancedInputComponent* EIC = Cast<UEnhancedInputComponent>(InputComponent))
+		{
+			EIC->BindAction(AssetSubsystem->InputAsset->ScoreboardAction, ETriggerEvent::Triggered, this, &ThisClass::ScoreboardButtonPressed);
+			EIC->BindAction(AssetSubsystem->InputAsset->ScoreboardAction, ETriggerEvent::Completed, this, &ThisClass::ScoreboardButtonReleased);
+			
+			EIC->BindAction(AssetSubsystem->InputAsset->PauseMenuAction, ETriggerEvent::Triggered, this, &ThisClass::PauseMenuButtonPressed);
+
+			EIC->BindAction(AssetSubsystem->InputAsset->RadialMenuAction, ETriggerEvent::Triggered, this, &ThisClass::RadialMenuButtonPressed);
+			EIC->BindAction(AssetSubsystem->InputAsset->RadialMenuAction, ETriggerEvent::Completed, this, &ThisClass::RadialMenuButtonReleased);
+			EIC->BindAction(AssetSubsystem->InputAsset->RadialMenuSwitchAction, ETriggerEvent::Triggered, this, &ThisClass::RadialMenuSwitchButtonPressed);
+			EIC->BindAction(AssetSubsystem->InputAsset->RadialMenuSelectAction, ETriggerEvent::Triggered, this, &ThisClass::RadialMenuSelect);
+
+			EIC->BindAction(AssetSubsystem->InputAsset->TextChatAction, ETriggerEvent::Triggered, this, &ThisClass::TextChat);
+		}
+	}
+}
+
 void ABaseController::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
@@ -46,7 +72,7 @@ void ABaseController::Tick(float DeltaSeconds)
 
 void ABaseController::OnUnPossess()
 {
-	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+	UAssetSubsystem* AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
 	if (AssetSubsystem == nullptr || AssetSubsystem->InputAsset == nullptr || AssetSubsystem->InputAsset == nullptr) return;
 
 	if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
@@ -59,6 +85,84 @@ void ABaseController::OnUnPossess()
 	}
 
 	Super::OnUnPossess();
+}
+void ABaseController::ScoreboardButtonPressed(const FInputActionValue& Value)
+{
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
+	{
+		UISubsystem->ShowScoreboard.Broadcast(true);
+	}
+}
+
+void ABaseController::ScoreboardButtonReleased(const FInputActionValue& Value)
+{
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
+	{
+		UISubsystem->ShowScoreboard.Broadcast(false);
+	}
+}
+
+void ABaseController::PauseMenuButtonPressed(const FInputActionValue& Value)
+{
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
+	{
+		UISubsystem->ShowPauseMenu.Broadcast();
+	}
+}
+
+void ABaseController::RadialMenuButtonPressed(const FInputActionValue& Value)
+{
+	// UE_LOG(LogTemp, Warning, TEXT("111 time: %f"), GetWorld()->GetTimeSeconds());
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
+	{
+		UISubsystem->ShowRadialMenu.Broadcast(true);
+	}
+}
+
+void ABaseController::RadialMenuButtonReleased(const FInputActionValue& Value)
+{
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
+	{
+		UISubsystem->ShowRadialMenu.Broadcast(false);
+	}
+}
+
+void ABaseController::RadialMenuSwitchButtonPressed(const FInputActionValue& Value)
+{
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
+	{
+		UISubsystem->SwitchRadialMenu.Broadcast();
+	}
+}
+
+// 已关闭 项目-增强输入-应只触发弦中最后操作/bShouldOnlyTriggerLastActionInChord
+void ABaseController::RadialMenuSelect(const FInputActionValue& Value)
+{
+	FVector2D AxisVector = Value.Get<FVector2D>();
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
+	{
+		UISubsystem->SelectRadialMenu.Broadcast(AxisVector.X, AxisVector.Y);
+	}
+	// UE_LOG(LogTemp, Warning, TEXT("222 x y time: %f %f %f"), AxisVector.X, AxisVector.Y, GetWorld()->GetTimeSeconds());
+}
+
+void ABaseController::TextChat(const FInputActionValue& Value)
+{
+	// TODO 手柄暂未处理
+	if (UCommonInputSubsystem* CommonInputSubsystem = UCommonInputSubsystem::Get(GetWorld()->GetFirstLocalPlayerFromController()))
+	{
+		if (CommonInputSubsystem->GetCurrentInputType() != ECommonInputType::MouseAndKeyboard)
+		{
+			return;
+		}
+	}
+
+	FocusUI();
+
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
+	{
+		UISubsystem->ShowTextChat.Broadcast();
+	}
 }
 
 void ABaseController::HandleServerClientDeltaTime()

@@ -103,7 +103,7 @@ void AEquipment::OnAreaSphereOverlap(UPrimitiveComponent* OverlappedComponent, A
 
 	if (AHumanCharacter* OverlapHumanCharacter = Cast<AHumanCharacter>(OtherActor))
 	{
-		OverlapHumanCharacter->ServerEquipOverlappingEquipment(this);
+		OverlapHumanCharacter->EquipOverlappingEquipment_Server(this);
 	}
 }
 

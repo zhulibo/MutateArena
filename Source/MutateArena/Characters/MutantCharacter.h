@@ -4,7 +4,7 @@
 #include "BaseCharacter.h"
 #include "GameplayEffectTypes.h"
 #include "GameplayTagContainer.h"
-#include "MutateArena/System/Interfaces/Interactable.h"
+#include "MutateArena/Interfaces/Interactable.h"
 #include "MutantCharacter.generated.h"
 
 enum class EMutantCharacterName : uint8;
@@ -115,10 +115,11 @@ protected:
 	UFUNCTION()
 	void MutantReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* AttackerController, AActor* DamageCauser);
 public:
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastDead(bool bKilledByMelee);
+	virtual void OnRep_bIsDead() override;
+	UPROPERTY(Replicated)
+	bool bKilledByMelee = false;
+	void MutantDead(bool bTempKilledByMelee);
 protected:
-	void MutantRespawn(bool bKilledByMelee);
 	void RemoveMappingContext();
 
 public:
@@ -129,18 +130,14 @@ public:
 
 protected:
 	// 交互
+	virtual bool CanInteract(ABaseCharacter* Interactor) override;
+	virtual void OnInteract_Server(ABaseCharacter* Interactor) override;
+	void AddRageOnSuck();
 	UPROPERTY(ReplicatedUsing = OnRep_bSuckedDry)
 	bool bSuckedDry = false;
+	void SetIsSuckedDry(bool TempBSuckedDry);
 	UFUNCTION()
 	void OnRep_bSuckedDry();
 	void SetDeadMaterial();
-	virtual bool CanInteract() override;
-	virtual void OnInteract(ABaseCharacter* BaseCharacter) override;
-	virtual void OnInteract_Server() override;
-	void SetIsSuckedDry(bool TempBSuckedDry);
-	UFUNCTION()
-	virtual void OnInteractMutantSuccess(AMutantCharacter* MutantCharacter) override;
-	UFUNCTION(Server, Reliable)
-	void ServerOnSuck(AMutantCharacter* MutantCharacter);
 	
 };

@@ -378,7 +378,7 @@ void AMutationMode::HumanReceiveDamage(AHumanCharacter* DamagedCharacter, ABaseC
 		// 摔死延迟重生
 		if (!bMutateImmediately)
 		{
-			DamagedCharacter->MulticastMutationDead(true, ESpawnMutantReason::Fall);
+			DamagedCharacter->MutationDead(true, ESpawnMutantReason::Fall);
 		}
 	}
 }
@@ -419,7 +419,7 @@ void AMutationMode::Mutate(ACharacter* Character, AController* Controller, ESpaw
 		FRotator ViewRotation = Character->GetViewRotation();
 
 		// 人类死亡
-		HumanCharacter->MulticastMutationDead(false);
+		HumanCharacter->MutationDead(false);
 		HumanCharacter->Destroy();
 
 		// 重生为突变体
@@ -506,7 +506,7 @@ void AMutationMode::MutantReceiveDamage(AMutantCharacter* DamagedCharacter, ABas
 				MutationGameState->EndRoundIfAllBeKilledByMelee();
 			}
 		}
-		DamagedCharacter->MulticastDead(bKilledByMelee);
+		DamagedCharacter->MutantDead(bKilledByMelee);
 	}
 }
 

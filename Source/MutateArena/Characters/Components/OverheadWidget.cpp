@@ -61,13 +61,6 @@ void UOverheadWidget::InitOverheadWidget()
 			if (BasePlayerState->Team != ETeam::NoTeam && LocalBasePlayerState->Team != ETeam::NoTeam)
 			{
 				FColor TeamColor = BasePlayerState->Team == LocalBasePlayerState->Team ? C_BLUE : C_RED;
-				if (AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(BaseCharacter))
-				{
-					if (HumanCharacter->bIsImmune)
-					{
-						TeamColor = C_YELLOW;
-					}
-				}
 				
 				// 设置名字
 				PlayerName->SetText(FText::FromString(ULibraryCommon::ObfuscateName(BasePlayerState->GetPlayerName(), this)));
@@ -76,6 +69,13 @@ void UOverheadWidget::InitOverheadWidget()
 				// 设置血条颜色
 				if (UMaterialInstanceDynamic* MID = HealthBar->GetDynamicMaterial())
 				{
+					if (AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(BaseCharacter))
+					{
+						if (HumanCharacter->bIsImmune)
+						{
+							TeamColor = C_YELLOW;
+						}
+					}
 					MID->SetVectorParameterValue(TEXT("TeamColor"), TeamColor);
 				}
 

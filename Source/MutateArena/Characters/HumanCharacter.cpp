@@ -5,6 +5,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "..\Equipments\Throwing.h"
+#include "Components/AutoHostComponent.h"
 #include "MutateArena/Equipments/Data/EquipmentType.h"
 #include "Components/CombatComponent.h"
 #include "MutateArena/Equipments/Melee.h"
@@ -69,11 +70,6 @@ void AHumanCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 void AHumanCharacter::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
-	
-	if (AIPerceptionComponent)
-	{
-		AIPerceptionComponent->OnTargetPerceptionUpdated.AddDynamic(this, &ThisClass::OnTargetPerceptionUpdated);
-	}
 }
 
 void AHumanCharacter::BeginPlay()
@@ -104,10 +100,10 @@ void AHumanCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 	// Set up action bindings
 	if (UEnhancedInputComponent* EIC = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
 	{
-		EIC->BindAction(AssetSubsystem->InputAsset->MoveAction, ETriggerEvent::Triggered, this, &ThisClass::UpdateActiveTime);
-		EIC->BindAction(AssetSubsystem->InputAsset->LookMouseAction, ETriggerEvent::Triggered, this, &ThisClass::UpdateActiveTime);
-		EIC->BindAction(AssetSubsystem->InputAsset->LookStickAction, ETriggerEvent::Triggered, this, &ThisClass::UpdateActiveTime);
-		EIC->BindAction(AssetSubsystem->InputAsset->FireAction, ETriggerEvent::Started, this, &ThisClass::UpdateActiveTime);
+		EIC->BindAction(AssetSubsystem->InputAsset->MoveAction, ETriggerEvent::Triggered, AutoHostComp, &UAutoHostComponent::UpdateActiveTime);
+		EIC->BindAction(AssetSubsystem->InputAsset->LookMouseAction, ETriggerEvent::Triggered, AutoHostComp, &UAutoHostComponent::UpdateActiveTime);
+		EIC->BindAction(AssetSubsystem->InputAsset->LookStickAction, ETriggerEvent::Triggered, AutoHostComp, &UAutoHostComponent::UpdateActiveTime);
+		EIC->BindAction(AssetSubsystem->InputAsset->FireAction, ETriggerEvent::Started, AutoHostComp, &UAutoHostComponent::UpdateActiveTime);
 		
 		EIC->BindAction(AssetSubsystem->InputAsset->AimAction, ETriggerEvent::Started, this, &ThisClass::AimButtonPressed);
 		EIC->BindAction(AssetSubsystem->InputAsset->AimAction, ETriggerEvent::Completed, this, &ThisClass::AimButtonReleased);
@@ -523,7 +519,7 @@ void AHumanCharacter::ClientSwapEquipmentWhenPickupFailed_Implementation(EEquipm
 }
 
 // 装备检测到的重叠装备
-void AHumanCharacter::ServerEquipOverlappingEquipment(AEquipment* Equipment)
+void AHumanCharacter::EquipOverlappingEquipment_Server(AEquipment* Equipment)
 {
 	if (bIsDead || Equipment == nullptr || Equipment->GetOwner() || CombatComp == nullptr) return;
 	if (CombatComp->HasEquippedEquipment(Equipment->EquipmentType)) return;
@@ -590,9 +586,19 @@ void AHumanCharacter::HumanReceiveDamage(AActor* DamagedActor, float Damage, con
 	}
 }
 
-void AHumanCharacter::MulticastMutationDead_Implementation(bool bNeedSpawn, ESpawnMutantReason SpawnMutantReason)
+void AHumanCharacter::OnRep_bIsDead()
 {
-	HandleDead();
+	Super::OnRep_bIsDead();
+	if (bIsDead)
+	{
+		HandleDead();
+	}
+}
+
+void AHumanCharacter::MutationDead(bool bNeedSpawn, ESpawnMutantReason SpawnMutantReason)
+{
+	bIsDead = true;
+	OnRep_bIsDead(); // 服务端本地主动调用一次死亡表现
 
 	if (HasAuthority() && bNeedSpawn)
 	{
@@ -608,11 +614,11 @@ void AHumanCharacter::MulticastMutationDead_Implementation(bool bNeedSpawn, ESpa
 	}
 }
 
-void AHumanCharacter::MulticastMeleeDead_Implementation()
+void AHumanCharacter::MeleeDead()
 {
-	HandleDead();
+	bIsDead = true;
+	OnRep_bIsDead();
 
-	// 重生
 	if (HasAuthority())
 	{
 		FTimerHandle TimerHandle;
@@ -627,11 +633,11 @@ void AHumanCharacter::MulticastMeleeDead_Implementation()
 	}
 }
 
-void AHumanCharacter::MulticastTeamDeadMatchDead_Implementation()
+void AHumanCharacter::TeamDeadMatchDead()
 {
-	HandleDead();
+	bIsDead = true;
+	OnRep_bIsDead();
 
-	// 重生
 	if (HasAuthority())
 	{
 		FTimerHandle TimerHandle;
@@ -648,8 +654,6 @@ void AHumanCharacter::MulticastTeamDeadMatchDead_Implementation()
 
 void AHumanCharacter::HandleDead()
 {
-	bIsDead = true;
-
 	if (CombatComp)
 	{
 		// 直接在服务端丢弃主武器不走GA
@@ -677,28 +681,24 @@ void AHumanCharacter::HandleDead()
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 }
 
-void AHumanCharacter::OnInteractMutantSuccess(class AMutantCharacter* MutantCharacter)
+void AHumanCharacter::BecomeImmune()
 {
 	bIsImmune = true;
-
-	if (AMutationController* InteractController = Cast<AMutationController>(Controller))
-	{
-		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(InteractController->GetLocalPlayer()))
-		{
-			UISubsystem->OnBeImmune.Broadcast();
-		}
-	}
-
-	ServerOnImmune(MutantCharacter);
-}
-
-void AHumanCharacter::ServerOnImmune_Implementation(class AMutantCharacter* MutantCharacter)
-{
-	bIsImmune = true;
+	OnRep_bIsImmune();
 }
 
 void AHumanCharacter::OnRep_bIsImmune()
 {
+	if (bIsImmune)
+	{
+		if (AMutationController* InteractController = Cast<AMutationController>(Controller))
+		{
+			if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(InteractController->GetLocalPlayer()))
+			{
+				UISubsystem->OnBeImmune.Broadcast();
+			}
+		}
+	}
 }
 
 #undef LOCTEXT_NAMESPACE
