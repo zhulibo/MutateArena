@@ -848,7 +848,7 @@ void ABaseCharacter::SprayPaint(int32 RadioIndex)
 				DecalRotation.Roll += 90.f;
 				DecalRotation.Yaw += 180.f;
 				SprayPaintDecal = UGameplayStatics::SpawnDecalAttached(
-					SprayPaints[RadioIndex].Material,
+					SprayPaints[RadioIndex].Material.LoadSynchronous(),
 					FVector(5.f, 100.f, 100.f),
 					OutHit.GetComponent(),
 					OutHit.BoneName,

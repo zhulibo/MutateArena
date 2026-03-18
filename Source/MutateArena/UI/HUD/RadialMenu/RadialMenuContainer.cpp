@@ -1,15 +1,12 @@
 #include "RadialMenuContainer.h"
+
 #include "CommonTextBlock.h"
 #include "RadialMenuEquipment.h"
 #include "RadialMenuPaint.h"
 #include "RadialMenuRadio.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/Characters/HumanCharacter.h"
-#include "MutateArena/Characters/Components/CombatComponent.h"
 #include "MutateArena/Equipments/Data/EquipmentType.h"
-#include "MutateArena/PlayerControllers/BaseController.h"
-#include "MutateArena/PlayerControllers/MutationController.h"
-#include "MutateArena/PlayerStates/TeamType.h"
 #include "MutateArena/System/UISubsystem.h"
 
 #define LOCTEXT_NAMESPACE "URadialMenuContainer"
@@ -18,14 +15,15 @@ void URadialMenuContainer::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
 
-	SetHumanRadialMenuText();
+	MenuCategories.Add({TitleEquipment, RadialMenuEquipment});
+	MenuCategories.Add({TitleRadio, RadialMenuRadio});
+	MenuCategories.Add({TitlePaint, RadialMenuPaint});
 
 	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer()))
 	{
 		UISubsystem->ShowRadialMenu.AddUObject(this, &ThisClass::ShowRadialMenu);
 		UISubsystem->SwitchRadialMenu.AddUObject(this, &ThisClass::SwitchRadialMenu);
 		UISubsystem->SelectRadialMenu.AddUObject(this, &ThisClass::SelectRadialMenu);
-		UISubsystem->OnTeamChange.AddUObject(this, &ThisClass::OnTeamChange);
 	}
 }
 
@@ -50,7 +48,7 @@ void URadialMenuContainer::ShowRadialMenuInternal()
 	HumanCharacter = Cast<AHumanCharacter>(GetOwningPlayerPawn());
 	MutantCharacter = Cast<AMutantCharacter>(GetOwningPlayerPawn());
 
-	TitleEquipment->SetColorAndOpacity(C_GREEN);
+	TitleEquipment->SetColorAndOpacity(C_YELLOW);
 	TitleRadio->SetColorAndOpacity(C_WHITE);
 	TitlePaint->SetColorAndOpacity(C_WHITE);
 
@@ -58,134 +56,72 @@ void URadialMenuContainer::ShowRadialMenuInternal()
 	RadialMenuRadio->SetVisibility(ESlateVisibility::Hidden);
 	RadialMenuPaint->SetVisibility(ESlateVisibility::Hidden);
 
-	ActiveRadialMenuIndex = 1;
+	RadialMenuEquipment->RefreshRadialMenu();
 
-	SetSelectedItem();
+	CurrentCategoryIndex = 0;
 
-	SetVisibility(ESlateVisibility::Visible);
-}
-
-// 设置轮盘选中项
-void URadialMenuContainer::SetSelectedItem()
-{
+	FLinearColor FactionColor = FLinearColor::White;
 	if (HumanCharacter)
 	{
-		if (HumanCharacter->CombatComp)
-		{
-			switch (HumanCharacter->CombatComp->CurEquipmentType)
-			{
-			case EEquipmentType::Primary:
-				RadialMenuEquipment->SetSelectedItem(0);
-				break;
-			case EEquipmentType::Secondary:
-				RadialMenuEquipment->SetSelectedItem(1);
-				break;
-			case EEquipmentType::Melee:
-				RadialMenuEquipment->SetSelectedItem(2);
-				break;
-			case EEquipmentType::Throwing:
-				RadialMenuEquipment->SetSelectedItem(3);
-				break;
-			}
-		}
+		FactionColor = FLinearColor(C_RED);
 	}
 	else if (MutantCharacter)
 	{
-
+		FactionColor = FLinearColor(C_GREEN);
 	}
+
+	for (FMenuCategory& Category : MenuCategories)
+	{
+		if (Category.RadialMenu)
+		{
+			Category.RadialMenu->ResetPointerInput();
+
+			Category.RadialMenu->SetPointerColor(FactionColor);
+			Category.RadialMenu->SetSegmentColor(FactionColor);
+		}
+	}
+
+	SetVisibility(ESlateVisibility::Visible);
 }
 
 // 切换轮盘
 void URadialMenuContainer::SwitchRadialMenu()
 {
-	// 防止轮盘Action未触发执行操作
-	if (GetVisibility() != ESlateVisibility::Visible) return;
-	
-	if (ActiveRadialMenuIndex == 1)
-	{
-		RadialMenuEquipment->SetVisibility(ESlateVisibility::Hidden);
-		TitleEquipment->SetColorAndOpacity(C_WHITE);
+	if (GetVisibility() != ESlateVisibility::Visible || MenuCategories.IsEmpty()) return;
 
-		RadialMenuRadio->SetVisibility(ESlateVisibility::Visible);
-		TitleRadio->SetColorAndOpacity(C_GREEN);
+	// 隐藏并重置当前菜单
+	MenuCategories[CurrentCategoryIndex].RadialMenu->SetVisibility(ESlateVisibility::Hidden);
+	MenuCategories[CurrentCategoryIndex].TitleText->SetColorAndOpacity(C_WHITE);
+	MenuCategories[CurrentCategoryIndex].RadialMenu->SetSelectedItem(-1);
 
-		ActiveRadialMenuIndex = 2;
-	}
-	else if (ActiveRadialMenuIndex == 2)
-	{
-		RadialMenuRadio->SetVisibility(ESlateVisibility::Hidden);
-		TitleRadio->SetColorAndOpacity(C_WHITE);
+	// 索引循环步进
+	CurrentCategoryIndex = (CurrentCategoryIndex + 1) % MenuCategories.Num();
 
-		RadialMenuPaint->SetVisibility(ESlateVisibility::Visible);
-		TitlePaint->SetColorAndOpacity(C_GREEN);
+	// 显示并高亮新菜单
+	MenuCategories[CurrentCategoryIndex].RadialMenu->SetVisibility(ESlateVisibility::Visible);
+	MenuCategories[CurrentCategoryIndex].TitleText->SetColorAndOpacity(C_YELLOW);
 
-		ActiveRadialMenuIndex = 3;
-	}
-	else if (ActiveRadialMenuIndex == 3)
-	{
-		RadialMenuPaint->SetVisibility(ESlateVisibility::Hidden);
-		TitlePaint->SetColorAndOpacity(C_WHITE);
-
-		RadialMenuEquipment->SetVisibility(ESlateVisibility::Visible);
-		TitleEquipment->SetColorAndOpacity(C_GREEN);
-
-		ActiveRadialMenuIndex = 1;
-	}
+	MenuCategories[CurrentCategoryIndex].RadialMenu->ResetPointerInput();
 }
 
 // 选择轮盘项
 void URadialMenuContainer::SelectRadialMenu(double X, double Y)
 {
-	// 防止轮盘Action未触发执行操作
+	// UE_LOG(LogTemp, Warning, TEXT("SelectRadialMenu X %f Y %f"), X, Y); 
+	// 防止轮盘未显示时触发
 	if (GetVisibility() != ESlateVisibility::Visible) return;
-	
-	// UE_LOG(LogTemp, Warning, TEXT("Select %f, %f"), X, Y);
-	if (X * X + Y * Y < .6) return;
 
 	if (URadialMenuBase* RadialMenu = GetActiveRadialMenu())
 	{
-		float Angle = FMath::Atan2(Y, X) * 180 / PI;
-		// UE_LOG(LogTemp, Warning, TEXT("Angle %f"), Angle);
-
-		if (Angle > -112.5 && Angle <= -67.5)
-		{
-			RadialMenu->SetSelectedItem(0);
-		}
-		else if (Angle > -67.5 && Angle <= -22.5)
-		{
-			RadialMenu->SetSelectedItem(1);
-		}
-		else if (Angle > -22.5 && Angle <= 22.5)
-		{
-			RadialMenu->SetSelectedItem(2);
-		}
-		else if (Angle > 22.5 && Angle <= 67.5)
-		{
-			RadialMenu->SetSelectedItem(3);
-		}
-		else if (Angle > 67.5 && Angle <= 112.5)
-		{
-			RadialMenu->SetSelectedItem(4);
-		}
-		else if (Angle > 112.5 && Angle <= 157.5)
-		{
-			RadialMenu->SetSelectedItem(5);
-		}
-		else if (Angle > 157.5 || Angle <= -157.5)
-		{
-			RadialMenu->SetSelectedItem(6);
-		}
-		else if (Angle > -157.5 && Angle <= -112.5)
-		{
-			RadialMenu->SetSelectedItem(7);
-		}
+		// 直接将原始 X, Y 传递给视图层进行平滑处理
+		RadialMenu->UpdatePointerInput(X, Y);
 	}
 }
 
 // 关闭轮盘
 void URadialMenuContainer::CloseRadialMenuInternal()
 {
-	if (ActiveRadialMenuIndex == 1)
+	if (CurrentCategoryIndex == 0)
 	{
 		if (RadialMenuEquipment->SelectedItemIndex != -1)
 		{
@@ -212,11 +148,10 @@ void URadialMenuContainer::CloseRadialMenuInternal()
 			// 突变体
 			else if (MutantCharacter)
 			{
-
 			}
 		}
 	}
-	else if (ActiveRadialMenuIndex == 2)
+	else if (CurrentCategoryIndex == 1)
 	{
 		if (RadialMenuRadio->SelectedItemIndex != -1)
 		{
@@ -232,7 +167,7 @@ void URadialMenuContainer::CloseRadialMenuInternal()
 			}
 		}
 	}
-	else if (ActiveRadialMenuIndex == 3)
+	else if (CurrentCategoryIndex == 2)
 	{
 		if (RadialMenuPaint->SelectedItemIndex != -1)
 		{
@@ -252,65 +187,10 @@ void URadialMenuContainer::CloseRadialMenuInternal()
 	SetVisibility(ESlateVisibility::Hidden);
 }
 
-void URadialMenuContainer::OnTeamChange(ETeam Team)
-{
-	if (Team == ETeam::Team1)
-	{
-		SetHumanRadialMenuText();
-	}
-	else if (Team == ETeam::Team2)
-	{
-		SetMutantRadialMenuText();
-	}
-}
-
-void URadialMenuContainer::SetHumanRadialMenuText()
-{
-	FText Item1Text = FText();
-	FText Item2Text = FText();
-	FText Item3Text = FText();
-	FText Item4Text = FText();
-	FText::FindTextInLiveTable_Advanced(CULTURE_EQUIPMENT_TYPE, TEXT("Primary"), Item1Text);
-	FText::FindTextInLiveTable_Advanced(CULTURE_EQUIPMENT_TYPE, TEXT("Secondary"), Item2Text);
-	FText::FindTextInLiveTable_Advanced(CULTURE_EQUIPMENT_TYPE, TEXT("Melee"), Item3Text);
-	FText::FindTextInLiveTable_Advanced(CULTURE_EQUIPMENT_TYPE, TEXT("Throwing"), Item4Text);
-
-	RadialMenuEquipment->Item1->SetText(Item1Text);
-	RadialMenuEquipment->Item2->SetText(Item2Text);
-	RadialMenuEquipment->Item3->SetText(Item3Text);
-	RadialMenuEquipment->Item4->SetText(Item4Text);
-	RadialMenuEquipment->Item5->SetText(FText::FromString(TEXT("-1")));
-	RadialMenuEquipment->Item6->SetText(FText::FromString(TEXT("-1")));
-	RadialMenuEquipment->Item7->SetText(FText::FromString(TEXT("-1")));
-	RadialMenuEquipment->Item8->SetText(FText::FromString(TEXT("-1")));
-}
-
-void URadialMenuContainer::SetMutantRadialMenuText()
-{
-	RadialMenuEquipment->Item1->SetText(FText::FromString(TEXT("-1")));
-	RadialMenuEquipment->Item2->SetText(FText::FromString(TEXT("-1")));
-	RadialMenuEquipment->Item3->SetText(FText::FromString(TEXT("-1")));
-	RadialMenuEquipment->Item4->SetText(FText::FromString(TEXT("-1")));
-	RadialMenuEquipment->Item5->SetText(FText::FromString(TEXT("-1")));
-	RadialMenuEquipment->Item6->SetText(FText::FromString(TEXT("-1")));
-	RadialMenuEquipment->Item7->SetText(FText::FromString(TEXT("-1")));
-	RadialMenuEquipment->Item8->SetText(FText::FromString(TEXT("-1")));
-}
-
 // 获取活跃的轮盘
 URadialMenuBase* URadialMenuContainer::GetActiveRadialMenu()
 {
-	switch (ActiveRadialMenuIndex)
-	{
-	case 1:
-		return RadialMenuEquipment;
-	case 2:
-		return RadialMenuRadio;
-	case 3:
-		return RadialMenuPaint;
-	default:
-		return nullptr;
-	}
+	return MenuCategories.IsValidIndex(CurrentCategoryIndex) ? MenuCategories[CurrentCategoryIndex].RadialMenu : nullptr;
 }
 
 #undef LOCTEXT_NAMESPACE

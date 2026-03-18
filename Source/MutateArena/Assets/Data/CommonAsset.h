@@ -11,8 +11,12 @@ struct FSprayPaint
 
 	UPROPERTY(EditAnywhere)
 	FString Name;
+	
 	UPROPERTY(EditAnywhere)
-	UMaterialInterface* Material =  nullptr;
+	TSoftObjectPtr<UTexture2D> Texture;
+	
+	UPROPERTY(EditAnywhere)
+	TSoftObjectPtr<UMaterialInterface> Material;
 	
 };
 

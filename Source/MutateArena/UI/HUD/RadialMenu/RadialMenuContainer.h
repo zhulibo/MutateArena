@@ -5,6 +5,8 @@
 #include "MutateArena/GameStates/BaseGameState.h"
 #include "RadialMenuContainer.generated.h"
 
+enum class ETeam : uint8;
+
 UCLASS()
 class MUTATEARENA_API URadialMenuContainer : public UCommonActivatableWidget
 {
@@ -29,6 +31,20 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	class URadialMenuPaint* RadialMenuPaint;
 
+	UPROPERTY()
+	class AHumanCharacter* HumanCharacter;
+	UPROPERTY()
+	class AMutantCharacter* MutantCharacter;
+
+	struct FMenuCategory
+	{
+		UCommonTextBlock* TitleText;
+		class URadialMenuBase* RadialMenu;
+	};
+
+	TArray<FMenuCategory> MenuCategories;
+	int32 CurrentCategoryIndex = 0;
+
 	void ShowRadialMenu(bool bIsShow);
 
 	void ShowRadialMenuInternal();
@@ -36,18 +52,6 @@ protected:
 	void SelectRadialMenu(double X, double Y);
 	void CloseRadialMenuInternal();
 
-	void OnTeamChange(ETeam TempTeam);
-	void SetHumanRadialMenuText();
-	void SetMutantRadialMenuText();
-
-	int32 ActiveRadialMenuIndex = 1;
 	class URadialMenuBase* GetActiveRadialMenu();
-
-	void SetSelectedItem();
-
-	UPROPERTY()
-	class AHumanCharacter* HumanCharacter;
-	UPROPERTY()
-	class AMutantCharacter* MutantCharacter;
-
+	
 };

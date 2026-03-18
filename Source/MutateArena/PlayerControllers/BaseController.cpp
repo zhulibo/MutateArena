@@ -112,7 +112,7 @@ void ABaseController::PauseMenuButtonPressed(const FInputActionValue& Value)
 
 void ABaseController::RadialMenuButtonPressed(const FInputActionValue& Value)
 {
-	// UE_LOG(LogTemp, Warning, TEXT("111 time: %f"), GetWorld()->GetTimeSeconds());
+	UE_LOG(LogTemp, Warning, TEXT("RadialMenuButtonPressed"));
 	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
 	{
 		UISubsystem->ShowRadialMenu.Broadcast(true);
@@ -121,6 +121,7 @@ void ABaseController::RadialMenuButtonPressed(const FInputActionValue& Value)
 
 void ABaseController::RadialMenuButtonReleased(const FInputActionValue& Value)
 {
+	UE_LOG(LogTemp, Warning, TEXT("RadialMenuButtonReleased"));
 	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
 	{
 		UISubsystem->ShowRadialMenu.Broadcast(false);
