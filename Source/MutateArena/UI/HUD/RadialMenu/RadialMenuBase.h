@@ -71,7 +71,7 @@ protected:
 	// 虚拟游标，用来“记住”鼠标拖动后的位置，维持指向
 	FVector2D VirtualCursor = FVector2D::ZeroVector;
 	UPROPERTY()
-	float PointerSensitivity = .1f;
+	float PointerSensitivity = .2f;
 
 public:
 	void ResetPointerInput();

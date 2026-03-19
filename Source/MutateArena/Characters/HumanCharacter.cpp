@@ -1,5 +1,6 @@
 #include "HumanCharacter.h"
 
+#include "CommonInputTypeEnum.h"
 #include "DataRegistryId.h"
 #include "DataRegistrySubsystem.h"
 #include "EnhancedInputComponent.h"
@@ -40,6 +41,7 @@
 #include "Net/UnrealNetwork.h"
 #include "Perception/AIPerceptionComponent.h"
 #include "MutateArena/Abilities/GameplayAbilityBase.h"
+#include "MutateArena/PlayerStates/BasePlayerState.h"
 
 #define LOCTEXT_NAMESPACE "AHumanCharacter"
 
@@ -362,6 +364,11 @@ void AHumanCharacter::AimButtonPressed(const FInputActionValue& Value)
 	{
 		FGameplayEventData Payload;
 		Payload.EventMagnitude = 2.f; // 重击
+		if (BasePlayerState == nullptr) BasePlayerState = GetPlayerState<ABasePlayerState>();
+		if (BasePlayerState && BasePlayerState->InputType == ECommonInputType::Gamepad)
+		{
+			Payload.EventMagnitude = 1.f; // 手柄瞄准键绑的是轻击
+		}
 		ASC->HandleGameplayEvent(TAG_EVENT_MELEE_ATTACK, &Payload);
 	}
 }
@@ -409,6 +416,11 @@ void AHumanCharacter::FireButtonPressed(const FInputActionValue& Value)
 		{
 			FGameplayEventData Payload;
 			Payload.EventMagnitude = 1.f; // 轻击
+			if (BasePlayerState == nullptr) BasePlayerState = GetPlayerState<ABasePlayerState>();
+			if (BasePlayerState && BasePlayerState->InputType == ECommonInputType::Gamepad)
+			{
+				Payload.EventMagnitude = 2.f;  // 手柄开火键绑的是轻击
+			}
 			ASC->HandleGameplayEvent(TAG_EVENT_MELEE_ATTACK, &Payload);
 		}
 		break;

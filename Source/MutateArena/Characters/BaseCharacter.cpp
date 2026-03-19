@@ -170,7 +170,6 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 			Subsystem->RemoveMappingContext(AssetSubsystem->InputAsset->SpectatorMappingContext);
 
 			Subsystem->AddMappingContext(AssetSubsystem->InputAsset->BaseMappingContext, 100);
-			Subsystem->AddMappingContext(AssetSubsystem->InputAsset->RadialMenuMappingContext, 1000);
 		}
 	}
 
@@ -347,7 +346,13 @@ void ABaseCharacter::Destroyed()
 // 输入设备类型改变
 void ABaseCharacter::OnInputMethodChanged(ECommonInputType TempInputType)
 {
-	UE_LOG(LogTemp, Warning, TEXT("OnInputMethodChanged: %d"), TempInputType);
+	// UE_LOG(LogTemp, Warning, TEXT("OnInputMethodChanged: %d"), TempInputType);
+	if (BasePlayerState == nullptr) BasePlayerState = GetPlayerState<ABasePlayerState>();
+	if (BasePlayerState)
+	{
+		BasePlayerState->InputType = TempInputType;
+	}
+	
 	ServerSetInputType(TempInputType);
 }
 

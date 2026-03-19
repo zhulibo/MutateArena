@@ -1,12 +1,15 @@
 #include "RadialMenuContainer.h"
 
 #include "CommonTextBlock.h"
+#include "EnhancedInputSubsystems.h"
 #include "RadialMenuEquipment.h"
 #include "RadialMenuPaint.h"
 #include "RadialMenuRadio.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/Characters/HumanCharacter.h"
+#include "MutateArena/Characters/Data/InputAsset.h"
 #include "MutateArena/Equipments/Data/EquipmentType.h"
+#include "MutateArena/System/AssetSubsystem.h"
 #include "MutateArena/System/UISubsystem.h"
 
 #define LOCTEXT_NAMESPACE "URadialMenuContainer"
@@ -45,6 +48,18 @@ void URadialMenuContainer::ShowRadialMenuInternal()
 	// Action设为了长按，且ETriggerEvent::Triggered，会频繁触发
 	if (GetVisibility() == ESlateVisibility::Visible) return;
 
+	// 动态注入径向菜单 IMC
+	if (UAssetSubsystem* AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>())
+	{
+		if (ULocalPlayer* LocalPlayer = GetOwningLocalPlayer())
+		{
+			if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LocalPlayer))
+			{
+				Subsystem->AddMappingContext(AssetSubsystem->InputAsset->RadialMenuMappingContext, 1000);
+			}
+		}
+	}
+	
 	HumanCharacter = Cast<AHumanCharacter>(GetOwningPlayerPawn());
 	MutantCharacter = Cast<AMutantCharacter>(GetOwningPlayerPawn());
 
@@ -184,6 +199,18 @@ void URadialMenuContainer::CloseRadialMenuInternal()
 		}
 	}
 
+	// 动态移除径向菜单 IMC
+	if (UAssetSubsystem* AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>())
+	{
+		if (ULocalPlayer* LocalPlayer = GetOwningLocalPlayer())
+		{
+			if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LocalPlayer))
+			{
+				Subsystem->RemoveMappingContext(AssetSubsystem->InputAsset->RadialMenuMappingContext);
+			}
+		}
+	}
+	
 	SetVisibility(ESlateVisibility::Hidden);
 }
 

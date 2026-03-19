@@ -37,6 +37,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Base")
 	UInputAction* TextChatAction;
 
+	UPROPERTY(EditAnywhere, Category = "Base")
+	UInputAction* RadialMenuAction;
+
 	// Human
 	UPROPERTY(EditAnywhere, Category = "Human")
 	UInputMappingContext* HumanMappingContext;
@@ -87,9 +90,7 @@ public:
 	// RadialMenu
 	UPROPERTY(EditAnywhere, Category = "RadialMenu")
 	UInputMappingContext* RadialMenuMappingContext;
-
-	UPROPERTY(EditAnywhere, Category = "RadialMenu")
-	UInputAction* RadialMenuAction;
+	
 	UPROPERTY(EditAnywhere, Category = "RadialMenu")
 	UInputAction* RadialMenuSwitchAction;
 	UPROPERTY(EditAnywhere, Category = "RadialMenu")

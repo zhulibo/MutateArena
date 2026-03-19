@@ -112,7 +112,6 @@ void ABaseController::PauseMenuButtonPressed(const FInputActionValue& Value)
 
 void ABaseController::RadialMenuButtonPressed(const FInputActionValue& Value)
 {
-	UE_LOG(LogTemp, Warning, TEXT("RadialMenuButtonPressed"));
 	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
 	{
 		UISubsystem->ShowRadialMenu.Broadcast(true);
@@ -121,7 +120,6 @@ void ABaseController::RadialMenuButtonPressed(const FInputActionValue& Value)
 
 void ABaseController::RadialMenuButtonReleased(const FInputActionValue& Value)
 {
-	UE_LOG(LogTemp, Warning, TEXT("RadialMenuButtonReleased"));
 	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
 	{
 		UISubsystem->ShowRadialMenu.Broadcast(false);
@@ -144,17 +142,15 @@ void ABaseController::RadialMenuSelect(const FInputActionValue& Value)
 	{
 		UISubsystem->SelectRadialMenu.Broadcast(AxisVector.X, AxisVector.Y);
 	}
-	// UE_LOG(LogTemp, Warning, TEXT("222 x y time: %f %f %f"), AxisVector.X, AxisVector.Y, GetWorld()->GetTimeSeconds());
 }
 
 void ABaseController::TextChat(const FInputActionValue& Value)
 {
-	// TODO 手柄暂未处理
 	if (UCommonInputSubsystem* CommonInputSubsystem = UCommonInputSubsystem::Get(GetWorld()->GetFirstLocalPlayerFromController()))
 	{
 		if (CommonInputSubsystem->GetCurrentInputType() != ECommonInputType::MouseAndKeyboard)
 		{
-			return;
+			return; // TODO 手柄
 		}
 	}
 
