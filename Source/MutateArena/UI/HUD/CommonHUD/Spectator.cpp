@@ -6,6 +6,7 @@
 #include "MutateArena/PlayerStates/BasePlayerState.h"
 #include "MutateArena/System/UISubsystem.h"
 #include "MutateArena/UI/Common/CommonButton.h"
+#include "MutateArena/Utils/LibraryCommon.h"
 
 #define LOCTEXT_NAMESPACE "USpectator"
 
@@ -29,7 +30,7 @@ void USpectator::OnViewTargetChange(AActor* ViewTarget)
 	{
 		if (ABasePlayerState* BasePlayerState = Cast<ABasePlayerState>(BaseCharacter->GetPlayerState()))
 		{
-			CurPlayer->SetText(FText::FromString(BasePlayerState->GetPlayerName()));
+			CurPlayer->SetText(FText::FromString(ULibraryCommon::ObfuscateName(BasePlayerState->GetPlayerName(), this)));
 		}
 	}
 }

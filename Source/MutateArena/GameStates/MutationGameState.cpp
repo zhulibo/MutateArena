@@ -107,13 +107,21 @@ void AMutationGameState::CalcDamageMul()
 	{
 		TempDamageMul = 2.f;
 	}
-	else if (PlayerMul <= .75f)
+	else if (PlayerMul <= .7f)
 	{
-		TempDamageMul = 1.5f;
+		TempDamageMul = 1.8f;
 	}
 	else if (PlayerMul <= 1.f)
 	{
-		TempDamageMul = 1.25f;
+		TempDamageMul = 1.6f;
+	}
+	else if (PlayerMul <= 1.5f)
+	{
+		TempDamageMul = 1.4f;
+	}
+	else if (PlayerMul <= 2.f)
+	{
+		TempDamageMul = 1.2f;
 	}
 
 	// 伤害加成只增不减

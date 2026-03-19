@@ -46,6 +46,7 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FOnTotalRoundChange, int32 Round);
 DECLARE_MULTICAST_DELEGATE(FOnCause1000Damage);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnSkillChange, bool bIsShow);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnRageChange, float Rage);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnLevelChange, float Level);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnDamageMulChange, float DamageMul);
 DECLARE_MULTICAST_DELEGATE(FOnBeImmune);
 
@@ -107,6 +108,7 @@ public:
 	FOnCause1000Damage OnCause1000Damage;
 	FOnSkillChange OnSkillChange;
 	FOnRageChange OnRageChange;
+	FOnLevelChange OnLevelChange;
 	FOnDamageMulChange OnDamageMulChange;
 	FOnBeImmune OnBeImmune;
 	

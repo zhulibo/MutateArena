@@ -14,6 +14,7 @@ class MUTATEARENA_API UMutationMutant : public UCommonActivatableWidget
 
 protected:
 	virtual void NativeOnInitialized() override;
+	virtual void NativeConstruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 	UPROPERTY()
@@ -35,6 +36,14 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	UCommonTextBlock* Rage;
+	UPROPERTY(meta = (BindWidget))
+	UCommonTextBlock* RageLabel;
 	void OnRageChange(float TempRage);
+	
+	UPROPERTY(meta = (BindWidget))
+	UCommonTextBlock* Level;
+	UPROPERTY(meta = (BindWidget))
+	UCommonTextBlock* LevelLabel;
+	void OnLevelChange(float TempLevel);
 
 };

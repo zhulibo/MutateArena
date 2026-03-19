@@ -209,7 +209,7 @@ void UServer::OnFindLobbiesComplete(bool bWasSuccessful, const TArray<TSharedRef
 					MapName = Lobbies[i]->Attributes.Find(LOBBY_MAP_NAME)->GetString();
 				}
 
-				ServerName = ULibraryCommon::ObfuscateName(ServerName, this);
+				ServerName = ULibraryCommon::ObfuscateServerName(ServerName, this);
 				
 				if (Lobbies[i]->Attributes.Num() > 0)
 				{

@@ -22,13 +22,14 @@ public:
 	
 	static FColor GetProgressColor(double Value, double InRangeA, double InRangeB, FColor InColor, FColor OutColor);
 
-	
+	static FString GetHashPrefix(const FString& Name);
 	static FString ObfuscateName(FString PlayerName, const UObject* Context);
+	static FString ObfuscateServerName(FString Msg, const UObject* Context);
 	static FString ObfuscateTextChat(FString Msg, const UObject* Context);
 	static FString ObfuscateText(FString Text);
 
 	static FString GetLanguage();
-	
+
 	// 获取UMG子集
 	template<typename T>
 	static TArray<T*> GetAllChildrenOfClass(UWidget* Parent, bool bRecursive = false)

@@ -21,9 +21,20 @@ void UMutationMutant::NativeOnInitialized()
 		UISubsystem->OnMutantHealthChange.AddUObject(this, &ThisClass::OnMutantHealthChange);
 		UISubsystem->OnSkillChange.AddUObject(this, &ThisClass::OnSkillChange);
 		UISubsystem->OnRageChange.AddUObject(this, &ThisClass::OnRageChange);
+		UISubsystem->OnLevelChange.AddUObject(this, &ThisClass::OnLevelChange);
 	}
 
 	SkillButton->OnClicked().AddUObject(this, &ThisClass::OnSkillButtonClicked);
+}
+
+void UMutationMutant::NativeConstruct()
+{
+	Super::NativeConstruct();
+	
+	RageLabel->SetColorAndOpacity(C_YELLOW);
+	Rage->SetColorAndOpacity(C_YELLOW);
+	LevelLabel->SetColorAndOpacity(C_YELLOW);
+	Level->SetColorAndOpacity(C_YELLOW);
 }
 
 void UMutationMutant::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
@@ -89,4 +100,13 @@ void UMutationMutant::OnRageChange(float TempRage)
 	Opts.SetUseGrouping(false); // 不使用千位分隔符
 	Opts.SetMaximumFractionalDigits(0);
 	Rage->SetText(FText::AsNumber(TempRage, &Opts));
+}
+
+void UMutationMutant::OnLevelChange(float TempLevel)
+{
+	FNumberFormattingOptions Opts;
+	Opts.RoundingMode = ERoundingMode::ToPositiveInfinity; // 向上取整
+	Opts.SetUseGrouping(false); // 不使用千位分隔符
+	Opts.SetMaximumFractionalDigits(0);
+	Level->SetText(FText::AsNumber(TempLevel, &Opts));
 }

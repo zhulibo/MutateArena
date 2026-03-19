@@ -26,6 +26,7 @@
 #include "Data/CharacterAsset.h"
 #include "MutateArena/Effects/BloodCollision.h"
 #include "Kismet/GameplayStatics.h"
+#include "MutateArena/System/UISubsystem.h"
 #include "MutateArena/System/Tags/ProjectTags.h"
 #include "Net/UnrealNetwork.h"
 #include "Perception/AIPerceptionComponent.h"
@@ -188,13 +189,20 @@ void AMutantCharacter::OnLocalSkillCooldownTagChanged(FGameplayTag GameplayTag, 
 	}
 }
 
-// 更新skill UI
 void AMutantCharacter::OnLocalCharacterLevelChanged(const FOnAttributeChangeData& Data)
 {
 	if (MutationController == nullptr) MutationController = Cast<AMutationController>(Controller);
 	if (MutationController && ASC)
 	{
 		MutationController->SetHUDSkill(ASC->GetTagCount(TAG_CD_MUTANT_SKILL) == 0 && Data.NewValue > 2.f);
+	}
+
+	if (MutationController)
+	{
+		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(MutationController->GetLocalPlayer()))
+		{
+			UISubsystem->OnLevelChange.Broadcast(Data.NewValue);
+		}
 	}
 }
 

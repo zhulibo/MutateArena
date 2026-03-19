@@ -104,7 +104,7 @@ void ULobby::SetUIAttr()
 {
 	if (EOSSubsystem == nullptr) return;
 	
-	FString ServerName = ULibraryCommon::ObfuscateName(EOSSubsystem->GetLobbyServerName(), this);
+	FString ServerName = ULibraryCommon::ObfuscateServerName(EOSSubsystem->GetLobbyServerName(), this);
 	ServerNameEditableTextBox->SetText(FText::FromString(ServerName));
 	LastServerName = FText::FromString(ServerName);
 
@@ -480,7 +480,7 @@ void ULobby::OnLobbyAttrChanged(const FLobbyAttributesChanged& LobbyAttributesCh
 		if (ChangedAttribute.Key == LOBBY_SERVER_NAME)
 		{
 			FString ServerName = ChangedAttribute.Value.Value.GetString();
-			ServerName = ULibraryCommon::ObfuscateName(ServerName, this);
+			ServerName = ULibraryCommon::ObfuscateServerName(ServerName, this);
 			ServerNameEditableTextBox->SetText(FText::FromString(ServerName));
 			LastServerName = FText::FromString(ServerName);
 

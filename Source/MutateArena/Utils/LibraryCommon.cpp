@@ -1,9 +1,12 @@
 #include "LibraryCommon.h"
 
+#include "ObfuscateWords.h"
+#include "GameFramework/GameStateBase.h"
 #include "Internationalization/Culture.h"
 #include "MutateArena/System/Storage/SaveGameSetting.h"
 #include "MutateArena/System/Storage/StorageSubsystem.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "MutateArena/PlayerStates/BasePlayerState.h"
 
 FString ULibraryCommon::GetProjectVersion()
 {
@@ -55,9 +58,19 @@ FColor ULibraryCommon::GetProgressColor(double Value, double InRangeA, double In
 	return FColor(R, G, B, A);
 }
 
+FString ULibraryCommon::GetHashPrefix(const FString& Name)
+{
+	uint32 NameHash = GetTypeHash(Name);
+	
+	int32 AdjIndex = NameHash % ObfuscateDict::Adjectives.Num();
+	int32 NounIndex = (NameHash / ObfuscateDict::Adjectives.Num()) % ObfuscateDict::Nouns.Num();
+	
+	return ObfuscateDict::Adjectives[AdjIndex] + ObfuscateDict::Nouns[NounIndex];
+}
+
 FString ULibraryCommon::ObfuscateName(FString Name, const UObject* Context)
 {
-	if (Context == nullptr) return Name;
+	if (Context == nullptr || Name.IsEmpty()) return Name;
 
 	if (UGameInstance* GameInstance = Context->GetWorld()->GetGameInstance())
 	{
@@ -67,14 +80,51 @@ FString ULibraryCommon::ObfuscateName(FString Name, const UObject* Context)
 		{
 			UEOSSubsystem* EOSSubsystem = GameInstance->GetSubsystem<UEOSSubsystem>();
 			// 非本人名字
+			UE_LOG(LogTemp, Warning, TEXT("EOSSubsystem->GetPlayerName() %s Name %s"), *EOSSubsystem->GetPlayerName(), *Name);
 			if (EOSSubsystem && EOSSubsystem->GetPlayerName() != Name)
 			{
-				return ObfuscateText(Name);
+				// 静态缓存
+				static TMap<FString, FString> ObfuscatedNameCache;
+				
+				if (ObfuscatedNameCache.Num() > 1000)
+				{
+					ObfuscatedNameCache.Empty();
+				}
+				
+				if (FString* CachedName = ObfuscatedNameCache.Find(Name))
+				{
+					return *CachedName;
+				}
+
+				// 如果没命中缓存，则进行首次计算
+				FString XX = GetHashPrefix(Name);
+				FString YY = ObfuscateText(Name);
+				FString ResultName = FString::Printf(TEXT("%s-%s"), *XX, *YY);
+
+				ObfuscatedNameCache.Add(Name, ResultName);
+
+				return ResultName;
 			}
 		}
 	}
 
 	return Name;
+}
+
+FString ULibraryCommon::ObfuscateServerName(FString Msg, const UObject* Context)
+{
+	if (Context && Context->GetWorld() && Context->GetWorld()->GetGameInstance())
+	{
+		if (UStorageSubsystem* StorageSubsystem = Context->GetWorld()->GetGameInstance()->GetSubsystem<UStorageSubsystem>())
+		{
+			if (StorageSubsystem->CacheSetting && StorageSubsystem->CacheSetting->bObfuscateName == true)
+			{
+				return ObfuscateText(Msg);
+			}
+		}
+	}
+
+	return Msg;
 }
 
 FString ULibraryCommon::ObfuscateTextChat(FString Msg, const UObject* Context)
@@ -97,8 +147,8 @@ FString ULibraryCommon::ObfuscateText(FString Text)
 {
 	FString ObfuscatedString;
 
-	const TCHAR ReplacementTable[] = TEXT("!@#$%^&*()_+");
-	const int32 TableSize = UE_ARRAY_COUNT(ReplacementTable) - 1; // 去掉结尾的'\0'
+	static constexpr TCHAR ReplacementTable[] = TEXT("~!@#$%^&*()_+-={}|[]<>?,./");
+	static constexpr int32 TableSize = UE_ARRAY_COUNT(ReplacementTable) - 1; // 去掉结尾的'\0'
 
 	for (TCHAR Character : Text)
 	{

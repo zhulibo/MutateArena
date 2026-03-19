@@ -6,13 +6,20 @@
 #include "MutateArena/System/AssetSubsystem.h"
 #include "MutateArena/Assets/Data/CommonAsset.h"
 #include "Components/AudioComponent.h"
+#include "Components/Image.h"
 #include "Kismet/GameplayStatics.h"
+#include "MutateArena/MutateArena.h"
 #include "MutateArena/System/UISubsystem.h"
 
 void UMutationHuman::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
-
+	
+	if (DamageMulImage)
+	{
+		DamageMulMID = DamageMulImage->GetDynamicMaterial();
+	}
+	
 	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer()))
 	{
 		UISubsystem->OnHumanHealthChange.AddUObject(this, &ThisClass::OnHumanHealthChange);
@@ -22,6 +29,14 @@ void UMutationHuman::NativeOnInitialized()
 		UISubsystem->OnCause1000Damage.AddUObject(this, &ThisClass::OnCombatIconChange, ECombatIconType::Cause1000Damage);
 		UISubsystem->OnBeImmune.AddUObject(this, &ThisClass::OnCombatIconChange, ECombatIconType::BeImmune);
 	}
+}
+
+void UMutationHuman::NativeConstruct()
+{
+	Super::NativeConstruct();
+	
+	DamageLabel->SetColorAndOpacity(C_YELLOW);
+	DamageMul->SetColorAndOpacity(C_YELLOW);
 }
 
 void UMutationHuman::OnHumanHealthChange(float TempHealth)
@@ -46,6 +61,11 @@ void UMutationHuman::OnCarriedAmmoChange(int32 TempCarriedAmmo)
 void UMutationHuman::OnDamageMulChange(float TempDamageMul)
 {
 	DamageMul->SetText(FText::AsPercent(TempDamageMul));
+	
+	if (DamageMulMID)
+	{
+		DamageMulMID->SetScalarParameterValue(FName("Progress"), FMath::Clamp(TempDamageMul - 1.0f, 0.0f, 1.0f));
+	}
 }
 
 void UMutationHuman::OnCombatIconChange(ECombatIconType CombatIconType)

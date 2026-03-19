@@ -34,7 +34,7 @@ void UScoreboard::ShowScoreboard(bool bIsShow)
 		if (EOSSubsystem == nullptr) EOSSubsystem = GetGameInstance()->GetSubsystem<UEOSSubsystem>();
 		if (EOSSubsystem)
 		{
-			Server->SetText(FText::FromString(ULibraryCommon::ObfuscateName(EOSSubsystem->GetLobbyServerName(), this)));
+			Server->SetText(FText::FromString(ULibraryCommon::ObfuscateServerName(EOSSubsystem->GetLobbyServerName(), this)));
 		}
 
 		SetVisibility(ESlateVisibility::Visible);
