@@ -13,6 +13,6 @@ public:
 	static UMAGameplayCueManager* Get();
 
 protected:
-	virtual bool ShouldAsyncLoadRuntimeObjectLibraries() const override;
+	// virtual bool ShouldAsyncLoadRuntimeObjectLibraries() const override;
 
 };

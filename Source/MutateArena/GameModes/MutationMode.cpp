@@ -304,10 +304,10 @@ void AMutationMode::RoundStartMutate()
 
 		if (ABasePlayerState* BasePlayerState = Team1[RandomIndex])
 		{
-			// 初始突变体拥有最高等级
-			if (BasePlayerState->GetAttributeSetBase())
+			// 初始突变体拥有满怒气，SetRage 内部会自动将其等级同步提升至 3 级
+			if (AMutationPlayerState* MutationPlayerState = Cast<AMutationPlayerState>(BasePlayerState))
 			{
-				BasePlayerState->GetAttributeSetBase()->SetCharacterLevel(3.f);
+				MutationPlayerState->SetRage(MutationPlayerState->RageLevel3);
 			}
 
 			if (AController* Controller = Cast<AController>(BasePlayerState->GetOwner()))

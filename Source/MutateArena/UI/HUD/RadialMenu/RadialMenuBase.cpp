@@ -89,50 +89,59 @@ void URadialMenuBase::ResetPointerInput()
 
 void URadialMenuBase::UpdatePointerInput(double X, double Y)
 {
-	// 保持不变：-= 确保你的视觉指针“指哪打哪”
-	VirtualCursor.X += X * PointerSensitivity;
-	VirtualCursor.Y -= Y * PointerSensitivity;
+	// ================= 1. 输入处理 (非线性加速) =================
+	FVector2D RawInput(X, -Y); // UE屏幕Y轴向下，输入取反保持直觉
+	float InputMag = RawInput.Size();
 
+	if (InputMag > 0.0f)
+	{
+		FVector2D InputDir = RawInput / InputMag;
+		
+		// 限制最大输入防暴增，应用指数曲线
+		float ClampedMag = FMath::Clamp(InputMag, 0.0f, 2.0f);
+		// 非线性加速：小幅输入更精细，大幅输入更迅猛
+		float AcceleratedMag = FMath::Pow(ClampedMag, AccelerationExponent);
+
+		// 累加到虚拟光标
+		VirtualCursor += InputDir * (AcceleratedMag * PointerSensitivity);
+	}
+
+	// ================= 2. 游标限位 =================
 	float Magnitude = VirtualCursor.Size();
 	if (Magnitude > 1.0f)
 	{
 		VirtualCursor /= Magnitude;
-		Magnitude = 1.0f;
+		Magnitude = 1.0f; // 限制在单位圆内
 	}
 
-	// ================= 1. 视觉角度 =================
-	// 传给材质的真实角度，让指针在屏幕上画得正确
+	// 计算视觉角度
 	float VisualAngle = FMath::Atan2(VirtualCursor.Y, VirtualCursor.X) * 180.0f / PI;
 
+	// ================= 3. 更新材质表现 =================
 	if (DynamicPointerMat)
 	{
 		DynamicPointerMat->SetScalarParameterValue(FName("PointerAngle"), VisualAngle);
 		DynamicPointerMat->SetScalarParameterValue(FName("PointerLength"), Magnitude);
 	}
 
-	// ==============================================
-
+	// ================= 4. 逻辑扇区判定 =================
+	// 根据是否已有选中项，决定当前使用的死区阈值（包含迟滞设计）
 	float CurrentDeadzone = (SelectedItemIndex == -1) ? DeadzoneThreshold : (DeadzoneThreshold - DeadzoneHysteresis);
+	int32 TargetIndex = -1;
 
-	// ================= 2. 逻辑角度 =================
+	// 当指针推到足够远（超过死区），才进行扇区选择
 	if (Magnitude >= CurrentDeadzone && SegmentCount > 0)
 	{
-		// 【终极魔法】：为了迎合底层 UI 数组色块的方向，我们在这里单独给角度加上负号！
-		float LogicAngle = -VisualAngle;
-
+		float LogicAngle = -VisualAngle; // 迎合底层 UI 数组色块的方向
 		float AngleStep = 360.0f / SegmentCount;
 		float Offset = 90.0f + (AngleStep / 2.0f);
-
-		// 注意这里改成了用 LogicAngle 去算
+		
 		float NormalizedAngle = FMath::Fmod(LogicAngle + Offset + 360.0f, 360.0f);
-		int32 TargetIndex = FMath::FloorToInt(NormalizedAngle / AngleStep) % SegmentCount;
+		TargetIndex = FMath::FloorToInt(NormalizedAngle / AngleStep) % SegmentCount;
+	}
 
-		SetSelectedItem(TargetIndex);
-	}
-	else
-	{
-		SetSelectedItem(-1);
-	}
+	// 更新选中状态
+	SetSelectedItem(TargetIndex);
 }
 
 void URadialMenuBase::SetSelectedItem(int32 Index)

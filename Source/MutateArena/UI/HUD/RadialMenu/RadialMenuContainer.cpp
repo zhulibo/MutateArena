@@ -75,15 +75,15 @@ void URadialMenuContainer::ShowRadialMenuInternal()
 
 	CurrentCategoryIndex = 0;
 
-	FLinearColor FactionColor = FLinearColor::White;
-	if (HumanCharacter)
-	{
-		FactionColor = FLinearColor(C_RED);
-	}
-	else if (MutantCharacter)
-	{
-		FactionColor = FLinearColor(C_GREEN);
-	}
+	FLinearColor FactionColor = FLinearColor(C_YELLOW);
+	// if (HumanCharacter)
+	// {
+	// 	FactionColor = FLinearColor(C_RED);
+	// }
+	// else if (MutantCharacter)
+	// {
+	// 	FactionColor = FLinearColor(C_GREEN);
+	// }
 
 	for (FMenuCategory& Category : MenuCategories)
 	{

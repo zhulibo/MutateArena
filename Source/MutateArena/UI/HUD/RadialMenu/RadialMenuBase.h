@@ -71,8 +71,11 @@ protected:
 	// 虚拟游标，用来“记住”鼠标拖动后的位置，维持指向
 	FVector2D VirtualCursor = FVector2D::ZeroVector;
 	UPROPERTY()
-	float PointerSensitivity = .2f;
-
+	float PointerSensitivity = .3f;
+	// 加速度曲线指数
+	UPROPERTY()
+	float AccelerationExponent = 1.6f;
+	
 public:
 	void ResetPointerInput();
 	void SetPointerColor(FLinearColor NewColor);

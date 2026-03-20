@@ -41,8 +41,6 @@ public:
 	float Rage = 0.f;
 	void SetRage(float TempRage);
 	UPROPERTY()
-	float RageLevel1 = 0.f;
-	UPROPERTY()
 	float RageLevel2 = 8000.f;
 	UPROPERTY()
 	float RageLevel3 = 12000.f;
