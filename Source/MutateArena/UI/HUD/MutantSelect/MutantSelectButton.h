@@ -13,9 +13,13 @@ class MUTATEARENA_API UMutantSelectButton : public UCommonButtonBase
 
 public:
 	UPROPERTY(meta = (BindWidget))
-	class UCommonTextBlock* NameText;
+	class UCommonTextBlock* Name;
 	UPROPERTY(meta = (BindWidget))
-	UCommonTextBlock* DescText;
+	UCommonTextBlock* Attribute;
+	UPROPERTY(meta = (BindWidget))
+	UCommonTextBlock* Skill;
+	UPROPERTY(meta = (BindWidget))
+	UCommonTextBlock* Desc;
 	UPROPERTY()
 	EMutantCharacterName MutantCharacterName;
 

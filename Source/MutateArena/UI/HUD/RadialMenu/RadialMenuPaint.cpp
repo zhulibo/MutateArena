@@ -22,9 +22,7 @@ void URadialMenuPaint::NativeOnInitialized()
             
 			if (SprayPaints.IsValidIndex(i))
 			{
-				FText Text;
-				FText::FindTextInLiveTable_Advanced(CULTURE_SPRAY_PAINT, SprayPaints[i].Name, Text);
-				ItemData.ItemText = Text;
+				ItemData.ItemText = SprayPaints[i].Name;
 				ItemData.ItemTexture = SprayPaints[i].Texture;
 			}
 			else

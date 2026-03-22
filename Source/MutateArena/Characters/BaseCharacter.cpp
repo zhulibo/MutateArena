@@ -76,7 +76,7 @@ ABaseCharacter::ABaseCharacter()
 
 	OverheadWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("OverheadWidget"));
 	OverheadWidget->SetupAttachment(GetMesh(), SOCKET_CAMERA);
-	OverheadWidget->SetRelativeLocation(FVector(0.f, 0.f, 50.f));
+	OverheadWidget->SetRelativeLocation(FVector(0.f, 0.f, 60.f));
 	OverheadWidget->SetDrawSize(FVector2D(120.f, 30.f));
 
 	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;

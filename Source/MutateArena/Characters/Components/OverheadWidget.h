@@ -12,31 +12,30 @@ class MUTATEARENA_API UOverheadWidget : public UCommonUserWidget
 public:
 	friend class ABaseCharacter;
 
+	void ShowOverheadWidget(bool bIsShow);
+	void PlayFlashbangEffect(float Speed);
+
+	void OnMaxHealthChange(float MaxHealth);
+	void OnHealthChange(float OldHealth, float NewHealth);
+
 protected:
 	virtual void NativeOnInitialized() override;
 	virtual void NativeConstruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 	virtual void NativeDestruct() override;
 
-	UPROPERTY()
-	TObjectPtr<class ABaseGameState> BaseGameState;
-
-	// 拥有此OverheadWidget的角色
-	UPROPERTY()
-	ABaseCharacter* BaseCharacter;
-	UPROPERTY()
-	class ABasePlayerState* BasePlayerState;
-
-	// 本地角色
-	UPROPERTY()
-	class ABaseController* LocalBaseController;
-	UPROPERTY()
-	ABasePlayerState* LocalBasePlayerState;
-	UPROPERTY()
-	ABaseCharacter* LocalBaseCharacter;
+	TWeakObjectPtr<class ABaseGameState> BaseGameState;
+	TWeakObjectPtr<class ABaseCharacter> BaseCharacter;
+	TWeakObjectPtr<class ABasePlayerState> BasePlayerState;
+	
+	TWeakObjectPtr<class ABaseController> LocalBaseController;
+	TWeakObjectPtr<class ABasePlayerState> LocalBasePlayerState;
+	TWeakObjectPtr<class ABaseCharacter> LocalBaseCharacter;
 	
 	UPROPERTY(meta = (BindWidget))
 	class UCommonTextBlock* PlayerName;
+	UPROPERTY(meta = (BindWidget))
+	class UVerticalBox* CT;
 	UPROPERTY(meta = (BindWidget))
 	class UCommonLazyImage* HealthBar;
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
@@ -48,15 +47,24 @@ protected:
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
 	UWidgetAnimation* FadeIn;
 
+	UPROPERTY(Transient)
+	UMaterialInstanceDynamic* HealthBarMID;
+	UPROPERTY(Transient)
+	UMaterialInstanceDynamic* HealthBarLineMID;
+	
+	bool bNeedUpdate = true;
+	void MakeDirty();
+	float TraceDistance = 3000.f;
 	void InitOverheadWidget();
 	FTimerHandle TraceTimerHandle;
 	void TraceOverheadWidget();
 	int32 GetHealthBarLineNum();
-	void OnMaxHealthChange(float MaxHealth);
-	void OnHealthChange(float OldHealth, float NewHealth);
 	bool bIsAllowShow = true;
-public:
-	void ShowOverheadWidget(bool bIsShow);
-	void PlayFlashbangEffect(float Speed);
-
+	
+	// 记录上一次处于准星范围内的时间
+	float LastAimTime = -999.f;
+	// 血条延迟显示的时间
+	UPROPERTY()
+	float HealthBarLingerTime = 2.f;
+	
 };

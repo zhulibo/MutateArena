@@ -4,6 +4,8 @@
 #include "CommonUserWidget.h"
 #include "Scoreboard.generated.h"
 
+class UStorageSubsystem;
+
 UCLASS()
 class MUTATEARENA_API UScoreboard : public UCommonUserWidget
 {
@@ -18,7 +20,9 @@ protected:
 	
 	UPROPERTY()
 	class UEOSSubsystem* EOSSubsystem;
-
+	UPROPERTY()
+	UStorageSubsystem* StorageSubsystem;
+	
 	void ShowScoreboard(bool bIsShow);
 
 	FTimerHandle TimerHandle;

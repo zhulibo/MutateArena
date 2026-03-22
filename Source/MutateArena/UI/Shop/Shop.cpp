@@ -109,9 +109,7 @@ void UShop::AddEquipmentButton(const FOffer& Offer, const FEquipmentMain& Equipm
 	if (UItemButton* EquipmentButton = CreateWidget<UItemButton>(this, EquipmentButtonClass))
 	{
 		EquipmentButton->Offer = Offer;
-		FText TranslatedShowName = FText();
-		FText::FindTextInLiveTable_Advanced(CULTURE_EQUIPMENT, EquipmentMain.ShowName, TranslatedShowName);
-		EquipmentButton->TranslatedShowName->SetText(TranslatedShowName);
+		EquipmentButton->ShowName->SetText(EquipmentMain.ShowName);
 		EquipmentButton->Price->SetText(Offer.FormattedPrice);
 		EquipmentButton->ShowImg->SetBrushFromLazyTexture(EquipmentMain.ShowImg);
 		EquipmentButton->OnClicked().AddUObject(this, &ThisClass::OnItemButtonClicked, EquipmentButton);
@@ -128,9 +126,7 @@ void UShop::AddCharacterButton(const FOffer& Offer, const FHumanCharacterMain& H
 	if (UItemButton* CharacterButton = CreateWidget<UItemButton>(this, CharacterButtonClass))
 	{
 		CharacterButton->Offer = Offer;
-		FText TranslatedShowName = FText();
-		FText::FindTextInLiveTable_Advanced(CULTURE_HUMAN, HumanCharacterMain.ShowName, TranslatedShowName);
-		CharacterButton->TranslatedShowName->SetText(TranslatedShowName);
+		CharacterButton->ShowName->SetText(HumanCharacterMain.ShowName);
 		CharacterButton->Price->SetText(Offer.FormattedPrice);
 		CharacterButton->ShowImg->SetBrushFromLazyTexture(HumanCharacterMain.ShowImg);
 		CharacterButton->OnClicked().AddUObject(this, &ThisClass::OnItemButtonClicked, CharacterButton);

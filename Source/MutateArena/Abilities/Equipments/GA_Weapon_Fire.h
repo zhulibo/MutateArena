@@ -10,19 +10,19 @@ struct FGameplayAbilityTargetData_FireInfo : public FGameplayAbilityTargetData
 	GENERATED_BODY()
 
 	UPROPERTY()
-	FVector HitTarget;
+	FVector HitTarget = FVector::ZeroVector;
 
 	UPROPERTY()
-	float RecoilVert;
+	float RecoilVert= 0.f;
 
 	UPROPERTY()
-	float RecoilHor;
+	float RecoilHor= 0.f;
 
 	UPROPERTY()
-	float SpreadX;
+	float SpreadX= 0.f;
 
 	UPROPERTY()
-	float SpreadY;
+	float SpreadY= 0.f;
 
 	// 返回静态结构体信息
 	virtual UScriptStruct* GetScriptStruct() const override

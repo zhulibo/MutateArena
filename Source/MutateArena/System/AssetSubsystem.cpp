@@ -3,6 +3,7 @@
 #include "AssetThread.h"
 #include "DataAssetManager.h"
 #include "Engine/StreamableManager.h"
+#include "MutateArena/MutateArena.h"
 #include "MutateArena/Assets/Data/CommonAsset.h"
 #include "MutateArena/Characters/Data/InputAsset.h"
 #include "MutateArena/Characters/Data/CharacterAsset.h"
@@ -17,17 +18,15 @@ void UAssetSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 
 	double StartTime = FPlatformTime::Seconds();
 	
-	CommonAssetId = GenerateId(UCommonAsset::StaticClass());
-	InputAssetId = GenerateId(UInputAsset::StaticClass());
-	CharacterAssetId = GenerateId(UCharacterAsset::StaticClass());
-	EquipmentAssetId = GenerateId(UEquipmentAsset::StaticClass());
+	const FString Prefix = TEXT("DA_");
+	CommonAssetId = FPrimaryAssetId(ASSET_COMMON, FName(Prefix + UCommonAsset::StaticClass()->GetFName().ToString()));
+	InputAssetId = FPrimaryAssetId(ASSET_INPUT, FName(Prefix + UInputAsset::StaticClass()->GetFName().ToString()));
+	CharacterAssetId = FPrimaryAssetId(ASSET_CHARACTER, FName(Prefix + UCharacterAsset::StaticClass()->GetFName().ToString()));
+	EquipmentAssetId = FPrimaryAssetId(ASSET_EQUIPMENT, FName(Prefix + UEquipmentAsset::StaticClass()->GetFName().ToString()));
 
 	// Sync load asset
-	FSoftObjectPath CommonAssetPath = UDataAssetManager::Get().GetPrimaryAssetPath(CommonAssetId);
-	FSoftObjectPath InputAssetPath = UDataAssetManager::Get().GetPrimaryAssetPath(InputAssetId);
-
-	CommonAsset = UDataAssetManager::Get().GetAsset(TSoftObjectPtr<UCommonAsset>(CommonAssetPath));
-	InputAsset = UDataAssetManager::Get().GetAsset(TSoftObjectPtr<UInputAsset>(InputAssetPath));
+	CommonAsset = UDataAssetManager::Get().GetAsset<UCommonAsset>(CommonAssetId);
+	InputAsset = UDataAssetManager::Get().GetAsset<UInputAsset>(InputAssetId);
 
 	double EndTime = FPlatformTime::Seconds();
 	UE_LOG(LogTemp, Warning, TEXT("Sync load asset time: %f seconds"), EndTime - StartTime);
@@ -37,11 +36,6 @@ void UAssetSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	AssetIds.Emplace(CharacterAssetId);
 	AssetIds.Emplace(EquipmentAssetId);
 	UDataAssetManager::Get().LoadPrimaryAssets(AssetIds, TArray<FName>(), FStreamableDelegate::CreateUObject(this, &ThisClass::LoadCompleted));
-}
-
-FPrimaryAssetId UAssetSubsystem::GenerateId(UClass* Class)
-{
-	return FPrimaryAssetId(FPrimaryAssetType(Class->GetFName()), FName(TEXT("DA_") + Class->GetFName().ToString()));
 }
 
 void UAssetSubsystem::LoadCompleted()

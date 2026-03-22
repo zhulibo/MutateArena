@@ -85,21 +85,7 @@ void URadialMenuEquipment::SetHumanRadialMenuText()
 					bFoundData = true;
 
 					ItemData.ItemTexture = EquipData->ShowImg;
-
-					// 设置文本 (完全参考你 Shop 中的翻译逻辑)
-					FText TranslatedShowName = FText();
-					// 注意：装备名字的翻译域是 CULTURE_EQUIPMENT，而不是类型域 CULTURE_EQUIPMENT_TYPE
-					FText::FindTextInLiveTable_Advanced(CULTURE_EQUIPMENT, EquipData->ShowName, TranslatedShowName);
-
-					// 如果 StringTable 中未配置翻译，则直接显示原表中填写的 ShowName
-					if (TranslatedShowName.IsEmpty())
-					{
-						ItemData.ItemText = FText::FromString(EquipData->ShowName);
-					}
-					else
-					{
-						ItemData.ItemText = TranslatedShowName;
-					}
+					ItemData.ItemText = EquipData->ShowName;
 				}
 			}
 

@@ -53,6 +53,9 @@ DECLARE_MULTICAST_DELEGATE(FOnBeImmune);
 // TDM
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnTeamScoreChange, float Score, ETeam Team);
 
+// OverheadWidget
+DECLARE_MULTICAST_DELEGATE(FOnOverheadWidgetNeedUpdate);
+
 UCLASS()
 class MUTATEARENA_API UUISubsystem : public ULocalPlayerSubsystem
 {
@@ -114,5 +117,8 @@ public:
 	
 	// TDM
 	FOnTeamScoreChange OnTeamScoreChange;
+	
+	// OverheadWidget
+	FOnOverheadWidgetNeedUpdate OnOverheadWidgetNeedUpdate;
 	
 };

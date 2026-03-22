@@ -9,6 +9,7 @@
 #define STORAGE_TYPE_ALL FString(TEXT("All"))
 #define STORAGE_TYPE_CHARACTER FString(TEXT("Character"))
 
+class UHumanDNAAsset;
 struct FEquipmentMain;
 struct FHumanCharacterMain;
 enum class EHumanCharacterName : uint8;
@@ -69,4 +70,15 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	class UHuman* Human;
 
+	UPROPERTY(meta = (BindWidget))
+	class UHumanDNAButton* HumanDNAButton1;
+	UPROPERTY(meta = (BindWidget))
+	UHumanDNAButton* HumanDNAButton2;
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class UHumanDNASelectScreen> DNASelectScreenClass;
+	void OnDNAButton1Clicked();
+	void OnDNAButton2Clicked();
+	void OpenDNASelectScreen(UHumanDNAButton* TargetButton);
+	void OnDNASelected(UHumanDNAAsset* SelectedDNA, UHumanDNAButton* TargetButton);
+	
 };

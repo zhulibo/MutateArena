@@ -14,7 +14,7 @@ class MUTATEARENA_API UItemButton : public UCommonButtonBase
 
 public:
 	UPROPERTY(meta = (BindWidget))
-	class UCommonTextBlock* TranslatedShowName;
+	class UCommonTextBlock* ShowName;
 	UPROPERTY(meta = (BindWidget))
 	UCommonTextBlock* Price;
 

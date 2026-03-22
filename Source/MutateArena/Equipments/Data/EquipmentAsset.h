@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
+#include "MutateArena/MutateArena.h"
 #include "EquipmentAsset.generated.h"
 
 UCLASS()
@@ -33,5 +34,10 @@ public:
 	UTextureRenderTarget2D* RT_Scope;
 	UPROPERTY(EditAnywhere, Category = "Scope")
 	UMaterialParameterCollection* MPC_Scope;
-
+	
+	virtual FPrimaryAssetId GetPrimaryAssetId() const override
+	{
+		return FPrimaryAssetId(ASSET_EQUIPMENT, GetFName());
+	}
+	
 };

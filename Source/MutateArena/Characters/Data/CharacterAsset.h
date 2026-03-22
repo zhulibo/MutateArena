@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
+#include "MutateArena/MutateArena.h"
 #include "CharacterAsset.generated.h"
 
 UCLASS()
@@ -51,5 +52,10 @@ public:
 	UMaterialInterface* MI_Flashbang;
 	UPROPERTY(EditAnywhere, Category = "Flashbang")
 	UMaterialParameterCollection* MPC_Flashbang;
+	
+	virtual FPrimaryAssetId GetPrimaryAssetId() const override
+	{
+		return FPrimaryAssetId(ASSET_CHARACTER, GetFName());
+	}
 
 };

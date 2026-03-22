@@ -31,6 +31,13 @@
 // 蒙太奇片段
 #define SECTION_RELOAD_END FName(TEXT("ReloadEnd"))
 
+// DataAsset
+#define ASSET_HUMAN_DNA FName(TEXT("HumanDNA"))
+#define ASSET_COMMON FName(TEXT("Common"))
+#define ASSET_CHARACTER FName(TEXT("Character"))
+#define ASSET_EQUIPMENT FName(TEXT("Equipment"))
+#define ASSET_INPUT FName(TEXT("Input"))
+
 // tag
 #define TAG_CHARACTER_BASE FName(TEXT("BaseCharacter"))
 #define TAG_CHARACTER_HUMAN FName(TEXT("HumanCharacter"))
@@ -86,8 +93,4 @@
 #define DR_EQUIPMENT_RECOIL FName(TEXT("DR_EquipmentRecoil"))
 
 // 多语言
-#define CULTURE_HUMAN FString(TEXT("Human"))
-#define CULTURE_MUTANT FString(TEXT("Mutant"))
-#define CULTURE_EQUIPMENT FString(TEXT("Equipment"))
 #define CULTURE_EQUIPMENT_TYPE FString(TEXT("EquipmentType"))
-#define CULTURE_SPRAY_PAINT FString(TEXT("SprayPaint"))

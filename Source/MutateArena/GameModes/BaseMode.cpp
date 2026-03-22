@@ -237,7 +237,7 @@ void ABaseMode::AddKillLog(ABasePlayerState* AttackerState, AActor* DamageCauser
 				FDataRegistryId DataRegistryId(DR_EQUIPMENT_MAIN, FName(EnumValue));
 				if (const FEquipmentMain* EquipmentMain = UDataRegistrySubsystem::Get()->GetCachedItem<FEquipmentMain>(DataRegistryId))
 				{
-					FText::FindTextInLiveTable_Advanced(CULTURE_EQUIPMENT, EquipmentMain->ShowName, CauserName);
+					CauserName = EquipmentMain->ShowName;
 				}
 			}
 			break;
@@ -248,7 +248,7 @@ void ABaseMode::AddKillLog(ABasePlayerState* AttackerState, AActor* DamageCauser
 				FDataRegistryId DataRegistryId(DR_EQUIPMENT_MAIN, FName(EnumValue));
 				if (const FEquipmentMain* EquipmentMain = UDataRegistrySubsystem::Get()->GetCachedItem<FEquipmentMain>(DataRegistryId))
 				{
-					FText::FindTextInLiveTable_Advanced(CULTURE_EQUIPMENT, EquipmentMain->ShowName, CauserName);
+					CauserName = EquipmentMain->ShowName;
 				}
 			}
 			break;

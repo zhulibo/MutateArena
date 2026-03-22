@@ -88,7 +88,7 @@ struct FEquipmentMain : public FTableRowBase
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere)
-	FString ShowName;
+	FText ShowName;
 
 	UPROPERTY(EditAnywhere)
 	EEquipmentName EquipmentParentName = EEquipmentName::None;

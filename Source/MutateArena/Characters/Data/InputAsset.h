@@ -95,5 +95,10 @@ public:
 	UInputAction* RadialMenuSwitchAction;
 	UPROPERTY(EditAnywhere, Category = "RadialMenu")
 	UInputAction* RadialMenuSelectAction;
+	
+	virtual FPrimaryAssetId GetPrimaryAssetId() const override
+	{
+		return FPrimaryAssetId(ASSET_INPUT, GetFName());
+	}
 
 };

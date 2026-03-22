@@ -6,6 +6,8 @@
 #include "CommonTextBlock.h"
 #include "DataRegistrySubsystem.h"
 #include "Human.h"
+#include "HumanDNAButton.h"
+#include "HumanDNASelectScreen.h"
 #include "LoadoutItem.h"
 #include "StorageButton.h"
 #include "MutateArena/Characters/Data/CharacterType.h"
@@ -22,7 +24,12 @@
 #include "Components/ScrollBoxSlot.h"
 #include "Components/WrapBox.h"
 #include "Components/WrapBoxSlot.h"
+#include "MutateArena/Characters/Data/HumanDNAAsset.h"
+#include "MutateArena/System/DataAssetManager.h"
+#include "MutateArena/System/UISubsystem.h"
+#include "MutateArena/System/Tags/ProjectTags.h"
 #include "Serialization/ObjectAndNameAsStringProxyArchive.h"
+#include "Widgets/CommonActivatableWidgetContainer.h"
 
 #define LOCTEXT_NAMESPACE "UStorage"
 
@@ -52,6 +59,15 @@ void UStorage::NativeOnInitialized()
 
 		EOSSubsystem->OnEnumerateUserFilesComplete.AddUObject(this, &ThisClass::OnEnumerateUserFilesComplete);
 		EOSSubsystem->OnReadUserFileComplete.AddUObject(this, &ThisClass::OnReadUserFileComplete);
+	}
+	
+	if (HumanDNAButton1)
+	{
+		HumanDNAButton1->OnClicked().AddUObject(this, &ThisClass::OnDNAButton1Clicked);
+	}
+	if (HumanDNAButton2)
+	{
+		HumanDNAButton2->OnClicked().AddUObject(this, &ThisClass::OnDNAButton2Clicked);
 	}
 }
 
@@ -168,17 +184,15 @@ void UStorage::InitPlayerConfig(USaveGameLoadout* SaveGameLoadout)
 			SaveGameLoadout->Loadouts[i].Throwing = DefaultConfig->Throwing;
 		}
 	}
-	// 设置装备
+	// 回显装备
 	for (int32 i = 0; i < LoadoutSwitcher->GetChildrenCount(); ++i)
 	{
 		if (ULoadoutContent* LoadoutContent = Cast<ULoadoutContent>(LoadoutSwitcher->GetChildAt(i)))
 		{
-			FText TranslatedShowName = FText();
-			
-			FString PrimaryShowName = FString();
-			FString SecondaryShowName = FString();
-			FString MeleeShowName = FString();
-			FString ThrowingShowName = FString();
+			FText PrimaryShowName = FText();
+			FText SecondaryShowName = FText();
+			FText MeleeShowName = FText();
+			FText ThrowingShowName = FText();
 
 			for (const TPair<FDataRegistryId, const uint8*>& Pair : EquipmentMains)
 			{
@@ -201,20 +215,16 @@ void UStorage::InitPlayerConfig(USaveGameLoadout* SaveGameLoadout)
 				}
 			}
 
-			FText::FindTextInLiveTable_Advanced(CULTURE_EQUIPMENT, PrimaryShowName, TranslatedShowName);
-			LoadoutContent->Primary->TranslatedShowName->SetText(TranslatedShowName);
+			LoadoutContent->Primary->ShowName->SetText(PrimaryShowName);
 			LoadoutContent->Primary->EquipmentName = SaveGameLoadout->Loadouts[i].Primary;
 			
-			FText::FindTextInLiveTable_Advanced(CULTURE_EQUIPMENT, SecondaryShowName, TranslatedShowName);
-			LoadoutContent->Secondary->TranslatedShowName->SetText(TranslatedShowName);
+			LoadoutContent->Secondary->ShowName->SetText(SecondaryShowName);
 			LoadoutContent->Secondary->EquipmentName = SaveGameLoadout->Loadouts[i].Secondary;
 
-			FText::FindTextInLiveTable_Advanced(CULTURE_EQUIPMENT, MeleeShowName, TranslatedShowName);
-			LoadoutContent->Melee->TranslatedShowName->SetText(TranslatedShowName);
+			LoadoutContent->Melee->ShowName->SetText(MeleeShowName);
 			LoadoutContent->Melee->EquipmentName = SaveGameLoadout->Loadouts[i].Melee;
 
-			FText::FindTextInLiveTable_Advanced(CULTURE_EQUIPMENT, ThrowingShowName, TranslatedShowName);
-			LoadoutContent->Throwing->TranslatedShowName->SetText(TranslatedShowName);
+			LoadoutContent->Throwing->ShowName->SetText(ThrowingShowName);
 			LoadoutContent->Throwing->EquipmentName = SaveGameLoadout->Loadouts[i].Throwing;
 			
 			// 显示图片
@@ -246,20 +256,27 @@ void UStorage::InitPlayerConfig(USaveGameLoadout* SaveGameLoadout)
 	{
 		SaveGameLoadout->HumanCharacterName = DefaultConfig->HumanCharacterName;
 	}
-
+	// 回显角色
 	for (const TPair<FDataRegistryId, const uint8*>& Pair : HumanCharacterMains)
 	{
 		FHumanCharacterMain ItemValue = *reinterpret_cast<const FHumanCharacterMain*>(Pair.Value);
 		if (ItemValue.HumanCharacterName == SaveGameLoadout->HumanCharacterName)
 		{
-			FText TranslatedShowName = FText();
-			FText::FindTextInLiveTable_Advanced(CULTURE_HUMAN, ItemValue.ShowName, TranslatedShowName);
-			Human->TranslatedShowName->SetText(TranslatedShowName);
+			Human->ShowName->SetText(ItemValue.ShowName);
 			
 			if (ItemValue.ShowImgFullBody) Human->ShowImgFullBody->SetBrushFromLazyTexture(ItemValue.ShowImgFullBody);
 			
 			break;
 		}
+	}
+	
+	if (UHumanDNAAsset* DNAAsset1 = StorageSubsystem->GetHumanDNAAssetByType(SaveGameLoadout->HumanDNA1))
+	{
+		HumanDNAButton1->UpdateDNAInfo(DNAAsset1);
+	}
+	if (UHumanDNAAsset* DNAAsset2 = StorageSubsystem->GetHumanDNAAssetByType(SaveGameLoadout->HumanDNA1))
+	{
+		HumanDNAButton1->UpdateDNAInfo(DNAAsset2);
 	}
 }
 
@@ -449,8 +466,7 @@ void UStorage::AddEquipmentButton(FEquipmentMain EquipmentMain)
 {
 	if (UStorageButton* EquipmentButton = CreateWidget<UStorageButton>(this, EquipmentButtonClass))
 	{
-		FText TranslatedShowName = FText();
-		FString ShowName = FString();
+		FText ShowName = FText();
 		for (const TPair<FDataRegistryId, const uint8*>& Pair : EquipmentMains)
 		{
 			FEquipmentMain ItemValue = *reinterpret_cast<const FEquipmentMain*>(Pair.Value);
@@ -460,10 +476,8 @@ void UStorage::AddEquipmentButton(FEquipmentMain EquipmentMain)
 				break;
 			}
 		}
-		FText::FindTextInLiveTable_Advanced(CULTURE_EQUIPMENT, ShowName, TranslatedShowName);
-		EquipmentButton->TranslatedShowName->SetText(TranslatedShowName);
-
-		EquipmentButton->ShowName = ShowName;
+		EquipmentButton->ShowName->SetText(ShowName);
+		EquipmentButton->Name = ShowName;
 		EquipmentButton->ShowImg->SetBrushFromLazyTexture(EquipmentMain.ShowImg);
 		EquipmentButton->ShowImgPath = EquipmentMain.ShowImg;
 		EquipmentButton->EquipmentName = EquipmentMain.EquipmentName;
@@ -481,8 +495,7 @@ void UStorage::AddCharacterButton(FHumanCharacterMain HumanCharacterMain)
 {
 	if (UStorageButton* CharacterButton = CreateWidget<UStorageButton>(this, CharacterButtonClass))
 	{
-		FText ButtonText = FText();
-		FString ShowName = FString();
+		FText ShowName = FText();
 		for (const TPair<FDataRegistryId, const uint8*>& Pair : HumanCharacterMains)
 		{
 			FHumanCharacterMain ItemValue = *reinterpret_cast<const FHumanCharacterMain*>(Pair.Value);
@@ -492,10 +505,8 @@ void UStorage::AddCharacterButton(FHumanCharacterMain HumanCharacterMain)
 				break;
 			}
 		}
-		FText::FindTextInLiveTable_Advanced(CULTURE_HUMAN, ShowName, ButtonText);
-		CharacterButton->TranslatedShowName->SetText(ButtonText);
-
-		CharacterButton->ShowName = ShowName;
+		CharacterButton->ShowName->SetText(ShowName);
+		CharacterButton->Name = ShowName;
 		CharacterButton->ShowImg->SetBrushFromLazyTexture(HumanCharacterMain.ShowImg);
 		CharacterButton->ShowImgFullBodyPath = HumanCharacterMain.ShowImgFullBody;
 		CharacterButton->HumanCharacterName = HumanCharacterMain.HumanCharacterName;
@@ -514,28 +525,25 @@ void UStorage::OnEquipmentButtonClicked(UStorageButton* EquipmentButton)
 
 	if (ULoadoutContent* LoadoutContent = Cast<ULoadoutContent>(LoadoutSwitcher->GetActiveWidget()))
 	{
-		FText TranslatedShowName = FText();
-		FText::FindTextInLiveTable_Advanced(CULTURE_EQUIPMENT, EquipmentButton->ShowName, TranslatedShowName);
-
 		switch (EquipmentButton->EquipmentType)
 		{
 		case EEquipmentType::Primary:
-			LoadoutContent->Primary->TranslatedShowName->SetText(TranslatedShowName);
+			LoadoutContent->Primary->ShowName->SetText(EquipmentButton->Name);
 			LoadoutContent->Primary->ShowImg->SetBrushFromLazyTexture(EquipmentButton->ShowImgPath);
 			LoadoutContent->Primary->EquipmentName = EquipmentButton->EquipmentName;
 			break;
 		case EEquipmentType::Secondary:
-			LoadoutContent->Secondary->TranslatedShowName->SetText(TranslatedShowName);
+			LoadoutContent->Secondary->ShowName->SetText(EquipmentButton->Name);
 			LoadoutContent->Secondary->ShowImg->SetBrushFromLazyTexture(EquipmentButton->ShowImgPath);
 			LoadoutContent->Secondary->EquipmentName = EquipmentButton->EquipmentName;
 			break;
 		case EEquipmentType::Melee:
-			LoadoutContent->Melee->TranslatedShowName->SetText(TranslatedShowName);
+			LoadoutContent->Melee->ShowName->SetText(EquipmentButton->Name);
 			LoadoutContent->Melee->ShowImg->SetBrushFromLazyTexture(EquipmentButton->ShowImgPath);
 			LoadoutContent->Melee->EquipmentName = EquipmentButton->EquipmentName;
 			break;
 		case EEquipmentType::Throwing:
-			LoadoutContent->Throwing->TranslatedShowName->SetText(TranslatedShowName);
+			LoadoutContent->Throwing->ShowName->SetText(EquipmentButton->Name);
 			LoadoutContent->Throwing->ShowImg->SetBrushFromLazyTexture(EquipmentButton->ShowImgPath);
 			LoadoutContent->Throwing->EquipmentName = EquipmentButton->EquipmentName;
 			break;
@@ -575,9 +583,7 @@ void UStorage::OnCharacterButtonClicked(UStorageButton* CharacterButton)
 {
 	if (CharacterButton == nullptr) return;
 
-	FText TranslatedShowName = FText();
-	FText::FindTextInLiveTable_Advanced(CULTURE_HUMAN, CharacterButton->ShowName, TranslatedShowName);
-	Human->TranslatedShowName->SetText(TranslatedShowName);
+	Human->ShowName->SetText(CharacterButton->Name);
 	
 	if (CharacterButton->ShowImgFullBodyPath) Human->ShowImgFullBody->SetBrushFromLazyTexture(CharacterButton->ShowImgFullBodyPath);
 
@@ -586,6 +592,57 @@ void UStorage::OnCharacterButtonClicked(UStorageButton* CharacterButton)
 	{
 		StorageSubsystem->CacheLoadout->HumanCharacterName = CharacterButton->HumanCharacterName;
 		StorageSubsystem->SaveLoadouts();
+	}
+}
+
+void UStorage::OnDNAButton1Clicked()
+{
+	OpenDNASelectScreen(HumanDNAButton1);
+}
+
+void UStorage::OnDNAButton2Clicked()
+{
+	OpenDNASelectScreen(HumanDNAButton2);
+}
+
+void UStorage::OpenDNASelectScreen(UHumanDNAButton* TargetButton)
+{
+	if (!DNASelectScreenClass) return;
+
+	UUISubsystem* UISubsystem = GetOwningLocalPlayer()->GetSubsystem<UUISubsystem>();
+	if (!UISubsystem) return;
+
+	if (auto Layer = UISubsystem->GetLayerStack(TAG_UI_LAYER_MODAL))
+	{
+		Layer->AddWidget<UHumanDNASelectScreen>(
+			DNASelectScreenClass,
+			[this, TargetButton](UHumanDNASelectScreen& Dialog) 
+			{
+				Dialog.Setup(FHumanDNASelectComplete::CreateUObject(this, &ThisClass::OnDNASelected, TargetButton));
+			}
+		);
+	}
+}
+
+void UStorage::OnDNASelected(UHumanDNAAsset* SelectedDNA, UHumanDNAButton* TargetButton)
+{
+	if (SelectedDNA && TargetButton)
+	{
+		TargetButton->UpdateDNAInfo(SelectedDNA);
+		
+		if (StorageSubsystem == nullptr) StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
+		if (StorageSubsystem && StorageSubsystem->CacheLoadout)
+		{
+			if (TargetButton == HumanDNAButton1)
+			{
+				StorageSubsystem->CacheLoadout->HumanDNA1 = SelectedDNA->DNAType;
+			}
+			else if (TargetButton == HumanDNAButton2)
+			{
+				StorageSubsystem->CacheLoadout->HumanDNA2 = SelectedDNA->DNAType;
+			}
+			StorageSubsystem->SaveLoadouts();
+		}
 	}
 }
 

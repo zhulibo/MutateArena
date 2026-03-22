@@ -15,9 +15,9 @@ class MUTATEARENA_API UStorageButton : public UCommonButtonBase
 
 public:
 	UPROPERTY(meta = (BindWidget))
-	class UCommonTextBlock* TranslatedShowName;
+	class UCommonTextBlock* ShowName;
 	UPROPERTY()
-	FString ShowName;
+	FText Name;
 
 	UPROPERTY(meta = (BindWidget))
 	class UCommonLazyImage* ShowImg;

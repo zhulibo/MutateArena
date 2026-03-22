@@ -18,7 +18,10 @@ public:
 	// Returns the asset referenced by a TSoftObjectPtr. This will synchronously load the asset if it's not already loaded.
 	template<typename AssetType>
 	static AssetType* GetAsset(const TSoftObjectPtr<AssetType>& AssetPointer, bool bKeepInMemory = false);
-
+	// 通过 FPrimaryAssetId 同步加载资产
+	template<typename AssetType>
+	static AssetType* GetAsset(const FPrimaryAssetId& PrimaryAssetId, bool bKeepInMemory = false);
+	
 	// Returns the subclass referenced by a TSoftClassPtr. This will synchronously load the asset if it's not already loaded.
 	template<typename AssetType>
 	static TSubclassOf<AssetType> GetSubclass(const TSoftClassPtr<AssetType>& AssetPointer, bool bKeepInMemory = false);
@@ -65,6 +68,24 @@ AssetType* UDataAssetManager::GetAsset(const TSoftObjectPtr<AssetType>& AssetPoi
 	}
 
 	return LoadedAsset;
+}
+
+template<typename AssetType>
+AssetType* UDataAssetManager::GetAsset(const FPrimaryAssetId& PrimaryAssetId, bool bKeepInMemory)
+{
+	if (PrimaryAssetId.IsValid())
+	{
+		FSoftObjectPath AssetPath = Get().GetPrimaryAssetPath(PrimaryAssetId);
+        
+		if (AssetPath.IsValid())
+		{
+			TSoftObjectPtr<AssetType> SoftPtr(AssetPath);
+            
+			return GetAsset<AssetType>(SoftPtr, bKeepInMemory);
+		}
+	}
+    
+	return nullptr;
 }
 
 template<typename AssetType>

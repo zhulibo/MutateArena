@@ -33,9 +33,7 @@ void ULoadoutSelect::NativeOnInitialized()
 					FDataRegistryId DataRegistryId(DR_EQUIPMENT_MAIN, FName(EnumValue));
 					if (const FEquipmentMain* EquipmentMain = UDataRegistrySubsystem::Get()->GetCachedItem<FEquipmentMain>(DataRegistryId))
 					{
-						FText TranslatedShowName = FText();
-						FText::FindTextInLiveTable_Advanced(CULTURE_EQUIPMENT, EquipmentMain->ShowName, TranslatedShowName);
-						LoadoutSelectButton->PrimaryEquipmentText->SetText(TranslatedShowName);
+						LoadoutSelectButton->PrimaryEquipmentText->SetText(EquipmentMain->ShowName);
 					}
 				}
 				
@@ -44,9 +42,7 @@ void ULoadoutSelect::NativeOnInitialized()
 					FDataRegistryId DataRegistryId(DR_EQUIPMENT_MAIN, FName(EnumValue));
 					if (const FEquipmentMain* EquipmentMain = UDataRegistrySubsystem::Get()->GetCachedItem<FEquipmentMain>(DataRegistryId))
 					{
-						FText TranslatedShowName = FText();
-						FText::FindTextInLiveTable_Advanced(CULTURE_EQUIPMENT, EquipmentMain->ShowName, TranslatedShowName);
-						LoadoutSelectButton->SecondaryEquipmentText->SetText(TranslatedShowName);
+						LoadoutSelectButton->SecondaryEquipmentText->SetText(EquipmentMain->ShowName);
 					}
 				}
 				
@@ -55,9 +51,7 @@ void ULoadoutSelect::NativeOnInitialized()
 					FDataRegistryId DataRegistryId(DR_EQUIPMENT_MAIN, FName(EnumValue));
 					if (const FEquipmentMain* EquipmentMain = UDataRegistrySubsystem::Get()->GetCachedItem<FEquipmentMain>(DataRegistryId))
 					{
-						FText TranslatedShowName = FText();
-						FText::FindTextInLiveTable_Advanced(CULTURE_EQUIPMENT, EquipmentMain->ShowName, TranslatedShowName);
-						LoadoutSelectButton->MeleeEquipmentText->SetText(TranslatedShowName);
+						LoadoutSelectButton->MeleeEquipmentText->SetText(EquipmentMain->ShowName);
 					}
 				}
 				
@@ -66,9 +60,7 @@ void ULoadoutSelect::NativeOnInitialized()
 					FDataRegistryId DataRegistryId(DR_EQUIPMENT_MAIN, FName(EnumValue));
 					if (const FEquipmentMain* EquipmentMain = UDataRegistrySubsystem::Get()->GetCachedItem<FEquipmentMain>(DataRegistryId))
 					{
-						FText TranslatedShowName = FText();
-						FText::FindTextInLiveTable_Advanced(CULTURE_EQUIPMENT, EquipmentMain->ShowName, TranslatedShowName);
-						LoadoutSelectButton->ThrowingEquipmentText->SetText(TranslatedShowName);
+						LoadoutSelectButton->ThrowingEquipmentText->SetText(EquipmentMain->ShowName);
 					}
 				}
 				

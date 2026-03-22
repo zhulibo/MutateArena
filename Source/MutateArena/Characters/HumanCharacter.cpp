@@ -701,11 +701,14 @@ void AHumanCharacter::BecomeImmune()
 
 void AHumanCharacter::OnRep_bIsImmune()
 {
-	if (bIsImmune)
+	if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
+	if (BaseController)
 	{
-		if (AMutationController* InteractController = Cast<AMutationController>(Controller))
+		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
 		{
-			if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(InteractController->GetLocalPlayer()))
+			UISubsystem->OnOverheadWidgetNeedUpdate.Broadcast();
+			
+			if (bIsImmune)
 			{
 				UISubsystem->OnBeImmune.Broadcast();
 			}

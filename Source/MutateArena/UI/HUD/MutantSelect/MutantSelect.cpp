@@ -48,10 +48,10 @@ void UMutantSelect::NativeOnInitialized()
 
 			if (UMutantSelectButton* MutantSelectButton = CreateWidget<UMutantSelectButton>(this, MutantSelectButtonClass))
 			{
-				FText NameText = FText();
-				FText::FindTextInLiveTable_Advanced(CULTURE_MUTANT, ItemValue.ShowName, NameText);
-				MutantSelectButton->NameText->SetText(NameText);
-				MutantSelectButton->DescText->SetText(FText::FromString(ItemValue.Desc));
+				MutantSelectButton->Name->SetText(ItemValue.ShowName);
+				MutantSelectButton->Attribute->SetText(ItemValue.Attribute);
+				MutantSelectButton->Skill->SetText(ItemValue.Skill);
+				MutantSelectButton->Desc->SetText(ItemValue.Desc);
 				MutantSelectButton->MutantCharacterName = ItemValue.MutantCharacterName;
 				MutantSelectButton->OnClicked().AddUObject(this, &ThisClass::OnMutantSelectButtonClicked, ItemValue.MutantCharacterName);
 				UScrollBoxSlot* NewSlot = Cast<UScrollBoxSlot>(MutantSelectButtonContainer->AddChild(MutantSelectButton));

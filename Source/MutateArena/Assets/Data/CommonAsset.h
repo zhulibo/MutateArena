@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
+#include "MutateArena/MutateArena.h"
 #include "CommonAsset.generated.h"
 
 USTRUCT(BlueprintType)
@@ -10,7 +11,7 @@ struct FSprayPaint
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere)
-	FString Name;
+	FText Name;
 	
 	UPROPERTY(EditAnywhere)
 	TSoftObjectPtr<UTexture2D> Texture;
@@ -74,5 +75,10 @@ public:
 	// 喷漆
 	UPROPERTY(EditAnywhere, Category = "SprayPaint")
 	TArray<FSprayPaint> SprayPaints;
+	
+	virtual FPrimaryAssetId GetPrimaryAssetId() const override
+	{
+		return FPrimaryAssetId(ASSET_COMMON, GetFName());
+	}
 
 };

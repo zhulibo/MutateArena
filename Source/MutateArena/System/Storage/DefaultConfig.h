@@ -32,6 +32,10 @@ public:
 	EHumanCharacterName HumanCharacterName = EHumanCharacterName::Solider;
 	UPROPERTY()
 	EMutantCharacterName MutantCharacterName = EMutantCharacterName::Tank;
+	UPROPERTY()
+	EHumanDNA HumanDNA1 = EHumanDNA::AcceleratedClotting;
+	UPROPERTY()
+	EHumanDNA HumanDNA2 = EHumanDNA::HighBoneDensity;
 
 	UPROPERTY()
 	FString Language;

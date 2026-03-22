@@ -7,7 +7,7 @@ UENUM(BlueprintType)
 enum class EHumanCharacterName : uint8
 {
 	Solider,
-	// Doctor,
+	Doctor,
 
 	None
 };
@@ -19,6 +19,11 @@ enum class EMutantCharacterName : uint8
 	Ghost,
 	Smoker,
 	Cutter,
+	Cook,
+	Echo,
+	Generator,
+	CorpseDriver,
+	Venom,
 
 	None
 };
@@ -26,16 +31,18 @@ enum class EMutantCharacterName : uint8
 UENUM(BlueprintType)
 enum class EHumanDNA : uint8
 {
-	// None,
-
-	None
-};
-
-UENUM(BlueprintType)
-enum class EHumanSpecialty : uint8
-{
-	// None,
-
+	EnhancedVision,
+	EnhancedHearing,
+	EnhancedSmell,
+	SubconsciousAwareness,
+	HighBoneDensity,
+	AcceleratedClotting,
+	AcceleratedMetabolism,
+	ThermalRegulation,
+	ToxicityImmunity,
+	PainModulation,
+	CoreMaintenance,
+	
 	None
 };
 
@@ -45,7 +52,7 @@ struct FHumanCharacterMain : public FTableRowBase
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere)
-	FString ShowName;
+	FText ShowName;
 
 	UPROPERTY(EditAnywhere)
 	EHumanCharacterName HumanCharacterName = EHumanCharacterName::None;
@@ -81,7 +88,7 @@ struct FMutantCharacterMain : public FTableRowBase
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere)
-	FString ShowName;
+	FText ShowName;
 
 	UPROPERTY(EditAnywhere)
 	EMutantCharacterName MutantCharacterName = EMutantCharacterName::None;
@@ -101,7 +108,11 @@ struct FMutantCharacterMain : public FTableRowBase
 	float HeavyAttackDamage = 0.f;
 
 	UPROPERTY(EditAnywhere)
-	FString Desc = "";
+	FText Attribute;
+	UPROPERTY(EditAnywhere)
+	FText Skill;
+	UPROPERTY(EditAnywhere)
+	FText Desc;
 
 };
 

@@ -4,6 +4,7 @@
 #include "GameFramework/SaveGame.h"
 #include "SaveGameLoadout.generated.h"
 
+enum class EHumanDNA : uint8;
 enum class EMutantCharacterName : uint8;
 enum class EHumanCharacterName : uint8;
 
@@ -22,10 +23,15 @@ public:
 	TArray<struct FLoadout> Loadouts;
 	UPROPERTY()
 	int32 LoadoutIndex;
-
+	
 	UPROPERTY()
 	EHumanCharacterName HumanCharacterName;
 	UPROPERTY()
 	EMutantCharacterName MutantCharacterName;
+
+	UPROPERTY()
+	EHumanDNA HumanDNA1;
+	UPROPERTY()
+	EHumanDNA HumanDNA2;
 
 };

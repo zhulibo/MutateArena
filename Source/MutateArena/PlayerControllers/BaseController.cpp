@@ -45,6 +45,8 @@ void ABaseController::SetupInputComponent()
 	{
 		if (UEnhancedInputComponent* EIC = Cast<UEnhancedInputComponent>(InputComponent))
 		{
+			if (!AssetSubsystem->InputAsset) return;
+			
 			EIC->BindAction(AssetSubsystem->InputAsset->ScoreboardAction, ETriggerEvent::Triggered, this, &ThisClass::ScoreboardButtonPressed);
 			EIC->BindAction(AssetSubsystem->InputAsset->ScoreboardAction, ETriggerEvent::Completed, this, &ThisClass::ScoreboardButtonReleased);
 			

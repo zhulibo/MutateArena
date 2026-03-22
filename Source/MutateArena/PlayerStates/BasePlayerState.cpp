@@ -139,11 +139,7 @@ void ABasePlayerState::SetTeam(ETeam TempTeam)
 {
 	Team = TempTeam;
 
-	BaseCharacter = Cast<ABaseCharacter>(GetPawn());
-	if (BaseCharacter)
-	{
-		BaseCharacter->bIsPlayerStateTeamReady = false;
-	}
+	OnRep_Team();
 }
 
 void ABasePlayerState::OnRep_Team()
@@ -152,6 +148,14 @@ void ABasePlayerState::OnRep_Team()
 	if (BaseCharacter)
 	{
 		BaseCharacter->bIsPlayerStateTeamReady = false;
+	}
+	
+	if (APlayerController* LocalPC = GetWorld()->GetFirstPlayerController())
+	{
+		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(LocalPC->GetLocalPlayer()))
+		{
+			UISubsystem->OnOverheadWidgetNeedUpdate.Broadcast();
+		}
 	}
 }
 

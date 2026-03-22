@@ -11,9 +11,7 @@ class MUTATEARENA_API UHuman : public UCommonButtonBase
 
 public:
 	UPROPERTY(meta = (BindWidget))
-	class UCommonTextBlock* TranslatedShowName;
-	// UPROPERTY()
-	// FString ShowName;
+	class UCommonTextBlock* ShowName;
 
 	UPROPERTY(meta = (BindWidget))
 	class UCommonLazyImage* ShowImgFullBody;

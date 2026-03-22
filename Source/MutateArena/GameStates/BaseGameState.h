@@ -4,6 +4,8 @@
 #include "ModularGameState.h"
 #include "BaseGameState.generated.h"
 
+class ABasePlayerState;
+enum class ETeam : uint8;
 enum class EMsgType : uint8;
 
 UCLASS()

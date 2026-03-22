@@ -13,9 +13,7 @@ class MUTATEARENA_API ULoadoutItem : public UCommonButtonBase
 
 public:
 	UPROPERTY(meta = (BindWidget))
-	class UCommonTextBlock* TranslatedShowName;
-	UPROPERTY()
-	FString ShowName;
+	class UCommonTextBlock* ShowName;
 
 	UPROPERTY(meta = (BindWidget))
 	class UCommonLazyImage* ShowImg;

@@ -6,12 +6,16 @@
 #include "MutateArena/UI/Setting/TabAudio.h"
 #include "MutateArena/Assets/Data/CommonAsset.h"
 #include "Kismet/GameplayStatics.h"
+#include "MutateArena/Characters/Data/HumanDNAAsset.h"
+#include "MutateArena/System/DataAssetManager.h"
 #include "Serialization/ObjectAndNameAsStringProxyArchive.h"
 
 void UStorageSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
 
+	BuildDNACache();
+	
 	EOSSubsystem = GetGameInstance()->GetSubsystem<UEOSSubsystem>();
 	if (EOSSubsystem)
 	{
@@ -217,4 +221,41 @@ void UStorageSubsystem::SetAudio(float Value, ESoundClassType SoundClassType)
 			true
 		);
 	}
+}
+
+void UStorageSubsystem::BuildDNACache()
+{
+	CachedDNAAssets.Empty();
+
+	TArray<FPrimaryAssetId> DNAAssetIds;
+	UDataAssetManager::Get().GetPrimaryAssetIdList(FPrimaryAssetType(ASSET_HUMAN_DNA), DNAAssetIds);
+	
+	// 按资产名称的字母表顺序固定住顺序
+	DNAAssetIds.Sort([](const FPrimaryAssetId& A, const FPrimaryAssetId& B)
+	{
+		return A.PrimaryAssetName.LexicalLess(B.PrimaryAssetName);
+	});
+	
+	for (const FPrimaryAssetId& AssetId : DNAAssetIds)
+	{
+		if (UHumanDNAAsset* DNAAsset = UDataAssetManager::GetAsset<UHumanDNAAsset>(AssetId))
+		{
+			CachedDNAAssets.Add(DNAAsset->DNAType, DNAAsset);
+		}
+	}
+}
+
+UHumanDNAAsset* UStorageSubsystem::GetHumanDNAAssetByType(EHumanDNA InDNAType) const
+{
+	if (InDNAType == EHumanDNA::None)
+	{
+		return nullptr;
+	}
+
+	if (UHumanDNAAsset* const* FoundAsset = CachedDNAAssets.Find(InDNAType))
+	{
+		return *FoundAsset;
+	}
+    
+	return nullptr;
 }

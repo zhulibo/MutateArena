@@ -26,13 +26,10 @@ public:
 protected:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 
-	// 资源命名必须是 Prefix + 类名
+	// 编辑器中资源命名必须是 Prefix + 类名
 	FPrimaryAssetId CommonAssetId;
 	FPrimaryAssetId InputAssetId;
 	FPrimaryAssetId CharacterAssetId;
 	FPrimaryAssetId EquipmentAssetId;
-
-	UFUNCTION()
-	FPrimaryAssetId GenerateId(UClass* Class);
 
 };
