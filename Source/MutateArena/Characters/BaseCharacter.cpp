@@ -556,16 +556,11 @@ void ABaseCharacter::SetHealth(float TempHealth)
 	{
 		AttributeSetBase->SetHealth(TempHealth);
 	}
-}
-
-// 使用RPC通知攻击者立刻响应受伤者血量变化（UAttributeSetBase中的Health同步有点慢）
-void ABaseCharacter::MulticastSetHealth_Implementation(float TempHealth, AController* AttackerController)
-{
-	if (HasAuthority()) return;
-
-	if (AttackerController && AttackerController->IsLocalController())
+	
+	if (BasePlayerState == nullptr) BasePlayerState = GetPlayerState<ABasePlayerState>();
+	if (BasePlayerState)
 	{
-		SetHealth(TempHealth);
+		BasePlayerState->ForceNetUpdate(); // 立刻响应受伤者血量变化
 	}
 }
 

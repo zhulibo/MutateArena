@@ -274,9 +274,9 @@ void UStorage::InitPlayerConfig(USaveGameLoadout* SaveGameLoadout)
 	{
 		HumanDNAButton1->UpdateDNAInfo(DNAAsset1);
 	}
-	if (UHumanDNAAsset* DNAAsset2 = StorageSubsystem->GetHumanDNAAssetByType(SaveGameLoadout->HumanDNA1))
+	if (UHumanDNAAsset* DNAAsset2 = StorageSubsystem->GetHumanDNAAssetByType(SaveGameLoadout->HumanDNA2))
 	{
-		HumanDNAButton1->UpdateDNAInfo(DNAAsset2);
+		HumanDNAButton2->UpdateDNAInfo(DNAAsset2);
 	}
 }
 

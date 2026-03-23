@@ -31,8 +31,7 @@ protected:
 public:
 	virtual void AddDamage(float TempDamage) override;
 protected:
-	virtual void OnRep_Damage() override;
-	virtual void ClientOnAddDamage_Implementation(float TempDamage) override;
+	virtual void OnRep_Damage(float OldValue) override;
 	float BaseDamage = 0.f; 
 	void Show1000DamageUI(float TempDamage);
 	

@@ -341,7 +341,6 @@ void AMutationMode::HumanReceiveDamage(AHumanCharacter* DamagedCharacter, ABaseC
 	float TakenDamage = FMath::Clamp(Damage, 0.f, DamagedCharacter->GetHealth());
 	float Health = DamagedCharacter->GetHealth() - TakenDamage;
 	DamagedCharacter->SetHealth(Health);
-	DamagedCharacter->MulticastSetHealth(Health, AttackerController);
 
 	if (AttackerState != DamagedState) // 受到跌落伤害时，AttackerController和DamageCauser传的是自己
 	{
@@ -473,7 +472,6 @@ void AMutationMode::MutantReceiveDamage(AMutantCharacter* DamagedCharacter, ABas
 	TakenDamage = FMath::Clamp(TakenDamage, 0.f, DamagedCharacter->GetHealth());
 	float Health = DamagedCharacter->GetHealth() - TakenDamage;
 	DamagedCharacter->SetHealth(Health);
-	DamagedCharacter->MulticastSetHealth(Health, AttackerController);
 
 	if (AttackerState != DamagedState) // 受到跌落伤害时，AttackerController和DamageCauser传的是自己
 	{

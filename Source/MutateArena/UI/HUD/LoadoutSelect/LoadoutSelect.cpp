@@ -67,7 +67,7 @@ void ULoadoutSelect::NativeOnInitialized()
 				LoadoutSelectButton->OnClicked().AddUObject(this, &ThisClass::OnLoadoutSelectButtonClicked, i);
 				if (UScrollBoxSlot* NewSlot = Cast<UScrollBoxSlot>(LoadoutSelectButtonContainer->AddChild(LoadoutSelectButton)))
 				{
-					NewSlot->SetPadding(FMargin(0, 0, 15, 0));
+					NewSlot->SetPadding(FMargin(20, 0, 0, 0));
 				}
 			}
 		}

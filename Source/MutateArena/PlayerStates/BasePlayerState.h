@@ -42,10 +42,7 @@ public:
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void BeginPlay() override;
-	virtual void Reset() override;
 	virtual void Destroyed() override;
-
-	virtual void InitData();
 
 	UPROPERTY()
 	class ABaseCharacter* BaseCharacter;
@@ -77,10 +74,7 @@ public:
 	virtual void AddDamage(float TempDamage);
 protected:
 	UFUNCTION()
-	virtual void OnRep_Damage();
-	UFUNCTION(Client, Reliable)
-	void ClientOnAddDamage(float TempDamage); // 使用RPC快速显示UI
-	virtual void ClientOnAddDamage_Implementation(float TempDamage);
+	virtual void OnRep_Damage(float OldValue);
 	void ShowDamageUI(float TempDamage);
 	
 public:
@@ -117,12 +111,13 @@ protected:
 	UFUNCTION()
 	void OnRep_KillStreak();
 	FTimerHandle ResetKillStreakTimerHandle;
-	UFUNCTION(Client, Reliable)
-	void ClientOnKill(); // 使用RPC快速播放音效
-	virtual void ClientOnKill_Implementation();
-	
-public:
-	FORCEINLINE EHumanCharacterName GetHumanCharacterName() const { return HumanCharacterName; }
-	FORCEINLINE EMutantCharacterName GetMutantCharacterName() const { return MutantCharacterName; }
 
+public:
+	UPROPERTY(Replicated)
+	EHumanDNA HumanDNA1 = EHumanDNA::None;
+	UPROPERTY(Replicated)
+	EHumanDNA HumanDNA2 = EHumanDNA::None;
+	UFUNCTION(Server, Reliable)
+	void ServerSetHumanDNA(EHumanDNA TempHumanDNA1, EHumanDNA TempHumanDNA2);
+	
 };

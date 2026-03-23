@@ -28,15 +28,6 @@ void UHumanDNASelectScreen::NativeOnInitialized()
 				{
 					NewSlot->SetPadding(FMargin(20, 20, 0, 0));
 				}
-
-				if (CurrentType == EHumanDNA::AcceleratedMetabolism
-					|| CurrentType == EHumanDNA::ThermalRegulation
-					|| CurrentType == EHumanDNA::ToxicityImmunity
-					|| CurrentType == EHumanDNA::PainModulation
-					|| CurrentType == EHumanDNA::CoreMaintenance)
-				{
-					NewButton->SetIsEnabled(false);
-				}
 			}
 		}
 	}

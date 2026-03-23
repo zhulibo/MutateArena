@@ -8,6 +8,7 @@
 #include "MutateArena/Abilities/MAAbilitySystemComponent.h"
 #include "MutateArena/Abilities/AttributeSetBase.h"
 #include "MutateArena/Assets/Data/CommonAsset.h"
+#include "MutateArena/Characters/Data/HumanDNAAsset.h"
 #include "MutateArena/GameStates/BaseGameState.h"
 #include "MutateArena/PlayerControllers/BaseController.h"
 #include "MutateArena/System/AssetSubsystem.h"
@@ -43,6 +44,8 @@ void ABasePlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(ThisClass, Survive);
 	DOREPLIFETIME(ThisClass, Infect);
 	DOREPLIFETIME(ThisClass, KillStreak);
+	DOREPLIFETIME(ThisClass, HumanDNA1);
+	DOREPLIFETIME(ThisClass, HumanDNA2);
 }
 
 void ABasePlayerState::BeginPlay()
@@ -58,17 +61,16 @@ void ABasePlayerState::BeginPlay()
 		{
 			ServerSetHumanCharacterName(StorageSubsystem->CacheLoadout->HumanCharacterName);
 			ServerSetMutantCharacterName(StorageSubsystem->CacheLoadout->MutantCharacterName);
+			
+			if (UHumanDNAAsset* DNAAsset1 = StorageSubsystem->GetHumanDNAAssetByType(StorageSubsystem->CacheLoadout->HumanDNA1))
+			{
+				if (UHumanDNAAsset* DNAAsset2 = StorageSubsystem->GetHumanDNAAssetByType(StorageSubsystem->CacheLoadout->HumanDNA2))
+				{
+					ServerSetHumanDNA(DNAAsset1->DNAType, DNAAsset2->DNAType);
+				}
+			}
 		}
 	}
-
-	InitData();
-}
-
-void ABasePlayerState::Reset()
-{
-	Super::Reset();
-
-	InitData();
 }
 
 void ABasePlayerState::Destroyed()
@@ -83,11 +85,6 @@ void ABasePlayerState::Destroyed()
 	}
 
 	Super::Destroyed();
-}
-
-// 初始化数据
-void ABasePlayerState::InitData()
-{
 }
 
 UAbilitySystemComponent* ABasePlayerState::GetAbilitySystemComponent() const
@@ -176,18 +173,17 @@ void ABasePlayerState::SetMutantCharacterName(EMutantCharacterName Name)
 
 void ABasePlayerState::AddDamage(float TempDamage)
 {
+	UE_LOG(LogTemp, Warning, TEXT("%s AddDamage: %f"), *GetPlayerName(), TempDamage); 
 	Damage += TempDamage;
 	
-	ClientOnAddDamage(TempDamage);
+	OnRep_Damage(TempDamage);
+	
+	ForceNetUpdate();
 }
 
-void ABasePlayerState::OnRep_Damage()
+void ABasePlayerState::OnRep_Damage(float OldValue)
 {
-}
-
-void ABasePlayerState::ClientOnAddDamage_Implementation(float TempDamage)
-{
-	ShowDamageUI(TempDamage);
+	ShowDamageUI(Damage - OldValue);
 }
 
 void ABasePlayerState::ShowDamageUI(float TempDamage)
@@ -233,23 +229,36 @@ void ABasePlayerState::AddKillStreak()
 {
 	KillStreak++;
 	
-	OnKillStreakChange();
-
-	GetWorldTimerManager().SetTimer(ResetKillStreakTimerHandle, this, &ThisClass::ResetKillStreak, 7.f);
+	OnRep_KillStreak();
 	
-	ClientOnKill();
+	ForceNetUpdate(); // 快速播放音效
+	
+	GetWorldTimerManager().SetTimer(ResetKillStreakTimerHandle, this, &ThisClass::ResetKillStreak, 7.f);
 }
 
 void ABasePlayerState::OnRep_KillStreak()
 {
 	OnKillStreakChange();
+	
+	if (KillStreak > 0)
+	{
+		if (BaseController == nullptr) BaseController = Cast<ABaseController>(GetOwner());
+		if (BaseController && BaseController->IsLocalController())
+		{
+			UAssetSubsystem* AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+			if (AssetSubsystem == nullptr || AssetSubsystem->CommonAsset == nullptr) return;
+
+			if (UAudioComponent* AudioComponent = UGameplayStatics::SpawnSound2D(this, AssetSubsystem->CommonAsset->KillSound))
+			{
+				// AudioComponent->SetFloatParameter(TEXT("Index"), 1);
+			}
+		}
+	}
 }
 
 void ABasePlayerState::ResetKillStreak()
 {
 	KillStreak = 0;
-	
-	OnKillStreakChange();
 }
 
 void ABasePlayerState::OnKillStreakChange()
@@ -264,13 +273,8 @@ void ABasePlayerState::OnKillStreakChange()
 	}
 }
 
-void ABasePlayerState::ClientOnKill_Implementation()
+void ABasePlayerState::ServerSetHumanDNA_Implementation(EHumanDNA TempHumanDNA1, EHumanDNA TempHumanDNA2)
 {
-	UAssetSubsystem* AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-	if (AssetSubsystem == nullptr || AssetSubsystem->CommonAsset == nullptr) return;
-
-	if (UAudioComponent* AudioComponent = UGameplayStatics::SpawnSound2D(this, AssetSubsystem->CommonAsset->KillSound))
-	{
-		// AudioComponent->SetFloatParameter(TEXT("Index"), 1);
-	}
+	HumanDNA1 = TempHumanDNA1;
+	HumanDNA2 = TempHumanDNA2;
 }

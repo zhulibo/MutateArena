@@ -27,11 +27,11 @@ protected:
 	UPROPERTY()
 	class UAssetSubsystem* AssetSubsystem;
 
-	TMap<FDataRegistryId, const uint8*> MutantCharacterMain;
+	TMap<FDataRegistryId, const uint8*> MutantCharacterMains;
 
 	UPROPERTY(meta = (BindWidget))
-	class UCommonHierarchicalScrollBox* MutantSelectButtonContainer;
-
+	class UWrapBox* MutantSelectButtonContainer;
+	
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UMutantSelectButton> MutantSelectButtonClass;
 	UFUNCTION()

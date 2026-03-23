@@ -159,7 +159,6 @@ void ATeamDeadMatchMode::HumanReceiveDamage(AHumanCharacter* DamagedCharacter, A
 	float TakenDamage = FMath::Clamp(Damage, 0.f, DamagedCharacter->GetHealth());
 	float Health = DamagedCharacter->GetHealth() - TakenDamage;
 	DamagedCharacter->SetHealth(Health);
-	DamagedCharacter->MulticastSetHealth(Health, AttackerController);
 
 	// 增加攻击者伤害分数
 	if (AttackerState != DamagedState) // 受到跌落伤害时，AttackerController和DamageCauser传的是自己

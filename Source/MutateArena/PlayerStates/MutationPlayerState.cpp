@@ -74,16 +74,11 @@ void AMutationPlayerState::AddDamage(float TempDamage)
 	Super::AddDamage(TempDamage);
 }
 
-void AMutationPlayerState::OnRep_Damage()
+void AMutationPlayerState::OnRep_Damage(float OldValue)
 {
-	Super::OnRep_Damage();
-}
-
-void AMutationPlayerState::ClientOnAddDamage_Implementation(float TempDamage)
-{
-	Super::ClientOnAddDamage_Implementation(TempDamage);
+	Super::OnRep_Damage(OldValue);
 	
-	Show1000DamageUI(TempDamage);
+	Show1000DamageUI(Damage);
 }
 
 void AMutationPlayerState::Show1000DamageUI(float TempDamage)

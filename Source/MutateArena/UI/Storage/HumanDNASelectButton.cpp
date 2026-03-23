@@ -19,6 +19,7 @@ void UHumanDNASelectButton::Setup(UHumanDNAAsset* DNAData)
 		|| DNAData->DNAType == EHumanDNA::PainModulation
 		|| DNAData->DNAType == EHumanDNA::CoreMaintenance)
 	{
-		Desc->SetText(FText::FromString("In Development"));
+		Desc->SetText(FText::FromString(TEXT("In Development")));
+		SetIsEnabled(false);
 	}
 }

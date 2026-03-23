@@ -65,6 +65,6 @@ protected:
 	float LastAimTime = -999.f;
 	// 血条延迟显示的时间
 	UPROPERTY()
-	float HealthBarLingerTime = 2.f;
+	float HealthBarLingerTime = 1.f;
 	
 };

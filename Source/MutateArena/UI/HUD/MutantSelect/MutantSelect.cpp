@@ -16,6 +16,8 @@
 #include "MutateArena/UI/Common/CommonButton.h"
 #include "MutateArena/UI/HUD/Mutation/MutationContainer.h"
 #include "Components/ScrollBoxSlot.h"
+#include "Components/WrapBox.h"
+#include "Components/WrapBoxSlot.h"
 #include "Widgets/CommonActivatableWidgetContainer.h"
 #include "MutateArena/Abilities/Mutants/GA_MutantChange.h"
 #include "MutateArena/PlayerStates/BasePlayerState.h"
@@ -40,9 +42,9 @@ void UMutantSelect::NativeOnInitialized()
 	if (UDataRegistry* DataRegistry = UDataRegistrySubsystem::Get()->GetRegistryForType(DR_MUTANT_CHARACTER_MAIN))
 	{
 		const UScriptStruct* OutStruct;
-		DataRegistry->GetAllCachedItems(MutantCharacterMain, OutStruct);
+		DataRegistry->GetAllCachedItems(MutantCharacterMains, OutStruct);
 
-		for (const TPair<FDataRegistryId, const uint8*>& Pair : MutantCharacterMain)
+		for (const TPair<FDataRegistryId, const uint8*>& Pair : MutantCharacterMains)
 		{
 			FMutantCharacterMain ItemValue = *reinterpret_cast<const FMutantCharacterMain*>(Pair.Value);
 
@@ -54,8 +56,18 @@ void UMutantSelect::NativeOnInitialized()
 				MutantSelectButton->Desc->SetText(ItemValue.Desc);
 				MutantSelectButton->MutantCharacterName = ItemValue.MutantCharacterName;
 				MutantSelectButton->OnClicked().AddUObject(this, &ThisClass::OnMutantSelectButtonClicked, ItemValue.MutantCharacterName);
-				UScrollBoxSlot* NewSlot = Cast<UScrollBoxSlot>(MutantSelectButtonContainer->AddChild(MutantSelectButton));
-				if (NewSlot) NewSlot->SetPadding(FMargin(0, 0, 15, 0));
+				if (UWrapBoxSlot* NewSlot = Cast<UWrapBoxSlot>(MutantSelectButtonContainer->AddChild(MutantSelectButton))) 
+					NewSlot->SetPadding(FMargin(20, 20, 0, 0));
+
+				if (ItemValue.MutantCharacterName == EMutantCharacterName::Cook
+					|| ItemValue.MutantCharacterName == EMutantCharacterName::Echo
+					|| ItemValue.MutantCharacterName == EMutantCharacterName::Generator
+					|| ItemValue.MutantCharacterName == EMutantCharacterName::CorpseDriver
+					|| ItemValue.MutantCharacterName == EMutantCharacterName::Venom)
+				{
+					MutantSelectButton->Desc->SetText(FText::FromString(TEXT("In Development")));
+					MutantSelectButton->SetIsEnabled(false);
+				}
 			}
 		}
 	}

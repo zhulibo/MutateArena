@@ -129,11 +129,11 @@ void UScoreboard::RefreshScoreBoard()
 				// DNA
 				if (StorageSubsystem && StorageSubsystem->CacheLoadout)
 				{
-					if (UHumanDNAAsset* DNAAsset1 = StorageSubsystem->GetHumanDNAAssetByType(StorageSubsystem->CacheLoadout->HumanDNA1))
+					if (UHumanDNAAsset* DNAAsset1 = StorageSubsystem->GetHumanDNAAssetByType(PlayerStates[i]->HumanDNA1))
 					{
 						ScoreBoardLineButton->HumanDNA1->SetBrushFromLazyTexture(DNAAsset1->Icon);
 					}
-					if (UHumanDNAAsset* DNAAsset2 = StorageSubsystem->GetHumanDNAAssetByType(StorageSubsystem->CacheLoadout->HumanDNA2))
+					if (UHumanDNAAsset* DNAAsset2 = StorageSubsystem->GetHumanDNAAssetByType(PlayerStates[i]->HumanDNA2))
 					{
 						ScoreBoardLineButton->HumanDNA2->SetBrushFromLazyTexture(DNAAsset2->Icon);
 					}

@@ -142,8 +142,6 @@ public:
 	UFUNCTION()
 	virtual void OnRep_bIsDead();
 	void SetHealth(float TempHealth);
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastSetHealth(float TempHealth, AController* AttackerController);
 protected:
 	void OnMaxHealthChanged(const FOnAttributeChangeData& Data);
 	virtual void OnHealthChanged(const FOnAttributeChangeData& Data);
