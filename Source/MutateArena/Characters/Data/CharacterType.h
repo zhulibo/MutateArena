@@ -29,7 +29,7 @@ enum class EMutantCharacterName : uint8
 };
 
 UENUM(BlueprintType)
-enum class EHumanDNA : uint8
+enum class EDNA : uint8
 {
 	EnhancedVision,
 	EnhancedHearing,

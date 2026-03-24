@@ -32,7 +32,7 @@
 #define SECTION_RELOAD_END FName(TEXT("ReloadEnd"))
 
 // DataAsset
-#define ASSET_HUMAN_DNA FName(TEXT("HumanDNA"))
+#define ASSET_DNA FName(TEXT("DNA"))
 #define ASSET_COMMON FName(TEXT("Common"))
 #define ASSET_CHARACTER FName(TEXT("Character"))
 #define ASSET_EQUIPMENT FName(TEXT("Equipment"))

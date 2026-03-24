@@ -8,7 +8,8 @@
 #include "MutateArena/Abilities/MAAbilitySystemComponent.h"
 #include "MutateArena/Abilities/AttributeSetBase.h"
 #include "MutateArena/Assets/Data/CommonAsset.h"
-#include "MutateArena/Characters/Data/HumanDNAAsset.h"
+#include "MutateArena/Characters/Data/CharacterAsset.h"
+#include "MutateArena/Characters/Data/DNAAsset2.h"
 #include "MutateArena/GameStates/BaseGameState.h"
 #include "MutateArena/PlayerControllers/BaseController.h"
 #include "MutateArena/System/AssetSubsystem.h"
@@ -16,6 +17,7 @@
 #include "MutateArena/System/Storage/DefaultConfig.h"
 #include "MutateArena/System/Storage/SaveGameLoadout.h"
 #include "MutateArena/System/Storage/StorageSubsystem.h"
+#include "MutateArena/System/Tags/ProjectTags.h"
 
 ABasePlayerState::ABasePlayerState()
 {
@@ -44,31 +46,22 @@ void ABasePlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(ThisClass, Survive);
 	DOREPLIFETIME(ThisClass, Infect);
 	DOREPLIFETIME(ThisClass, KillStreak);
-	DOREPLIFETIME(ThisClass, HumanDNA1);
-	DOREPLIFETIME(ThisClass, HumanDNA2);
+	DOREPLIFETIME(ThisClass, DNA1);
+	DOREPLIFETIME(ThisClass, DNA2);
 }
 
 void ABasePlayerState::BeginPlay()
 {
 	Super::BeginPlay();
 
-	BaseController = Cast<ABaseController>(GetOwner());
+	if (!BaseController) BaseController = Cast<ABaseController>(GetOwner());
 	if (BaseController && BaseController->IsLocalController())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s -----------------------------------------------"), *GetPlayerName());
 		UStorageSubsystem* StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
 		if (StorageSubsystem && StorageSubsystem->CacheLoadout)
 		{
 			ServerSetHumanCharacterName(StorageSubsystem->CacheLoadout->HumanCharacterName);
 			ServerSetMutantCharacterName(StorageSubsystem->CacheLoadout->MutantCharacterName);
-			
-			if (UHumanDNAAsset* DNAAsset1 = StorageSubsystem->GetHumanDNAAssetByType(StorageSubsystem->CacheLoadout->HumanDNA1))
-			{
-				if (UHumanDNAAsset* DNAAsset2 = StorageSubsystem->GetHumanDNAAssetByType(StorageSubsystem->CacheLoadout->HumanDNA2))
-				{
-					ServerSetHumanDNA(DNAAsset1->DNAType, DNAAsset2->DNAType);
-				}
-			}
 		}
 	}
 }
@@ -173,10 +166,9 @@ void ABasePlayerState::SetMutantCharacterName(EMutantCharacterName Name)
 
 void ABasePlayerState::AddDamage(float TempDamage)
 {
-	UE_LOG(LogTemp, Warning, TEXT("%s AddDamage: %f"), *GetPlayerName(), TempDamage); 
 	Damage += TempDamage;
 	
-	OnRep_Damage(TempDamage);
+	ShowDamageUI(TempDamage);
 	
 	ForceNetUpdate();
 }
@@ -273,8 +265,69 @@ void ABasePlayerState::OnKillStreakChange()
 	}
 }
 
-void ABasePlayerState::ServerSetHumanDNA_Implementation(EHumanDNA TempHumanDNA1, EHumanDNA TempHumanDNA2)
+void ABasePlayerState::ServerSetDNA_Implementation(EDNA TempDNA1, EDNA TempDNA2)
 {
-	HumanDNA1 = TempHumanDNA1;
-	HumanDNA2 = TempHumanDNA2;
+	DNA1 = TempDNA1;
+	DNA2 = TempDNA2;
+	
+	ApplyDNAGameplayEffect(DNA1);
+	ApplyDNAGameplayEffect(DNA2);
+}
+
+void ABasePlayerState::ApplyDNAGameplayEffect(EDNA DNA)
+{
+	if (!AbilitySystemComponent) return;
+
+	UAssetSubsystem* AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+	if (!AssetSubsystem || !AssetSubsystem->CharacterAsset) return;
+	TSubclassOf<UGameplayEffect> GEClass = nullptr;
+
+	switch (DNA)
+	{
+	case EDNA::EnhancedVision:
+		GEClass = AssetSubsystem->CharacterAsset->GE_DNA_EnhancedVision;
+		break;
+	case EDNA::EnhancedHearing:
+		GEClass = AssetSubsystem->CharacterAsset->GE_DNA_EnhancedHearing;
+		break;
+	case EDNA::EnhancedSmell:
+		GEClass = AssetSubsystem->CharacterAsset->GE_DNA_EnhancedSmell;
+		break;
+	case EDNA::SubconsciousAwareness:
+		GEClass = AssetSubsystem->CharacterAsset->GE_DNA_SubconsciousAwareness;
+		break;
+	case EDNA::HighBoneDensity:
+		GEClass = AssetSubsystem->CharacterAsset->GE_DNA_HighBoneDensity;
+		break;
+	case EDNA::AcceleratedClotting:
+		GEClass = AssetSubsystem->CharacterAsset->GE_DNA_AcceleratedClotting;
+		break;
+	case EDNA::AcceleratedMetabolism:
+		GEClass = AssetSubsystem->CharacterAsset->GE_DNA_AcceleratedMetabolism;
+		break;
+	case EDNA::ThermalRegulation:
+		GEClass = AssetSubsystem->CharacterAsset->GE_DNA_ThermalRegulation;
+		break;
+	case EDNA::ToxicityImmunity:
+		GEClass = AssetSubsystem->CharacterAsset->GE_DNA_ToxicityImmunity;
+		break;
+	case EDNA::PainModulation:
+		GEClass = AssetSubsystem->CharacterAsset->GE_DNA_PainModulation;
+		break;
+	case EDNA::CoreMaintenance:
+		GEClass = AssetSubsystem->CharacterAsset->GE_DNA_CoreMaintenance;
+		break;
+	}
+
+	if (GEClass)
+	{
+		FGameplayEffectContextHandle Context = AbilitySystemComponent->MakeEffectContext();
+		Context.AddInstigator(this, this);
+
+		FGameplayEffectSpecHandle SpecHandle = AbilitySystemComponent->MakeOutgoingSpec(GEClass, 1.f, Context);
+		if (SpecHandle.IsValid())
+		{
+			AbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
+		}
+	}
 }

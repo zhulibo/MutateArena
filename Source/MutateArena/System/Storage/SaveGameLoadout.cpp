@@ -14,6 +14,6 @@ USaveGameLoadout::USaveGameLoadout()
 	HumanCharacterName = DefaultConfig->HumanCharacterName;
 	MutantCharacterName = DefaultConfig->MutantCharacterName;
 	
-	HumanDNA1 = DefaultConfig->HumanDNA1;
-	HumanDNA2 = DefaultConfig->HumanDNA2;
+	DNA1 = DefaultConfig->DNA1;
+	DNA2 = DefaultConfig->DNA2;
 }

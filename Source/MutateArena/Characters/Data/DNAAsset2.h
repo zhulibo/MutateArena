@@ -4,18 +4,18 @@
 #include "CharacterType.h"
 #include "Engine/DataAsset.h"
 #include "MutateArena/MutateArena.h"
-#include "HumanDNAAsset.generated.h"
+#include "DNAAsset2.generated.h"
 
-enum class EHumanDNA : uint8;
+enum class EDNA : uint8;
 
 UCLASS(BlueprintType)
-class MUTATEARENA_API UHumanDNAAsset : public UPrimaryDataAsset
+class MUTATEARENA_API UDNAAsset2 : public UPrimaryDataAsset
 {
 	GENERATED_BODY()
 
 public:
 	UPROPERTY(EditAnywhere)
-	EHumanDNA DNAType = EHumanDNA::None;
+	EDNA DNA = EDNA::None;
 
 	UPROPERTY(EditAnywhere)
 	FText DisplayName;
@@ -28,7 +28,7 @@ public:
 	
 	virtual FPrimaryAssetId GetPrimaryAssetId() const override
 	{
-		return FPrimaryAssetId(ASSET_HUMAN_DNA, GetFName());
+		return FPrimaryAssetId(ASSET_DNA, GetFName());
 	}
 	
 };

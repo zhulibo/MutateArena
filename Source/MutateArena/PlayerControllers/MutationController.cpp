@@ -250,6 +250,7 @@ void AMutationController::InitHumanHUD()
 		SetHUDTeamNum(MutationGameState->GetPlayerStates(ETeam::Team1).Num(), ETeam::Team1);
 		SetHUDTeamNum(MutationGameState->GetPlayerStates(ETeam::Team2).Num(), ETeam::Team2);
 		SetHUDDamageMul(MutationGameState->DamageMul);
+		SetHUDMeleeDamageMul(MutationGameState->MeleeDamageMul);
 	}
 }
 
@@ -342,6 +343,14 @@ void AMutationController::SetHUDDamageMul(float DamageMul)
 	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
 	{
 		UISubsystem->OnDamageMulChange.Broadcast(DamageMul);
+	}
+}
+
+void AMutationController::SetHUDMeleeDamageMul(float MeleeDamageMul)
+{
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
+	{
+		UISubsystem->OnMeleeDamageMulChange.Broadcast(MeleeDamageMul);
 	}
 }
 

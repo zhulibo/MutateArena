@@ -2,18 +2,18 @@
 
 #include "CoreMinimal.h"
 #include "CommonButtonBase.h"
-#include "HumanDNASelectButton.generated.h"
+#include "DNASelectButton.generated.h"
 
-class UHumanDNAAsset;
-enum class EHumanDNA : uint8;
+class UDNAAsset2;
+enum class EDNA : uint8;
 
 UCLASS(Abstract)
-class MUTATEARENA_API UHumanDNASelectButton : public UCommonButtonBase
+class MUTATEARENA_API UDNASelectButton : public UCommonButtonBase
 {
 	GENERATED_BODY()
 
 public:
-	void Setup(UHumanDNAAsset* DNAData);
+	void Setup(UDNAAsset2* DNAData);
 	
 	UPROPERTY(meta = (BindWidget))
 	class UCommonTextBlock* DisplayName;
@@ -24,6 +24,6 @@ public:
 	class UCommonLazyImage* Icon;
 	
 	UPROPERTY()
-	EHumanDNA DNAType;
+	EDNA DNA;
 
 };

@@ -1,6 +1,9 @@
 #include "GC_MutantGhostSkill.h"
 
+#include "AbilitySystemComponent.h"
+#include "AbilitySystemGlobals.h"
 #include "MutateArena/Characters/Mutants/MutantGhost.h"
+#include "MutateArena/System/Tags/ProjectTags.h"
 
 AGC_MutantGhostSkill::AGC_MutantGhostSkill()
 {
@@ -13,6 +16,22 @@ bool AGC_MutantGhostSkill::WhileActive_Implementation(AActor* MyTarget, const FG
 	if (AMutantGhost* MutantGhost = Cast<AMutantGhost>(MyTarget))
 	{
 		// 更改材质透明度
+		float TargetOpacity = .1f; 
+
+		if (APlayerController* LocalPC = MyTarget->GetWorld()->GetFirstPlayerController())
+		{
+			if (APawn* LocalPawn = LocalPC->GetPawn())
+			{
+				if (UAbilitySystemComponent* ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(LocalPawn))
+				{
+					if (ASC->HasMatchingGameplayTag(TAG_STATE_DNA_EnhancedVision))
+					{
+						TargetOpacity = .2f; 
+					}
+				}
+			}
+		}
+
 		TArray<UMaterialInterface*> MaterialInterfaces = MutantGhost->GetMesh()->GetMaterials();
 		for (int32 i = 0; i < MaterialInterfaces.Num(); ++i)
 		{
@@ -23,7 +42,7 @@ bool AGC_MutantGhostSkill::WhileActive_Implementation(AActor* MyTarget, const FG
 			}
 			if (DynamicMaterial)
 			{
-				DynamicMaterial->SetScalarParameterValue(FName("Opacity"), 0.1f);
+				DynamicMaterial->SetScalarParameterValue(FName("Opacity"), TargetOpacity);
 			}
 		}
 		

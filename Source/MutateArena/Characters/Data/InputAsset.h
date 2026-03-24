@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
+#include "MutateArena/MutateArena.h"
 #include "InputAsset.generated.h"
 
 UCLASS()

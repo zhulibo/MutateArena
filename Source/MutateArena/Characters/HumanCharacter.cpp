@@ -508,10 +508,7 @@ void AHumanCharacter::SwapBetweenPrimarySecondaryEquipmentButtonPressed(const FI
 void AHumanCharacter::SendSwapEquipmentEvent(EEquipmentType TargetEquipmentType)
 {
 	// 如果玩家想切的目标，就是他现在使用的或正在努力切过去的装备，直接返回
-	if (CombatComp && CombatComp->DesiredEquipmentType == TargetEquipmentType)
-	{
-		return;
-	}
+	if (CombatComp && CombatComp->DesiredEquipmentType == TargetEquipmentType) return;
 	
 	if (ASC)
 	{

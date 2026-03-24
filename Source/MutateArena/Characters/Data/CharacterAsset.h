@@ -32,8 +32,32 @@ public:
 	// GAS
 	UPROPERTY(EditAnywhere, Category = "GAS")
 	TArray<TSubclassOf<class UGameplayAbilityBase>> HumanDefaultAbilities;
+	
 	UPROPERTY(EditAnywhere, Category = "GAS")
-	TArray<TSubclassOf<class UGameplayAbilityBase>> MutantDefaultAbilities;
+	TArray<TSubclassOf<UGameplayAbilityBase>> MutantDefaultAbilities;
+
+	UPROPERTY(EditAnywhere, Category = "GAS")
+	TSubclassOf<UGameplayEffect> GE_DNA_EnhancedVision;
+	UPROPERTY(EditAnywhere, Category = "GAS")
+	TSubclassOf<UGameplayEffect> GE_DNA_EnhancedHearing;
+	UPROPERTY(EditAnywhere, Category = "GAS")
+	TSubclassOf<UGameplayEffect> GE_DNA_EnhancedSmell;
+	UPROPERTY(EditAnywhere, Category = "GAS")
+	TSubclassOf<UGameplayEffect> GE_DNA_SubconsciousAwareness;
+	UPROPERTY(EditAnywhere, Category = "GAS")
+	TSubclassOf<UGameplayEffect> GE_DNA_HighBoneDensity;
+	UPROPERTY(EditAnywhere, Category = "GAS")
+	TSubclassOf<UGameplayEffect> GE_DNA_AcceleratedClotting;
+	UPROPERTY(EditAnywhere, Category = "GAS")
+	TSubclassOf<UGameplayEffect> GE_DNA_AcceleratedMetabolism;
+	UPROPERTY(EditAnywhere, Category = "GAS")
+	TSubclassOf<UGameplayEffect> GE_DNA_ThermalRegulation;
+	UPROPERTY(EditAnywhere, Category = "GAS")
+	TSubclassOf<UGameplayEffect> GE_DNA_ToxicityImmunity;
+	UPROPERTY(EditAnywhere, Category = "GAS")
+	TSubclassOf<UGameplayEffect> GE_DNA_PainModulation;
+	UPROPERTY(EditAnywhere, Category = "GAS")
+	TSubclassOf<UGameplayEffect> GE_DNA_CoreMaintenance;
 
 	// Character
 	UPROPERTY(EditAnywhere, Category = "Character")

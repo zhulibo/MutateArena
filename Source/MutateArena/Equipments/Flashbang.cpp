@@ -1,4 +1,7 @@
 #include "Flashbang.h"
+
+#include "AbilitySystemComponent.h"
+#include "AbilitySystemGlobals.h"
 #include "MutateArena/Characters/BaseCharacter.h"
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "MutateArena/PlayerControllers/BaseController.h"
@@ -88,7 +91,21 @@ void AFlashbang::MulticastExplode_Implementation()
 
 			// 仅当该本地玩家在爆炸半径内时，才进行检测和应用
 			float Distance = LocalCharacter->GetDistanceTo(this);
-			if (Distance <= Radius)
+					
+			float FinalRadius = Radius;
+			float FinalMaxFlashTime = MaxFlashTime;
+			float FinalMaxCapTime = MaxCapTime;
+			if (UAbilitySystemComponent* ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(LocalCharacter))
+			{
+				if (ASC->HasMatchingGameplayTag(TAG_STATE_DNA_EnhancedVision))
+				{
+					FinalRadius *= 1.1f; 
+					FinalMaxFlashTime *= 1.1f; 
+					FinalMaxCapTime *= 1.1f;
+				}
+			}
+			
+			if (Distance <= FinalRadius)
 			{
 				// 射线检测是否有阻挡
 				FHitResult HitResult;
@@ -121,16 +138,16 @@ void AFlashbang::MulticastExplode_Implementation()
 					DotProduct = FMath::Clamp(DotProduct, -1.f, 1.f);
 					float AngleInRadians = FMath::Acos(DotProduct);
 					float Angle = FMath::RadiansToDegrees(AngleInRadians);
-
+					
 					UAssetSubsystem* Subsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
 					if (Subsystem && Subsystem->CharacterAsset)
 					{
 						if (UMaterialParameterCollectionInstance* MPCI = GetWorld()->GetParameterCollectionInstance(
 							Subsystem->CharacterAsset->MPC_Flashbang))
 						{
-							MPCI->SetScalarParameterValue(FName("Radius"), Radius);
-							MPCI->SetScalarParameterValue(FName("MaxFlashTime"), MaxFlashTime);
-							MPCI->SetScalarParameterValue(FName("MaxCapTime"), MaxCapTime);
+							MPCI->SetScalarParameterValue(FName("Radius"), FinalRadius);
+							MPCI->SetScalarParameterValue(FName("MaxFlashTime"), FinalMaxFlashTime);
+							MPCI->SetScalarParameterValue(FName("MaxCapTime"), FinalMaxCapTime);
 							MPCI->SetScalarParameterValue(FName("FlashTime"), GetWorld()->GetTimeSeconds());
 							MPCI->SetScalarParameterValue(FName("Distance"), Distance);
 							MPCI->SetScalarParameterValue(FName("Angle"), Angle);
@@ -138,15 +155,14 @@ void AFlashbang::MulticastExplode_Implementation()
 					}
 
 					// 隐藏所有其他玩家的 OverheadWidget
-					float Speed = 1 / (FMath::Clamp(Distance / Radius, .5f, 1.f) * MaxCapTime);
+					float Speed = 1 / (FMath::Clamp(1.0f - Distance / FinalRadius, .5f, 1.f) * FinalMaxCapTime);
 					for (AActor* Player : AllPlayers)
 					{
 						if (ABaseCharacter* PlayerCharacter = Cast<ABaseCharacter>(Player))
 						{
 							if (UWidgetComponent* OverheadWidget = PlayerCharacter->OverheadWidget)
 							{
-								if (UOverheadWidget* OverheadWidgetClass = Cast<UOverheadWidget>(
-									OverheadWidget->GetUserWidgetObject()))
+								if (UOverheadWidget* OverheadWidgetClass = Cast<UOverheadWidget>(OverheadWidget->GetUserWidgetObject()))
 								{
 									OverheadWidgetClass->PlayFlashbangEffect(Speed);
 								}

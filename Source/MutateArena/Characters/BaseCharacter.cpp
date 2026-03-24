@@ -34,11 +34,14 @@
 #include "MutateArena/Effects/BloodCollision.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include "Components/StateTreeComponent.h"
+#include "Data/DNAAsset2.h"
 #include "Materials/MaterialParameterCollectionInstance.h"
 #include "MutateArena/GameStates/BaseGameState.h"
 #include "MutateArena/Assets/Data/CommonAsset.h"
 #include "MutateArena/System/DevSetting.h"
 #include "MutateArena/System/UISubsystem.h"
+#include "MutateArena/System/Storage/SaveGameLoadout.h"
+#include "MutateArena/System/Tags/ProjectTags.h"
 #include "MutateArena/UI/TextChat/TextChat.h"
 #include "MutateArena/Utils/LibraryNotify.h"
 #include "Net/UnrealNetwork.h"
@@ -386,6 +389,26 @@ void ABaseCharacter::OnASCInit()
 		ASC->GetGameplayAttributeValueChangeDelegate(AttributeSetBase->GetMaxHealthAttribute()).AddUObject(this, &ThisClass::OnMaxHealthChanged);
 		ASC->GetGameplayAttributeValueChangeDelegate(AttributeSetBase->GetHealthAttribute()).AddUObject(this, &ThisClass::OnHealthChanged);
 	}
+	
+	if (IsLocallyControlled())
+	{
+		if (BasePlayerState == nullptr) BasePlayerState = GetPlayerState<ABasePlayerState>();
+		if (BasePlayerState)
+		{
+			if (StorageSubsystem == nullptr) StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
+			if (StorageSubsystem && StorageSubsystem->CacheLoadout)
+			{
+				if (UDNAAsset2* DNAAsset1 = StorageSubsystem->GetDNAAssetByType(StorageSubsystem->CacheLoadout->DNA1))
+				{
+					if (UDNAAsset2* DNAAsset2 = StorageSubsystem->GetDNAAssetByType(StorageSubsystem->CacheLoadout->DNA2))
+					{
+						// BasePlayerState->ServerSetDNA(DNAAsset1->DNA, DNAAsset2->DNA);
+						BasePlayerState->ServerSetDNA(EDNA::HighBoneDensity, EDNA::EnhancedVision);
+					}
+				}
+			}
+		}
+	}
 }
 
 UAbilitySystemComponent* ABaseCharacter::GetAbilitySystemComponent() const
@@ -488,16 +511,18 @@ void ABaseCharacter::Move(const FInputActionValue& Value)
 // 分开处理Look，无需根据输入设备类型区分灵敏度，支持同时使用键鼠和手柄控制一个角色
 void ABaseCharacter::LookMouse(const FInputActionValue& Value)
 {
-	FVector2D AxisVector = Value.Get<FVector2D>();
 	if (StorageSubsystem == nullptr) StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
+	if (!StorageSubsystem || !StorageSubsystem->CacheSetting) return;
+	FVector2D AxisVector = Value.Get<FVector2D>();
 	AddControllerYawInput(AxisVector.X * StorageSubsystem->CacheSetting->MouseSensitivity);
 	AddControllerPitchInput(AxisVector.Y * StorageSubsystem->CacheSetting->MouseSensitivity);
 }
 
 void ABaseCharacter::LookStick(const FInputActionValue& Value)
 {
-	FVector2D AxisVector = Value.Get<FVector2D>();
 	if (StorageSubsystem == nullptr) StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
+	if (!StorageSubsystem || !StorageSubsystem->CacheSetting) return;
+	FVector2D AxisVector = Value.Get<FVector2D>();
 	AddControllerYawInput(AxisVector.X * StorageSubsystem->CacheSetting->ControllerSensitivity);
 	AddControllerPitchInput(AxisVector.Y * StorageSubsystem->CacheSetting->ControllerSensitivity);
 }
@@ -657,6 +682,11 @@ void ABaseCharacter::Landed(const FHitResult& Hit)
 // 计算跌落伤害比例
 float ABaseCharacter::CalcFallDamageRate()
 {
+	if (ASC && ASC->HasMatchingGameplayTag(TAG_STATE_DNA_HighBoneDensity))
+	{
+		return 0.f; 
+	}
+	
 	FVector Velocity = GetCharacterMovement()->Velocity; // Landed判定的时机是即将落地时，此时速度达到最大
 	float Gravity = GetCharacterMovement()->GetGravityZ();
 	float DiffHighMeter = Velocity.Z / Gravity;

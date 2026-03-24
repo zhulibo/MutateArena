@@ -5,8 +5,8 @@
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "StorageSubsystem.generated.h"
 
-enum class EHumanDNA : uint8;
-class UHumanDNAAsset;
+enum class EDNA : uint8;
+class UDNAAsset2;
 enum class ESoundClassType : uint8;
 
 UCLASS()
@@ -54,9 +54,9 @@ protected:
 	
 	// 用于缓存所有 DNA 资产的字典
 	UPROPERTY(Transient)
-	TMap<EHumanDNA, UHumanDNAAsset*> CachedDNAAssets;
+	TMap<EDNA, UDNAAsset2*> CachedDNAAssets;
 	void BuildDNACache();
 public:
-	UHumanDNAAsset* GetHumanDNAAssetByType(EHumanDNA InDNAType) const;
+	UDNAAsset2* GetDNAAssetByType(EDNA InDNA) const;
 	
 };

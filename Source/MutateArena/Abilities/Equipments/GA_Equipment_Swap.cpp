@@ -133,8 +133,7 @@ void UGA_Equipment_Swap::OnSwapOutEventReceived(FGameplayEventData Payload)
 	UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
 	AHumanCharacter* HumanChar = GetHumanCharacter();
 	UCombatComponent* CombatComp = HumanChar ? HumanChar->CombatComp : nullptr;
-	AEquipment* CurEquipment = GetCurEquipment();
-	if (!ASC || !CombatComp || !TargetEquipment || !CurEquipment) return;
+	if (!ASC || !CombatComp || !TargetEquipment) return;
 	
 	// 切换装备
 	CombatComp->InstantSwap(TargetEquipment->EquipmentType);

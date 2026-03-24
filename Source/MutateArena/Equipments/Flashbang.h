@@ -27,8 +27,10 @@ protected:
 
 	UPROPERTY()
 	float Radius = 1000.f;
+	// 闪光留存时间
 	UPROPERTY()
 	float MaxFlashTime = 6.f;
+	// 残影留存时间
 	UPROPERTY()
 	float MaxCapTime = 8.f;
 

@@ -469,6 +469,11 @@ void AMutationMode::MutantReceiveDamage(AMutantCharacter* DamagedCharacter, ABas
 
 	// 设置受伤者血量
 	float TakenDamage = Damage * MutationGameState->DamageMul * DamagedState->GetDamageReceivedMul();
+	const UDamageTypeBase* DamageTypeBase = Cast<UDamageTypeBase>(DamageType);
+	if (DamageTypeBase && DamageTypeBase->DamageType == EDamageCauserType::Melee)
+	{
+		TakenDamage *= MutationGameState->MeleeDamageMul;
+	}
 	TakenDamage = FMath::Clamp(TakenDamage, 0.f, DamagedCharacter->GetHealth());
 	float Health = DamagedCharacter->GetHealth() - TakenDamage;
 	DamagedCharacter->SetHealth(Health);
@@ -495,14 +500,11 @@ void AMutationMode::MutantReceiveDamage(AMutantCharacter* DamagedCharacter, ABas
 
 		// 处理突变体死亡流程
 		bool bKilledByMelee = false;
-		if (const UDamageTypeBase* DamageTypeBase = Cast<UDamageTypeBase>(DamageType))
+		if (DamageTypeBase && DamageTypeBase->DamageType == EDamageCauserType::Melee)
 		{
-			if (DamageTypeBase->DamageType == EDamageCauserType::Melee)
-			{
-				bKilledByMelee = true;
-				DamagedState->bKilledByMelee = true;
-				MutationGameState->EndRoundIfAllBeKilledByMelee();
-			}
+			bKilledByMelee = true;
+			DamagedState->bKilledByMelee = true;
+			MutationGameState->EndRoundIfAllBeKilledByMelee();
 		}
 		DamagedCharacter->MutantDead(bKilledByMelee);
 	}

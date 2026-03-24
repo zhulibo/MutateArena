@@ -13,9 +13,9 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	class UCommonTextBlock* Player;
 	UPROPERTY(meta = (BindWidget))
-	class UCommonLazyImage* HumanDNA1;
+	class UCommonLazyImage* DNA1;
 	UPROPERTY(meta = (BindWidget))
-	UCommonLazyImage* HumanDNA2;
+	UCommonLazyImage* DNA2;
 	UPROPERTY(meta = (BindWidget))
 	UCommonTextBlock* Damage;
 	UPROPERTY(meta = (BindWidget))

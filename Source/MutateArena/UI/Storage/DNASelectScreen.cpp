@@ -1,24 +1,24 @@
-#include "HumanDNASelectScreen.h"
-#include "HumanDNASelectButton.h"
+#include "DNASelectScreen.h"
+#include "DNASelectButton.h"
 #include "Components/WrapBox.h"
 #include "Components/WrapBoxSlot.h"
-#include "MutateArena/Characters/Data/HumanDNAAsset.h"
+#include "MutateArena/Characters/Data/DNAAsset2.h"
 #include "MutateArena/System/Storage/StorageSubsystem.h"
 
-void UHumanDNASelectScreen::NativeOnInitialized()
+void UDNASelectScreen::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
 
 	UStorageSubsystem* StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
 	if (!StorageSubsystem) return;
 	
-	for (uint8 i = 0; i < static_cast<uint8>(EHumanDNA::None); ++i)
+	for (uint8 i = 0; i < static_cast<uint8>(EDNA::None); ++i)
 	{
-		EHumanDNA CurrentType = static_cast<EHumanDNA>(i);
+		EDNA CurrentType = static_cast<EDNA>(i);
         
-		if (UHumanDNAAsset* DNAData = StorageSubsystem->GetHumanDNAAssetByType(CurrentType))
+		if (UDNAAsset2* DNAData = StorageSubsystem->GetDNAAssetByType(CurrentType))
 		{
-			if (UHumanDNASelectButton* NewButton = CreateWidget<UHumanDNASelectButton>(this, HumanDNASelectButtonClass))
+			if (UDNASelectButton* NewButton = CreateWidget<UDNASelectButton>(this, DNASelectButtonClass))
 			{
 				NewButton->Setup(DNAData);
 				NewButton->OnClicked().Clear();
@@ -33,7 +33,7 @@ void UHumanDNASelectScreen::NativeOnInitialized()
 	}
 }
 
-UWidget* UHumanDNASelectScreen::NativeGetDesiredFocusTarget() const
+UWidget* UDNASelectScreen::NativeGetDesiredFocusTarget() const
 {
 	if (DNAContainer && DNAContainer->GetChildrenCount() > 0)
 	{
@@ -44,12 +44,12 @@ UWidget* UHumanDNASelectScreen::NativeGetDesiredFocusTarget() const
 	return Super::NativeGetDesiredFocusTarget();
 }
 
-void UHumanDNASelectScreen::Setup(FHumanDNASelectComplete InCallback)
+void UDNASelectScreen::Setup(FDNASelectComplete InCallback)
 {
 	Callback = InCallback;
 }
 
-void UHumanDNASelectScreen::OnDNAButtonClicked(UHumanDNAAsset* SelectedDNA)
+void UDNASelectScreen::OnDNAButtonClicked(UDNAAsset2* SelectedDNA)
 {
 	DeactivateWidget();
 

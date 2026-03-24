@@ -6,7 +6,7 @@
 #include "MutateArena/UI/Setting/TabAudio.h"
 #include "MutateArena/Assets/Data/CommonAsset.h"
 #include "Kismet/GameplayStatics.h"
-#include "MutateArena/Characters/Data/HumanDNAAsset.h"
+#include "MutateArena/Characters/Data/DNAAsset2.h"
 #include "MutateArena/System/DataAssetManager.h"
 #include "Serialization/ObjectAndNameAsStringProxyArchive.h"
 
@@ -228,7 +228,7 @@ void UStorageSubsystem::BuildDNACache()
 	CachedDNAAssets.Empty();
 
 	TArray<FPrimaryAssetId> DNAAssetIds;
-	UDataAssetManager::Get().GetPrimaryAssetIdList(FPrimaryAssetType(ASSET_HUMAN_DNA), DNAAssetIds);
+	UDataAssetManager::Get().GetPrimaryAssetIdList(FPrimaryAssetType(ASSET_DNA), DNAAssetIds);
 	
 	// 按资产名称的字母表顺序固定住顺序
 	DNAAssetIds.Sort([](const FPrimaryAssetId& A, const FPrimaryAssetId& B)
@@ -238,21 +238,21 @@ void UStorageSubsystem::BuildDNACache()
 	
 	for (const FPrimaryAssetId& AssetId : DNAAssetIds)
 	{
-		if (UHumanDNAAsset* DNAAsset = UDataAssetManager::GetAsset<UHumanDNAAsset>(AssetId))
+		if (UDNAAsset2* DNAAsset = UDataAssetManager::GetAsset<UDNAAsset2>(AssetId))
 		{
-			CachedDNAAssets.Add(DNAAsset->DNAType, DNAAsset);
+			CachedDNAAssets.Add(DNAAsset->DNA, DNAAsset);
 		}
 	}
 }
 
-UHumanDNAAsset* UStorageSubsystem::GetHumanDNAAssetByType(EHumanDNA InDNAType) const
+UDNAAsset2* UStorageSubsystem::GetDNAAssetByType(EDNA InDNA) const
 {
-	if (InDNAType == EHumanDNA::None)
+	if (InDNA == EDNA::None)
 	{
 		return nullptr;
 	}
 
-	if (UHumanDNAAsset* const* FoundAsset = CachedDNAAssets.Find(InDNAType))
+	if (UDNAAsset2* const* FoundAsset = CachedDNAAssets.Find(InDNA))
 	{
 		return *FoundAsset;
 	}

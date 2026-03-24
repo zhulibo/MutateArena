@@ -5,7 +5,7 @@
 #include "ScoreBoardLineButton.h"
 #include "Kismet/GameplayStatics.h"
 #include "MutateArena/MutateArena.h"
-#include "MutateArena/Characters/Data/HumanDNAAsset.h"
+#include "MutateArena/Characters/Data/DNAAsset2.h"
 #include "MutateArena/GameStates/BaseGameState.h"
 #include "MutateArena/PlayerControllers/BaseController.h"
 #include "MutateArena/PlayerStates/BasePlayerState.h"
@@ -129,13 +129,13 @@ void UScoreboard::RefreshScoreBoard()
 				// DNA
 				if (StorageSubsystem && StorageSubsystem->CacheLoadout)
 				{
-					if (UHumanDNAAsset* DNAAsset1 = StorageSubsystem->GetHumanDNAAssetByType(PlayerStates[i]->HumanDNA1))
+					if (UDNAAsset2* DNAAsset1 = StorageSubsystem->GetDNAAssetByType(PlayerStates[i]->DNA1))
 					{
-						ScoreBoardLineButton->HumanDNA1->SetBrushFromLazyTexture(DNAAsset1->Icon);
+						ScoreBoardLineButton->DNA1->SetBrushFromLazyTexture(DNAAsset1->Icon);
 					}
-					if (UHumanDNAAsset* DNAAsset2 = StorageSubsystem->GetHumanDNAAssetByType(PlayerStates[i]->HumanDNA2))
+					if (UDNAAsset2* DNAAsset2 = StorageSubsystem->GetDNAAssetByType(PlayerStates[i]->DNA2))
 					{
-						ScoreBoardLineButton->HumanDNA2->SetBrushFromLazyTexture(DNAAsset2->Icon);
+						ScoreBoardLineButton->DNA2->SetBrushFromLazyTexture(DNAAsset2->Icon);
 					}
 				}
 				

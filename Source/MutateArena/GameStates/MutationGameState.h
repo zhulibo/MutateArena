@@ -28,10 +28,15 @@ public:
 	
 	UPROPERTY(ReplicatedUsing = OnRep_DamageMul)
 	float DamageMul = 1.f;
+	UPROPERTY(ReplicatedUsing = OnRep_MeleeDamageMul)
+	float MeleeDamageMul = 1.f;
 protected:
-	void CalcDamageMul();
+	void AddDamageMul();
 	UFUNCTION()
 	void OnRep_DamageMul();
+	void UpdateMeleeDamageMul();
+	UFUNCTION()
+	void OnRep_MeleeDamageMul();
 
 public:
 	virtual void AddToPlayerStates(ABasePlayerState* BasePlayerState, ETeam Team) override;

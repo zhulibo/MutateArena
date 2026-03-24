@@ -26,6 +26,7 @@ void UMutationHuman::NativeOnInitialized()
 		UISubsystem->OnAmmoChange.AddUObject(this, &ThisClass::OnAmmoChange);
 		UISubsystem->OnCarriedAmmoChange.AddUObject(this, &ThisClass::OnCarriedAmmoChange);
 		UISubsystem->OnDamageMulChange.AddUObject(this, &ThisClass::OnDamageMulChange);
+		UISubsystem->OnMeleeDamageMulChange.AddUObject(this, &ThisClass::OnMeleeDamageMulChange);
 		UISubsystem->OnCause1000Damage.AddUObject(this, &ThisClass::OnCombatIconChange, ECombatIconType::Cause1000Damage);
 		UISubsystem->OnBeImmune.AddUObject(this, &ThisClass::OnCombatIconChange, ECombatIconType::BeImmune);
 	}
@@ -35,8 +36,10 @@ void UMutationHuman::NativeConstruct()
 {
 	Super::NativeConstruct();
 	
-	DamageLabel->SetColorAndOpacity(C_YELLOW);
-	DamageMul->SetColorAndOpacity(C_YELLOW);
+	// DamageLabel->SetColorAndOpacity(C_YELLOW);
+	// DamageMul->SetColorAndOpacity(C_YELLOW);
+	MeleeDamageLabel->SetColorAndOpacity(C_YELLOW);
+	MeleeDamageMul->SetColorAndOpacity(C_YELLOW);
 }
 
 void UMutationHuman::OnHumanHealthChange(float TempHealth)
@@ -66,6 +69,11 @@ void UMutationHuman::OnDamageMulChange(float TempDamageMul)
 	{
 		DamageMulMID->SetScalarParameterValue(FName("Progress"), FMath::Clamp(TempDamageMul - 1.0f, 0.0f, 1.0f));
 	}
+}
+
+void UMutationHuman::OnMeleeDamageMulChange(float TempMeleeDamageMul)
+{
+	MeleeDamageMul->SetText(FText::AsPercent(TempMeleeDamageMul));
 }
 
 void UMutationHuman::OnCombatIconChange(ECombatIconType CombatIconType)

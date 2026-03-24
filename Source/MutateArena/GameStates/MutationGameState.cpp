@@ -19,6 +19,7 @@ void AMutationGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ThisClass, DamageMul);
+	DOREPLIFETIME(ThisClass, MeleeDamageMul);
 }
 
 void AMutationGameState::Tick(float DeltaTime)
@@ -74,6 +75,8 @@ void AMutationGameState::WatchGameState()
 
 void AMutationGameState::EndRoundIfAllBeKilledByMelee()
 {
+	AddDamageMul();
+	
 	if (MutationMode == nullptr) MutationMode = Cast<AMutationMode>(GetWorld()->GetAuthGameMode());
 	if (MutationMode == nullptr) return;
 
@@ -95,41 +98,12 @@ void AMutationGameState::EndRoundIfAllBeKilledByMelee()
 	}
 }
 
-void AMutationGameState::CalcDamageMul()
+void AMutationGameState::AddDamageMul()
 {
-	if (MatchState != MatchState::InProgress) return;
-	if (Team1PlayerStates.IsEmpty() || Team2PlayerStates.IsEmpty()) return;
+	if (DamageMul >= 2.f) return;
 
-	float PlayerMul = Team1PlayerStates.Num() / Team2PlayerStates.Num();
-	float TempDamageMul = 1.f;
-
-	if (PlayerMul <= .5f)
-	{
-		TempDamageMul = 2.f;
-	}
-	else if (PlayerMul <= .7f)
-	{
-		TempDamageMul = 1.8f;
-	}
-	else if (PlayerMul <= 1.f)
-	{
-		TempDamageMul = 1.6f;
-	}
-	else if (PlayerMul <= 1.5f)
-	{
-		TempDamageMul = 1.4f;
-	}
-	else if (PlayerMul <= 2.f)
-	{
-		TempDamageMul = 1.2f;
-	}
-
-	// 伤害加成只增不减
-	if (TempDamageMul > DamageMul)
-	{
-		DamageMul = TempDamageMul;
-	}
-
+	DamageMul = FMath::Clamp(DamageMul + 0.25f, 1.f, 2.f);
+	
 	OnRep_DamageMul();
 }
 
@@ -142,11 +116,58 @@ void AMutationGameState::OnRep_DamageMul()
 	}
 }
 
+void AMutationGameState::UpdateMeleeDamageMul()
+{
+	if (MatchState != MatchState::InProgress) return;
+	if (Team1PlayerStates.IsEmpty() || Team2PlayerStates.IsEmpty()) return;
+
+	float PlayerMul = Team1PlayerStates.Num() / Team2PlayerStates.Num();
+	float TempMeleeDamageMul = 1.f;
+
+	if (PlayerMul <= .5f)
+	{
+		TempMeleeDamageMul = 2.f;
+	}
+	else if (PlayerMul <= .7f)
+	{
+		TempMeleeDamageMul = 1.8f;
+	}
+	else if (PlayerMul <= 1.f)
+	{
+		TempMeleeDamageMul = 1.6f;
+	}
+	else if (PlayerMul <= 1.5f)
+	{
+		TempMeleeDamageMul = 1.4f;
+	}
+	else if (PlayerMul <= 2.f)
+	{
+		TempMeleeDamageMul = 1.2f;
+	}
+
+	// 伤害加成只增不减
+	if (TempMeleeDamageMul > MeleeDamageMul)
+	{
+		MeleeDamageMul = TempMeleeDamageMul;
+	}
+
+	OnRep_MeleeDamageMul();
+}
+
+void AMutationGameState::OnRep_MeleeDamageMul()
+{
+	if (MutationController == nullptr) MutationController = Cast<AMutationController>(GetWorld()->GetFirstPlayerController());
+	if (MutationController)
+	{
+		MutationController->SetHUDMeleeDamageMul(MeleeDamageMul);
+	}
+}
+
 void AMutationGameState::AddToPlayerStates(ABasePlayerState* BasePlayerState, ETeam Team)
 {
 	Super::AddToPlayerStates(BasePlayerState, Team);
 
-	CalcDamageMul();
+	UpdateMeleeDamageMul();
 
 	SetHUDTeamNum(GetPlayerStates(Team).Num(), Team);
 }
@@ -155,7 +176,7 @@ void AMutationGameState::RemoveFromPlayerStates(ABasePlayerState* BasePlayerStat
 {
 	Super::RemoveFromPlayerStates(BasePlayerState, Team);
 
-	CalcDamageMul();
+	UpdateMeleeDamageMul();
 
 	SetHUDTeamNum(GetPlayerStates(Team).Num(), Team);
 }

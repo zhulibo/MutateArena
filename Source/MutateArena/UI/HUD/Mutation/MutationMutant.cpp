@@ -31,10 +31,10 @@ void UMutationMutant::NativeConstruct()
 {
 	Super::NativeConstruct();
 	
-	RageLabel->SetColorAndOpacity(C_YELLOW);
-	Rage->SetColorAndOpacity(C_YELLOW);
-	LevelLabel->SetColorAndOpacity(C_YELLOW);
-	Level->SetColorAndOpacity(C_YELLOW);
+	// RageLabel->SetColorAndOpacity(C_YELLOW);
+	// Rage->SetColorAndOpacity(C_YELLOW);
+	// LevelLabel->SetColorAndOpacity(C_YELLOW);
+	// Level->SetColorAndOpacity(C_YELLOW);
 }
 
 void UMutationMutant::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)

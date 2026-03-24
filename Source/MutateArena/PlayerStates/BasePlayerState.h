@@ -114,10 +114,11 @@ protected:
 
 public:
 	UPROPERTY(Replicated)
-	EHumanDNA HumanDNA1 = EHumanDNA::None;
+	EDNA DNA1 = EDNA::None;
 	UPROPERTY(Replicated)
-	EHumanDNA HumanDNA2 = EHumanDNA::None;
+	EDNA DNA2 = EDNA::None;
 	UFUNCTION(Server, Reliable)
-	void ServerSetHumanDNA(EHumanDNA TempHumanDNA1, EHumanDNA TempHumanDNA2);
-	
+	void ServerSetDNA(EDNA TempDNA1, EDNA TempDNA2);
+	void ApplyDNAGameplayEffect(EDNA DNA);
+
 };

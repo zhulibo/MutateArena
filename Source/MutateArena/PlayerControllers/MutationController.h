@@ -80,6 +80,7 @@ public:
 	void SetHUDSkill(bool bIsReady);
 	void SetHUDRage(float UpdateRageUI);
 	void SetHUDDamageMul(float DamageMul);
+	void SetHUDMeleeDamageMul(float MeleeDamageMul);
 protected:
 	void SetHUDCurRound();
 	void SetHUDTotalRound();

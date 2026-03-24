@@ -6,8 +6,8 @@
 #include "CommonTextBlock.h"
 #include "DataRegistrySubsystem.h"
 #include "Human.h"
-#include "HumanDNAButton.h"
-#include "HumanDNASelectScreen.h"
+#include "DNAButton.h"
+#include "DNASelectScreen.h"
 #include "LoadoutItem.h"
 #include "StorageButton.h"
 #include "MutateArena/Characters/Data/CharacterType.h"
@@ -24,7 +24,7 @@
 #include "Components/ScrollBoxSlot.h"
 #include "Components/WrapBox.h"
 #include "Components/WrapBoxSlot.h"
-#include "MutateArena/Characters/Data/HumanDNAAsset.h"
+#include "MutateArena/Characters/Data/DNAAsset2.h"
 #include "MutateArena/System/DataAssetManager.h"
 #include "MutateArena/System/UISubsystem.h"
 #include "MutateArena/System/Tags/ProjectTags.h"
@@ -61,13 +61,13 @@ void UStorage::NativeOnInitialized()
 		EOSSubsystem->OnReadUserFileComplete.AddUObject(this, &ThisClass::OnReadUserFileComplete);
 	}
 	
-	if (HumanDNAButton1)
+	if (DNAButton1)
 	{
-		HumanDNAButton1->OnClicked().AddUObject(this, &ThisClass::OnDNAButton1Clicked);
+		DNAButton1->OnClicked().AddUObject(this, &ThisClass::OnDNAButton1Clicked);
 	}
-	if (HumanDNAButton2)
+	if (DNAButton2)
 	{
-		HumanDNAButton2->OnClicked().AddUObject(this, &ThisClass::OnDNAButton2Clicked);
+		DNAButton2->OnClicked().AddUObject(this, &ThisClass::OnDNAButton2Clicked);
 	}
 }
 
@@ -270,13 +270,13 @@ void UStorage::InitPlayerConfig(USaveGameLoadout* SaveGameLoadout)
 		}
 	}
 	
-	if (UHumanDNAAsset* DNAAsset1 = StorageSubsystem->GetHumanDNAAssetByType(SaveGameLoadout->HumanDNA1))
+	if (UDNAAsset2* DNAAsset1 = StorageSubsystem->GetDNAAssetByType(SaveGameLoadout->DNA1))
 	{
-		HumanDNAButton1->UpdateDNAInfo(DNAAsset1);
+		DNAButton1->UpdateDNAInfo(DNAAsset1);
 	}
-	if (UHumanDNAAsset* DNAAsset2 = StorageSubsystem->GetHumanDNAAssetByType(SaveGameLoadout->HumanDNA2))
+	if (UDNAAsset2* DNAAsset2 = StorageSubsystem->GetDNAAssetByType(SaveGameLoadout->DNA2))
 	{
-		HumanDNAButton2->UpdateDNAInfo(DNAAsset2);
+		DNAButton2->UpdateDNAInfo(DNAAsset2);
 	}
 }
 
@@ -597,15 +597,15 @@ void UStorage::OnCharacterButtonClicked(UStorageButton* CharacterButton)
 
 void UStorage::OnDNAButton1Clicked()
 {
-	OpenDNASelectScreen(HumanDNAButton1);
+	OpenDNASelectScreen(DNAButton1);
 }
 
 void UStorage::OnDNAButton2Clicked()
 {
-	OpenDNASelectScreen(HumanDNAButton2);
+	OpenDNASelectScreen(DNAButton2);
 }
 
-void UStorage::OpenDNASelectScreen(UHumanDNAButton* TargetButton)
+void UStorage::OpenDNASelectScreen(UDNAButton* TargetButton)
 {
 	if (!DNASelectScreenClass) return;
 
@@ -614,17 +614,17 @@ void UStorage::OpenDNASelectScreen(UHumanDNAButton* TargetButton)
 
 	if (auto Layer = UISubsystem->GetLayerStack(TAG_UI_LAYER_MODAL))
 	{
-		Layer->AddWidget<UHumanDNASelectScreen>(
+		Layer->AddWidget<UDNASelectScreen>(
 			DNASelectScreenClass,
-			[this, TargetButton](UHumanDNASelectScreen& Dialog) 
+			[this, TargetButton](UDNASelectScreen& Dialog) 
 			{
-				Dialog.Setup(FHumanDNASelectComplete::CreateUObject(this, &ThisClass::OnDNASelected, TargetButton));
+				Dialog.Setup(FDNASelectComplete::CreateUObject(this, &ThisClass::OnDNASelected, TargetButton));
 			}
 		);
 	}
 }
 
-void UStorage::OnDNASelected(UHumanDNAAsset* SelectedDNA, UHumanDNAButton* TargetButton)
+void UStorage::OnDNASelected(UDNAAsset2* SelectedDNA, UDNAButton* TargetButton)
 {
 	if (SelectedDNA && TargetButton)
 	{
@@ -633,13 +633,13 @@ void UStorage::OnDNASelected(UHumanDNAAsset* SelectedDNA, UHumanDNAButton* Targe
 		if (StorageSubsystem == nullptr) StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
 		if (StorageSubsystem && StorageSubsystem->CacheLoadout)
 		{
-			if (TargetButton == HumanDNAButton1)
+			if (TargetButton == DNAButton1)
 			{
-				StorageSubsystem->CacheLoadout->HumanDNA1 = SelectedDNA->DNAType;
+				StorageSubsystem->CacheLoadout->DNA1 = SelectedDNA->DNA;
 			}
-			else if (TargetButton == HumanDNAButton2)
+			else if (TargetButton == DNAButton2)
 			{
-				StorageSubsystem->CacheLoadout->HumanDNA2 = SelectedDNA->DNAType;
+				StorageSubsystem->CacheLoadout->DNA2 = SelectedDNA->DNA;
 			}
 			StorageSubsystem->SaveLoadouts();
 		}

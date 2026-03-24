@@ -48,6 +48,7 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FOnSkillChange, bool bIsShow);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnRageChange, float Rage);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnLevelChange, float Level);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnDamageMulChange, float DamageMul);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnMeleeDamageMulChange, float MeleeDamageMul);
 DECLARE_MULTICAST_DELEGATE(FOnBeImmune);
 
 // TDM
@@ -113,6 +114,7 @@ public:
 	FOnRageChange OnRageChange;
 	FOnLevelChange OnLevelChange;
 	FOnDamageMulChange OnDamageMulChange;
+	FOnMeleeDamageMulChange OnMeleeDamageMulChange;
 	FOnBeImmune OnBeImmune;
 	
 	// TDM

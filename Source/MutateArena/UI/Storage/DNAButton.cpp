@@ -1,14 +1,14 @@
-#include "HumanDNAButton.h"
+#include "DNAButton.h"
 
 #include "CommonLazyImage.h"
 #include "CommonTextBlock.h"
-#include "MutateArena/Characters/Data/HumanDNAAsset.h"
+#include "MutateArena/Characters/Data/DNAAsset2.h"
 
-void UHumanDNAButton::UpdateDNAInfo(UHumanDNAAsset* DNAData)
+void UDNAButton::UpdateDNAInfo(UDNAAsset2* DNAData)
 {
 	if (DNAData)
 	{
-		DNAType = DNAData->DNAType;
+		DNA = DNAData->DNA;
 
 		if (DisplayName)
 		{
