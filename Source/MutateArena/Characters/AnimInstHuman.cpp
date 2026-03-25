@@ -30,7 +30,9 @@ void UAnimInstHuman::NativeUpdateAnimation(float DeltaSeconds)
 	if (AEquipment* CurEquipment = CombatComp->GetCurEquipment())
 	{
 		EquipmentName = CurEquipment->EquipmentName;
-
+		// FString EnumString = UEnum::GetValueAsString(CurEquipment->EquipmentName);
+		// UE_LOG(LogTemp, Warning, TEXT("EquipmentName = %s"), *EnumString);
+		
 		WalkPlayRate = HumanChar->GetMaxWalkSpeed() / HumanChar->DefaultMaxWalkSpeed;
 		if (CombatComp->IsAiming())
 		{

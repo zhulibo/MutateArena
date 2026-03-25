@@ -34,7 +34,7 @@ void AFlashbang::ThrowOut()
 	if (HasAuthority())
 	{
 		FTimerHandle TimerHandleSound;
-		GetWorldTimerManager().SetTimer(TimerHandleSound, this, &ThisClass::ServerPlaySound, 1.8f);
+		GetWorldTimerManager().SetTimer(TimerHandleSound, this, &ThisClass::ServerPlaySound, 1.8f); // 起音较慢，提前播放
 
 		FTimerHandle TimerHandleExplode;
 		GetWorldTimerManager().SetTimer(TimerHandleExplode, this, &ThisClass::ServerExplode, 2.0f);
@@ -79,6 +79,8 @@ void AFlashbang::MulticastExplode_Implementation()
 			GetActorRotation()
 		);
 	}
+	
+	ABaseGameState* BaseGameState = GetWorld()->GetGameState<ABaseGameState>();
 
 	// 遍历本地玩家控制器
 	for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
@@ -110,14 +112,21 @@ void AFlashbang::MulticastExplode_Implementation()
 				// 射线检测是否有阻挡
 				FHitResult HitResult;
 				FCollisionQueryParams QueryParams;
-
+				QueryParams.AddIgnoredActor(this); // 忽略震撼弹自身
+				
 				TArray<AActor*> AllPlayers;
-				UGameplayStatics::GetAllActorsWithTag(GetWorld(), TAG_CHARACTER_BASE, AllPlayers);
+				if (BaseGameState)
+				{
+					for (APlayerState* PS : BaseGameState->PlayerArray)
+					{
+						if (PS && PS->GetPawn())
+						{
+							AllPlayers.Add(PS->GetPawn());
+						}
+					}
+				}
 				QueryParams.AddIgnoredActors(AllPlayers);
-
-				TArray<AActor*> AllEquipments;
-				UGameplayStatics::GetAllActorsWithTag(GetWorld(), TAG_EQUIPMENT, AllEquipments);
-				QueryParams.AddIgnoredActors(AllEquipments);
+				QueryParams.AddIgnoredActors(BaseGameState->AllEquipments);
 
 				bool bHit = GetWorld()->LineTraceSingleByChannel(
 					HitResult,
@@ -139,20 +148,14 @@ void AFlashbang::MulticastExplode_Implementation()
 					float AngleInRadians = FMath::Acos(DotProduct);
 					float Angle = FMath::RadiansToDegrees(AngleInRadians);
 					
-					UAssetSubsystem* Subsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-					if (Subsystem && Subsystem->CharacterAsset)
-					{
-						if (UMaterialParameterCollectionInstance* MPCI = GetWorld()->GetParameterCollectionInstance(
-							Subsystem->CharacterAsset->MPC_Flashbang))
-						{
-							MPCI->SetScalarParameterValue(FName("Radius"), FinalRadius);
-							MPCI->SetScalarParameterValue(FName("MaxFlashTime"), FinalMaxFlashTime);
-							MPCI->SetScalarParameterValue(FName("MaxCapTime"), FinalMaxCapTime);
-							MPCI->SetScalarParameterValue(FName("FlashTime"), GetWorld()->GetTimeSeconds());
-							MPCI->SetScalarParameterValue(FName("Distance"), Distance);
-							MPCI->SetScalarParameterValue(FName("Angle"), Angle);
-						}
-					}
+					LocalCharacter->ApplyFlashbangEffect(
+						FinalRadius, 
+						FinalMaxFlashTime, 
+						FinalMaxCapTime, 
+						GetWorld()->GetTimeSeconds(), 
+						Distance, 
+						Angle
+					);
 
 					// 隐藏所有其他玩家的 OverheadWidget
 					float Speed = 1 / (FMath::Clamp(1.0f - Distance / FinalRadius, .5f, 1.f) * FinalMaxCapTime);

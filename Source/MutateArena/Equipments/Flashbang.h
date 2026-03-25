@@ -15,9 +15,6 @@ public:
 protected:
 	virtual void ThrowOut() override;
 
-	UPROPERTY()
-	class ABaseGameState* BaseGameState;
-
 	UPROPERTY(EditAnywhere)
 	class UNiagaraSystem* ExplodeEffect;
 	UPROPERTY()
@@ -26,7 +23,7 @@ protected:
 	class UMetaSoundSource* ExplodeSound;
 
 	UPROPERTY()
-	float Radius = 1000.f;
+	float Radius = 1200.f;
 	// 闪光留存时间
 	UPROPERTY()
 	float MaxFlashTime = 6.f;

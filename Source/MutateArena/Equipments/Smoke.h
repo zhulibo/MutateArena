@@ -28,12 +28,9 @@ protected:
 	UPROPERTY()
 	class ASmokeBlocker* SpawnedSmokeBlocker;
 	
-	// 服务器执行爆炸逻辑
 	UFUNCTION()
 	void ServerExplode();
-	
 	float Time = 12.f;
-	// 多播给客户端播放表现，并开启本地视线遮挡
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastExplodeEffects();
 	

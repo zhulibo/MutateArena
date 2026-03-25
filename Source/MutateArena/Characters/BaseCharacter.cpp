@@ -266,6 +266,17 @@ void ABaseCharacter::OnLocallyControllerReady()
 	{
 		AutoHostComp->StartAFKCheck();
 	}
+	
+	if (Camera)
+	{
+		UAssetSubsystem* Subsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+		if (Subsystem && Subsystem->CharacterAsset && Subsystem->CharacterAsset->MI_Flashbang)
+		{
+			MID_Flashbang = UMaterialInstanceDynamic::Create(Subsystem->CharacterAsset->MI_Flashbang, this);
+			
+			Camera->AddOrUpdateBlendable(MID_Flashbang, 0.f); 
+		}
+	}
 }
 
 // 计算俯仰
@@ -402,8 +413,8 @@ void ABaseCharacter::OnASCInit()
 				{
 					if (UDNAAsset2* DNAAsset2 = StorageSubsystem->GetDNAAssetByType(StorageSubsystem->CacheLoadout->DNA2))
 					{
-						// BasePlayerState->ServerSetDNA(DNAAsset1->DNA, DNAAsset2->DNA);
-						BasePlayerState->ServerSetDNA(EDNA::HighBoneDensity, EDNA::EnhancedVision);
+						BasePlayerState->ServerSetDNA(DNAAsset1->DNA, DNAAsset2->DNA);
+						// BasePlayerState->ServerSetDNA(EDNA::HighBoneDensity, EDNA::EnhancedVision);
 					}
 				}
 			}
@@ -846,9 +857,11 @@ void ABaseCharacter::SprayPaint(int32 RadioIndex)
 
 	FCollisionQueryParams QueryParams;
 	QueryParams.AddIgnoredActor(this);
-	TArray<AActor*> AllEquipments;
-	UGameplayStatics::GetAllActorsWithTag(GetWorld(), TAG_EQUIPMENT, AllEquipments);
-	QueryParams.AddIgnoredActors(AllEquipments);
+	if (BaseGameState == nullptr) BaseGameState = GetWorld()->GetGameState<ABaseGameState>();
+	if (BaseGameState)
+	{
+		QueryParams.AddIgnoredActors(BaseGameState->AllEquipments);
+	}
 
 	FHitResult OutHit;
 	GetWorld()->SweepSingleByChannel(
@@ -890,6 +903,52 @@ void ABaseCharacter::SprayPaint(int32 RadioIndex)
 			}
 		}
 	}
+}
+
+void ABaseCharacter::ApplyFlashbangEffect(float InRadius, float InMaxFlashTime, float InMaxCapTime, float InFlashTime, float InDistance, float InAngle)
+{
+	if (!Camera || !MID_Flashbang) return;
+
+	// 更新材质参数
+	MID_Flashbang->SetScalarParameterValue(FName("Radius"), InRadius);
+	MID_Flashbang->SetScalarParameterValue(FName("MaxFlashTime"), InMaxFlashTime);
+	MID_Flashbang->SetScalarParameterValue(FName("MaxCapTime"), InMaxCapTime);
+	MID_Flashbang->SetScalarParameterValue(FName("FlashTime"), InFlashTime);
+	MID_Flashbang->SetScalarParameterValue(FName("Distance"), InDistance);
+	MID_Flashbang->SetScalarParameterValue(FName("Angle"), InAngle);
+	
+	// 权重设为 1.0f，激活后处理渲染
+	Camera->AddOrUpdateBlendable(MID_Flashbang, 1.f);
+
+	// 修复多重闪光弹覆盖 Bug 的核心计算逻辑
+	float CurrentTime = GetWorld()->GetTimeSeconds();
+	float TotalDuration = InMaxFlashTime + InMaxCapTime; // 取相加适当延长时间，避免效果为执行完就关掉了后处理材质
+	float ProposedEndTime = CurrentTime + TotalDuration; // 计算这颗新闪光弹理论上的结束时间
+
+	// 只有当新闪光弹的结束时间 > 当前记录的结束时间时，才去刷新定时器
+	if (ProposedEndTime > FlashbangEndTime)
+	{
+		FlashbangEndTime = ProposedEndTime;
+		
+		// 重新设定定时器，剩余等待时间 = 绝对结束时间 - 当前时间
+		GetWorldTimerManager().SetTimer(
+			TimerHandle_FlashbangEnd, 
+			this, 
+			&ABaseCharacter::ClearFlashbangEffect, 
+			FlashbangEndTime - CurrentTime, 
+			false
+		);
+	}
+}
+
+void ABaseCharacter::ClearFlashbangEffect()
+{
+	if (Camera && MID_Flashbang)
+	{
+		Camera->AddOrUpdateBlendable(MID_Flashbang, 0.f);
+	}
+
+	FlashbangEndTime = 0.f; 
 }
 
 #undef LOCTEXT_NAMESPACE

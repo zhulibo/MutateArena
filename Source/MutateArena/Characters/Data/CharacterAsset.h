@@ -74,8 +74,6 @@ public:
 	UTextureRenderTarget2D* RT_Flashbang;
 	UPROPERTY(EditAnywhere, Category = "Flashbang")
 	UMaterialInterface* MI_Flashbang;
-	UPROPERTY(EditAnywhere, Category = "Flashbang")
-	UMaterialParameterCollection* MPC_Flashbang;
 	
 	virtual FPrimaryAssetId GetPrimaryAssetId() const override
 	{

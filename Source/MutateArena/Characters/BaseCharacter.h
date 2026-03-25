@@ -182,4 +182,14 @@ protected:
 public:
 	void SprayPaint(int32 RadioIndex);
 	
+protected:
+	UPROPERTY()
+	class UMaterialInstanceDynamic* MID_Flashbang;
+	FTimerHandle TimerHandle_FlashbangEnd;
+	// 记录当前闪光效果的绝对结束时间戳，用于防止较弱的闪光弹覆盖强闪光弹
+	float FlashbangEndTime = 0.f; 
+	void ClearFlashbangEffect();
+public:
+	void ApplyFlashbangEffect(float InRadius, float InMaxFlashTime, float InMaxCapTime, float InFlashTime, float InDistance, float InAngle);
+	
 };

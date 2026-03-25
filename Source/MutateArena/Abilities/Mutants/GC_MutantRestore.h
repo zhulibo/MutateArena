@@ -1,22 +1,23 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameplayCueNotify_Actor.h"
+#include "GameplayCueNotify_Static.h"
 #include "GC_MutantRestore.generated.h"
 
+class UMetaSoundSource;
+
 UCLASS()
-class MUTATEARENA_API AGC_MutantRestore : public AGameplayCueNotify_Actor
+class MUTATEARENA_API UGC_MutantRestore : public UGameplayCueNotify_Static
 {
 	GENERATED_BODY()
 
 public:
-	AGC_MutantRestore();
-
-	virtual bool OnExecute_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters) override;
-	virtual bool OnRemove_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters) override;
+	UGC_MutantRestore();
 
 protected:
 	UPROPERTY(EditAnywhere)
-	class UMetaSoundSource* RestoreHealthSound;
+	UMetaSoundSource* RestoreHealthSound;
 
+	virtual bool OnExecute_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters) const override;
+	
 };
