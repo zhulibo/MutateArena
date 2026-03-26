@@ -123,7 +123,7 @@ void ATeamDeadMatchMode::HandleSpawn(AController* Controller)
 
 		if (Team == ETeam::NoTeam)
 		{
-			Team = TeamDeadMatchGameState->GetPlayerStates(ETeam::Team1).Num() > TeamDeadMatchGameState->GetPlayerStates(ETeam::Team2).Num() ? ETeam::Team2 : ETeam::Team1;
+			Team = TeamDeadMatchGameState->Team1PlayerStates.Num() > TeamDeadMatchGameState->Team2PlayerStates.Num() ? ETeam::Team2 : ETeam::Team1;
 		}
 
 		AssignTeam(Controller, Team);

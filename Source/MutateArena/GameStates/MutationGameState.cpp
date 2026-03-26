@@ -169,7 +169,7 @@ void AMutationGameState::AddToPlayerStates(ABasePlayerState* BasePlayerState, ET
 
 	UpdateMeleeDamageMul();
 
-	SetHUDTeamNum(GetPlayerStates(Team).Num(), Team);
+	SetHUDTeamNum(Team == ETeam::Team1 ? Team1PlayerStates.Num() : Team2PlayerStates.Num(), Team);
 }
 
 void AMutationGameState::RemoveFromPlayerStates(ABasePlayerState* BasePlayerState, ETeam Team)
@@ -178,7 +178,7 @@ void AMutationGameState::RemoveFromPlayerStates(ABasePlayerState* BasePlayerStat
 
 	UpdateMeleeDamageMul();
 
-	SetHUDTeamNum(GetPlayerStates(Team).Num(), Team);
+	SetHUDTeamNum(Team == ETeam::Team1 ? Team1PlayerStates.Num() : Team2PlayerStates.Num(), Team);
 }
 
 void AMutationGameState::OnRep_Team1PlayerStates()

@@ -41,7 +41,11 @@ UE_DEFINE_GAMEPLAY_TAG(TAG_EVENT_THROWING_THROWOUT, "Event.Throwing.ThrowOut");
 
 // Human
 UE_DEFINE_GAMEPLAY_TAG(TAG_STATE_DNA_EnhancedVision, "State.DNA.EnhancedVision");
+UE_DEFINE_GAMEPLAY_TAG(TAG_STATE_DNA_EnhancedHearing, "State.DNA.EnhancedHearing");
+UE_DEFINE_GAMEPLAY_TAG(TAG_STATE_DNA_EnhancedSmell, "State.DNA.EnhancedSmell");
+UE_DEFINE_GAMEPLAY_TAG(TAG_STATE_DNA_SubconsciousAwareness, "State.DNA.SubconsciousAwareness");
 UE_DEFINE_GAMEPLAY_TAG(TAG_STATE_DNA_HighBoneDensity, "State.DNA.HighBoneDensity");
+UE_DEFINE_GAMEPLAY_TAG(TAG_STATE_DNA_AcceleratedClotting, "State.DNA.AcceleratedClotting");
 
 // Mutant
 UE_DEFINE_GAMEPLAY_TAG(TAG_ABILITY_MUTANT_CHANGE, "Ability.Mutant.Change");

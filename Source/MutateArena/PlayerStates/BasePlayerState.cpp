@@ -270,64 +270,25 @@ void ABasePlayerState::ServerSetDNA_Implementation(EDNA TempDNA1, EDNA TempDNA2)
 	DNA1 = TempDNA1;
 	DNA2 = TempDNA2;
 	
-	ApplyDNAGameplayEffect(DNA1);
-	ApplyDNAGameplayEffect(DNA2);
+	ApplyDNAGameplayEffect(TempDNA1);
+	ApplyDNAGameplayEffect(TempDNA2);
 }
 
 void ABasePlayerState::ApplyDNAGameplayEffect(EDNA DNA)
 {
 	if (!AbilitySystemComponent) return;
+	
+	UStorageSubsystem* StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
+	if (!StorageSubsystem || !StorageSubsystem->CacheLoadout) return;
+	
+	UDNAAsset2* DNAAsset = StorageSubsystem->GetDNAAssetByType(DNA);
+	if (!DNAAsset) return;
 
-	UAssetSubsystem* AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-	if (!AssetSubsystem || !AssetSubsystem->CharacterAsset) return;
-	TSubclassOf<UGameplayEffect> GEClass = nullptr;
-
-	switch (DNA)
+	FGameplayEffectContextHandle Context = AbilitySystemComponent->MakeEffectContext();
+	Context.AddInstigator(this, this);
+	FGameplayEffectSpecHandle SpecHandle = AbilitySystemComponent->MakeOutgoingSpec(DNAAsset->GEClass, 1.f, Context);
+	if (SpecHandle.IsValid())
 	{
-	case EDNA::EnhancedVision:
-		GEClass = AssetSubsystem->CharacterAsset->GE_DNA_EnhancedVision;
-		break;
-	case EDNA::EnhancedHearing:
-		GEClass = AssetSubsystem->CharacterAsset->GE_DNA_EnhancedHearing;
-		break;
-	case EDNA::EnhancedSmell:
-		GEClass = AssetSubsystem->CharacterAsset->GE_DNA_EnhancedSmell;
-		break;
-	case EDNA::SubconsciousAwareness:
-		GEClass = AssetSubsystem->CharacterAsset->GE_DNA_SubconsciousAwareness;
-		break;
-	case EDNA::HighBoneDensity:
-		GEClass = AssetSubsystem->CharacterAsset->GE_DNA_HighBoneDensity;
-		break;
-	case EDNA::AcceleratedClotting:
-		GEClass = AssetSubsystem->CharacterAsset->GE_DNA_AcceleratedClotting;
-		break;
-	case EDNA::AcceleratedMetabolism:
-		GEClass = AssetSubsystem->CharacterAsset->GE_DNA_AcceleratedMetabolism;
-		break;
-	case EDNA::ThermalRegulation:
-		GEClass = AssetSubsystem->CharacterAsset->GE_DNA_ThermalRegulation;
-		break;
-	case EDNA::ToxicityImmunity:
-		GEClass = AssetSubsystem->CharacterAsset->GE_DNA_ToxicityImmunity;
-		break;
-	case EDNA::PainModulation:
-		GEClass = AssetSubsystem->CharacterAsset->GE_DNA_PainModulation;
-		break;
-	case EDNA::CoreMaintenance:
-		GEClass = AssetSubsystem->CharacterAsset->GE_DNA_CoreMaintenance;
-		break;
-	}
-
-	if (GEClass)
-	{
-		FGameplayEffectContextHandle Context = AbilitySystemComponent->MakeEffectContext();
-		Context.AddInstigator(this, this);
-
-		FGameplayEffectSpecHandle SpecHandle = AbilitySystemComponent->MakeOutgoingSpec(GEClass, 1.f, Context);
-		if (SpecHandle.IsValid())
-		{
-			AbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
-		}
+		AbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
 	}
 }

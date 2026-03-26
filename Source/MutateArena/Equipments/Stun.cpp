@@ -42,11 +42,13 @@ void AStun::ServerExplode()
 	ABaseGameState* BaseGameState = GetWorld()->GetGameState<ABaseGameState>();
 	if (BaseGameState)
 	{
-		for (int32 i = 0; i < BaseGameState->GetPlayerStates(OwnerTeam).Num(); ++i)
+		TArray<ABasePlayerState*> PlayerStates;
+		BaseGameState->GetPlayerStates(OwnerTeam, PlayerStates);
+		for (int32 i = 0; i < PlayerStates.Num(); ++i)
 		{
-			if (ABasePlayerState* PS = Cast<ABasePlayerState>(BaseGameState->GetPlayerStates(OwnerTeam)[i]))
+			if (PlayerStates[i])
 			{
-				AActor* TeamActor = PS->GetPawn();
+				AActor* TeamActor = PlayerStates[i]->GetPawn();
 				if (TeamActor && TeamActor != HumanCharacter)
 				{
 					ActorsToIgnore.AddUnique(TeamActor);
@@ -71,7 +73,9 @@ void AStun::ServerExplode()
 	QueryParams.AddIgnoredActor(this); // 忽略震撼弹自身
 	if (BaseGameState)
 	{
-		for (APlayerState* PS : BaseGameState->GetPlayerStates({}))
+		TArray<ABasePlayerState*> PlayerStates;
+		BaseGameState->GetPlayerStates(OwnerTeam, PlayerStates);
+		for (APlayerState* PS : PlayerStates)
 		{
 			if (PS && PS->GetPawn())
 			{

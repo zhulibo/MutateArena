@@ -247,8 +247,8 @@ void AMutationController::InitHumanHUD()
 	{
 		SetHUDHealth(BaseCharacter->GetHealth());
 		SetHUDCurRound();
-		SetHUDTeamNum(MutationGameState->GetPlayerStates(ETeam::Team1).Num(), ETeam::Team1);
-		SetHUDTeamNum(MutationGameState->GetPlayerStates(ETeam::Team2).Num(), ETeam::Team2);
+		SetHUDTeamNum(MutationGameState->Team1PlayerStates.Num(), ETeam::Team1);
+		SetHUDTeamNum(MutationGameState->Team2PlayerStates.Num(), ETeam::Team2);
 		SetHUDDamageMul(MutationGameState->DamageMul);
 		SetHUDMeleeDamageMul(MutationGameState->MeleeDamageMul);
 	}
@@ -264,8 +264,8 @@ void AMutationController::InitMutantHUD()
 	{
 		SetHUDHealth(BaseCharacter->GetHealth());
 		SetHUDCurRound();
-		SetHUDTeamNum(MutationGameState->GetPlayerStates(ETeam::Team1).Num(), ETeam::Team1);
-		SetHUDTeamNum(MutationGameState->GetPlayerStates(ETeam::Team2).Num(), ETeam::Team2);
+		SetHUDTeamNum(MutationGameState->Team1PlayerStates.Num(), ETeam::Team1);
+		SetHUDTeamNum(MutationGameState->Team2PlayerStates.Num(), ETeam::Team2);
 		SetHUDRage(MutationPlayerState->Rage);
 
 		if (MutationPlayerState->GetAbilitySystemComponent())

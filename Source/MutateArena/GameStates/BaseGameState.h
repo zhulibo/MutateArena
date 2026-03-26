@@ -27,16 +27,18 @@ protected:
 	virtual void HandleMatchHasStarted() override;
 	virtual void HandleRoundHasEnded();
 
+public:
 	UPROPERTY(ReplicatedUsing = OnRep_Team1PlayerStates)
 	TArray<ABasePlayerState*> Team1PlayerStates;
 	UPROPERTY(ReplicatedUsing = OnRep_Team2PlayerStates)
 	TArray<ABasePlayerState*> Team2PlayerStates;
+protected:
 	UFUNCTION()
 	virtual void OnRep_Team1PlayerStates() {}
 	UFUNCTION()
 	virtual void OnRep_Team2PlayerStates() {}
 public:
-	TArray<ABasePlayerState*> GetPlayerStates(TOptional<ETeam> Team);
+	void GetPlayerStates(TOptional<ETeam> Team, TArray<ABasePlayerState*>& OutPlayerStates) const;
 	virtual void AddToPlayerStates(ABasePlayerState* BasePlayerState, ETeam Team);
 	virtual void RemoveFromPlayerStates(ABasePlayerState* BasePlayerState, ETeam Team);
 

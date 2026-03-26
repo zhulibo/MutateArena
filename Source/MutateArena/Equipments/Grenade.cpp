@@ -39,11 +39,13 @@ void AGrenade::ServerExplode()
 		if (OwnerTeam == ETeam::NoTeam) SetOwnerTeam();
 		if (ABaseGameState* BaseGameState = GetWorld()->GetGameState<ABaseGameState>())
 		{
-			for (int32 i = 0; i < BaseGameState->GetPlayerStates(OwnerTeam).Num(); ++i)
+			TArray<ABasePlayerState*> PlayerStates;
+			BaseGameState->GetPlayerStates(OwnerTeam, PlayerStates);
+			for (int32 i = 0; i < PlayerStates.Num(); ++i)
 			{
-				if (BaseGameState->GetPlayerStates(OwnerTeam)[i])
+				if (PlayerStates[i])
 				{
-					IgnoreActors.AddUnique(BaseGameState->GetPlayerStates(OwnerTeam)[i]->GetPawn());
+					IgnoreActors.AddUnique(PlayerStates[i]->GetPawn());
 				}
 			}
 		}

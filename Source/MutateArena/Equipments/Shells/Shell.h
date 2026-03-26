@@ -21,7 +21,6 @@ public:
 	void LaunchShell(const FVector& CharacterVelocity);
 protected:
 	FTimerHandle LifeSpanTimer;
-	FTimerHandle CollisionDelayTimer;
 	UFUNCTION()
 	void ReturnToPool();
 	

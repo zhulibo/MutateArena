@@ -79,25 +79,28 @@ void ABaseGameState::RemoveFromPlayerStates(ABasePlayerState* BasePlayerState, E
 	}
 }
 
-TArray<ABasePlayerState*> ABaseGameState::GetPlayerStates(TOptional<ETeam> Team)
+void ABaseGameState::GetPlayerStates(TOptional<ETeam> Team, TArray<ABasePlayerState*>& OutPlayerStates) const
 {
+	OutPlayerStates.Reset(); // Reset 会清空数组元素，但不会释放已分配的底层内存
+
 	if (Team.IsSet())
 	{
 		switch (Team.GetValue())
 		{
 		case ETeam::Team1:
-			return Team1PlayerStates;
+			OutPlayerStates.Append(Team1PlayerStates);
+			break;
 		case ETeam::Team2:
-			return Team2PlayerStates;
-		default:
-			return TArray<ABasePlayerState*>();
+			OutPlayerStates.Append(Team2PlayerStates);
+			break;
 		}
 	}
 	else
 	{
-		TArray<ABasePlayerState*> AllPlayerStates = Team1PlayerStates;
-		AllPlayerStates.Append(Team2PlayerStates);
-		return AllPlayerStates;
+		// 提前分配好总内存，避免 Append 时的二次扩容开销
+		OutPlayerStates.Reserve(Team1PlayerStates.Num() + Team2PlayerStates.Num());
+		OutPlayerStates.Append(Team1PlayerStates);
+		OutPlayerStates.Append(Team2PlayerStates);
 	}
 }
 

@@ -118,6 +118,22 @@ ABaseCharacter::ABaseCharacter()
 	AutoHostComp = CreateDefaultSubobject<UAutoHostComponent>(TEXT("AutoHostComponent"));
 }
 
+void ABaseCharacter::GetActorEyesViewPoint(FVector& OutLocation, FRotator& OutRotation) const
+{
+	if (USkeletalMeshComponent* MeshComp = GetMesh())
+	{
+		const FName HeadBoneName = FName("Head");
+		if (MeshComp->DoesSocketExist(HeadBoneName))
+		{
+			OutLocation = MeshComp->GetSocketLocation(HeadBoneName);
+			OutRotation = MeshComp->GetSocketRotation(HeadBoneName);
+			return;
+		}
+	}
+
+	Super::GetActorEyesViewPoint(OutLocation, OutRotation);
+}
+
 void ABaseCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -201,9 +217,7 @@ void ABaseCharacter::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 
 	PollInit_PlayerStateTeam();
-
 	PollInit_ControllerAndPSAndTeam();
-
 	CalcAimPitch();
 }
 
@@ -240,7 +254,6 @@ void ABaseCharacter::PollInit_ControllerAndPSAndTeam()
 			if (!bIsLocallyControllerReady)
 			{
 				bIsLocallyControllerReady = true;
-				
 				OnLocallyControllerReady();
 			}
 			
@@ -317,9 +330,7 @@ void ABaseCharacter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
 
-	// 初始化ASC
 	InitAbilityActorInfo();
-
 	OnASCInit();
 
 	if (ASC)
@@ -340,7 +351,6 @@ void ABaseCharacter::OnRep_PlayerState()
 	Super::OnRep_PlayerState();
 
 	InitAbilityActorInfo();
-
 	OnASCInit();
 }
 
@@ -413,8 +423,8 @@ void ABaseCharacter::OnASCInit()
 				{
 					if (UDNAAsset2* DNAAsset2 = StorageSubsystem->GetDNAAssetByType(StorageSubsystem->CacheLoadout->DNA2))
 					{
-						BasePlayerState->ServerSetDNA(DNAAsset1->DNA, DNAAsset2->DNA);
-						// BasePlayerState->ServerSetDNA(EDNA::HighBoneDensity, EDNA::EnhancedVision);
+						// BasePlayerState->ServerSetDNA(DNAAsset1->DNA, DNAAsset2->DNA);
+						BasePlayerState->ServerSetDNA(EDNA::HighBoneDensity, EDNA::SubconsciousAwareness);
 					}
 				}
 			}

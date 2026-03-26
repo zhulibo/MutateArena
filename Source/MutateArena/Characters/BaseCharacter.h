@@ -40,6 +40,8 @@ public:
 	UPROPERTY(EditAnywhere)
 	class UAISenseConfig_Sight* SightConfig;
 
+	virtual void GetActorEyesViewPoint(FVector& OutLocation, FRotator& OutRotation) const override;
+	
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void PostInitializeComponents() override;

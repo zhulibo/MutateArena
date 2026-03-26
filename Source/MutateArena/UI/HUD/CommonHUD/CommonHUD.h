@@ -56,4 +56,7 @@ protected:
 	class UHorizontalBox* HostingBox;
 	void OnAFKHosting(bool bIsHosting);
 	
+	UPROPERTY(meta = (BindWidget))
+	class UHighAlert* HighAlert;
+	
 };

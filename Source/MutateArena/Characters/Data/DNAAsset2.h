@@ -7,6 +7,7 @@
 #include "DNAAsset2.generated.h"
 
 enum class EDNA : uint8;
+class UGameplayEffect;
 
 UCLASS(BlueprintType)
 class MUTATEARENA_API UDNAAsset2 : public UPrimaryDataAsset
@@ -25,6 +26,9 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	TSoftObjectPtr<UTexture2D> Icon;
+	
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<UGameplayEffect> GEClass;
 	
 	virtual FPrimaryAssetId GetPrimaryAssetId() const override
 	{

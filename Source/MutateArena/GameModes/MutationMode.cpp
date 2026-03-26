@@ -130,8 +130,9 @@ void AMutationMode::EndRound()
 	if (MutationGameState == nullptr) MutationGameState = GetGameState<AMutationGameState>();
 	if (MutationGameState)
 	{
-		TArray<ABasePlayerState*> BasePlayerStates = MutationGameState->GetPlayerStates(ETeam::Team1);
-		for (ABasePlayerState* BasePlayerState : BasePlayerStates)
+		TArray<ABasePlayerState*> PlayerStates;
+		BaseGameState->GetPlayerStates(ETeam::Team1, PlayerStates);
+		for (ABasePlayerState* BasePlayerState : PlayerStates)
 		{
 			if (ABaseCharacter* BaseCharacter = Cast<ABaseCharacter>(BasePlayerState->GetPawn()))
 			{
@@ -268,18 +269,19 @@ void AMutationMode::RoundStartMutate()
 	if (MutationGameState == nullptr) MutationGameState = GetGameState<AMutationGameState>();
 	if (MutationGameState == nullptr) return;
 
-	TArray<ABasePlayerState*> Team1 = MutationGameState->GetPlayerStates(ETeam::Team1);
-
+	TArray<ABasePlayerState*> PlayerStates;
+	BaseGameState->GetPlayerStates(ETeam::Team1, PlayerStates);
+	
 	int32 MutateNum;
-	if (Team1.Num() <= 6)
+	if (PlayerStates.Num() <= 6)
 	{
 		MutateNum = 1;
 	}
-	else if (Team1.Num() >= 7 && Team1.Num() <= 14)
+	else if (PlayerStates.Num() >= 7 && PlayerStates.Num() <= 14)
 	{
 		MutateNum = 2;
 	}
-	else if (Team1.Num() >= 15 && Team1.Num() <= 18)
+	else if (PlayerStates.Num() >= 15 && PlayerStates.Num() <= 18)
 	{
 		MutateNum = 3;
 	}
@@ -290,19 +292,19 @@ void AMutationMode::RoundStartMutate()
 
 	for (int i = 0; i < MutateNum; ++i)
 	{
-		int32 RandomIndex = FMath::RandRange(0, Team1.Num() - 1);
+		int32 RandomIndex = FMath::RandRange(0, PlayerStates.Num() - 1);
 		
 		if (GetWorld()->WorldType == EWorldType::PIE)
 		{
 			RandomIndex = GetDefault<UDevSetting>()->MutateClientIndex;
 
-			if (RandomIndex > Team1.Num() - 1)
+			if (RandomIndex > PlayerStates.Num() - 1)
 			{
-				RandomIndex = Team1.Num() - 1;
+				RandomIndex = PlayerStates.Num() - 1;
 			}
 		}
 
-		if (ABasePlayerState* BasePlayerState = Team1[RandomIndex])
+		if (ABasePlayerState* BasePlayerState = PlayerStates[RandomIndex])
 		{
 			// 初始突变体拥有满怒气，SetRage 内部会自动将其等级同步提升至 3 级
 			if (AMutationPlayerState* MutationPlayerState = Cast<AMutationPlayerState>(BasePlayerState))

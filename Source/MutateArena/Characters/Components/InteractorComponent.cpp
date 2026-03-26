@@ -43,7 +43,8 @@ void UInteractorComponent::TraceInteractTarget(FHitResult& OutHit)
 		QueryParams.AddIgnoredActors(BaseGameState->AllEquipments);
 
 		// 忽略队友
-		TArray<ABasePlayerState*> PlayerStates = BaseGameState->GetPlayerStates({});
+		TArray<ABasePlayerState*> PlayerStates;
+		BaseGameState->GetPlayerStates({}, PlayerStates);
 		for (int32 i = 0; i < PlayerStates.Num(); ++i)
 		{
 			if (PlayerStates[i] && PlayerStates[i]->GetHealth() > 0.f)

@@ -122,7 +122,7 @@ void AMeleeMode::HandleSpawn(AController* Controller)
 
 		if (Team == ETeam::NoTeam)
 		{
-			Team = MeleeGameState->GetPlayerStates(ETeam::Team1).Num() > MeleeGameState->GetPlayerStates(ETeam::Team2).Num() ? ETeam::Team2 : ETeam::Team1;
+			Team = MeleeGameState->Team1PlayerStates.Num() > MeleeGameState->Team2PlayerStates.Num() ? ETeam::Team2 : ETeam::Team1;
 		}
 
 		AssignTeam(Controller, Team);

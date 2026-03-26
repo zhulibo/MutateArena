@@ -61,8 +61,7 @@ void UScoreboard::RefreshScoreBoard()
 	if (BaseGameState)
 	{
 		TArray<ABasePlayerState*> PlayerStates;
-		PlayerStates.Append(BaseGameState->GetPlayerStates({}));
-
+		BaseGameState->GetPlayerStates({}, PlayerStates);
 		// 删除空对象
 		PlayerStates.RemoveAll([](const ABasePlayerState* BasePlayerState) {
 			if (BasePlayerState == nullptr)

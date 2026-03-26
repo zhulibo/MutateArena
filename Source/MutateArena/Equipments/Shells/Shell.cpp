@@ -17,6 +17,9 @@ AShell::AShell()
 	ShellMesh->SetCollisionObjectType(ECollisionChannel::ECC_WorldDynamic);
 	ShellMesh->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
 
+	ShellMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+	ShellMesh->SetCollisionResponseToChannel(ECC_WorldStatic, ECollisionResponse::ECR_Block);
+	
 	ShellMesh->SetSimulatePhysics(true);
 	ShellMesh->SetEnableGravity(true);
 	ShellMesh->SetNotifyRigidBodyCollision(true);
@@ -36,20 +39,6 @@ void AShell::OnSpawnedFromPool()
 	ShellMesh->SetSimulatePhysics(true);
 	ShellMesh->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
 	ShellMesh->SetNotifyRigidBodyCollision(true); // 恢复声音触发
-
-	// 2. 弹壳刚生成时，避免与角色和武器碰撞
-	ShellMesh->SetCollisionResponseToChannel(ECC_Pawn, ECollisionResponse::ECR_Ignore);
-	ShellMesh->SetCollisionResponseToChannel(ECC_MESH_TEAM1, ECollisionResponse::ECR_Ignore);
-	ShellMesh->SetCollisionResponseToChannel(ECC_MESH_TEAM2, ECollisionResponse::ECR_Ignore);
-	ShellMesh->SetCollisionResponseToChannel(ECC_WorldDynamic, ECollisionResponse::ECR_Ignore);
-
-	// 4. 定时器：延迟恢复与角色的碰撞
-	GetWorldTimerManager().SetTimer(CollisionDelayTimer, FTimerDelegate::CreateWeakLambda(this, [this]() {
-		ShellMesh->SetCollisionResponseToChannel(ECC_Pawn, ECollisionResponse::ECR_Block);
-		ShellMesh->SetCollisionResponseToChannel(ECC_MESH_TEAM1, ECollisionResponse::ECR_Block);
-		ShellMesh->SetCollisionResponseToChannel(ECC_MESH_TEAM2, ECollisionResponse::ECR_Block);
-		ShellMesh->SetCollisionResponseToChannel(ECC_WorldDynamic, ECollisionResponse::ECR_Block);
-	}), 0.2f, false);
 
 	// 5. 定时器：替代原先的 SetLifeSpan，时间到后回收对象
 	float LifeTime = FMath::FRandRange(3.f, 5.f);
@@ -71,7 +60,6 @@ void AShell::OnReturnedToPool()
 {
 	// 清除所有定时器，防止在池中意外触发
 	GetWorldTimerManager().ClearTimer(LifeSpanTimer);
-	GetWorldTimerManager().ClearTimer(CollisionDelayTimer);
 
 	// 隐藏模型并关闭物理与碰撞（节省开销）
 	SetActorHiddenInGame(true);
@@ -102,8 +90,19 @@ void AShell::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveC
 
 	FCollisionQueryParams Params;
 	Params.bReturnPhysicalMaterial = true;
+	Params.AddIgnoredActor(this);
 
-	GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECollisionChannel::ECC_Visibility, Params);
+	FCollisionObjectQueryParams ObjectQueryParams;
+	ObjectQueryParams.AddObjectTypesToQuery(ECC_WorldStatic);
+
+	GetWorld()->LineTraceSingleByObjectType(
+		HitResult, 
+		Start, 
+		End, 
+		ObjectQueryParams, 
+		Params
+	);
+	
 	if (HitResult.bBlockingHit)
 	{
 		UMetaSoundSource* Sound = nullptr;

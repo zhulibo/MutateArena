@@ -31,7 +31,7 @@ protected:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<UCameraShakeBase> CameraShakeClass;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY()
 	float Radius = 800.f;
 
 	UPROPERTY(EditAnywhere)
