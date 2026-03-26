@@ -138,8 +138,6 @@ void UHighAlert::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 					if (bHit) continue;
 
-					if (MyPawn->HasAuthority()) UE_LOG(LogTemp, Warning, TEXT("1"));
-
 					// 计算提示的相对方位
 					FVector DirToEnemy = -DirFromEnemyToPlayer; 
 
@@ -176,10 +174,10 @@ void UHighAlert::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 					}
 				}
 				
-				if (MyPawn->HasAuthority())
-				{
-					UE_LOG(LogTemp, Warning, TEXT("MaxLeft MaxRight MaxBottom %f %f %f"), MaxLeft, MaxRight, MaxBottom);
-				}
+				// if (MyPawn->HasAuthority())
+				// {
+				// 	UE_LOG(LogTemp, Warning, TEXT("MaxLeft MaxRight MaxBottom %f %f %f"), MaxLeft, MaxRight, MaxBottom);
+				// }
 				
 				// 将本轮计算出来的最大值作为插值目标
 				TargetLeftAlert = MaxLeft;

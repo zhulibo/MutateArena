@@ -41,7 +41,12 @@ public:
 	UMaterialInterface* MI_BloodDecal;
 	UPROPERTY(EditAnywhere, Category = "Character")
 	UMaterialInterface* MI_Overlay_Dead;
-
+	UPROPERTY(EditAnywhere, Category = "Audio")
+	
+	class USoundAttenuation* Atten_Footstep_Normal;
+	UPROPERTY(EditAnywhere, Category = "Audio")
+	class USoundAttenuation* Atten_Footstep_Enhanced;
+	
 	// 低血量
 	UPROPERTY(EditAnywhere, Category = "LowHealth")
 	UMaterialParameterCollection* MPC_LowHealth;

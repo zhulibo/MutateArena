@@ -162,6 +162,7 @@ public:
 	void PlayFootSound();
 	void PlayFootLandSound();
 protected:
+	void GetFootstepAudioSettings(float& OutVolumeMultiplier, class USoundAttenuation*& OutAttenuation);
 	virtual void FellOutOfWorld(const UDamageType& DmgType) override;
 
 	// 无线电

@@ -423,8 +423,8 @@ void ABaseCharacter::OnASCInit()
 				{
 					if (UDNAAsset2* DNAAsset2 = StorageSubsystem->GetDNAAssetByType(StorageSubsystem->CacheLoadout->DNA2))
 					{
-						// BasePlayerState->ServerSetDNA(DNAAsset1->DNA, DNAAsset2->DNA);
-						BasePlayerState->ServerSetDNA(EDNA::HighBoneDensity, EDNA::SubconsciousAwareness);
+						BasePlayerState->ServerSetDNA(DNAAsset1->DNA, DNAAsset2->DNA);
+						// BasePlayerState->ServerSetDNA(EDNA::HighBoneDensity, EDNA::EnhancedHearing);
 					}
 				}
 			}
@@ -742,7 +742,6 @@ void ABaseCharacter::MulticastPlayOuchSound_Implementation(float DamageRate)
 	}
 }
 
-// 根据地形播放不同脚步声
 void ABaseCharacter::PlayFootSound()
 {
 	FHitResult HitResult;
@@ -773,7 +772,20 @@ void ABaseCharacter::PlayFootSound()
 			Sound = AssetSubsystem->CharacterAsset->FootSound_Wood;
 			break;
 		}
-		UGameplayStatics::PlaySoundAtLocation(this, Sound, HitResult.Location);
+
+		float VolumeMultiplier;
+		USoundAttenuation* DynamicAttenuation;
+		GetFootstepAudioSettings(VolumeMultiplier, DynamicAttenuation);
+
+		UGameplayStatics::PlaySoundAtLocation(
+			this, 
+			Sound, 
+			HitResult.Location, 
+			VolumeMultiplier, 
+			1.0f, 
+			0.0f, 
+			DynamicAttenuation
+		);
 	}
 }
 
@@ -807,7 +819,61 @@ void ABaseCharacter::PlayFootLandSound()
 			Sound = AssetSubsystem->CharacterAsset->FootLandSound_Wood;
 			break;
 		}
-		UGameplayStatics::PlaySoundAtLocation(this, Sound, HitResult.Location);
+
+		float VolumeMultiplier;
+		USoundAttenuation* DynamicAttenuation;
+		GetFootstepAudioSettings(VolumeMultiplier, DynamicAttenuation);
+
+		UGameplayStatics::PlaySoundAtLocation(
+			this, 
+			Sound, 
+			HitResult.Location, 
+			VolumeMultiplier, 
+			1.0f, 
+			0.0f, 
+			DynamicAttenuation
+		);
+	}
+}
+
+void ABaseCharacter::GetFootstepAudioSettings(float& OutVolumeMultiplier, USoundAttenuation*& OutAttenuation)
+{
+	// 默认值
+	OutVolumeMultiplier = 1.0f;
+	OutAttenuation = nullptr; 
+
+	if (AssetSubsystem && AssetSubsystem->CharacterAsset)
+	{
+		OutAttenuation = AssetSubsystem->CharacterAsset->Atten_Footstep_Normal;
+	}
+
+	if (APlayerController* LocalPC = UGameplayStatics::GetPlayerController(GetWorld(), 0))
+	{
+		if (ABaseCharacter* LocalCharacter = Cast<ABaseCharacter>(LocalPC->GetPawn()))
+		{
+			if (LocalCharacter->GetAbilitySystemComponent() && 
+				LocalCharacter->GetAbilitySystemComponent()->HasMatchingGameplayTag(TAG_STATE_DNA_EnhancedHearing))
+			{
+				if (this != LocalCharacter)
+				{
+					if (LocalCharacter->BasePlayerState == nullptr) LocalCharacter->BasePlayerState = LocalCharacter->GetPlayerState<ABasePlayerState>();
+					if (this->BasePlayerState == nullptr) this->BasePlayerState = this->GetPlayerState<ABasePlayerState>();
+
+					if (LocalCharacter->BasePlayerState && this->BasePlayerState)
+					{
+						if (LocalCharacter->BasePlayerState->Team != this->BasePlayerState->Team)
+						{
+							OutVolumeMultiplier = 1.5f;
+							
+							if (AssetSubsystem && AssetSubsystem->CharacterAsset)
+							{
+								OutAttenuation = AssetSubsystem->CharacterAsset->Atten_Footstep_Enhanced;
+							}
+						}
+					}
+				}
+			}
+		}
 	}
 }
 
@@ -844,7 +910,7 @@ void ABaseCharacter::ServerPlayRadioSound_Implementation(int32 RadioIndex)
 
 void ABaseCharacter::MulticastPlayRadioSound_Implementation(int32 RadioIndex)
 {
-	if (IsLocallyControlled())
+	if (!IsLocallyControlled())
 	{
 		LocalPlayRadioSound(RadioIndex);
 	}
