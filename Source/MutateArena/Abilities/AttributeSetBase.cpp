@@ -1,5 +1,8 @@
 #include "AttributeSetBase.h"
 
+#include "Kismet/GameplayStatics.h"
+#include "MutateArena/Equipments/Data/DamageTypeBleed.h"
+#include "GameplayEffectExtension.h"
 #include "Net/UnrealNetwork.h"
 
 UAttributeSetBase::UAttributeSetBase()
@@ -53,6 +56,41 @@ void UAttributeSetBase::ClampAttr(const FGameplayAttribute& Attribute, float& Ne
 	if (Attribute == GetHealthAttribute())
 	{
 		NewValue = FMath::Clamp(NewValue, 0.f, GetMaxHealth());
+	}
+}
+
+void UAttributeSetBase::PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data)
+{
+	Super::PostGameplayEffectExecute(Data);
+
+	// 拦截对 Damage 的修改
+	if (Data.EvaluatedData.Attribute == GetDamageAttribute())
+	{
+		// 1. 获取本次 GE 造成的伤害值
+		float LocalDamageDone = GetDamage();
+		
+		// 2. 将 Damage 属性清零（非常重要，防止下一次 tick 累加）
+		SetDamage(0.f);
+
+		if (LocalDamageDone > 0.f)
+		{
+			// 3. 获取受击者
+			AActor* TargetActor = GetOwningAbilitySystemComponent()->GetAvatarActor();
+			
+			// 4. 从 GE 的上下文中提取施法者（即 Cutter）
+			AActor* Instigator = Data.EffectSpec.GetContext().GetInstigator();
+			AController* InstigatorController = Instigator ? Instigator->GetInstigatorController() : nullptr;
+
+			// 5. 触发原生伤害系统
+			// 这将正确地路由到你的 AMutationMode::HumanReceiveDamage 或 MutantReceiveDamage
+			UGameplayStatics::ApplyDamage(
+				TargetActor,
+				LocalDamageDone,
+				InstigatorController,
+				Instigator,
+				UDamageTypeBleed::StaticClass()
+			);
+		}
 	}
 }
 

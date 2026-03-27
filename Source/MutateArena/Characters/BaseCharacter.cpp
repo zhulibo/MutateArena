@@ -424,7 +424,7 @@ void ABaseCharacter::OnASCInit()
 					if (UDNAAsset2* DNAAsset2 = StorageSubsystem->GetDNAAssetByType(StorageSubsystem->CacheLoadout->DNA2))
 					{
 						BasePlayerState->ServerSetDNA(DNAAsset1->DNA, DNAAsset2->DNA);
-						// BasePlayerState->ServerSetDNA(EDNA::HighBoneDensity, EDNA::EnhancedHearing);
+						// BasePlayerState->ServerSetDNA(EDNA::HighBoneDensity, EDNA::AcceleratedClotting);
 					}
 				}
 			}

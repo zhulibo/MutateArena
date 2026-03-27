@@ -108,6 +108,7 @@ protected:
 public:
 	UFUNCTION(Server, Reliable)
 	void ServerApplyDamage(AActor* OtherActor, float Damage);
+	virtual void ServerApplyDamage_Implementation(AActor* OtherActor, float Damage);
 protected:
 	UFUNCTION()
 	virtual void DropBlood(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, float Damage);

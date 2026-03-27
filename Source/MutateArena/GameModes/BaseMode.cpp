@@ -258,6 +258,9 @@ void ABaseMode::AddKillLog(ABasePlayerState* AttackerState, AActor* DamageCauser
 		case EDamageCauserType::MutantDamage:
 			CauserName = LOCTEXT("Damage", "Damage");
 			break;
+		case EDamageCauserType::Bleed:
+			CauserName = LOCTEXT("Bleed", "Bleed");
+			break;
 		case EDamageCauserType::Fall:
 			CauserName = LOCTEXT("Fall", "Fall");
 			break;

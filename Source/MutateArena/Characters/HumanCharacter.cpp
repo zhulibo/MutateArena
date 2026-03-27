@@ -598,6 +598,7 @@ void AHumanCharacter::HumanReceiveDamage(AActor* DamagedActor, float Damage, con
 void AHumanCharacter::OnRep_bIsDead()
 {
 	Super::OnRep_bIsDead();
+	
 	if (bIsDead)
 	{
 		HandleDead();
@@ -699,16 +700,22 @@ void AHumanCharacter::BecomeImmune()
 void AHumanCharacter::OnRep_bIsImmune()
 {
 	if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
-	if (BaseController)
+	if (BaseController && IsLocallyControlled())
 	{
 		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
 		{
-			UISubsystem->OnOverheadWidgetNeedUpdate.Broadcast();
-			
 			if (bIsImmune)
 			{
 				UISubsystem->OnBeImmune.Broadcast();
 			}
+		}
+	}
+	
+	if (APlayerController* LocalPC = GetWorld()->GetFirstPlayerController())
+	{
+		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(LocalPC->GetLocalPlayer()))
+		{
+			UISubsystem->OnOverheadWidgetNeedUpdate.Broadcast();
 		}
 	}
 }
