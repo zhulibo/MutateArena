@@ -25,7 +25,7 @@ enum class ECoolLoginType : uint8
 using namespace UE::Online;
 
 // Login
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnLoginComplete, bool bWasSuccessful);
+DECLARE_MULTICAST_DELEGATE_TwoParams(FOnLoginComplete, bool bWasSuccessful, FString ErrorMessage);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnLoginStatusChanged, const FAuthLoginStatusChanged& AuthLoginStatusChanged);
 
 // Lobby

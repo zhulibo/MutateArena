@@ -46,10 +46,10 @@ public:
 	class USoundAttenuation* Atten_Footstep_Normal;
 	UPROPERTY(EditAnywhere, Category = "Audio")
 	class USoundAttenuation* Atten_Footstep_Enhanced;
-	
-	// 低血量
-	UPROPERTY(EditAnywhere, Category = "LowHealth")
-	UMaterialParameterCollection* MPC_LowHealth;
+
+	// 受伤
+	UPROPERTY(EditAnywhere, Category = "Hurt")
+	UMaterialInterface* MI_Hurt;
 
 	// 闪光弹
 	UPROPERTY(EditAnywhere, Category = "Flashbang")

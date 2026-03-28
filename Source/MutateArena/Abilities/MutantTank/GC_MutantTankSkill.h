@@ -4,6 +4,8 @@
 #include "GameplayCueNotify_Actor.h"
 #include "GC_MutantTankSkill.generated.h"
 
+class UMetaSoundSource;
+
 UCLASS()
 class MUTATEARENA_API AGC_MutantTankSkill : public AGameplayCueNotify_Actor
 {
@@ -18,5 +20,8 @@ public:
 protected:
 	UPROPERTY(EditAnywhere)
 	UMaterialInterface* MI_Overlay_Skill;
-
+	
+	UPROPERTY(EditAnywhere)
+	UMetaSoundSource* SkillActivationSound;
+	
 };

@@ -4,6 +4,8 @@
 #include "GameplayCueNotify_Actor.h"
 #include "GC_MutantSmokerSkill.generated.h"
 
+class UMetaSoundSource;
+
 UCLASS()
 class MUTATEARENA_API AGC_MutantSmokerSkill : public AGameplayCueNotify_Actor
 {
@@ -24,5 +26,8 @@ protected:
 	
 	UPROPERTY()
 	AActor* SpawnedSmokeActor;
+	
+	UPROPERTY(EditAnywhere)
+	UMetaSoundSource* SkillActivationSound;
 	
 };

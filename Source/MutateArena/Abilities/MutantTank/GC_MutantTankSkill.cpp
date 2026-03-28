@@ -1,5 +1,7 @@
 #include "GC_MutantTankSkill.h"
 
+#include "MetaSoundSource.h"
+#include "Kismet/GameplayStatics.h"
 #include "MutateArena/Characters/Mutants/MutantTank.h"
 
 AGC_MutantTankSkill::AGC_MutantTankSkill()
@@ -15,6 +17,14 @@ bool AGC_MutantTankSkill::WhileActive_Implementation(AActor* MyTarget, const FGa
 	{
 		// 更改皮肤颜色
 		MutantTank->GetMesh()->SetOverlayMaterial(MI_Overlay_Skill);
+		
+		if (MutantTank->IsLocallyControlled())
+		{
+			if (SkillActivationSound)
+			{
+				UGameplayStatics::PlaySound2D(MutantTank, SkillActivationSound);
+			}
+		}
 	}
 
 	return Super::WhileActive_Implementation(MyTarget, Parameters);

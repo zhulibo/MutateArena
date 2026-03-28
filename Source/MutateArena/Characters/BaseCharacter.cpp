@@ -219,6 +219,11 @@ void ABaseCharacter::Tick(float DeltaSeconds)
 	PollInit_PlayerStateTeam();
 	PollInit_ControllerAndPSAndTeam();
 	CalcAimPitch();
+	
+	if (IsLocallyControlled())
+	{
+		UpdateHurtEffect(DeltaSeconds);
+	}
 }
 
 void ABaseCharacter::PollInit_PlayerStateTeam()
@@ -278,17 +283,6 @@ void ABaseCharacter::OnLocallyControllerReady()
 	if (AutoHostComp)
 	{
 		AutoHostComp->StartAFKCheck();
-	}
-	
-	if (Camera)
-	{
-		UAssetSubsystem* Subsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-		if (Subsystem && Subsystem->CharacterAsset && Subsystem->CharacterAsset->MI_Flashbang)
-		{
-			MID_Flashbang = UMaterialInstanceDynamic::Create(Subsystem->CharacterAsset->MI_Flashbang, this);
-			
-			Camera->AddOrUpdateBlendable(MID_Flashbang, 0.f); 
-		}
 	}
 }
 
@@ -424,7 +418,7 @@ void ABaseCharacter::OnASCInit()
 					if (UDNAAsset2* DNAAsset2 = StorageSubsystem->GetDNAAssetByType(StorageSubsystem->CacheLoadout->DNA2))
 					{
 						BasePlayerState->ServerSetDNA(DNAAsset1->DNA, DNAAsset2->DNA);
-						// BasePlayerState->ServerSetDNA(EDNA::HighBoneDensity, EDNA::AcceleratedClotting);
+						// BasePlayerState->ServerSetDNA(EDNA::HighBoneDensity, EDNA::SubconsciousAwareness);
 					}
 				}
 			}
@@ -617,27 +611,6 @@ void ABaseCharacter::OnMaxHealthChanged(const FOnAttributeChangeData& Data)
 	{
 		OverheadWidgetClass->OnMaxHealthChange(Data.NewValue);
 	}
-
-	if (IsLocallyControlled())
-	{
-		// 低血量屏幕变灰
-		if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-		if (AssetSubsystem && AssetSubsystem->CharacterAsset && AssetSubsystem->CharacterAsset->MPC_LowHealth)
-		{
-			if (Data.OldValue == 0.f || Data.NewValue == 0.f) return;
-			float OldRate = Data.OldValue / GetMaxHealth();
-			float NewRate = Data.NewValue / GetMaxHealth();
-			
-			// 没有跨过阈值
-			if (OldRate > HealthRateThreshold && NewRate > HealthRateThreshold || OldRate < HealthRateThreshold && NewRate < HealthRateThreshold) return;
-			if (UMaterialParameterCollectionInstance* MPCI = GetWorld()->GetParameterCollectionInstance(AssetSubsystem->CharacterAsset->MPC_LowHealth))
-			{
-				float TempDesaturation = NewRate < HealthRateThreshold ? Desaturation : 0.f;
-				MPCI->SetScalarParameterValue(FName("Desaturation"), TempDesaturation);
-				MPCI->SetScalarParameterValue(FName("TriggerTime"), GetWorld()->GetTimeSeconds());
-			}
-		}
-	}
 }
 
 void ABaseCharacter::OnHealthChanged(const FOnAttributeChangeData& Data)
@@ -647,7 +620,7 @@ void ABaseCharacter::OnHealthChanged(const FOnAttributeChangeData& Data)
 	{
 		OverheadWidgetClass->OnHealthChange(Data.OldValue, Data.NewValue);
 	}
-
+	
 	if (IsLocallyControlled())
 	{
 		if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
@@ -655,24 +628,8 @@ void ABaseCharacter::OnHealthChanged(const FOnAttributeChangeData& Data)
 		{
 			BaseController->SetHUDHealth(Data.NewValue);
 		}
-
-		// 低血量屏幕变灰
-		if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-		if (AssetSubsystem && AssetSubsystem->CharacterAsset && AssetSubsystem->CharacterAsset->MPC_LowHealth)
-		{
-			if (GetMaxHealth() == 0.f) return;
-			float OldRate = Data.OldValue / GetMaxHealth();
-			float NewRate = Data.NewValue / GetMaxHealth();
-			
-			// 没有跨过阈值
-			if (OldRate > HealthRateThreshold && NewRate > HealthRateThreshold || OldRate < HealthRateThreshold && NewRate < HealthRateThreshold) return;
-			if (UMaterialParameterCollectionInstance* MPCI = GetWorld()->GetParameterCollectionInstance(AssetSubsystem->CharacterAsset->MPC_LowHealth))
-			{
-				float TempDesaturation = NewRate < HealthRateThreshold ? Desaturation : 0.f;
-				MPCI->SetScalarParameterValue(FName("Desaturation"), TempDesaturation);
-				MPCI->SetScalarParameterValue(FName("TriggerTime"), GetWorld()->GetTimeSeconds());
-			}
-		}
+		
+		ApplyHurtEffect(Data);
 	}
 }
 
@@ -926,10 +883,17 @@ void ABaseCharacter::LocalPlayRadioSound(int32 RadioIndex)
 
 void ABaseCharacter::SprayPaint(int32 RadioIndex)
 {
+	if (UAudioComponent* AudioComponent = UGameplayStatics::SpawnSound2D(this, AssetSubsystem->CommonAsset->SprayPaintSound))
+	{
+		// AudioComponent->SetFloatParameter(TEXT("Index"), 1);
+	}
+	
 	FVector Start = Camera->GetComponentLocation();
-	FVector End = Start + Camera->GetForwardVector() * 500.f;
+	FVector End = Start + Camera->GetForwardVector() * 400.f;
 
-	DrawDebugLine(GetWorld(), Start, End, C_YELLOW, true);
+#if !UE_BUILD_SHIPPING
+	DrawDebugLine(GetWorld(), Start, End, FColor::Yellow, false, 7.f);
+#endif
 
 	FCollisionQueryParams QueryParams;
 	QueryParams.AddIgnoredActor(this);
@@ -952,39 +916,143 @@ void ABaseCharacter::SprayPaint(int32 RadioIndex)
 	
 	if (OutHit.bBlockingHit)
 	{
-		if (AssetSubsystem == nullptr) AssetSubsystem = GetWorld()->GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-		if (AssetSubsystem && AssetSubsystem->CommonAsset)
+		ServerSprayPaint(RadioIndex, OutHit.ImpactPoint, OutHit.ImpactNormal, OutHit.GetComponent(), OutHit.BoneName);
+	}
+}
+
+void ABaseCharacter::ServerSprayPaint_Implementation(int32 RadioIndex, FVector_NetQuantize ImpactPoint, FVector_NetQuantizeNormal ImpactNormal, UPrimitiveComponent* HitComp, FName BoneName)
+{
+	MulticastSprayPaint(RadioIndex, ImpactPoint, ImpactNormal, HitComp, BoneName);
+}
+
+void ABaseCharacter::MulticastSprayPaint_Implementation(int32 RadioIndex, FVector_NetQuantize ImpactPoint, FVector_NetQuantizeNormal ImpactNormal, UPrimitiveComponent* HitComp, FName BoneName)
+{
+	if (AssetSubsystem == nullptr) AssetSubsystem = GetWorld()->GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+	if (AssetSubsystem && AssetSubsystem->CommonAsset)
+	{
+		auto SprayPaints = AssetSubsystem->CommonAsset->SprayPaints;
+		if (SprayPaints.IsValidIndex(RadioIndex))
 		{
-			auto SprayPaints = AssetSubsystem->CommonAsset->SprayPaints;
-			if (SprayPaints.IsValidIndex(RadioIndex))
+			if (IsValid(SprayPaintDecal))
 			{
-				if (IsValid(SprayPaintDecal))
-				{
-					SprayPaintDecal->DestroyComponent();
-				}
-				
-				FRotator DecalRotation = FRotationMatrix::MakeFromX(OutHit.ImpactNormal).Rotator();
-				DecalRotation.Roll += 90.f;
-				DecalRotation.Yaw += 180.f;
-				SprayPaintDecal = UGameplayStatics::SpawnDecalAttached(
-					SprayPaints[RadioIndex].Material.LoadSynchronous(),
-					FVector(5.f, 100.f, 100.f),
-					OutHit.GetComponent(),
-					OutHit.BoneName,
-					OutHit.ImpactPoint,
-					DecalRotation,
-					EAttachLocation::KeepWorldPosition,
-					0.f
-				);
+				SprayPaintDecal->DestroyComponent();
 			}
+			
+			// 根据法线计算旋转
+			FRotator DecalRotation = FRotationMatrix::MakeFromX(ImpactNormal).Rotator();
+			DecalRotation.Roll += 90.f;
+			DecalRotation.Yaw += 180.f;
+			
+			// 所有客户端（包括发起者）在相同位置生成贴花
+			SprayPaintDecal = UGameplayStatics::SpawnDecalAttached(
+				SprayPaints[RadioIndex].Material.LoadSynchronous(),
+				FVector(5.f, 100.f, 100.f),
+				HitComp,
+				BoneName,
+				ImpactPoint,
+				DecalRotation,
+				EAttachLocation::KeepWorldPosition,
+				0.f
+			);
 		}
+	}
+}
+
+// TODO 改进：血液屏幕方向对应攻击者方向 血液距屏幕边缘距离对应攻击者距离 血液多少对应伤害大小
+void ABaseCharacter::ApplyHurtEffect(const FOnAttributeChangeData& Data)
+{
+	if (!MID_Hurt)
+	{
+		UAssetSubsystem* Subsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+		if (Subsystem && Subsystem->CharacterAsset && Subsystem->CharacterAsset->MI_Hurt)
+		{
+			MID_Hurt = UMaterialInstanceDynamic::Create(Subsystem->CharacterAsset->MI_Hurt, this);
+			MID_Hurt->SetVectorParameterValue(FName("BloodColor"), BloodColor);
+		}
+	}
+	if (!MID_Hurt) return;
+
+	// 计算受到的伤害
+	float Damage = Data.OldValue - Data.NewValue;
+    
+	if (Damage > 0.f)
+	{
+		// 核心修改：如果当前没有血迹（从无到有），则随机生成 UV 偏移量
+		if (CurrentBloodIntensity <= 0.f)
+		{
+			// 生成 0.0 到 1.0 之间的随机偏移值
+			float RandomOffsetX = FMath::RandRange(0.0f, 1.0f);
+			float RandomOffsetY = FMath::RandRange(0.0f, 1.0f);
+			MID_Hurt->SetScalarParameterValue(FName("OffsetX"), RandomOffsetX);
+			MID_Hurt->SetScalarParameterValue(FName("OffsetY"), RandomOffsetY);
+		}
+
+		// 根据伤害比例增加血迹强度
+		float DamageRatio = Damage / GetMaxHealth();
+		float AddedBlood = FMath::Clamp(DamageRatio * 4.f, 0.3f, 1.0f);
+       
+		CurrentBloodIntensity = FMath::Clamp(CurrentBloodIntensity + AddedBlood, 0.0f, 1.0f);
+
+		BloodRecoveryDelayTimer = 3.0f;
+	}
+}
+
+void ABaseCharacter::UpdateHurtEffect(float DeltaSeconds)
+{
+	if (!MID_Hurt) return;
+
+	if (BloodRecoveryDelayTimer > 0.f)
+	{
+		BloodRecoveryDelayTimer -= DeltaSeconds;
+	}
+	else if (CurrentBloodIntensity > 0.f && !bIsDead)
+	{
+		// 计时器归零后，才开始随着时间衰减血迹
+		CurrentBloodIntensity -= BloodRecoveryRate * DeltaSeconds;
+		CurrentBloodIntensity = FMath::Max(CurrentBloodIntensity, 0.0f);
+	}
+
+	// 褪色
+	float HealthRatio = GetMaxHealth() > 0.f ? (GetHealth() / GetMaxHealth()) : 0.f;
+	float DesaturationIntensity = 0.f;
+
+	if (HealthRatio <= 0.2f)
+	{
+		// 基础衰减比例：血量从 20% 降到 0% 时，BaseRatio 从 0 增加到 1
+		float BaseRatio = 1.0f - (HealthRatio / 0.2f);
+		BaseRatio = FMath::Clamp(BaseRatio, 0.0f, 1.0f);
+		// 乘以 0.4，将最大失色程度限制在 40%
+		DesaturationIntensity = BaseRatio * 0.4f;
+	}
+
+	MID_Hurt->SetScalarParameterValue(FName("BloodIntensity"), CurrentBloodIntensity);
+	MID_Hurt->SetScalarParameterValue(FName("DesaturationIntensity"), DesaturationIntensity);
+
+	if (CurrentBloodIntensity <= 0.f && DesaturationIntensity <= 0.f)
+	{
+		Camera->AddOrUpdateBlendable(MID_Hurt, 0.f);
+	}
+	else
+	{
+		Camera->AddOrUpdateBlendable(MID_Hurt, 1.f);
 	}
 }
 
 void ABaseCharacter::ApplyFlashbangEffect(float InRadius, float InMaxFlashTime, float InMaxCapTime, float InFlashTime, float InDistance, float InAngle)
 {
-	if (!Camera || !MID_Flashbang) return;
-
+	if (!Camera) return;
+	
+	if (!MID_Flashbang)
+	{
+		UAssetSubsystem* Subsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+		if (Subsystem && Subsystem->CharacterAsset && Subsystem->CharacterAsset->MI_Flashbang)
+		{
+			MID_Flashbang = UMaterialInstanceDynamic::Create(Subsystem->CharacterAsset->MI_Flashbang, this);
+		}
+	}
+	
+	if (!MID_Flashbang) return;
+	
 	// 更新材质参数
 	MID_Flashbang->SetScalarParameterValue(FName("Radius"), InRadius);
 	MID_Flashbang->SetScalarParameterValue(FName("MaxFlashTime"), InMaxFlashTime);

@@ -144,12 +144,10 @@ public:
 	UFUNCTION()
 	virtual void OnRep_bIsDead();
 	void SetHealth(float TempHealth);
+
 protected:
 	void OnMaxHealthChanged(const FOnAttributeChangeData& Data);
 	virtual void OnHealthChanged(const FOnAttributeChangeData& Data);
-	float HealthRateThreshold = .2f;
-	float Desaturation = .7f;
-	float Power = .7f;
 
 	// 跌落
 	virtual void Landed(const FHitResult& Hit) override;
@@ -184,10 +182,25 @@ protected:
 	UDecalComponent* SprayPaintDecal;
 public:
 	void SprayPaint(int32 RadioIndex);
-	
 protected:
+	UFUNCTION(Server, Unreliable)
+	void ServerSprayPaint(int32 RadioIndex, FVector_NetQuantize ImpactPoint, FVector_NetQuantizeNormal ImpactNormal, UPrimitiveComponent* HitComp, FName BoneName);
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastSprayPaint(int32 RadioIndex, FVector_NetQuantize ImpactPoint, FVector_NetQuantizeNormal ImpactNormal, UPrimitiveComponent* HitComp, FName BoneName);
+
 	UPROPERTY()
-	class UMaterialInstanceDynamic* MID_Flashbang;
+	UMaterialInstanceDynamic* MID_Hurt;
+	UPROPERTY()
+	float CurrentBloodIntensity = 0.f;
+	UPROPERTY()
+	float BloodRecoveryRate = 0.2f;
+	UPROPERTY()
+	float BloodRecoveryDelayTimer = 0.f; 
+	void ApplyHurtEffect(const FOnAttributeChangeData& Data);
+	void UpdateHurtEffect(float DeltaSeconds);
+
+	UPROPERTY()
+	UMaterialInstanceDynamic* MID_Flashbang;
 	FTimerHandle TimerHandle_FlashbangEnd;
 	// 记录当前闪光效果的绝对结束时间戳，用于防止较弱的闪光弹覆盖强闪光弹
 	float FlashbangEndTime = 0.f; 

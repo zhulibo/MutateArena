@@ -2,11 +2,13 @@
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
+#include "MetaSoundSource.h"
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/Characters/Mutants/MutantSmoker.h"
 #include "Components/SphereComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "MutateArena/System/Tags/ProjectTags.h"
 
 AGC_MutantSmokerSkill::AGC_MutantSmokerSkill()
@@ -70,6 +72,14 @@ bool AGC_MutantSmokerSkill::WhileActive_Implementation(AActor* MyTarget, const F
                 SphereComponent->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
              }
              SpawnedSmokeActor->Tags.Add(TAG_SMOKE_ACTOR);
+          }
+       }
+		
+       if (MutantSmoker->IsLocallyControlled())
+       {
+          if (SkillActivationSound)
+          {
+             UGameplayStatics::PlaySound2D(MutantSmoker, SkillActivationSound);
           }
        }
     }

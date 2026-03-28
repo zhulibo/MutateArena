@@ -1,7 +1,9 @@
 #include "GC_MutantCutterSkill.h"
 
+#include "MetaSoundSource.h"
 #include "MutateArena/Characters/Mutants/MutantCutter.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 AGC_MutantCutterSkill::AGC_MutantCutterSkill()
 {
@@ -15,6 +17,14 @@ bool AGC_MutantCutterSkill::WhileActive_Implementation(AActor* MyTarget, const F
 	{
 		// 更改皮肤颜色
 		MutantCutter->GetMesh()->SetOverlayMaterial(MI_Overlay_Skill);
+		
+		if (MutantCutter->IsLocallyControlled())
+		{
+			if (SkillActivationSound)
+			{
+				UGameplayStatics::PlaySound2D(MutantCutter, SkillActivationSound);
+			}
+		}
 	}
 
 	return Super::WhileActive_Implementation(MyTarget, Parameters);

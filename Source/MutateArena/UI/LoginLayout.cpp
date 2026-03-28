@@ -56,7 +56,7 @@ void ULoginLayout::OnLoginButtonClicked(ECoolLoginType LoginType, FString Id, FS
 	}
 }
 
-void ULoginLayout::OnLoginComplete(bool bWasSuccessful)
+void ULoginLayout::OnLoginComplete(bool bWasSuccessful, FString ErrorMessage)
 {
 	if (bWasSuccessful)
 	{
@@ -70,7 +70,8 @@ void ULoginLayout::OnLoginComplete(bool bWasSuccessful)
 	}
 	else
 	{
-		NOTIFY(this, C_RED, LOCTEXT("LoginFailed", "Login failed"));
+		// NOTIFY(this, C_RED, LOCTEXT("LoginFailed", "Login failed"));
+		NOTIFY(this, C_RED, FText::FromString(ErrorMessage));
 		
 		LoginButton->SetIsEnabled(true);
 		LoginStatus->SetText(LOCTEXT("LoginFailed", "Login failed"));

@@ -77,7 +77,7 @@ bool AGC_Stun_Explode::OnRemove_Implementation(AActor* MyTarget, const FGameplay
 		{
 			if (TargetChar->Camera && StunMID)
 			{
-				TargetChar->Camera->PostProcessSettings.RemoveBlendable(StunMID);
+				TargetChar->Camera->AddOrUpdateBlendable(StunMID, 0.f);
 			}
 
 			if (EarRingingAudioComponent)

@@ -22,7 +22,8 @@ AFireBottle::AFireBottle()
 	FireSphere->SetupAttachment(RootComponent);
 	FireSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	FireSphere->SetSphereRadius(FireRadius);
-
+	
+	// ProjectileMovement->bShouldBounce = false;
 	ProjectileMovement->Bounciness = 0.1f;
 	ProjectileMovement->Friction = 0.9f;
 }

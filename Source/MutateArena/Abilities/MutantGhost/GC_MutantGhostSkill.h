@@ -4,6 +4,8 @@
 #include "GameplayCueNotify_Actor.h"
 #include "GC_MutantGhostSkill.generated.h"
 
+class UMetaSoundSource;
+
 UCLASS()
 class MUTATEARENA_API AGC_MutantGhostSkill : public AGameplayCueNotify_Actor
 {
@@ -16,5 +18,7 @@ public:
 	virtual bool OnRemove_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters) override;
 
 protected:
-
+	UPROPERTY(EditAnywhere)
+	UMetaSoundSource* SkillActivationSound;
+	
 };

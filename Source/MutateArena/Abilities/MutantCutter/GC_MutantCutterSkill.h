@@ -4,6 +4,8 @@
 #include "GameplayCueNotify_Actor.h"
 #include "GC_MutantCutterSkill.generated.h"
 
+class UMetaSoundSource;
+
 UCLASS()
 class MUTATEARENA_API AGC_MutantCutterSkill : public AGameplayCueNotify_Actor
 {
@@ -19,4 +21,7 @@ protected:
 	UPROPERTY(EditAnywhere)
 	UMaterialInterface* MI_Overlay_Skill;
 
+	UPROPERTY(EditAnywhere)
+	UMetaSoundSource* SkillActivationSound;
+	
 };

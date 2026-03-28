@@ -75,6 +75,8 @@ public:
 	// 喷漆
 	UPROPERTY(EditAnywhere, Category = "SprayPaint")
 	TArray<FSprayPaint> SprayPaints;
+	UPROPERTY(EditAnywhere, Category = "SprayPaint")
+	UMetaSoundSource* SprayPaintSound;
 	
 	virtual FPrimaryAssetId GetPrimaryAssetId() const override
 	{

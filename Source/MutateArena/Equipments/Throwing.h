@@ -26,4 +26,10 @@ protected:
 	
 	virtual void OnRep_EquipmentState(EEquipmentState OldState) override;
 	
+	bool bHasBounced = false;
+	UPROPERTY(EditAnywhere)
+	class UMetaSoundSource* HitSound;
+	UFUNCTION()
+	virtual void OnProjectileBounce(const FHitResult& ImpactResult, const FVector& ImpactVelocity);
+	
 };

@@ -24,7 +24,7 @@ void AGrenade::ThrowOut()
 	if (HasAuthority())
 	{
 		FTimerHandle TimerHandle;
-		GetWorldTimerManager().SetTimer(TimerHandle, this, &ThisClass::ServerExplode, 3.f);
+		GetWorldTimerManager().SetTimer(TimerHandle, this, &ThisClass::ServerExplode, 4.f);
 	}
 }
 

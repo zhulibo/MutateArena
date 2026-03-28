@@ -2,6 +2,8 @@
 
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemGlobals.h"
+#include "MetaSoundSource.h"
+#include "Kismet/GameplayStatics.h"
 #include "MutateArena/Characters/Mutants/MutantGhost.h"
 #include "MutateArena/System/Tags/ProjectTags.h"
 
@@ -47,6 +49,14 @@ bool AGC_MutantGhostSkill::WhileActive_Implementation(AActor* MyTarget, const FG
 		}
 		
 		MutantGhost->ShowOverheadWidget(false);
+		
+		if (MutantGhost->IsLocallyControlled())
+		{
+			if (SkillActivationSound)
+			{
+				UGameplayStatics::PlaySound2D(MutantGhost, SkillActivationSound);
+			}
+		}
 	}
 
 	return Super::WhileActive_Implementation(MyTarget, Parameters);

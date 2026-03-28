@@ -55,20 +55,18 @@ void UEOSSubsystem::Deinitialize()
 // 登录
 void UEOSSubsystem::Login(FPlatformUserId TempPlatformUserId, ECoolLoginType LoginType, FString Id, FString Token)
 {
-	GetWorld()->GetTimerManager().SetTimer(TickNumTimerHandle, this, &ThisClass::ChangeLobbyMemberTickNum, 2.f, true);
-
 	if (AuthPtr == nullptr) return;
 
 	PlatformUserId = TempPlatformUserId;
 	GetAccountInfo(PlatformUserId);
 
 	// 已登录
-	if (AccountInfo && AuthPtr->IsLoggedIn(AccountInfo->AccountId))
+	if (AccountInfo && AuthPtr->IsLoggedIn(PlatformUserId)) // TODO PIE 断网重新登录会崩溃
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Login info exist"));
 		GetUserInfo();
 
-		OnLoginComplete.Broadcast(true);
+		OnLoginComplete.Broadcast(true, TEXT("Login info exist"));
 
 		return;
 	}
@@ -99,13 +97,16 @@ void UEOSSubsystem::Login(FPlatformUserId TempPlatformUserId, ECoolLoginType Log
 
 			QueryUserInfo();
 
-			OnLoginComplete.Broadcast(true);
+			OnLoginComplete.Broadcast(true, TEXT("Success"));
+			
+			// 临时代码
+			GetWorld()->GetTimerManager().SetTimer(TickNumTimerHandle, this, &ThisClass::ChangeLobbyMemberTickNum, 2.f, true);
 		}
 		else
 		{
 			UE_LOG(LogTemp, Error, TEXT("Login %s"), *Result.GetErrorValue().GetLogString());
 			
-			OnLoginComplete.Broadcast(false);
+			OnLoginComplete.Broadcast(false, *Result.GetErrorValue().GetLogString());
 		}
 	});
 }
@@ -1070,7 +1071,7 @@ void UEOSSubsystem::Checkout(TArray<FPurchaseOffer> Offers)
 		else
 		{
 			UE_LOG(LogTemp, Error, TEXT("Checkout %s"), *Result.GetErrorValue().GetLogString());
-			OnCheckoutComplete.Broadcast(false, FString());
+			OnCheckoutComplete.Broadcast(false, TOptional<FString>());
 		}
 	});
 }

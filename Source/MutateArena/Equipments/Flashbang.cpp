@@ -34,10 +34,10 @@ void AFlashbang::ThrowOut()
 	if (HasAuthority())
 	{
 		FTimerHandle TimerHandleSound;
-		GetWorldTimerManager().SetTimer(TimerHandleSound, this, &ThisClass::ServerPlaySound, 1.8f); // 起音较慢，提前播放
+		GetWorldTimerManager().SetTimer(TimerHandleSound, this, &ThisClass::ServerPlaySound, 2.5f); // 起音较慢，提前播放
 
 		FTimerHandle TimerHandleExplode;
-		GetWorldTimerManager().SetTimer(TimerHandleExplode, this, &ThisClass::ServerExplode, 2.0f);
+		GetWorldTimerManager().SetTimer(TimerHandleExplode, this, &ThisClass::ServerExplode, 3.0f);
 	}
 }
 
@@ -82,107 +82,102 @@ void AFlashbang::MulticastExplode_Implementation()
 	
 	ABaseGameState* BaseGameState = GetWorld()->GetGameState<ABaseGameState>();
 
-	// 遍历本地玩家控制器
-	for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
+	if (APlayerController* LocalPC = GetWorld()->GetFirstPlayerController())
 	{
-		APlayerController* PC = Iterator->Get();
-		if (PC && PC->IsLocalController())
-		{
-			ABaseCharacter* LocalCharacter = Cast<ABaseCharacter>(PC->GetPawn());
-			if (!LocalCharacter || !LocalCharacter->Camera) continue;
+		ABaseCharacter* LocalCharacter = Cast<ABaseCharacter>(LocalPC->GetPawn());
+		if (!LocalCharacter || !LocalCharacter->Camera) return;;
 
-			// 仅当该本地玩家在爆炸半径内时，才进行检测和应用
-			float Distance = LocalCharacter->GetDistanceTo(this);
-					
-			float FinalRadius = Radius;
-			float FinalMaxFlashTime = MaxFlashTime;
-			float FinalMaxCapTime = MaxCapTime;
-			if (UAbilitySystemComponent* ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(LocalCharacter))
-			{
-				if (ASC->HasMatchingGameplayTag(TAG_STATE_DNA_EnhancedVision))
-				{
-					FinalRadius *= 1.1f; 
-					FinalMaxFlashTime *= 1.1f; 
-					FinalMaxCapTime *= 1.1f;
-				}
-			}
-			
-			if (Distance <= FinalRadius)
-			{
-				// 射线检测是否有阻挡
-				FHitResult HitResult;
-				FCollisionQueryParams QueryParams;
-				QueryParams.AddIgnoredActor(this); // 忽略震撼弹自身
+		// 仅当该本地玩家在爆炸半径内时，才进行检测和应用
+		float Distance = LocalCharacter->GetDistanceTo(this);
 				
-				TArray<AActor*> AllPlayers;
-				if (BaseGameState)
+		float FinalRadius = Radius;
+		float FinalMaxFlashTime = MaxFlashTime;
+		float FinalMaxCapTime = MaxCapTime;
+		if (UAbilitySystemComponent* ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(LocalCharacter))
+		{
+			if (ASC->HasMatchingGameplayTag(TAG_STATE_DNA_EnhancedVision))
+			{
+				FinalRadius *= 1.1f; 
+				FinalMaxFlashTime *= 1.1f; 
+				FinalMaxCapTime *= 1.1f;
+			}
+		}
+		
+		if (Distance <= FinalRadius)
+		{
+			// 射线检测是否有阻挡
+			FHitResult HitResult;
+			FCollisionQueryParams QueryParams;
+			QueryParams.AddIgnoredActor(this); // 忽略震撼弹自身
+			
+			TArray<AActor*> AllPlayers;
+			if (BaseGameState)
+			{
+				for (APlayerState* PS : BaseGameState->PlayerArray)
 				{
-					for (APlayerState* PS : BaseGameState->PlayerArray)
+					if (PS && PS->GetPawn())
 					{
-						if (PS && PS->GetPawn())
-						{
-							AllPlayers.Add(PS->GetPawn());
-						}
+						AllPlayers.Add(PS->GetPawn());
 					}
 				}
-				QueryParams.AddIgnoredActors(AllPlayers);
-				QueryParams.AddIgnoredActors(BaseGameState->AllEquipments);
+			}
+			QueryParams.AddIgnoredActors(AllPlayers);
+			QueryParams.AddIgnoredActors(BaseGameState->AllEquipments);
 
-				bool bHit = GetWorld()->LineTraceSingleByChannel(
-					HitResult,
-					GetActorLocation(),
-					LocalCharacter->Camera->GetComponentLocation(),
-					ECollisionChannel::ECC_Visibility,
-					QueryParams
+			bool bHit = GetWorld()->LineTraceSingleByChannel(
+				HitResult,
+				GetActorLocation(),
+				LocalCharacter->Camera->GetComponentLocation(),
+				ECollisionChannel::ECC_Visibility,
+				QueryParams
+			);
+
+			// 如果没有阻挡，才被致盲
+			if (!bHit)
+			{
+				FVector A = LocalCharacter->Camera->GetForwardVector();
+				FVector B = GetActorLocation() - LocalCharacter->Camera->GetComponentLocation();
+				A.Normalize();
+				B.Normalize();
+				float DotProduct = FVector::DotProduct(A, B);
+				DotProduct = FMath::Clamp(DotProduct, -1.f, 1.f);
+				float AngleInRadians = FMath::Acos(DotProduct);
+				float Angle = FMath::RadiansToDegrees(AngleInRadians);
+				
+				LocalCharacter->ApplyFlashbangEffect(
+					FinalRadius, 
+					FinalMaxFlashTime, 
+					FinalMaxCapTime, 
+					GetWorld()->GetTimeSeconds(), 
+					Distance, 
+					Angle
 				);
 
-				// 如果没有阻挡，才被致盲
-				if (!bHit)
+				// 隐藏所有其他玩家的 OverheadWidget
+				float Speed = 1 / (FMath::Clamp(1.0f - Distance / FinalRadius, .5f, 1.f) * FinalMaxCapTime);
+				for (AActor* Player : AllPlayers)
 				{
-					FVector A = LocalCharacter->Camera->GetForwardVector();
-					FVector B = GetActorLocation() - LocalCharacter->Camera->GetComponentLocation();
-					A.Normalize();
-					B.Normalize();
-					float DotProduct = FVector::DotProduct(A, B);
-					DotProduct = FMath::Clamp(DotProduct, -1.f, 1.f);
-					float AngleInRadians = FMath::Acos(DotProduct);
-					float Angle = FMath::RadiansToDegrees(AngleInRadians);
-					
-					LocalCharacter->ApplyFlashbangEffect(
-						FinalRadius, 
-						FinalMaxFlashTime, 
-						FinalMaxCapTime, 
-						GetWorld()->GetTimeSeconds(), 
-						Distance, 
-						Angle
-					);
-
-					// 隐藏所有其他玩家的 OverheadWidget
-					float Speed = 1 / (FMath::Clamp(1.0f - Distance / FinalRadius, .5f, 1.f) * FinalMaxCapTime);
-					for (AActor* Player : AllPlayers)
+					if (ABaseCharacter* PlayerCharacter = Cast<ABaseCharacter>(Player))
 					{
-						if (ABaseCharacter* PlayerCharacter = Cast<ABaseCharacter>(Player))
+						if (UWidgetComponent* OverheadWidget = PlayerCharacter->OverheadWidget)
 						{
-							if (UWidgetComponent* OverheadWidget = PlayerCharacter->OverheadWidget)
+							if (UOverheadWidget* OverheadWidgetClass = Cast<UOverheadWidget>(OverheadWidget->GetUserWidgetObject()))
 							{
-								if (UOverheadWidget* OverheadWidgetClass = Cast<UOverheadWidget>(OverheadWidget->GetUserWidgetObject()))
-								{
-									OverheadWidgetClass->PlayFlashbangEffect(Speed);
-								}
+								OverheadWidgetClass->PlayFlashbangEffect(Speed);
 							}
 						}
 					}
-
-					TWeakObjectPtr<AFlashbang> WeakThis = this;
-					TWeakObjectPtr<ABaseCharacter> WeakCharacter = LocalCharacter;
-					GetWorldTimerManager().SetTimerForNextTick([WeakThis, WeakCharacter]()
-					{
-						if (WeakThis.IsValid() && WeakCharacter.IsValid() && WeakCharacter->SceneCapture)
-						{
-							WeakCharacter->SceneCapture->CaptureScene();
-						}
-					});
 				}
+
+				TWeakObjectPtr<AFlashbang> WeakThis = this;
+				TWeakObjectPtr<ABaseCharacter> WeakCharacter = LocalCharacter;
+				GetWorldTimerManager().SetTimerForNextTick([WeakThis, WeakCharacter]()
+				{
+					if (WeakThis.IsValid() && WeakCharacter.IsValid() && WeakCharacter->SceneCapture)
+					{
+						WeakCharacter->SceneCapture->CaptureScene();
+					}
+				});
 			}
 		}
 	}

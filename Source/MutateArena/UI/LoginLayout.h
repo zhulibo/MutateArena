@@ -27,7 +27,7 @@ protected:
 	class UCommonButton* LoginButton;
 	UFUNCTION()
 	void OnLoginButtonClicked(ECoolLoginType LoginType, FString Id, FString Token);
-	void OnLoginComplete(bool bWasSuccessful);
+	void OnLoginComplete(bool bWasSuccessful, FString ErrorMessage);
 
 	UPROPERTY(meta = (BindWidget))
 	class USizeBox* DevContainer;
