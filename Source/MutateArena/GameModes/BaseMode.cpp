@@ -27,6 +27,20 @@ ABaseMode::ABaseMode()
 	bDelayedStart = true;
 }
 
+void ABaseMode::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
+{
+	Super::InitGame(MapName, Options, ErrorMessage);
+	
+	// 强制覆盖当前加载地图的 KillZ
+	if (UWorld* World = GetWorld())
+	{
+		if (AWorldSettings* WorldSettings = World->GetWorldSettings())
+		{
+			WorldSettings->KillZ = -10000.0f;
+		}
+	}
+}
+
 void ABaseMode::BeginPlay()
 {
 	Super::BeginPlay();

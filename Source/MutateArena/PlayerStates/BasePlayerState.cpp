@@ -112,7 +112,7 @@ float ABasePlayerState::GetRepelReceivedMul()
 
 float ABasePlayerState::GetCharacterLevel()
 {
-	return AttributeSetBase ? AttributeSetBase->GetCharacterLevel() : 0.f;
+	return AttributeSetBase ? AttributeSetBase->GetCharacterLevel() : 1.f;
 }
 
 float ABasePlayerState::GetMaxWalkSpeed()

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "CommonActivatableWidget.h"
+#include "CommonUserWidget.h"
 #include "MutationHuman.generated.h"
 
 class UImage;
@@ -16,7 +16,7 @@ enum class ECombatIconType : uint8
 enum class ETeam : uint8;
 
 UCLASS()
-class MUTATEARENA_API UMutationHuman : public UCommonActivatableWidget
+class MUTATEARENA_API UMutationHuman : public UCommonUserWidget
 {
 	GENERATED_BODY()
 

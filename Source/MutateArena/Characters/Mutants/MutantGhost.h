@@ -10,7 +10,7 @@ class MUTATEARENA_API AMutantGhost : public AMutantCharacter
 	GENERATED_BODY()
 
 public:
-	AMutantGhost();
+	AMutantGhost(const FObjectInitializer& ObjectInitializer);
 
 	void ShowOverheadWidget(bool bIsShow);
 

@@ -19,7 +19,11 @@ protected:
 	class AMutantCharacter* MutantChar;
 	UPROPERTY()
 	class UPlayerSubsystem* PlayerSubsystem;
+	UPROPERTY()
+	class UMAMovementComponent* MovementComp;
 	
+	UPROPERTY(BlueprintReadOnly)
+	bool bIsOnLadder;
 	UPROPERTY(BlueprintReadOnly)
 	float Speed;
 	UPROPERTY(BlueprintReadOnly)

@@ -33,6 +33,8 @@ public class MutateArena : ModuleRules
 				"GameplayStateTreeModule",
 				"AIModule",
 				"NavigationSystem",
+				"GeometryFramework",
+				"GeometryScriptingCore",
 			}
 		);
 

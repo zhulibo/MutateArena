@@ -304,16 +304,12 @@ void ABaseController::SetHUDWarmupCountdown(int32 CountdownTime)
 	FString String = ULibraryCommon::GetFormatTime(CountdownTime);
 	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
 	{
-		UISubsystem->ChangeAnnouncement.Broadcast(FText::Format(LOCTEXT("GameStart", "Game starts in {0}"), FText::FromString(String)));
+		UISubsystem->OnAnnouncementChange.Broadcast(FText::Format(LOCTEXT("GameStart", "Game starts in {0}"), FText::FromString(String)), 2.f);
 	}
 }
 
 void ABaseController::HandleMatchHasStarted()
 {
-	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
-	{
-		UISubsystem->ChangeAnnouncement.Broadcast(FText());
-	}
 }
 
 void ABaseController::HandleMatchHasEnded()
@@ -322,7 +318,7 @@ void ABaseController::HandleMatchHasEnded()
 	{
 		UISubsystem->OnMatchEnd.Broadcast();
 		
-		UISubsystem->ChangeAnnouncement.Broadcast(LOCTEXT("GameOver", "Game over"));
+		UISubsystem->OnAnnouncementChange.Broadcast(LOCTEXT("GameOver", "Game over"), 10.f);
 	}
 }
 

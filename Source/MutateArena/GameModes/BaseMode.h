@@ -20,10 +20,10 @@ public:
 		float Damage, const UDamageType* DamageType, AController* AttackerController, AActor* DamageCauser) {}
 
 protected:
+	virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void OnPostLogin(AController* NewPlayer) override;
-	
 	virtual void HandleMatchHasEnded() override;
 
 	virtual void Logout(AController* Exiting) override;

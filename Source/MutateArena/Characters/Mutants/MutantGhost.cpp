@@ -6,7 +6,8 @@
 #include "MutateArena/Characters/Components/OverheadWidget.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
-AMutantGhost::AMutantGhost()
+AMutantGhost::AMutantGhost(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
 {
 	MutantCharacterName = EMutantCharacterName::Ghost;
 	

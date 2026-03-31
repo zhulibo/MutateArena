@@ -48,6 +48,7 @@
 #define TAG_GAME_STATE_MUTATION FName(TEXT("GameStateMutation"))
 #define TAG_GAME_STATE_MELEE FName(TEXT("GameStateMelee"))
 #define TAG_GAME_STATE_TDM FName(TEXT("GameStateTDM"))
+#define TAG_LADDER FName(TEXT("Ladder"))
 
 // 地图路径
 #define MAP_LOGIN FString(TEXT("/Game/Maps/UI_Login"))

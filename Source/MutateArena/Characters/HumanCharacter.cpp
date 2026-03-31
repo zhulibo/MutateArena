@@ -45,7 +45,8 @@
 
 #define LOCTEXT_NAMESPACE "AHumanCharacter"
 
-AHumanCharacter::AHumanCharacter()
+AHumanCharacter::AHumanCharacter(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
 {
 	PrimaryActorTick.bCanEverTick = true;
 

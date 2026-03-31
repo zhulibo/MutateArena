@@ -7,6 +7,7 @@
 
 enum class EHUDState : uint8;
 
+// TODO 动态添加 Widget 参考 lyra UUIExtensionSubsystem UUIExtensionPointWidget
 UCLASS()
 class MUTATEARENA_API UCommonHUD : public UCommonUserWidget
 {
@@ -17,11 +18,15 @@ protected:
 
 	UPROPERTY()
 	class ABasePlayerState* LocalPlayerState;
-	
+
 	UPROPERTY(meta = (BindWidget))
 	class UCommonTextBlock* Announcement;
-	void OnAnnouncementChange(FText Text);
-
+	UFUNCTION()
+	void OnAnnouncementChange(const FText& Text, float DisplayTime);
+	UFUNCTION()
+	void ClearAnnouncement();
+	FTimerHandle AnnouncementTimerHandle;
+	
 	UPROPERTY(meta = (BindWidget))
 	UCommonTextBlock* KillStreak;
 	void OnKillStreakChange(int32 Num);

@@ -26,6 +26,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/DecalComponent.h"
 #include "Components/InteractorComponent.h"
+#include "Components/MAMovementComponent.h"
 #include "Components/OverheadWidget.h"
 #include "Components/WidgetComponent.h"
 #include "Data/CharacterAsset.h"
@@ -52,7 +53,8 @@
 
 #define LOCTEXT_NAMESPACE "ABaseCharacter"
 
-ABaseCharacter::ABaseCharacter()
+ABaseCharacter::ABaseCharacter(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer.SetDefaultSubobjectClass<UMAMovementComponent>(ACharacter::CharacterMovementComponentName))
 {
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -60,6 +62,8 @@ ABaseCharacter::ABaseCharacter()
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
 
+	MovementComp = Cast<UMAMovementComponent>(GetCharacterMovement());
+	
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(GetMesh(), SOCKET_CAMERA);
 	CameraBoom->TargetArmLength = 0.f;
@@ -150,6 +154,12 @@ void ABaseCharacter::PostInitializeComponents()
 void ABaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	
+	if (GetCapsuleComponent())
+	{
+		GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnLadderBeginOverlap);
+		GetCapsuleComponent()->OnComponentEndOverlap.AddDynamic(this, &ThisClass::OnLadderEndOverlap);
+	}
 	
 	// 监听输入设备类型改变
 	if (UCommonInputSubsystem* CommonInputSubsystem = UCommonInputSubsystem::Get(GetWorld()->GetFirstLocalPlayerFromController()))
@@ -519,8 +529,33 @@ void ABaseCharacter::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPr
 void ABaseCharacter::Move(const FInputActionValue& Value)
 {
 	FVector2D AxisVector = Value.Get<FVector2D>();
-	AddMovementInput(GetActorForwardVector(), AxisVector.Y);
-	AddMovementInput(GetActorRightVector(), AxisVector.X);
+
+	if (MovementComp && MovementComp->MovementMode == MOVE_Custom && MovementComp->CustomMovementMode == CMOVE_Ladder)
+	{
+		// 【梯子移动】：将 Y 轴的输入（W和S键）转换为世界坐标的 Z 轴 (UpVector)
+		AddMovementInput(FVector::UpVector, AxisVector.Y);
+		
+		// 利用梯子自身的右方向，而不是玩家的右方向
+		if (CurrentLadder)
+		{
+			FVector PlayerRight = GetActorRightVector();
+			FVector LadderRight = CurrentLadder->GetActorRightVector();
+			
+			// 点乘判断：如果梯子的右方向和玩家视角的右边相反（夹角大于90度），就把向量反转
+			// 这保证了无论梯子怎么摆放，你按 D 键永远是往你屏幕的右边走
+			if (FVector::DotProduct(PlayerRight, LadderRight) < 0.0f)
+			{
+				LadderRight = -LadderRight;
+			}
+			
+			AddMovementInput(LadderRight, AxisVector.X);
+		}
+	}
+	else
+	{
+		AddMovementInput(GetActorForwardVector(), AxisVector.Y);
+		AddMovementInput(GetActorRightVector(), AxisVector.X);
+	}
 }
 
 // 分开处理Look，无需根据输入设备类型区分灵敏度，支持同时使用键鼠和手柄控制一个角色
@@ -544,6 +579,19 @@ void ABaseCharacter::LookStick(const FInputActionValue& Value)
 
 void ABaseCharacter::JumpButtonPressed(const FInputActionValue& Value)
 {
+	if (MovementComp && MovementComp->MovementMode == MOVE_Custom && MovementComp->CustomMovementMode == CMOVE_Ladder)
+	{
+		// 1. 客户端本地立刻执行脱离（保证手感零延迟）
+		ExitLadderAndJump();
+		
+		// 2. 如果当前是客户端，必须通知服务器也执行一次（防止拉扯/吸回）
+		if (!HasAuthority())
+		{
+			Server_JumpOffLadder();
+		}
+		return;
+	}
+	
 	if (bIsCrouched)
 	{
 		UnCrouch();
@@ -1093,6 +1141,72 @@ void ABaseCharacter::ClearFlashbangEffect()
 	}
 
 	FlashbangEndTime = 0.f; 
+}
+
+void ABaseCharacter::OnLadderBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (OtherActor && OtherActor->ActorHasTag(TAG_LADDER))
+	{
+		// 如果在冷却期内（刚跳下梯子），拒绝吸附
+		if (GetWorld()->GetTimeSeconds() < LadderGrabCooldown)
+		{
+			return; 
+		}
+
+		// 防止顶部退后时被吸附的逻辑
+		float TriggerTopZ = OtherComp->Bounds.Origin.Z + OtherComp->Bounds.BoxExtent.Z;
+		float PlayerBottomZ = GetActorLocation().Z - GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+		if (PlayerBottomZ >= TriggerTopZ - 10.0f) return;
+
+		if (HasAuthority() || IsLocallyControlled())
+		{
+			// 【45度掉落修复 1】：记录当前梯子
+			CurrentLadder = OtherActor;
+			
+			GetCharacterMovement()->SetMovementMode(MOVE_Custom, CMOVE_Ladder);
+			GetCharacterMovement()->Velocity = FVector::ZeroVector; 
+		}
+	}
+}
+
+void ABaseCharacter::OnLadderEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	if (OtherActor && OtherActor->ActorHasTag(TAG_LADDER))
+	{
+		if (OtherActor == CurrentLadder)
+		{
+			CurrentLadder = nullptr;
+		}
+
+		if (HasAuthority() || IsLocallyControlled())
+		{
+			GetCharacterMovement()->SetMovementMode(MOVE_Falling);
+			if (GetCharacterMovement()->Velocity.Z > 0)
+			{
+				FVector PushForward = GetActorForwardVector() * 300.0f;
+				GetCharacterMovement()->Velocity += PushForward;
+			}
+		}
+	}
+}
+
+void ABaseCharacter::Server_JumpOffLadder_Implementation()
+{
+	ExitLadderAndJump();
+}
+
+void ABaseCharacter::ExitLadderAndJump()
+{
+	if (MovementComp)
+	{
+		MovementComp->SetMovementMode(MOVE_Falling);
+		// 给一个脱离梯子的初速度
+		FVector JumpVelocity = FVector::UpVector * GetJumpZVelocity() + GetActorForwardVector() * -400.f;
+		MovementComp->Velocity = JumpVelocity;
+	}
+	
+	// 设置 0.3 秒的梯子吸附冷却期，这样你的身体在被弹开的瞬间，即使还在 TriggerBox 里，也不会再次触发重叠吸附。
+	LadderGrabCooldown = GetWorld()->GetTimeSeconds() + 0.3f;
 }
 
 #undef LOCTEXT_NAMESPACE

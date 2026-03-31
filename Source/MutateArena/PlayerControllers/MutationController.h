@@ -78,7 +78,8 @@ public:
 	virtual void SetHUDHealth(float Health) override;
 	void SetHUDTeamNum(int32 TeamNum, ETeam Team);
 	void SetHUDSkill(bool bIsReady);
-	void SetHUDRage(float UpdateRageUI);
+	void SetHUDRage(float InRage);
+	void SetHUDCharacterLevel(float InLevel);
 	void SetHUDDamageMul(float DamageMul);
 	void SetHUDMeleeDamageMul(float MeleeDamageMul);
 protected:

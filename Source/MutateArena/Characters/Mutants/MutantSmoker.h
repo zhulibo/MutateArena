@@ -10,7 +10,7 @@ class MUTATEARENA_API AMutantSmoker : public AMutantCharacter
 	GENERATED_BODY()
 
 public:
-	AMutantSmoker();
+	AMutantSmoker(const FObjectInitializer& ObjectInitializer);
 
 protected:
 	virtual void BeginPlay() override;

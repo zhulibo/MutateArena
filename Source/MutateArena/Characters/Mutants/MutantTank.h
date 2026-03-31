@@ -10,7 +10,7 @@ class MUTATEARENA_API AMutantTank : public AMutantCharacter
 	GENERATED_BODY()
 
 public:
-	AMutantTank();
+	AMutantTank(const FObjectInitializer& ObjectInitializer);
 
 	UPROPERTY(EditAnywhere)
 	UMaterialInterface* MI_Overlay_Skill;

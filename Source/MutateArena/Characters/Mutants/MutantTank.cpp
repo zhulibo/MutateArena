@@ -3,7 +3,8 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "MutateArena/Characters/Data/CharacterType.h"
 
-AMutantTank::AMutantTank()
+AMutantTank::AMutantTank(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
 {
 	MutantCharacterName = EMutantCharacterName::Tank;
 	

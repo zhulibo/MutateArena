@@ -25,7 +25,7 @@ void UCommonHUD::NativeOnInitialized()
 	
 	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer()))
 	{
-		UISubsystem->ChangeAnnouncement.AddUObject(this, &ThisClass::OnAnnouncementChange);
+		UISubsystem->OnAnnouncementChange.AddUObject(this, &ThisClass::OnAnnouncementChange);
 		UISubsystem->OnKillStreakChange.AddUObject(this, &ThisClass::OnKillStreakChange);
 		UISubsystem->OnHUDStateChange.AddUObject(this, &ThisClass::OnHUDStateChange);
 		UISubsystem->OnCauseDamage.AddUObject(this, &ThisClass::OnCauseDamage);
@@ -38,9 +38,37 @@ void UCommonHUD::NativeOnInitialized()
 	TextChat->MsgContainer->SetScrollBarVisibility(ESlateVisibility::Hidden);
 }
 
-void UCommonHUD::OnAnnouncementChange(FText Text)
+void UCommonHUD::OnAnnouncementChange(const FText& Text, float DisplayTime)
 {
+	if (!Announcement) return;
+
+	GetWorld()->GetTimerManager().ClearTimer(AnnouncementTimerHandle);
+
+	if (Text.IsEmpty() || DisplayTime <= 0.f)
+	{
+		ClearAnnouncement();
+		return;
+	}
+
 	Announcement->SetText(Text);
+	Announcement->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+
+	GetWorld()->GetTimerManager().SetTimer(
+		AnnouncementTimerHandle, 
+		this, 
+		&UCommonHUD::ClearAnnouncement, 
+		DisplayTime, 
+		false
+	);
+}
+
+void UCommonHUD::ClearAnnouncement()
+{
+	if (Announcement)
+	{
+		Announcement->SetText(FText::GetEmpty());
+		Announcement->SetVisibility(ESlateVisibility::Collapsed);
+	}
 }
 
 void UCommonHUD::OnKillStreakChange(int Num)

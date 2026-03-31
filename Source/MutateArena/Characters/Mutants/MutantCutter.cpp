@@ -5,7 +5,8 @@
 #include "MutateArena/Characters/Data/CharacterType.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
-AMutantCutter::AMutantCutter()
+AMutantCutter::AMutantCutter(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
 {
 	MutantCharacterName = EMutantCharacterName::Cutter;
 	

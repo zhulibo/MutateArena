@@ -1,5 +1,6 @@
 #include "AnimInstMutant.h"
 
+#include "Components/MAMovementComponent.h"
 #include "MutateArena/Characters/MutantCharacter.h"
 #include "MutateArena/System/PlayerSubsystem.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -14,17 +15,19 @@ void UAnimInstMutant::NativeUpdateAnimation(float DeltaSeconds)
 	Super::NativeUpdateAnimation(DeltaSeconds);
 
 	if (MutantChar == nullptr) MutantChar = Cast<AMutantCharacter>(TryGetPawnOwner());
-	if (MutantChar == nullptr) return;
+	if (MovementComp == nullptr) MovementComp = MutantChar ? MutantChar->MovementComp : nullptr;
+	if (!MutantChar || !MovementComp) return;
 
+	bIsOnLadder = MovementComp->MovementMode == MOVE_Custom && MovementComp->CustomMovementMode == CMOVE_Ladder;
+	
 	FVector Velocity = MutantChar->GetVelocity();
-	Velocity.Z = 0.f;
-	Speed = Velocity.Size();
+	Speed = bIsOnLadder ? FMath::Abs(Velocity.Z) : Velocity.Size2D();
 
 	WalkPlayRate = MutantChar->GetMaxWalkSpeed() / MutantChar->DefaultMaxWalkSpeed;
 	// UE_LOG(LogTemp, Warning, TEXT("DefaultWalkSpeed %f GetMaxWalkSpeed %f WalkPlayRate: %f"), MutantCharacter->DefaultWalkSpeed, MutantCharacter->GetMaxWalkSpeed(), WalkPlayRate);
-
-	bIsInAir = MutantChar->GetCharacterMovement()->IsFalling();
-	bIsAccelerating = MutantChar->GetCharacterMovement()->GetCurrentAcceleration().Size() > 0.f;
+	
+	bIsInAir = MovementComp->IsFalling() && !bIsOnLadder;
+	bIsAccelerating = MovementComp->GetCurrentAcceleration().Size() > 0.f;
 	bIsCrouched = MutantChar->bIsCrouched;
 
 	// 计算瞄准方向与移动方向的偏移量，用于控制脚步朝向

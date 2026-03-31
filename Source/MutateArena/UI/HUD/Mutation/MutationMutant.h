@@ -1,14 +1,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "CommonActivatableWidget.h"
+#include "CommonUserWidget.h"
 #include "GameplayTagContainer.h"
 #include "MutationMutant.generated.h"
 
 enum class ETeam : uint8;
 
 UCLASS()
-class MUTATEARENA_API UMutationMutant : public UCommonActivatableWidget
+class MUTATEARENA_API UMutationMutant : public UCommonUserWidget
 {
 	GENERATED_BODY()
 

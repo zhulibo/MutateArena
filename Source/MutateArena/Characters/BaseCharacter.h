@@ -14,8 +14,10 @@ class MUTATEARENA_API ABaseCharacter : public AModularCharacter, public IAbility
 	GENERATED_BODY()
 
 public:
-	ABaseCharacter();
-
+	ABaseCharacter(const FObjectInitializer& ObjectInitializer);
+	
+	UPROPERTY()
+	class UMAMovementComponent* MovementComp;
 	UPROPERTY(VisibleAnywhere)
 	class USpringArmComponent* CameraBoom;
 	UPROPERTY(VisibleAnywhere)
@@ -207,5 +209,16 @@ protected:
 	void ClearFlashbangEffect();
 public:
 	void ApplyFlashbangEffect(float InRadius, float InMaxFlashTime, float InMaxCapTime, float InFlashTime, float InDistance, float InAngle);
+
+	UFUNCTION()
+	void OnLadderBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	UFUNCTION()
+	void OnLadderEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	UPROPERTY()
+	AActor* CurrentLadder = nullptr;
+	float LadderGrabCooldown = 0.0f;
+	void ExitLadderAndJump();
+	UFUNCTION(Server, Reliable)
+	void Server_JumpOffLadder();
 	
 };

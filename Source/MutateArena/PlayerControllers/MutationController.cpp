@@ -128,7 +128,7 @@ void AMutationController::HandleRoundHasEnded()
 {
 	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
 	{
-		UISubsystem->ChangeAnnouncement.Broadcast(LOCTEXT("RoundEnd", "Round end"));
+		UISubsystem->OnAnnouncementChange.Broadcast(LOCTEXT("RoundEnd", "Round end"), 10.f);
 	}
 }
 
@@ -182,7 +182,7 @@ void AMutationController::SetHUDTime()
 				
 				if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
 				{
-					UISubsystem->ChangeAnnouncement.Broadcast(FText::FromString(FString::Printf(TEXT("%d"), MutateCountdown)));
+					UISubsystem->OnAnnouncementChange.Broadcast(FText::FromString(FString::Printf(TEXT("%d"), MutateCountdown)), 2.f);
 				}
 
 				// 播放倒计时
@@ -200,10 +200,6 @@ void AMutationController::SetHUDTime()
 			}
 			else if (MutateCountdown == 0)
 			{
-				if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
-				{
-					UISubsystem->ChangeAnnouncement.Broadcast(FText());
-				}
 			}
 		}
 		else if (MatchState == MatchState::WaitingPostMatch)
@@ -267,6 +263,7 @@ void AMutationController::InitMutantHUD()
 		SetHUDTeamNum(MutationGameState->Team1PlayerStates.Num(), ETeam::Team1);
 		SetHUDTeamNum(MutationGameState->Team2PlayerStates.Num(), ETeam::Team2);
 		SetHUDRage(MutationPlayerState->Rage);
+		SetHUDCharacterLevel(MutationPlayerState->GetCharacterLevel());
 
 		if (MutationPlayerState->GetAbilitySystemComponent())
 		{
@@ -330,11 +327,19 @@ void AMutationController::SetHUDSkill(bool bIsReady)
 	}
 }
 
-void AMutationController::SetHUDRage(float Rage)
+void AMutationController::SetHUDRage(float InRage)
 {
 	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
 	{
-		UISubsystem->OnRageChange.Broadcast(Rage);
+		UISubsystem->OnRageChange.Broadcast(InRage);
+	}
+}
+
+void AMutationController::SetHUDCharacterLevel(float InLevel)
+{
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
+	{
+		UISubsystem->OnLevelChange.Broadcast(InLevel);
 	}
 }
 

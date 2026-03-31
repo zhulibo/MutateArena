@@ -13,7 +13,7 @@ class ABasePlayerState;
 // Base
 DECLARE_MULTICAST_DELEGATE_OneParam(FChangeCrosshairSpread, float Spread);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnCrosshairHidden, bool bIsHidden);
-DECLARE_MULTICAST_DELEGATE_OneParam(FChangeAnnouncement, FText Text);
+DECLARE_MULTICAST_DELEGATE_TwoParams(FOnAnnouncementChange, const FText& Text, float DisplayTime);
 DECLARE_MULTICAST_DELEGATE(FOnMatchEnd);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnMatchCountdownChange, int32 CountdownTime);
 DECLARE_MULTICAST_DELEGATE_OneParam(FShowScoreboard, bool bIsShow);
@@ -79,7 +79,7 @@ public:
 	// Base
 	FChangeCrosshairSpread ChangeCrosshairSpread;
 	FOnCrosshairHidden OnCrosshairHidden;
-	FChangeAnnouncement ChangeAnnouncement;
+	FOnAnnouncementChange OnAnnouncementChange;
 	FOnMatchEnd OnMatchEnd;
 	FOnMatchCountdownChange OnMatchCountdownChange;
 	FShowScoreboard ShowScoreboard;

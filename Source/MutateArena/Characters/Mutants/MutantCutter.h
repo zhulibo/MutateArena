@@ -10,7 +10,7 @@ class MUTATEARENA_API AMutantCutter : public AMutantCharacter
 	GENERATED_BODY()
 
 public:
-	AMutantCutter();
+	AMutantCutter(const FObjectInitializer& ObjectInitializer);
 
 protected:
 	virtual void BeginPlay() override;

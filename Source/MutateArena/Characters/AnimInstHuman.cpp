@@ -4,6 +4,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Components/CombatComponent.h"
+#include "Components/MAMovementComponent.h"
 #include "MutateArena/Equipments/Equipment.h"
 #include "MutateArena/Equipments/Weapon.h"
 
@@ -17,14 +18,16 @@ void UAnimInstHuman::NativeUpdateAnimation(float DeltaSeconds)
 
 	if (HumanChar == nullptr) HumanChar = Cast<AHumanCharacter>(TryGetPawnOwner());
 	if (CombatComp == nullptr) CombatComp = HumanChar ? HumanChar->CombatComp : nullptr;
-	if (!HumanChar || !CombatComp) return;
+	if (MovementComp == nullptr) MovementComp = HumanChar ? HumanChar->MovementComp : nullptr;
+	if (!HumanChar || !CombatComp || !MovementComp) return;
+	
+	bIsOnLadder = MovementComp->MovementMode == MOVE_Custom && MovementComp->CustomMovementMode == CMOVE_Ladder;
 	
 	FVector Velocity = HumanChar->GetVelocity();
-	Velocity.Z = 0.f;
-	Speed = Velocity.Size();
+	Speed = bIsOnLadder ? FMath::Abs(Velocity.Z) : Velocity.Size2D();
 	
-	bIsInAir = HumanChar->GetCharacterMovement()->IsFalling();
-	bIsAccelerating = HumanChar->GetCharacterMovement()->GetCurrentAcceleration().Size() > 0.f;
+	bIsInAir = MovementComp->IsFalling() && !bIsOnLadder;
+	bIsAccelerating = MovementComp->GetCurrentAcceleration().Size() > 0.f;
 	bIsCrouched = HumanChar->bIsCrouched;
 	
 	if (AEquipment* CurEquipment = CombatComp->GetCurEquipment())

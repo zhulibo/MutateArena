@@ -7,6 +7,7 @@
 
 UAttributeSetBase::UAttributeSetBase()
 {
+	InitCharacterLevel(1.f);
 }
 
 void UAttributeSetBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

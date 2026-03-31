@@ -16,7 +16,7 @@ class MUTATEARENA_API AMutantCharacter : public ABaseCharacter, public IInteract
 	GENERATED_BODY()
 
 public:
-	AMutantCharacter();
+	AMutantCharacter(const FObjectInitializer& ObjectInitializer);
 
 	UPROPERTY(VisibleAnywhere)
 	UCapsuleComponent* RightHandCapsule;

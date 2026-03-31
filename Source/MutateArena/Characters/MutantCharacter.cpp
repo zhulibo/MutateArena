@@ -33,7 +33,8 @@
 
 #define LOCTEXT_NAMESPACE "AMutantCharacter"
 
-AMutantCharacter::AMutantCharacter()
+AMutantCharacter::AMutantCharacter(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
 {
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -164,7 +165,7 @@ void AMutantCharacter::OnASCInit()
 {
 	Super::OnASCInit();
 
-	if (ASC && AttributeSetBase && IsLocallyControlled())
+	if (ASC && AttributeSetBase)
 	{
 		ASC->RegisterGameplayTagEvent(
 			TAG_CD_MUTANT_SKILL, EGameplayTagEventType::NewOrRemoved).AddUObject(this, &ThisClass::OnLocalSkillCooldownTagChanged);
@@ -182,6 +183,8 @@ void AMutantCharacter::OnASCInit()
 // 更新skill UI
 void AMutantCharacter::OnLocalSkillCooldownTagChanged(FGameplayTag GameplayTag, int32 TagCount)
 {
+	if (!IsLocallyControlled()) return;
+	
 	if (MutationController == nullptr) MutationController = Cast<AMutationController>(Controller);
 	if (MutationController)
 	{
@@ -191,17 +194,21 @@ void AMutantCharacter::OnLocalSkillCooldownTagChanged(FGameplayTag GameplayTag, 
 
 void AMutantCharacter::OnLocalCharacterLevelChanged(const FOnAttributeChangeData& Data)
 {
+	if (!IsLocallyControlled()) return;
+	
 	if (MutationController == nullptr) MutationController = Cast<AMutationController>(Controller);
 	if (MutationController && ASC)
 	{
 		MutationController->SetHUDSkill(ASC->GetTagCount(TAG_CD_MUTANT_SKILL) == 0 && Data.NewValue > 2.f);
 	}
-
+	UE_LOG(LogTemp, Warning, TEXT("1"));
 	if (MutationController)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("2"));
 		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(MutationController->GetLocalPlayer()))
 		{
 			UISubsystem->OnLevelChange.Broadcast(Data.NewValue);
+			UE_LOG(LogTemp, Warning, TEXT("3"));
 		}
 	}
 }

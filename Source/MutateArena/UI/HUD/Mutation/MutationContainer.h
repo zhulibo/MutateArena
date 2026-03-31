@@ -23,14 +23,10 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	class UMutationHUD* MutationHUD;
 
-	UPROPERTY(Meta = (BindWidget))
-	TObjectPtr<class UDynamicEntryBox> EntryBox_MutationHuman;
-	UPROPERTY()
+	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<class UMutationHuman> MutationHuman;
 
-	UPROPERTY(Meta = (BindWidget))
-	TObjectPtr<UDynamicEntryBox> EntryBox_MutationMutant;
-	UPROPERTY()
+	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<class UMutationMutant> MutationMutant;
 
 	UPROPERTY(meta = (BindWidget))
@@ -38,5 +34,5 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	class URadialMenuContainer* RadialMenuContainer;
-
+	
 };

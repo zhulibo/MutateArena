@@ -20,7 +20,11 @@ protected:
 	class AHumanCharacter* HumanChar;
 	UPROPERTY()
 	class UCombatComponent* CombatComp;
+	UPROPERTY()
+	class UMAMovementComponent* MovementComp;
 
+	UPROPERTY(BlueprintReadOnly)
+	bool bIsOnLadder;
 	UPROPERTY(BlueprintReadOnly)
 	float Speed;
 	UPROPERTY(BlueprintReadOnly)

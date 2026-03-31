@@ -3,7 +3,8 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "MutateArena/Characters/Data/CharacterType.h"
 
-AMutantSmoker::AMutantSmoker()
+AMutantSmoker::AMutantSmoker(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
 {
 	MutantCharacterName = EMutantCharacterName::Smoker;
 	

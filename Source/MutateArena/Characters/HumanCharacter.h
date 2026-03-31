@@ -15,7 +15,7 @@ class MUTATEARENA_API AHumanCharacter : public ABaseCharacter, public IInteracta
 	GENERATED_BODY()
 
 public:
-	AHumanCharacter();
+	AHumanCharacter(const FObjectInitializer& ObjectInitializer);
 
 	UPROPERTY(VisibleAnywhere)
 	class UCombatComponent* CombatComp;
