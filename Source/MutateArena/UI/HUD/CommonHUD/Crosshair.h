@@ -11,25 +11,13 @@ class MUTATEARENA_API UCrosshair : public UCommonUserWidget
 
 public:
 	UPROPERTY(meta = (BindWidget))
-	class UCommonBorder* Crosshair_L;
-	UPROPERTY(meta = (BindWidget))
-	UCommonBorder* Crosshair_R;
-	UPROPERTY(meta = (BindWidget))
-	UCommonBorder* Crosshair_T;
-	UPROPERTY(meta = (BindWidget))
-	UCommonBorder* Crosshair_B;
+	class UImage* CrosshairImage;
 
 protected:
 	virtual void NativeOnInitialized() override;
 
 	UPROPERTY()
-	class UCanvasPanelSlot* Crosshair_L_Slot;
-	UPROPERTY()
-	UCanvasPanelSlot* Crosshair_R_Slot;
-	UPROPERTY()
-	UCanvasPanelSlot* Crosshair_T_Slot;
-	UPROPERTY()
-	UCanvasPanelSlot* Crosshair_B_Slot;
+	class UMaterialInstanceDynamic* CrosshairMID;
 	
 	void ChangeCrosshairSpread(float Spread);
 	void OnCrosshairHidden(bool bIsHidden);
