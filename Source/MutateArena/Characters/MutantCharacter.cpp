@@ -46,6 +46,7 @@ AMutantCharacter::AMutantCharacter(const FObjectInitializer& ObjectInitializer)
 	RightHandCapsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	RightHandCapsule->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	RightHandCapsule->SetCollisionResponseToChannel(ECC_MESH_TEAM1, ECollisionResponse::ECR_Overlap);
+	RightHandCapsule->SetCollisionResponseToChannel(ECC_WorldDynamic, ECollisionResponse::ECR_Overlap);
 	RightHandCapsule->OnComponentBeginOverlap.AddUniqueDynamic(this, &ThisClass::OnRightHandCapsuleOverlap);
 
 	LeftHandCapsule = CreateDefaultSubobject<UCapsuleComponent>(TEXT("LeftHandCapsule"));
@@ -54,6 +55,7 @@ AMutantCharacter::AMutantCharacter(const FObjectInitializer& ObjectInitializer)
 	LeftHandCapsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	LeftHandCapsule->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	LeftHandCapsule->SetCollisionResponseToChannel(ECC_MESH_TEAM1, ECollisionResponse::ECR_Overlap);
+	LeftHandCapsule->SetCollisionResponseToChannel(ECC_WorldDynamic, ECollisionResponse::ECR_Overlap);
 	LeftHandCapsule->OnComponentBeginOverlap.AddUniqueDynamic(this, &ThisClass::OnLeftHandCapsuleOverlap);
 
 	Tags.Add(TAG_CHARACTER_MUTANT);
@@ -411,9 +413,8 @@ void AMutantCharacter::OnLeftHandCapsuleOverlap(UPrimitiveComponent* OverlappedC
 
 void AMutantCharacter::ServerApplyDamage_Implementation(AActor* OtherActor, float Damage)
 {
-	if (bIsDead) return;
+	if (bIsDead || OtherActor == nullptr) return;
 	
-	// 对局结束只有人类可以造成伤害
 	if (MutationMode == nullptr) MutationMode = GetWorld()->GetAuthGameMode<AMutationMode>();
 	if (MutationMode)
 	{
@@ -422,22 +423,32 @@ void AMutantCharacter::ServerApplyDamage_Implementation(AActor* OtherActor, floa
 			return;
 		}
 	}
-	
-	// 判断Overlap对象不是人类退出（Human变为Mutant时，Team可能未同步到本地，会发生Overlap）。
-	AHumanCharacter* DamagedCharacter = Cast<AHumanCharacter>(OtherActor);
-	if (DamagedCharacter == nullptr) return;
 
-	// 造成伤害
-	UGameplayStatics::ApplyDamage(OtherActor, Damage, Controller, this, UDamageTypeMutantDamage::StaticClass());
+	FVector HitDirection = (OtherActor->GetActorLocation() - GetActorLocation()).GetSafeNormal();
+	FHitResult FakeHit;
+	FakeHit.ImpactPoint = OtherActor->GetActorLocation();
 
-	// 造成感染
-	if (!DamagedCharacter->bIsDead && !DamagedCharacter->bIsImmune)
+	UGameplayStatics::ApplyPointDamage(
+		OtherActor, 
+		Damage, 
+		HitDirection, 
+		FakeHit, 
+		Controller, 
+		this, 
+		UDamageTypeMutantDamage::StaticClass()
+	);
+
+	// 是人类触发感染
+	if (AHumanCharacter* DamagedCharacter = Cast<AHumanCharacter>(OtherActor))
 	{
-		ABaseController* DamagedController = Cast<ABaseController>(DamagedCharacter->Controller);
-		if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
-		if (MutationMode)
+		if (!DamagedCharacter->bIsDead && !DamagedCharacter->bIsImmune)
 		{
-			MutationMode->GetInfect(DamagedCharacter, DamagedController, this, BaseController);
+			ABaseController* DamagedController = Cast<ABaseController>(DamagedCharacter->Controller);
+			if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
+			if (MutationMode)
+			{
+				MutationMode->GetInfect(DamagedCharacter, DamagedController, this, BaseController);
+			}
 		}
 	}
 }

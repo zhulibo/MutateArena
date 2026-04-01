@@ -70,6 +70,7 @@ void AMelee::SetAttackCapsuleCollision()
 		}
 
 		AttackCapsule->SetCollisionResponseToChannel(ECC_MESH_HREB, ECollisionResponse::ECR_Overlap);
+		AttackCapsule->SetCollisionResponseToChannel(ECC_WorldDynamic, ECollisionResponse::ECR_Overlap);
 	}
 }
 
@@ -101,17 +102,12 @@ void AMelee::OnAttackCapsuleOverlap(UPrimitiveComponent* OverlappedComponent, AA
 	if (InstigatorCharacter && !HitEnemies.Contains(OtherActor))
 	{
 		HitEnemies.Add(OtherActor);
+		
+		float Damage = bIsLightAttack ? LightAttackDamage : HeavyAttackDamage;
 
 		if (OtherActor->ActorHasTag(TAG_CHARACTER_BASE))
 		{
-			float Damage = bIsLightAttack ? LightAttackDamage : HeavyAttackDamage;
-			
 			DropBlood(OverlappedComponent, OtherActor, OtherComp, Damage);
-		
-			if (InstigatorCharacter->IsLocallyControlled())
-			{
-				ServerApplyDamage(OtherActor, InstigatorCharacter, Damage);
-			}
 		}
 		else if (OtherActor->ActorHasTag(TAG_HERB))
 		{
@@ -120,14 +116,32 @@ void AMelee::OnAttackCapsuleOverlap(UPrimitiveComponent* OverlappedComponent, AA
 				Herb->ServerDestroy();
 			}
 		}
+		
+		if (InstigatorCharacter->IsLocallyControlled())
+		{
+			ServerApplyDamage(OtherActor, InstigatorCharacter, Damage);
+		}
 	}
 }
 
 void AMelee::ServerApplyDamage_Implementation(AActor* OtherActor, AHumanCharacter* InstigatorCharacter, float Damage)
 {
-	if (InstigatorCharacter)
+	if (InstigatorCharacter && OtherActor)
 	{
-		UGameplayStatics::ApplyDamage(OtherActor, Damage, InstigatorCharacter->Controller, this, UDamageTypeMelee::StaticClass());
+		FVector HitDirection = (OtherActor->GetActorLocation() - InstigatorCharacter->GetActorLocation()).GetSafeNormal();
+		
+		FHitResult FakeHit;
+		FakeHit.ImpactPoint = OtherActor->GetActorLocation();
+
+		UGameplayStatics::ApplyPointDamage(
+			OtherActor, 
+			Damage, 
+			HitDirection, 
+			FakeHit, 
+			InstigatorCharacter->Controller, 
+			this, 
+			UDamageTypeMelee::StaticClass()
+		);
 	}
 }
 

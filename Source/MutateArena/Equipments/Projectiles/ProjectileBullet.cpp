@@ -41,11 +41,15 @@ void AProjectileBullet::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, 
 
 	ABaseCharacter* DamagedActor = Cast<ABaseCharacter>(OtherActor);
 
-	if (HasAuthority() && DamagedActor && GetInstigator())
+	if (HasAuthority() && OtherActor && GetInstigator())
 	{
-		UGameplayStatics::ApplyDamage(
+		FVector ShotDirection = ProjectileMovement->Velocity.GetSafeNormal();
+
+		UGameplayStatics::ApplyPointDamage(
 			OtherActor,
 			GetDamage(Hit.Distance),
+			ShotDirection,
+			Hit,
 			GetInstigator()->Controller,
 			this,
 			UDamageTypeEquipment::StaticClass()

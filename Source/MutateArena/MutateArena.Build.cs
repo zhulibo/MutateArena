@@ -35,6 +35,9 @@ public class MutateArena : ModuleRules
 				"NavigationSystem",
 				"GeometryFramework",
 				"GeometryScriptingCore",
+				"GeometryCollectionEngine",
+				"FieldSystemEngine",
+				"ChaosSolverEngine",
 			}
 		);
 
