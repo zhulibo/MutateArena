@@ -14,9 +14,19 @@ class MUTATEARENA_API AProjectile : public AActor
 public:
 	AProjectile();
 
+	UPROPERTY(VisibleAnywhere)
+	class UBoxComponent* CollisionBox;
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* ProjectileMesh;
+	UPROPERTY(VisibleAnywhere)
+	class UProjectileMovementComponent* ProjectileMovement;
+
 	UPROPERTY()
 	float InitialSpeed = 40000.f;
-
+	
+	UPROPERTY()
+	FVector SpawnLocation;
+	
 	UFUNCTION()
 	float GetDamage(float Distance);
 	UFUNCTION()
@@ -28,13 +38,6 @@ public:
 protected:
 	virtual void PostActorCreated() override;
 	virtual void BeginPlay() override;
-
-	UPROPERTY(VisibleAnywhere)
-	class UBoxComponent* CollisionBox;
-	UPROPERTY(VisibleAnywhere)
-	UStaticMeshComponent* ProjectileMesh;
-	UPROPERTY(VisibleAnywhere)
-	class UProjectileMovementComponent* ProjectileMovement;
 
 	// 在空中留下的轨迹
 	UPROPERTY(EditAnywhere)
@@ -57,8 +60,7 @@ protected:
 	// 弹孔
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UMaterialInterface> ImpactDecal;
-
-public:
-	FORCEINLINE UBoxComponent* GetCollisionBox() const { return CollisionBox; }
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UMaterialInterface> ImpactDecalExit;
 
 };

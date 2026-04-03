@@ -65,6 +65,8 @@ public:
 	bool bIsAutomatic;
 	UPROPERTY()
 	int32 PelletNum;
+	UPROPERTY()
+	float PenetrationPower = 0.;
 	FORCEINLINE bool IsEmpty() const { return Ammo <= 0; }
 	FORCEINLINE bool IsFull() const { return Ammo == MagCapacity; }
 	FORCEINLINE float GetFireDelay() const { return 60 / FireRate; }

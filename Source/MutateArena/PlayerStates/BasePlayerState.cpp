@@ -124,6 +124,10 @@ float ABasePlayerState::GetJumpZVelocity()
 {
 	return AttributeSetBase ? AttributeSetBase->GetJumpZVelocity() : 0.f;
 }
+float ABasePlayerState::GetBodyResistance()
+{
+	return AttributeSetBase ? AttributeSetBase->GetBodyResistance() : 0.f;
+}
 
 void ABasePlayerState::SetTeam(ETeam TempTeam)
 {

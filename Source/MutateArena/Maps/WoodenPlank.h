@@ -29,7 +29,7 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	UGeometryCollectionComponent* GeometryComp;
 
-	// 用于服务器接收射线检测(子弹)的碰撞体
+	// 用于服务器接收射线检测(子弹)的碰撞体 物理材质设置为了木头
 	UPROPERTY(VisibleAnywhere)
 	UBoxComponent* HitBox;
 

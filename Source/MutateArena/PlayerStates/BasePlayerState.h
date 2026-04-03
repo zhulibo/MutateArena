@@ -35,6 +35,7 @@ public:
 	float GetCharacterLevel();
 	float GetMaxWalkSpeed();
 	float GetJumpZVelocity();
+	float GetBodyResistance();
 
 	UPROPERTY(Replicated)
 	ECommonInputType InputType;

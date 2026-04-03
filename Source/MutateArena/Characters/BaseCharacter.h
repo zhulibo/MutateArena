@@ -44,7 +44,6 @@ public:
 
 	virtual void GetActorEyesViewPoint(FVector& OutLocation, FRotator& OutRotation) const override;
 	
-protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void PostInitializeComponents() override;
 	virtual void BeginPlay() override;
@@ -54,6 +53,7 @@ protected:
 	virtual void OnRep_PlayerState() override;
 	virtual void Destroyed() override;
 	
+protected:
 	UPROPERTY()
 	class UAssetSubsystem* AssetSubsystem;
 	UPROPERTY()
@@ -116,6 +116,7 @@ public:
 	float GetCharacterLevel();
 	float GetMaxWalkSpeed();
 	float GetJumpZVelocity();
+	float GetBodyResistance();
 
 	UPROPERTY()
 	FColor BloodColor;
@@ -124,10 +125,6 @@ public:
 	UPROPERTY(EditAnywhere)
 	UNiagaraSystem* BloodSmokeEffect;
 protected:
-	UFUNCTION()
-	virtual void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
-		FVector NormalImpulse, const FHitResult& Hit);
-
 	// 基础运动
 	virtual void MoveStarted(const struct FInputActionValue& Value) {}
 	void Move(const FInputActionValue& Value);

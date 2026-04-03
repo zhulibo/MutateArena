@@ -34,7 +34,6 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastRepel(FVector ImpulseVector);
 
-protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void PostInitializeComponents() override;
 	virtual void BeginPlay() override;
@@ -43,6 +42,7 @@ protected:
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void Destroyed() override;
 
+protected:
 	UPROPERTY()
 	class AMutationMode* MutationMode;
 	UPROPERTY()

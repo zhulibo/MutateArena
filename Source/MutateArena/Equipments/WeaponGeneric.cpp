@@ -7,6 +7,7 @@
 #include "MutateArena/Utils/LibraryCommon.h"
 #include "Components/BoxComponent.h"
 #include "Engine/SkeletalMeshSocket.h"
+#include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Projectiles/ProjectileBullet.h"
 
@@ -22,8 +23,9 @@ void AWeaponGeneric::Fire(const FVector& HitTarget, float RecoilVert, float Reco
 	if (OwnerTeam == ETeam::NoTeam) SetOwnerTeam();
 	const USkeletalMeshSocket* MuzzleSocket = EquipmentMesh->GetSocketByName(SOCKET_MUZZLE);
 
-	if (HumanCharacter == nullptr || ProjectileClass == nullptr|| OwnerTeam == ETeam::NoTeam || MuzzleSocket == nullptr) return;
-
+	if (HumanCharacter == nullptr || ProjectileClass == nullptr || OwnerTeam == ETeam::NoTeam || MuzzleSocket == nullptr) return;
+	
+	// 子弹是从枪口发出，射向准星在世界场景的投射点，所以穿透后的弹着点会有视差，这是正常的
 	FTransform SocketTransform = MuzzleSocket->GetSocketTransform(EquipmentMesh);
 	FRotator TargetRotation = (HitTarget - SocketTransform.GetLocation()).Rotation();
 
@@ -35,26 +37,35 @@ void AWeaponGeneric::Fire(const FVector& HitTarget, float RecoilVert, float Reco
 	TargetRotation.Pitch += SpreadPitch;
 	TargetRotation.Yaw += SpreadYaw;
 
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.Owner = this;
-	SpawnParams.Instigator = HumanCharacter;
+	// 构造生成的 Transform
+	FTransform SpawnTransform(TargetRotation, SocketTransform.GetLocation());
 
-	AProjectileBullet* Projectile = GetWorld()->SpawnActor<AProjectileBullet>(
+	AProjectileBullet* Projectile = GetWorld()->SpawnActorDeferred<AProjectileBullet>(
 		ProjectileClass,
-		SocketTransform.GetLocation(),
-		TargetRotation,
-		SpawnParams
+		SpawnTransform,
+		this,
+		HumanCharacter,
+		ESpawnActorCollisionHandlingMethod::AlwaysSpawn
 	);
 
-	Projectile->OwnerName = FName(ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(EquipmentParentName)));
-
-	switch (OwnerTeam)
+	if (Projectile)
 	{
-	case ETeam::Team1:
-		Projectile->GetCollisionBox()->SetCollisionResponseToChannel(ECC_MESH_TEAM2, ECollisionResponse::ECR_Block);
-		break;
-	case ETeam::Team2:
-		Projectile->GetCollisionBox()->SetCollisionResponseToChannel(ECC_MESH_TEAM1, ECollisionResponse::ECR_Block);
-		break;
+		// 设置 OwnerName
+		Projectile->OwnerName = FName(ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(EquipmentParentName)));
+
+		Projectile->InitialPenetrationPower = PenetrationPower;
+
+		// 设置队伍碰撞通道
+		switch (OwnerTeam)
+		{
+		case ETeam::Team1:
+			Projectile->CollisionBox->SetCollisionResponseToChannel(ECC_MESH_TEAM2, ECollisionResponse::ECR_Overlap);
+			break;
+		case ETeam::Team2:
+			Projectile->CollisionBox->SetCollisionResponseToChannel(ECC_MESH_TEAM1, ECollisionResponse::ECR_Overlap);
+			break;
+		}
+
+		UGameplayStatics::FinishSpawningActor(Projectile, SpawnTransform);
 	}
 }

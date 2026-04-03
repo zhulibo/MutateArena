@@ -58,6 +58,10 @@ public:
 	UPROPERTY(ReplicatedUsing = OnRep_JumpZVelocity)
 	FGameplayAttributeData JumpZVelocity;
 	ATTRIBUTE_ACCESSORS(UAttributeSetBase, JumpZVelocity)
+	
+	UPROPERTY(ReplicatedUsing = OnRep_BodyResistance)
+	FGameplayAttributeData BodyResistance;
+	ATTRIBUTE_ACCESSORS(UAttributeSetBase, BodyResistance)
 
 protected:
 	UFUNCTION()
@@ -74,6 +78,8 @@ protected:
 	virtual void OnRep_MaxWalkSpeed(const FGameplayAttributeData& OldMaxWalkSpeed);
 	UFUNCTION()
 	virtual void OnRep_JumpZVelocity(const FGameplayAttributeData& OldJumpZVelocity);
+	UFUNCTION()
+	virtual void OnRep_BodyResistance(const FGameplayAttributeData& OldBodyResistance);
 
 	void ClampAttr(const FGameplayAttribute& Attribute, float& NewValue) const;
 

@@ -156,6 +156,9 @@ struct FWeaponData : public FTableRowBase
 	
 	UPROPERTY(EditAnywhere)
 	int32 PelletNum = 1;
+	
+	UPROPERTY(EditAnywhere)
+	float PenetrationPower = 0.f;
 
 	UPROPERTY(EditAnywhere)
 	float AimingFOVMul = 0.9;

@@ -178,8 +178,6 @@ void ABaseCharacter::BeginPlay()
 			OverheadWidgetClass->BaseCharacter = this;
 		}
 	}
-
-	GetMesh()->OnComponentHit.AddUniqueDynamic(this, &ThisClass::OnHit);
 }
 
 // 增强输入
@@ -481,49 +479,9 @@ float ABaseCharacter::GetJumpZVelocity()
 	return AttributeSetBase ? AttributeSetBase->GetJumpZVelocity() : 0.f;
 }
 
-void ABaseCharacter::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
-	FVector NormalImpulse, const FHitResult& Hit)
+float ABaseCharacter::GetBodyResistance()
 {
-	// UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::OnHit Location: %s"), *Hit.ImpactPoint.ToString());
-	// UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::OnHit Rotation: %s"), *Hit.ImpactNormal.Rotation().ToString());
-
-	FRotator HitRotation = Hit.ImpactNormal.Rotation();
-	
-	if (BloodEffect)
-	{
-		auto BloodEffectComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
-			GetWorld(),
-			BloodEffect,
-			Hit.ImpactPoint,
-			FRotator(-HitRotation.Pitch, HitRotation.Yaw + 180.f, HitRotation.Roll)
-		);
-		if (BloodEffectComponent)
-		{
-			if (AProjectileBullet* ProjectileBullet = Cast<AProjectileBullet>(OtherActor))
-			{
-				float Damage = ProjectileBullet->GetDamage(Hit.Distance);
-				BloodEffectComponent->SetVariableInt(TEXT("Count"), ULibraryCommon::GetBloodParticleCount(Damage));
-			}
-			BloodEffectComponent->SetVariableLinearColor(TEXT("Color"), BloodColor);
-
-			UBloodCollision* CollisionCB = NewObject<UBloodCollision>(this);
-			BloodEffectComponent->SetVariableObject(TEXT("CollisionCB"), CollisionCB);
-		}
-	}
-	
-	if (BloodSmokeEffect)
-	{
-		auto BloodSmokeEffectComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
-			GetWorld(),
-			BloodSmokeEffect,
-			Hit.ImpactPoint,
-			FRotator(-HitRotation.Pitch, HitRotation.Yaw + 180.f, HitRotation.Roll)
-		);
-		if (BloodSmokeEffectComponent)
-		{
-			BloodSmokeEffectComponent->SetVariableLinearColor(TEXT("SmokeColor"), BloodColor);
-		}
-	}
+	return AttributeSetBase ? AttributeSetBase->GetBodyResistance() : 0.f;
 }
 
 void ABaseCharacter::Move(const FInputActionValue& Value)

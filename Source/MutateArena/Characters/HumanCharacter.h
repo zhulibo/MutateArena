@@ -24,7 +24,6 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	class UCrosshairComponent* CrosshairComp;
 	
-protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void PostInitializeComponents() override;
 	virtual void BeginPlay() override;
@@ -32,8 +31,9 @@ protected:
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void PossessedBy(AController* NewController) override;
 
-public:
+protected:
 	virtual void OnASCInit() override;
+public:
 	void OnMaxWalkSpeedChanged(const FOnAttributeChangeData& Data);
 	void OnSwappingTagChanged(FGameplayTag GameplayTag, int NewCount);
 	void OnAimingTagChanged(FGameplayTag GameplayTag, int NewCount);

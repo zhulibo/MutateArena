@@ -17,11 +17,11 @@ public:
 
 	friend class AHumanCharacter;
 
-protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void BeginPlay() override;
 	virtual void TickComponent(float DeltaSeconds, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
+protected:
 	UPROPERTY()
 	AHumanCharacter* HumanChar;
 	UPROPERTY()

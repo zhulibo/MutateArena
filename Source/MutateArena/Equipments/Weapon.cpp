@@ -69,6 +69,7 @@ void AWeapon::InitData()
 			bIsAutomatic = WeaponData->bIsAutomatic;
 			WalkSpeedMul = WeaponData->WalkSpeedMul;
 			PelletNum = WeaponData->PelletNum;
+			PenetrationPower = WeaponData->PenetrationPower;
 			
 			// 补给箱中的装备 TODO
 			if (EquipmentName == EEquipmentName::AK47_Cyclone)
