@@ -9,7 +9,6 @@
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "MetaSoundSource.h"
-#include "MutateArena/Effects/BloodCollision.h"
 #include "MutateArena/Equipments/Data/EquipmentAsset.h"
 #include "MutateArena/System/AssetSubsystem.h"
 #include "MutateArena/Utils/LibraryCommon.h"
@@ -248,8 +247,6 @@ void AProjectileBullet::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent,
             {
                 BloodEffectComponent->SetVariableInt(TEXT("Count"), ULibraryCommon::GetBloodParticleCount(FinalDamage));
                 BloodEffectComponent->SetVariableLinearColor(TEXT("Color"), DamagedActor->BloodColor);
-                UBloodCollision* CollisionCB = NewObject<UBloodCollision>(DamagedActor);
-                BloodEffectComponent->SetVariableObject(TEXT("CollisionCB"), CollisionCB);
             }
         }
         

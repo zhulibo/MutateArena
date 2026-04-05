@@ -68,9 +68,8 @@ void AThrowing::OnRep_EquipmentState(EEquipmentState OldState)
 
 void AThrowing::OnProjectileBounce(const FHitResult& ImpactResult, const FVector& ImpactVelocity)
 {
-	UE_LOG(LogTemp, Warning, TEXT("1"));
 	if (!HitSound || bHasBounced) return;
-	UE_LOG(LogTemp, Warning, TEXT("2"));
+
 	bHasBounced = true;
 
 	UGameplayStatics::SpawnSoundAttached(

@@ -21,10 +21,10 @@
 #include "MutateArena/System/AssetSubsystem.h"
 #include "MutateArena/Utils/LibraryCommon.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/MAMovementComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Data/InputAsset.h"
 #include "Data/CharacterAsset.h"
-#include "MutateArena/Effects/BloodCollision.h"
 #include "Kismet/GameplayStatics.h"
 #include "MutateArena/System/UISubsystem.h"
 #include "MutateArena/System/Tags/ProjectTags.h"
@@ -78,7 +78,7 @@ void AMutantCharacter::PostInitializeComponents()
 void AMutantCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-
+	
 	FString EnumValue = ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(MutantCharacterName));
 	FDataRegistryId DataRegistryId(DR_MUTANT_CHARACTER_MAIN, FName(EnumValue));
 	if (const FMutantCharacterMain* MutantCharacterMain = UDataRegistrySubsystem::Get()->GetCachedItem<FMutantCharacterMain>(DataRegistryId))
@@ -203,14 +203,12 @@ void AMutantCharacter::OnLocalCharacterLevelChanged(const FOnAttributeChangeData
 	{
 		MutationController->SetHUDSkill(ASC->GetTagCount(TAG_CD_MUTANT_SKILL) == 0 && Data.NewValue > 2.f);
 	}
-	UE_LOG(LogTemp, Warning, TEXT("1"));
+
 	if (MutationController)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("2"));
 		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(MutationController->GetLocalPlayer()))
 		{
 			UISubsystem->OnLevelChange.Broadcast(Data.NewValue);
-			UE_LOG(LogTemp, Warning, TEXT("3"));
 		}
 	}
 }
@@ -489,8 +487,6 @@ void AMutantCharacter::DropBlood(UPrimitiveComponent* OverlappedComponent, AActo
 			{
 				BloodEffectComponent->SetVariableInt(TEXT("Count"), ULibraryCommon::GetBloodParticleCount(Damage));
 				BloodEffectComponent->SetVariableLinearColor(TEXT("Color"), OverlappedCharacter->BloodColor);
-				UBloodCollision* CollisionCB = NewObject<UBloodCollision>(this);
-				BloodEffectComponent->SetVariableObject(TEXT("CollisionCB"), CollisionCB);
 			}
 			
 			auto BloodSmokeEffectComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
@@ -607,13 +603,60 @@ void AMutantCharacter::ServerSelectMutant_Implementation(EMutantCharacterName Te
 	}
 }
 
-void AMutantCharacter::MulticastRepel_Implementation(FVector ImpulseVector)
+void AMutantCharacter::ApplySuppressionForce(FVector HitDirection, float PushStrength)
 {
-	TSharedPtr<FRootMotionSource_ConstantForce> RootMotionSource = MakeShared<FRootMotionSource_ConstantForce>();
-	RootMotionSource->Force = ImpulseVector;
-	RootMotionSource->Duration = 0.1f;
-	RootMotionSource->AccumulateMode = ERootMotionAccumulateMode::Additive;
-	GetCharacterMovement()->ApplyRootMotionSource(RootMotionSource);
+    if (!HasAuthority() || !GetCharacterMovement()) return;
+
+    if (GetCharacterMovement()->MovementMode == MOVE_Custom && 
+        GetCharacterMovement()->CustomMovementMode == CMOVE_Ladder)
+    {
+        return; 
+    }
+
+    float CurrentTime = GetWorld()->GetTimeSeconds();
+    if (CurrentTime - LastRepelTime < RepelCooldown) return; 
+    LastRepelTime = CurrentTime;
+
+    float BaseDuration = 0.16f;
+    ExecuteRootMotionPush(HitDirection, PushStrength, BaseDuration);
+
+    if (!IsLocallyControlled())
+    {
+        Client_PredictSuppressionForce(HitDirection, PushStrength);
+    }
+}
+
+void AMutantCharacter::Client_PredictSuppressionForce_Implementation(FVector HitDirection, float PushStrength)
+{
+    LastRepelTime = GetWorld()->GetTimeSeconds();
+    
+    // 计算单程网络延迟 (Ping)
+    float PingSeconds = 0.05f;
+    if (APlayerState* PS = GetPlayerState())
+    {
+        PingSeconds = PS->GetPingInMilliseconds() / 1000.f;
+    }
+
+    // 将原本的 0.2 秒扣除掉延迟时间
+    float AdjustedDuration = FMath::Max(0.01f, 0.2f - PingSeconds); // 使用AdjustedDuration避免客户端本地被击退又拉回
+
+    ExecuteRootMotionPush(HitDirection, PushStrength, AdjustedDuration);
+}
+
+void AMutantCharacter::ExecuteRootMotionPush(FVector HitDirection, float PushStrength, float Duration)
+{
+    FVector PushDir = HitDirection;
+    if (!PushDir.Normalize()) return;
+
+    TSharedPtr<FRootMotionSource_ConstantForce> SmoothPush = MakeShared<FRootMotionSource_ConstantForce>();
+	
+    SmoothPush->InstanceName = FName("HitSuppression");
+    SmoothPush->Force = PushDir * PushStrength; 
+    SmoothPush->Duration = Duration; // 使用传进来的动态时间
+    SmoothPush->AccumulateMode = ERootMotionAccumulateMode::Additive;
+    SmoothPush->Settings.SetFlag(ERootMotionSourceSettingsFlags::IgnoreZAccumulate);
+	
+    GetCharacterMovement()->ApplyRootMotionSource(SmoothPush);
 }
 
 bool AMutantCharacter::CanInteract(ABaseCharacter* Interactor)

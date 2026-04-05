@@ -86,6 +86,7 @@ float AProjectile::GetDamage(float Distance)
 
 	return Damage;
 }
+
 // 子弹伤害会受到受穿透力影响，施加伤害时已计算在内，击退力受伤害影响，所以间接地也受到穿透力影响
 float AProjectile::GetImpulse(float DeclineDamage)
 {

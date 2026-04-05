@@ -6,7 +6,6 @@
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "MutateArena/Characters/Components/CombatComponent.h"
-#include "MutateArena/Effects/BloodCollision.h"
 #include "MutateArena/PlayerStates/TeamType.h"
 #include "MutateArena/Utils/LibraryCommon.h"
 #include "Components/CapsuleComponent.h"
@@ -186,8 +185,6 @@ void AMelee::DropBlood(UPrimitiveComponent* OverlappedComponent, AActor* OtherAc
 			{
 				BloodEffectComponent->SetVariableInt(TEXT("Count"), ULibraryCommon::GetBloodParticleCount(Damage));
 				BloodEffectComponent->SetVariableLinearColor(TEXT("Color"), OverlappedCharacter->BloodColor);
-				UBloodCollision* CollisionCB = NewObject<UBloodCollision>(this);
-				BloodEffectComponent->SetVariableObject(TEXT("CollisionCB"), CollisionCB);
 			}
 			
 			auto BloodSmokeEffectComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(

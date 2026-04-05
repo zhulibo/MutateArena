@@ -40,11 +40,11 @@ public:
 	UPROPERTY(Replicated)
 	ECommonInputType InputType;
 	
-protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void BeginPlay() override;
 	virtual void Destroyed() override;
 
+protected:
 	UPROPERTY()
 	class ABaseCharacter* BaseCharacter;
 	UPROPERTY()

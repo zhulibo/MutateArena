@@ -38,8 +38,6 @@ public:
 	
 	// Character
 	UPROPERTY(EditAnywhere, Category = "Character")
-	UMaterialInterface* MI_BloodDecal;
-	UPROPERTY(EditAnywhere, Category = "Character")
 	UMaterialInterface* MI_Overlay_Dead;
 	UPROPERTY(EditAnywhere, Category = "Audio")
 	

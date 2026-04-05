@@ -12,10 +12,10 @@ class MUTATEARENA_API UAnimInstHuman : public UAnimInstance
 
 public:
 	UAnimInstHuman();
-
-protected:
+	
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 
+protected:
 	UPROPERTY()
 	class AHumanCharacter* HumanChar;
 	UPROPERTY()

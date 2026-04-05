@@ -12,9 +12,9 @@ class MUTATEARENA_API UAnimInstMutant : public UAnimInstance
 public:
 	UAnimInstMutant();
 
-protected:
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 
+protected:
 	UPROPERTY()
 	class AMutantCharacter* MutantChar;
 	UPROPERTY()

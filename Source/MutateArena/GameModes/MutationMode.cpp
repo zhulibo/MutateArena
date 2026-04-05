@@ -464,11 +464,11 @@ void AMutationMode::MutantReceiveDamage(AMutantCharacter* DamagedCharacter, ABas
 	// 击退受伤者
 	if (AProjectileBullet* ProjectileBullet = Cast<AProjectileBullet>(DamageCauser))
 	{
-		FVector ImpulseVector = ProjectileBullet->GetActorForwardVector();
-		ImpulseVector.Z = 0.f;
-		DamagedCharacter->MulticastRepel(ImpulseVector * ProjectileBullet->GetImpulse(Damage) * DamagedState->GetRepelReceivedMul());
+		FVector ImpulseDirection = ProjectileBullet->GetActorForwardVector();
+		float ForceMagnitude = ProjectileBullet->GetImpulse(Damage) * DamagedState->GetRepelReceivedMul();
+		DamagedCharacter->ApplySuppressionForce(ImpulseDirection, ForceMagnitude);
 	}
-
+	
 	// 设置受伤者血量
 	float TakenDamage = Damage * MutationGameState->DamageMul * DamagedState->GetDamageReceivedMul();
 	const UDamageTypeBase* DamageTypeBase = Cast<UDamageTypeBase>(DamageType);

@@ -30,9 +30,14 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	class UMetaSoundSource* MutantBornSound;
-
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastRepel(FVector ImpulseVector);
+	
+	float LastRepelTime = 0.f;
+	UPROPERTY()
+	float RepelCooldown = 0.2f;
+	void ApplySuppressionForce(FVector HitDirection, float PushStrength);
+	UFUNCTION(Client, Reliable)
+	void Client_PredictSuppressionForce(FVector HitDirection, float PushStrength);
+	void ExecuteRootMotionPush(FVector HitDirection, float PushStrength, float Duration);
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void PostInitializeComponents() override;
