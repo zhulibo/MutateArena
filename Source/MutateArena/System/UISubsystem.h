@@ -44,6 +44,7 @@ DECLARE_MULTICAST_DELEGATE_TwoParams(FOnTeamNumChange, int32 TeamNum, ETeam Team
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnCurRoundChange, int32 Round);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnTotalRoundChange, int32 Round);
 DECLARE_MULTICAST_DELEGATE(FOnCause1000Damage);
+DECLARE_MULTICAST_DELEGATE(FOnCause1000Rage);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnSkillChange, bool bIsShow);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnRageChange, float Rage);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnLevelChange, float Level);
@@ -110,6 +111,7 @@ public:
 	FOnCurRoundChange OnCurRoundChange;
 	FOnTotalRoundChange OnTotalRoundChange;
 	FOnCause1000Damage OnCause1000Damage;
+	FOnCause1000Rage OnCause1000Rage;
 	FOnSkillChange OnSkillChange;
 	FOnRageChange OnRageChange;
 	FOnLevelChange OnLevelChange;

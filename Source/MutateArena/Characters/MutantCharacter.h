@@ -134,10 +134,10 @@ public:
 	UFUNCTION(Server, Reliable)
 	void ServerSelectMutant(EMutantCharacterName TempMutantCharacterName);
 
-protected:
 	// 交互
 	virtual bool CanInteract(ABaseCharacter* Interactor) override;
 	virtual void OnInteract_Server(ABaseCharacter* Interactor) override;
+protected:
 	void AddRageOnSuck();
 	UPROPERTY(ReplicatedUsing = OnRep_bSuckedDry)
 	bool bSuckedDry = false;

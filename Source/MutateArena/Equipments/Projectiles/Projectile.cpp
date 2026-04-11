@@ -75,7 +75,7 @@ float AProjectile::GetDamage(float Distance)
 {
 	float Damage = 0.f;
 
-	FDataRegistryId DataRegistryId(DR_WEAPON_DATA, OwnerName);
+	FDataRegistryId DataRegistryId(DR_WEAPON_DATA, FName(OwnerName));
 	if (const FWeaponData* WeaponData = UDataRegistrySubsystem::Get()->GetCachedItem<FWeaponData>(DataRegistryId))
 	{
 		if (UCurveFloat* DamageCurve = WeaponData->DamageCurve)
@@ -92,7 +92,7 @@ float AProjectile::GetImpulse(float DeclineDamage)
 {
 	float Impulse = 0.f;
 
-	FDataRegistryId DataRegistryId(DR_WEAPON_DATA, OwnerName);
+	FDataRegistryId DataRegistryId(DR_WEAPON_DATA, FName(OwnerName));
 	if (const FWeaponData* WeaponData = UDataRegistrySubsystem::Get()->GetCachedItem<FWeaponData>(DataRegistryId))
 	{
 		if (UCurveFloat* DamageCurve = WeaponData->DamageCurve)

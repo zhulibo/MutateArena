@@ -55,13 +55,22 @@
 #define MAP_MENU FString(TEXT("/Game/Maps/UI_Menu"))
 
 // 模式
-#define ALL FString(TEXT("All"))
-#define MUTATION FString(TEXT("Mutation"))
-#define TEAM_DEAD_MATCH FString(TEXT("TeamDeadMatch"))
-#define MELEE FString(TEXT("Melee"))
+#define ALL FName(TEXT("All"))
+#define MUTATION FName(TEXT("Mutation"))
+#define TEAM_DEAD_MATCH FName(TEXT("TeamDeadMatch"))
+#define MELEE FName(TEXT("Melee"))
 
 #define DEFAULT_MATCH_ROUND 12
 #define DEFAULT_MATCH_TIME 10
+
+// 设置
+#define ON FName(TEXT("on"))
+#define OFF FName(TEXT("off"))
+#define FULLSCREEN FName(TEXT("Fullscreen"))
+#define WIDOWED_FULLSCREEN FName(TEXT("WindowedFullscreen"))
+#define WIDOWED FName(TEXT("Windowed"))
+#define EN FName(TEXT("en"))
+#define ZH FName(TEXT("zh"))
 
 // 角色碰撞通道
 #define ECC_MESH_TEAM1 ECollisionChannel::ECC_GameTraceChannel1

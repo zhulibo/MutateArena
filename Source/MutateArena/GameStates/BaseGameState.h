@@ -14,14 +14,11 @@ class MUTATEARENA_API ABaseGameState : public AModularGameState
 	GENERATED_BODY()
 
 public:
-
-protected:
+	ABaseGameState();
+	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void BeginPlay() override;
-	UPROPERTY()
-	class ABaseController* BaseController;
 
-public:
 	virtual void OnRep_MatchState() override;
 protected:
 	virtual void HandleMatchHasStarted() override;
@@ -44,6 +41,9 @@ public:
 
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastAddKillLog(ABasePlayerState* AttackerState, const FText& CauserName, ABasePlayerState* DamagedState);
+	
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastMeleeLog(const FText& AttackerName, const FText& CauserName, const FText& DamagedName);
 	
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastSendMsg(EMsgType MsgType, ETeam Team, const FString& PlayerName, const FString& Msg = FString());

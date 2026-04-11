@@ -16,10 +16,10 @@ public:
 	USaveGameSetting();
 
 	UPROPERTY()
-	int32 Version = 1;
+	int32 Version = 2;
 
 	UPROPERTY()
-	FString Language;
+	FName Language;
 	UPROPERTY()
 	bool bHideSkins;
 	UPROPERTY()

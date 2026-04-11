@@ -539,7 +539,7 @@ void AMutationMode::SpawnMutantCharacter(AController* Controller, ESpawnMutantRe
 	FString CharacterName;
 	if (ABasePlayerState* BasePlayerState = Cast<ABasePlayerState>(Controller->PlayerState))
 	{
-		CharacterName = ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(BasePlayerState->MutantCharacterName));
+		CharacterName = StaticEnum<EMutantCharacterName>()->GetNameStringByValue(static_cast<int64>(BasePlayerState->MutantCharacterName));
 	}
 
 	// 获取角色类

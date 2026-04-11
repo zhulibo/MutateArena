@@ -98,7 +98,7 @@ public:
 	FName LocalLobbyName = TEXT("LocalLobbyName");
 	void CreateLobby();
 	FOnCreateLobbyComplete OnCreateLobbyComplete;
-	void FindLobbies(FString LobbyName, FString GameMode, FString MapName);
+	void FindLobbies(FString LobbyName, FName GameMode, FName MapName);
 	FOnFindLobbiesComplete OnFindLobbiesComplete;
 	void JoinLobby(TSharedPtr<const FLobby> Lobby);
 	FOnJoinLobbyComplete OnJoinLobbyComplete;

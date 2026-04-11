@@ -18,9 +18,6 @@ public:
 	
 	static FString GetFormatTime(int32 CountdownTime);
 	static FString GetNowFormatTime();
-	static FString GetEnumValue(const FString& EnumValue);
-	
-	static FColor GetProgressColor(double Value, double InRangeA, double InRangeB, FColor InColor, FColor OutColor);
 
 	static FString GetHashPrefix(const FString& Name);
 	static FString ObfuscateName(FString PlayerName, const UObject* Context);

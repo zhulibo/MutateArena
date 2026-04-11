@@ -215,8 +215,8 @@ void UEOSSubsystem::CreateLobby()
 	Params.JoinPolicy = ELobbyJoinPolicy::PublicAdvertised;
 	Params.Attributes.Emplace(LOBBY_VERSION, ULibraryCommon::GetProjectVersion());
 	Params.Attributes.Emplace(LOBBY_SERVER_NAME, FString(TEXT("Default Name")));
-	Params.Attributes.Emplace(LOBBY_MODE_NAME, MUTATION);
-	Params.Attributes.Emplace(LOBBY_MAP_NAME, FString(TEXT("Dust")));
+	Params.Attributes.Emplace(LOBBY_MODE_NAME, MUTATION.ToString());
+	Params.Attributes.Emplace(LOBBY_MAP_NAME, FString(TEXT("RoseManor")));
 	Params.Attributes.Emplace(LOBBY_MATCH_ROUND, static_cast<int64>(DEFAULT_MATCH_ROUND));
 	Params.Attributes.Emplace(LOBBY_MATCH_TIME, static_cast<int64>(DEFAULT_MATCH_TIME));
 	Params.Attributes.Emplace(LOBBY_STATUS, static_cast<int64>(0));
@@ -242,7 +242,7 @@ void UEOSSubsystem::CreateLobby()
 }
 
 // 查找大厅
-void UEOSSubsystem::FindLobbies(FString LobbyName, FString GameMode, FString MapName)
+void UEOSSubsystem::FindLobbies(FString LobbyName, FName GameMode, FName MapName)
 {
 	if (AuthPtr == nullptr || AccountInfo == nullptr || !AuthPtr->IsLoggedIn(AccountInfo->AccountId) || LobbyPtr == nullptr)
 	{
@@ -273,7 +273,7 @@ void UEOSSubsystem::FindLobbies(FString LobbyName, FString GameMode, FString Map
 		Params.Filters.Emplace(FFindLobbySearchFilter{
 			LOBBY_MODE_NAME,
 			ESchemaAttributeComparisonOp::Equals,
-			GameMode
+			GameMode.ToString()
 		});
 	}
 	if (MapName != ALL)
@@ -281,7 +281,7 @@ void UEOSSubsystem::FindLobbies(FString LobbyName, FString GameMode, FString Map
 		Params.Filters.Emplace(FFindLobbySearchFilter{
 			LOBBY_MAP_NAME,
 			ESchemaAttributeComparisonOp::Equals,
-			MapName
+			MapName.ToString()
 		});
 	}
 	// TODO 添加Status

@@ -1,8 +1,10 @@
 #include "CommonHUD.h"
 
 #include "CommonHierarchicalScrollBox.h"
+#include "CommonLazyImage.h"
 #include "CommonTextBlock.h"
 #include "DamageLogLine.h"
+#include "MetaSoundSource.h"
 #include "MutateArena/UI/HUD/CommonHUD/KillLogLine.h"
 #include "Spectator.h"
 #include "MutateArena/MutateArena.h"
@@ -15,6 +17,9 @@
 #include "Components/EditableTextBox.h"
 #include "Components/HorizontalBox.h"
 #include "Components/VerticalBox.h"
+#include "Kismet/GameplayStatics.h"
+#include "MutateArena/Assets/Data/CommonAsset.h"
+#include "MutateArena/System/AssetSubsystem.h"
 #include "MutateArena/System/UISubsystem.h"
 
 #define LOCTEXT_NAMESPACE "UCommonHUD"
@@ -31,6 +36,9 @@ void UCommonHUD::NativeOnInitialized()
 		UISubsystem->OnCauseDamage.AddUObject(this, &ThisClass::OnCauseDamage);
 		UISubsystem->OnAddKillLog.AddUObject(this, &ThisClass::OnAddKillLog);
 		UISubsystem->OnAFKHosting.AddUObject(this, &ThisClass::OnAFKHosting);
+		UISubsystem->OnCause1000Damage.AddUObject(this, &ThisClass::OnCombatIconChange, ECombatIconType::Cause1000Damage);
+		UISubsystem->OnCause1000Rage.AddUObject(this, &ThisClass::OnCombatIconChange, ECombatIconType::Cause1000Rage);
+		UISubsystem->OnBeImmune.AddUObject(this, &ThisClass::OnCombatIconChange, ECombatIconType::BeImmune);
 	}
 	
 	// 默认隐藏聊天输入框
@@ -73,14 +81,17 @@ void UCommonHUD::ClearAnnouncement()
 
 void UCommonHUD::OnKillStreakChange(int Num)
 {
+	GetWorld()->GetTimerManager().SetTimer(HiddenKillStreakTimerHandle, this, &ThisClass::HiddenKillStreak, 3.f);
+	
 	if (Num > 1)
 	{
 		KillStreak->SetText(FText::FromString(FString::Printf(TEXT("%d KILL"), Num)));
 	}
-	else
-	{
-		KillStreak->SetText(FText());
-	}
+}
+
+void UCommonHUD::HiddenKillStreak()
+{
+	KillStreak->SetText(FText());
 }
 
 void UCommonHUD::OnAddKillLog(ABasePlayerState* AttackerState, const FText& CauserName, ABasePlayerState* DamagedState)
@@ -97,7 +108,6 @@ void UCommonHUD::OnAddKillLog(ABasePlayerState* AttackerState, const FText& Caus
 			// 攻击者
 			if (AttackerState)
 			{
-				
 				KillLogLine->AttackerPlayer->SetText(FText::FromString(ULibraryCommon::ObfuscateName(AttackerState->GetPlayerName(), this)));
 				if (LocalPlayerState)
 				{
@@ -239,6 +249,51 @@ void UCommonHUD::OnCauseDamage(float Num)
 void UCommonHUD::OnAFKHosting(bool bIsHosting)
 {
 	HostingBox->SetVisibility(bIsHosting ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+}
+
+void UCommonHUD::OnCombatIconChange(ECombatIconType CombatIconType)
+{
+	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+	if (AssetSubsystem == nullptr || AssetSubsystem->CommonAsset == nullptr) return;
+
+	CombatIcon->SetVisibility(ESlateVisibility::HitTestInvisible);
+	
+	GetWorld()->GetTimerManager().SetTimer(CombatIconTimerHandle, this, &ThisClass::ClearCombatIcon, 3.f);
+	
+	switch (CombatIconType)
+	{
+	case ECombatIconType::Cause1000Damage:
+		CombatIcon->SetBrushFromLazyTexture(AssetSubsystem->CommonAsset->Cause1000DamageTexture);
+		
+		if (UAudioComponent* AudioComponent = UGameplayStatics::SpawnSound2D(this, AssetSubsystem->CommonAsset->Cause1000DamageSound))
+		{
+			// AudioComponent->SetFloatParameter(TEXT("Index"), 1);
+		}
+		break;
+		
+	case ECombatIconType::Cause1000Rage:
+		CombatIcon->SetBrushFromLazyTexture(AssetSubsystem->CommonAsset->Cause1000RageTexture);
+		
+		if (UAudioComponent* AudioComponent = UGameplayStatics::SpawnSound2D(this, AssetSubsystem->CommonAsset->Cause1000DamageSound))
+		{
+			// AudioComponent->SetFloatParameter(TEXT("Index"), 1);
+		}
+		break;
+		
+	case ECombatIconType::BeImmune:
+		CombatIcon->SetBrushFromLazyTexture(AssetSubsystem->CommonAsset->BeImmuneTexture);
+		
+		if (UAudioComponent* AudioComponent = UGameplayStatics::SpawnSound2D(this, AssetSubsystem->CommonAsset->Cause1000DamageSound))
+		{
+			// AudioComponent->SetFloatParameter(TEXT("Index"), 1);
+		}
+		break;
+	}
+}
+
+void UCommonHUD::ClearCombatIcon()
+{
+	CombatIcon->SetVisibility(ESlateVisibility::Hidden);
 }
 
 #undef LOCTEXT_NAMESPACE

@@ -14,8 +14,13 @@
 #include "MutateArena/UI/TextChat/TextChat.h"
 #include "MutateArena/Utils/LibraryNotify.h"
 #include "Components/EditableTextBox.h"
+#include "Internationalization/StringTable.h"
+#include "MutateArena/Assets/Data/CommonAsset.h"
+#include "MutateArena/System/AssetSubsystem.h"
 #include "MutateArena/System/UISubsystem.h"
 #include "MutateArena/System/Tags/ProjectTags.h"
+#include "MutateArena/UI/Common/ComboBoxItem.h"
+#include "MutateArena/UI/Common/CommonComboBox2.h"
 
 #define LOCTEXT_NAMESPACE "ULobby"
 
@@ -24,6 +29,16 @@ void ULobby::NativeOnInitialized()
 	Super::NativeOnInitialized();
 
 	ServerNameEditableTextBox->OnTextCommitted.AddUniqueDynamic(this, &ThisClass::OnServerNameCommitted);
+	
+	ModeComboBox->OnGenerateItemWidget.BindDynamic(this, &ThisClass::GenerateComboBoxWidget);
+	ModeComboBox->OnGenerateContentWidget.BindDynamic(this, &ThisClass::GenerateComboBoxWidget);
+	MapComboBox->OnGenerateItemWidget.BindDynamic(this, &ThisClass::GenerateComboBoxWidget);
+	MapComboBox->OnGenerateContentWidget.BindDynamic(this, &ThisClass::GenerateComboBoxWidget);
+	MatchRoundComboBox->OnGenerateItemWidget.BindDynamic(this, &ThisClass::GenerateComboBoxWidget);
+	MatchRoundComboBox->OnGenerateContentWidget.BindDynamic(this, &ThisClass::GenerateComboBoxWidget);
+	MatchTimeComboBox->OnGenerateItemWidget.BindDynamic(this, &ThisClass::GenerateComboBoxWidget);
+	MatchTimeComboBox->OnGenerateContentWidget.BindDynamic(this, &ThisClass::GenerateComboBoxWidget);
+
 	ModeComboBox->OnSelectionChanged.AddUniqueDynamic(this, &ThisClass::OnModeComboBoxChanged);
 	MapComboBox->OnSelectionChanged.AddUniqueDynamic(this, &ThisClass::OnMapComboBoxChanged);
 	MatchRoundComboBox->OnSelectionChanged.AddUniqueDynamic(this, &ThisClass::OnMatchRoundComboBoxChanged);
@@ -109,32 +124,36 @@ void ULobby::SetUIAttr()
 	LastServerName = FText::FromString(ServerName);
 
 	ModeComboBox->ClearOptions();
+	const UEnum* ModeEnum = StaticEnum<ECoolGameMode>();
 	for (int32 i = 0; i < static_cast<int32>(ECoolGameMode::None); ++i)
 	{
-		FString EnumValue = ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(static_cast<ECoolGameMode>(i)));
-		ModeComboBox->AddOption(EnumValue);
+		FName EnumKey = FName(*ModeEnum->GetNameStringByIndex(i));
+		ModeComboBox->AddOption(EnumKey);
 	}
-	ModeComboBox->SetSelectedOption(EOSSubsystem->GetLobbyModeName());
+	ModeComboBox->SetSelectedOption(FName(*EOSSubsystem->GetLobbyModeName()));
 
 	GetWorld()->GetTimerManager().SetTimerForNextTick([this]() {
-		MapComboBox->SetSelectedOption(EOSSubsystem->GetLobbyMapName());
+		MapComboBox->SetSelectedOption(FName(*EOSSubsystem->GetLobbyMapName()));
 	});
 	
 	MatchRoundComboBox->ClearOptions();
-	MatchRoundComboBox->AddOption(FString::FromInt(6));
-	MatchRoundComboBox->AddOption(FString::FromInt(9));
-	MatchRoundComboBox->AddOption(FString::FromInt(DEFAULT_MATCH_ROUND));
-	MatchRoundComboBox->AddOption(FString::FromInt(15));
-	MatchRoundComboBox->AddOption(FString::FromInt(18));
-	MatchRoundComboBox->SetSelectedOption(FString::FromInt(EOSSubsystem->GetLobbyMatchRound()));
+	MatchRoundComboBox->AddOption(FName(FString::FromInt(6)));
+	MatchRoundComboBox->AddOption(FName(FString::FromInt(9)));
+	MatchRoundComboBox->AddOption(FName(FString::FromInt(DEFAULT_MATCH_ROUND)));
+	MatchRoundComboBox->AddOption(FName(FString::FromInt(15)));
+	MatchRoundComboBox->AddOption(FName(FString::FromInt(18)));
+	UE_LOG(LogTemp, Warning, TEXT("MatchRound: %lld"), EOSSubsystem->GetLobbyMatchRound()); 
+	MatchRoundComboBox->SetSelectedOption(FName(FString::FromInt(EOSSubsystem->GetLobbyMatchRound())));
 	
 	MatchTimeComboBox->ClearOptions();
-	MatchTimeComboBox->AddOption(FString::FromInt(6));
-	MatchTimeComboBox->AddOption(FString::FromInt(8));
-	MatchTimeComboBox->AddOption(FString::FromInt(DEFAULT_MATCH_TIME));
-	MatchTimeComboBox->AddOption(FString::FromInt(15));
-	MatchTimeComboBox->AddOption(FString::FromInt(25));
-	MatchTimeComboBox->SetSelectedOption(FString::FromInt(EOSSubsystem->GetLobbyMatchTime()));
+	MatchTimeComboBox->AddOption(FName(FString::FromInt(6)));
+	MatchTimeComboBox->AddOption(FName(FString::FromInt(8)));
+	MatchTimeComboBox->AddOption(FName(FString::FromInt(DEFAULT_MATCH_TIME)));
+	MatchTimeComboBox->AddOption(FName(FString::FromInt(15)));
+	MatchTimeComboBox->AddOption(FName(FString::FromInt(25)));
+	UE_LOG(LogTemp, Warning, TEXT("GetLobbyMatchTime: %lld"), EOSSubsystem->GetLobbyMatchTime()); 
+	
+	MatchTimeComboBox->SetSelectedOption(FName(FString::FromInt(EOSSubsystem->GetLobbyMatchTime())));
 }
 
 // 设置按钮状态
@@ -301,10 +320,10 @@ void ULobby::InitMapComboBox()
 
 	if (ModeComboBox->GetSelectedOption() == MUTATION)
 	{
+		const UEnum* MapEnum = StaticEnum<EMutationMap>();
 		for (int32 i = 0; i < static_cast<int32>(EMutationMap::None); ++i)
 		{
-			FString EnumValue = ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(static_cast<EMutationMap>(i)));
-			MapComboBox->AddOption(EnumValue);
+			MapComboBox->AddOption(FName(MapEnum->GetNameStringByIndex(i)));
 		}
 
 		if (UPanelWidget* ParentWidget = MatchRoundComboBox->GetParent())
@@ -318,10 +337,10 @@ void ULobby::InitMapComboBox()
 	}
 	else if (ModeComboBox->GetSelectedOption() == MELEE)
 	{
+		const UEnum* MapEnum = StaticEnum<EMeleeMap>();
 		for (int32 i = 0; i < static_cast<int32>(EMeleeMap::None); ++i)
 		{
-			FString EnumValue = ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(static_cast<EMeleeMap>(i)));
-			MapComboBox->AddOption(EnumValue);
+			MapComboBox->AddOption(FName(MapEnum->GetNameStringByIndex(i)));
 		}
 		
 		if (UPanelWidget* ParentWidget = MatchRoundComboBox->GetParent())
@@ -335,10 +354,10 @@ void ULobby::InitMapComboBox()
 	}
 	else if (ModeComboBox->GetSelectedOption() == TEAM_DEAD_MATCH)
 	{
+		const UEnum* MapEnum = StaticEnum<ETeamDeadMatchMap>();
 		for (int32 i = 0; i < static_cast<int32>(ETeamDeadMatchMap::None); ++i)
 		{
-			FString EnumValue = ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(static_cast<ETeamDeadMatchMap>(i)));
-			MapComboBox->AddOption(EnumValue);
+			MapComboBox->AddOption(FName(MapEnum->GetNameStringByIndex(i)));
 		}
 		
 		if (UPanelWidget* ParentWidget = MatchRoundComboBox->GetParent())
@@ -381,9 +400,9 @@ void ULobby::OnServerNameCommitted(const FText& Text, ETextCommit::Type CommitMe
 	}
 }
 
-void ULobby::OnModeComboBoxChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
+void ULobby::OnModeComboBoxChanged(FName SelectedItem, ESelectInfo::Type SelectionType)
 {
-	UE_LOG(LogTemp, Warning, TEXT("OnModeComboBoxChanged, %s"), *SelectedItem);
+	UE_LOG(LogTemp, Warning, TEXT("OnModeComboBoxChanged, %s"), *SelectedItem.ToString());
 
 	InitMapComboBox();
 
@@ -392,27 +411,45 @@ void ULobby::OnModeComboBoxChanged(FString SelectedItem, ESelectInfo::Type Selec
 		// 代码修改Mode，由赋值处处理
 		if (SelectionType != ESelectInfo::Direct)
 		{
-			MapComboBox->SetSelectedIndex(0);
+			FName FirstMapName;
+			if (SelectedItem == MUTATION)
+			{
+				FirstMapName = FName(StaticEnum<EMutationMap>()->GetNameStringByIndex(0));
+			}
+			else if (SelectedItem == MELEE)
+			{
+				FirstMapName = FName(StaticEnum<EMeleeMap>()->GetNameStringByIndex(0));
+			}
+			else if (SelectedItem == TEAM_DEAD_MATCH)
+			{
+				FirstMapName = FName(StaticEnum<ETeamDeadMatchMap>()->GetNameStringByIndex(0));
+			}
+
+			// 将焦点设置到获取到的第一项上
+			if (!FirstMapName.IsNone())
+			{
+				MapComboBox->SetSelectedOption(FirstMapName);
+			}
 		}
 	}
 }
 
-void ULobby::OnMapComboBoxChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
+void ULobby::OnMapComboBoxChanged(FName SelectedItem, ESelectInfo::Type SelectionType)
 {
-	UE_LOG(LogTemp, Warning, TEXT("OnMapComboBoxChanged, %s"), *SelectedItem);
+	UE_LOG(LogTemp, Warning, TEXT("OnMapComboBoxChanged, %s"), *SelectedItem.ToString());
 	// InitMapComboBox引起OnMapComboBoxChanged时，SelectedItem为空
-	if (SelectedItem.IsEmpty()) return;
+	if (SelectedItem.IsNone()) return;
 
 	if (EOSSubsystem && EOSSubsystem->IsLobbyHost())
 	{
 		TMap<FSchemaAttributeId, FSchemaVariant> UpdatedAttributes;
 		if (ModeComboBox->GetSelectedOption() != EOSSubsystem->GetLobbyModeName())
 		{
-			UpdatedAttributes.Add(LOBBY_MODE_NAME, ModeComboBox->GetSelectedOption());
+			UpdatedAttributes.Add(LOBBY_MODE_NAME, ModeComboBox->GetSelectedOption().ToString());
 		}
 		if (SelectedItem != EOSSubsystem->GetLobbyMapName())
 		{
-			UpdatedAttributes.Add(LOBBY_MAP_NAME, SelectedItem);
+			UpdatedAttributes.Add(LOBBY_MAP_NAME, SelectedItem.ToString());
 		}
 		if (UpdatedAttributes.Num() > 0)
 		{
@@ -422,34 +459,76 @@ void ULobby::OnMapComboBoxChanged(FString SelectedItem, ESelectInfo::Type Select
 	}
 }
 
-void ULobby::OnMatchRoundComboBoxChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
+void ULobby::OnMatchRoundComboBoxChanged(FName SelectedItem, ESelectInfo::Type SelectionType)
 {
-	UE_LOG(LogTemp, Warning, TEXT("OnMatchRoundComboBoxChanged, %s"), *SelectedItem);
+	UE_LOG(LogTemp, Warning, TEXT("OnMatchRoundComboBoxChanged, %s"), *SelectedItem.ToString());
 
-	if (SelectedItem.IsEmpty()) return;
+	if (SelectedItem.IsNone()) return;
 
 	if (EOSSubsystem && EOSSubsystem->IsLobbyHost())
 	{
 		TMap<FSchemaAttributeId, FSchemaVariant> UpdatedAttributes;
-		int64 MatchRound = FCString::Atoi(*SelectedItem);
+		int64 MatchRound = FCString::Atoi(*SelectedItem.ToString());
 		UpdatedAttributes.Add(LOBBY_MATCH_ROUND, MatchRound);
 		EOSSubsystem->ModifyLobbyAttr(UpdatedAttributes);
 	}
 }
 
-void ULobby::OnMatchTimeComboBoxChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
+void ULobby::OnMatchTimeComboBoxChanged(FName SelectedItem, ESelectInfo::Type SelectionType)
 {
-	UE_LOG(LogTemp, Warning, TEXT("OnMatchTimeComboBoxChanged, %s"), *SelectedItem);
+	UE_LOG(LogTemp, Warning, TEXT("OnMatchTimeComboBoxChanged, %s"), *SelectedItem.ToString());
 
-	if (SelectedItem.IsEmpty()) return;
+	if (SelectedItem.IsNone()) return;
 
 	if (EOSSubsystem && EOSSubsystem->IsLobbyHost())
 	{
 		TMap<FSchemaAttributeId, FSchemaVariant> UpdatedAttributes;
-		int64 MatchTime = FCString::Atoi(*SelectedItem);
+		int64 MatchTime = FCString::Atoi(*SelectedItem.ToString());
 		UpdatedAttributes.Add(LOBBY_MATCH_TIME, MatchTime);
 		EOSSubsystem->ModifyLobbyAttr(UpdatedAttributes);
 	}
+}
+
+UWidget* ULobby::GenerateComboBoxWidget(FName ItemName)
+{
+	UAssetSubsystem* AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+	if (AssetSubsystem == nullptr || AssetSubsystem->CommonAsset == nullptr) return nullptr;
+	
+	UComboBoxItem* ItemWidget = CreateWidget<UComboBoxItem>(this, AssetSubsystem->CommonAsset->ComboBoxItemClass);
+	if (!ItemWidget) return nullptr;
+	
+	FText DisplayText;
+	FString ItemString = ItemName.ToString();
+
+	// 优先判断是否为纯数字
+	if (ItemString.IsNumeric())
+	{
+		DisplayText = FText::FromString(ItemString);
+	}
+	else
+	{
+		// 非数字时，走翻译表逻辑
+		if (AssetSubsystem->CommonAsset->ST_Common)
+		{
+			FText TableText = FText::FromStringTable(AssetSubsystem->CommonAsset->ST_Common->GetStringTableId(), ItemString);
+			if (!TableText.IsEmpty())
+			{
+				DisplayText = TableText;
+			}
+			else
+			{
+				DisplayText = FText::FromName(ItemName);
+			}
+		}
+		else
+		{
+			DisplayText = FText::FromName(ItemName);
+		}
+	}
+
+	ItemWidget->ItemText->SetText(DisplayText);
+
+	return ItemWidget;
 }
 
 // 修改大厅属性完成事件
@@ -489,7 +568,7 @@ void ULobby::OnLobbyAttrChanged(const FLobbyAttributesChanged& LobbyAttributesCh
 		else if (ChangedAttribute.Key == LOBBY_MODE_NAME)
 		{
 			FString ModeName = ChangedAttribute.Value.Value.GetString();
-			ModeComboBox->SetSelectedOption(ModeName);
+			ModeComboBox->SetSelectedOption(FName(ModeName));
 
 			TextChat->ShowMsg(EMsgType::ModeNameChange, PlayerTeam, PlayerName, ModeName);
 		}
@@ -498,7 +577,7 @@ void ULobby::OnLobbyAttrChanged(const FLobbyAttributesChanged& LobbyAttributesCh
 			// mode和map同时改变时，等待InitMapComboBox
 			FString MapName = ChangedAttribute.Value.Value.GetString();
 			GetWorld()->GetTimerManager().SetTimerForNextTick([this, MapName]() {
-				MapComboBox->SetSelectedOption(MapName);
+				MapComboBox->SetSelectedOption(FName(MapName));
 			});
 			
 			TextChat->ShowMsg(EMsgType::MapNameChange, PlayerTeam, PlayerName, MapName);
@@ -507,7 +586,7 @@ void ULobby::OnLobbyAttrChanged(const FLobbyAttributesChanged& LobbyAttributesCh
 		{
 			FString MatchRound = FString::FromInt(ChangedAttribute.Value.Value.GetInt64());
 			GetWorld()->GetTimerManager().SetTimerForNextTick([this, MatchRound]() {
-				MatchRoundComboBox->SetSelectedOption(MatchRound);
+				MatchRoundComboBox->SetSelectedOption(FName(MatchRound));
 			});
 
 			TextChat->ShowMsg(EMsgType::MatchRoundChange, PlayerTeam, PlayerName, MatchRound);
@@ -516,7 +595,7 @@ void ULobby::OnLobbyAttrChanged(const FLobbyAttributesChanged& LobbyAttributesCh
 		{
 			FString MatchTime = FString::FromInt(ChangedAttribute.Value.Value.GetInt64());
 			GetWorld()->GetTimerManager().SetTimerForNextTick([this, MatchTime]() {
-				MatchTimeComboBox->SetSelectedOption(MatchTime);
+				MatchTimeComboBox->SetSelectedOption(FName(MatchTime));
 			});
 
 			TextChat->ShowMsg(EMsgType::MatchTimeChange, PlayerTeam, PlayerName, MatchTime);
@@ -647,7 +726,7 @@ bool ULobby::CanStartServer()
 {
 	if (EOSSubsystem == nullptr || !EOSSubsystem->IsLobbyHost() || EOSSubsystem->CurLobby == nullptr) return false;
 
-	if (MapComboBox->GetSelectedOption().IsEmpty())
+	if (MapComboBox->GetSelectedOption().IsNone())
 	{
 		NOTIFY(this, C_YELLOW, LOCTEXT("NeedSelectMap", "Please select map"));
 		return false;
@@ -818,7 +897,8 @@ void ULobby::OnTravelFailure(UWorld* World, ETravelFailure::Type Arg, const FStr
 {
 	bIsActioning = false;
 
-	FString Msg = ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(Arg));
+	FString Msg = StaticEnum<ETravelFailure::Type>()->GetNameStringByValue(static_cast<int64>(Arg));
+	
 	NOTIFY(this, C_RED, FText::Format(LOCTEXT("TravelFailure", "Travel failed: Type {0} Error {1}"), FText::FromString(Msg), FText::FromString(String)));
 }
 

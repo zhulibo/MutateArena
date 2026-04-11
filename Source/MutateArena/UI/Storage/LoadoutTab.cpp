@@ -65,7 +65,6 @@ void ULoadoutTab::HandleOnTabSelected(FName TabId)
 	if (bIsInitialized)
 	{
 		bIsInitialized = false;
-		UE_LOG(LogTemp, Warning, TEXT("ULoadoutTab"));
 		
 		return;
 	}

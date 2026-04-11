@@ -24,7 +24,10 @@
 #include "Components/ScrollBoxSlot.h"
 #include "Components/WrapBox.h"
 #include "Components/WrapBoxSlot.h"
+#include "Internationalization/StringTable.h"
+#include "MutateArena/Assets/Data/CommonAsset.h"
 #include "MutateArena/Characters/Data/DNAAsset2.h"
+#include "MutateArena/System/AssetSubsystem.h"
 #include "MutateArena/System/DataAssetManager.h"
 #include "MutateArena/System/UISubsystem.h"
 #include "MutateArena/System/Tags/ProjectTags.h"
@@ -352,16 +355,20 @@ void UStorage::AddStorageTypeButton()
 				NewSlot->SetPadding(FMargin(0, 0, 20, 0));
 			}
 		}
-
+		
+		UAssetSubsystem* AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
 		// 装备按钮
 		for (int32 i = 0; i < static_cast<int32>(EEquipmentType::None); ++i)
 		{
 			if (UCommonButton* EquipmentTypeButton = CreateWidget<UCommonButton>(this, StorageTypeButtonClass))
 			{
-				FString EnumValue = ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(static_cast<EEquipmentType>(i)));
-				FText ButtonText = FText();
-				FText::FindTextInLiveTable_Advanced(CULTURE_EQUIPMENT_TYPE, EnumValue, ButtonText);
-				EquipmentTypeButton->ButtonText->SetText(ButtonText);
+				FString EnumValue = StaticEnum<EEquipmentType>()->GetNameStringByIndex(i);
+				FText TableText = FText::FromString(EnumValue);
+				if (AssetSubsystem && AssetSubsystem->CommonAsset && AssetSubsystem->CommonAsset->ST_Common)
+				{
+					TableText = FText::FromStringTable(AssetSubsystem->CommonAsset->ST_Common->GetStringTableId(), EnumValue);
+				}
+				EquipmentTypeButton->ButtonText->SetText(TableText);
 				
 				EquipmentTypeButton->Name = EnumValue;
 				EquipmentTypeButton->SetIsSelectable(true);
@@ -432,7 +439,7 @@ void UStorage::AddEquipments(FString EquipmentType)
 	for (const TPair<FDataRegistryId, const uint8*>& Pair : EquipmentMains)
 	{
 		FEquipmentMain ItemValue = *reinterpret_cast<const FEquipmentMain*>(Pair.Value);
-		FString EnumValue = ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(ItemValue.EquipmentType));
+		FString EnumValue = StaticEnum<EEquipmentType>()->GetNameStringByValue(static_cast<int64>(ItemValue.EquipmentType));
 
 		if (EquipmentType == STORAGE_TYPE_ALL || EnumValue == EquipmentType)
 		{

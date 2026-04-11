@@ -12,11 +12,11 @@ class MUTATEARENA_API AMutationPlayerState : public ABasePlayerState
 public:
 	AMutationPlayerState();
 
-protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void BeginPlay() override;
 	virtual void Reset() override;
-
+	
+protected:
 	UPROPERTY()
 	class AMutationController* MutationController;
 
@@ -43,10 +43,13 @@ public:
 	float RageLevel2 = 8000.f;
 	UPROPERTY()
 	float RageLevel3 = 12000.f;
-
+	float BaseRage = 0.f;
+	void Show1000RageUI(float TempRage);
+	
 protected:
 	UFUNCTION()
-	void OnRep_Rage();
+	void OnRep_Rage(float OldValue);
+	void ShowRageUI();
 	void ApplyLevelUpEffect();
 	UFUNCTION(Client, Reliable)
 	void ClientOnLevelUp();

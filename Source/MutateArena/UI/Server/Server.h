@@ -34,14 +34,15 @@ protected:
 	// 搜索大厅
 	UPROPERTY(meta = (BindWidget))
 	class UEditableTextBox* ServerNameEditableTextBox;
-
+	
 	UPROPERTY(meta = (BindWidget))
-	class UCommonComboBox* ModeComboBox;
+	class UCommonComboBox2* ModeComboBox;
 	UFUNCTION()
-	void OnModeComboBoxChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
-
+	void OnModeComboBoxChanged(FName SelectedItem, ESelectInfo::Type SelectionType);
+	UFUNCTION()
+	UWidget* GenerateComboBoxWidget(FName ItemName);
 	UPROPERTY(meta = (BindWidget))
-	UCommonComboBox* MapComboBox;
+	UCommonComboBox2* MapComboBox;
 
 	UPROPERTY(meta = (BindWidget))
 	UCommonButton* RefreshServerButton;

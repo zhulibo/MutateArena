@@ -38,7 +38,7 @@ public:
 	EDNA DNA2 = EDNA::AcceleratedClotting;
 
 	UPROPERTY()
-	FString Language;
+	FName Language;
 	UPROPERTY()
 	bool bHideSkins = false;
 	UPROPERTY()

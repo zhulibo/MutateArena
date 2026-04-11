@@ -45,22 +45,24 @@ protected:
 	UFUNCTION()
 	void OnServerNameCommitted(const FText& Text, ETextCommit::Type CommitMethod);
 	UPROPERTY(meta = (BindWidget))
-	class UCommonComboBox* ModeComboBox;
+	class UCommonComboBox2* ModeComboBox;
 	UFUNCTION()
-	void OnModeComboBoxChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
+	void OnModeComboBoxChanged(FName SelectedItem, ESelectInfo::Type SelectionType);
 	UPROPERTY(meta = (BindWidget))
-	UCommonComboBox* MapComboBox;
+	UCommonComboBox2* MapComboBox;
 	UFUNCTION()
-	void OnMapComboBoxChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
+	void OnMapComboBoxChanged(FName SelectedItem, ESelectInfo::Type SelectionType);
 	UPROPERTY(meta = (BindWidget))
-	UCommonComboBox* MatchRoundComboBox;
+	UCommonComboBox2* MatchRoundComboBox;
 	UFUNCTION()
-	void OnMatchRoundComboBoxChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
+	void OnMatchRoundComboBoxChanged(FName SelectedItem, ESelectInfo::Type SelectionType);
 	UPROPERTY(meta = (BindWidget))
-	UCommonComboBox* MatchTimeComboBox;
+	UCommonComboBox2* MatchTimeComboBox;
 	UFUNCTION()
-	void OnMatchTimeComboBoxChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
-
+	void OnMatchTimeComboBoxChanged(FName SelectedItem, ESelectInfo::Type SelectionType);
+	UFUNCTION()
+	UWidget* GenerateComboBoxWidget(FName ItemName);
+	
 	void OnModifyLobbyAttrComplete(bool bWasSuccessful);
 	void OnLobbyAttrChanged(const FLobbyAttributesChanged& LobbyAttributesChanged);
 

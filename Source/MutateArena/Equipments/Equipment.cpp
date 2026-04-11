@@ -67,7 +67,7 @@ void AEquipment::BeginPlay()
 {
 	Super::BeginPlay();
 
-	FString EnumValue = ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(EquipmentName));
+	FString EnumValue = StaticEnum<EEquipmentName>()->GetNameStringByValue(static_cast<int64>(EquipmentName));
 	FDataRegistryId DataRegistryId(DR_EQUIPMENT_MAIN, FName(EnumValue));
 	if (const FEquipmentMain* EquipmentMain = UDataRegistrySubsystem::Get()->GetCachedItem<FEquipmentMain>(DataRegistryId))
 	{
@@ -85,7 +85,7 @@ void AEquipment::BeginPlay()
 		if (StorageSubsystem == nullptr) StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
 		if (StorageSubsystem->CacheSetting->bHideSkins && !bIsMyOwnWeapon && EquipmentName != EquipmentParentName)
 		{
-			FString EnumValue2 = ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(EquipmentParentName));
+			FString EnumValue2 = StaticEnum<EEquipmentName>()->GetNameStringByValue(static_cast<int64>(EquipmentParentName));
 			FDataRegistryId DataRegistryId2(DR_EQUIPMENT_MAIN, FName(EnumValue2));
 			if (const FEquipmentMain* EquipmentMain2 = UDataRegistrySubsystem::Get()->GetCachedItem<FEquipmentMain>(DataRegistryId2))
 			{

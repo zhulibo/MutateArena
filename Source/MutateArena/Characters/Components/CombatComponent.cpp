@@ -312,7 +312,7 @@ void UCombatComponent::AttachToHand(AEquipment* Equipment, FName SocketNameSuffi
 {
 	if (HumanChar == nullptr || HumanChar->GetMesh() == nullptr || Equipment == nullptr) return;
 
-	FString EquipmentName = ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(Equipment->EquipmentParentName)) + SocketNameSuffix.ToString();
+	FString EquipmentName = StaticEnum<EEquipmentName>()->GetNameStringByValue(static_cast<int64>(Equipment->EquipmentParentName)) + SocketNameSuffix.ToString();
 
 	if (const USkeletalMeshSocket* HandSocket = HumanChar->GetMesh()->GetSocketByName(*EquipmentName))
 	{

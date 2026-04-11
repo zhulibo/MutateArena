@@ -43,21 +43,6 @@ FString ULibraryCommon::GetNowFormatTime()
 	return FString::Printf(TEXT("%02d:%02d:%02d"), Hour, Minute, Second);
 }
 
-FString ULibraryCommon::GetEnumValue(const FString& EnumValue)
-{
-	return EnumValue.Right(EnumValue.Len() - EnumValue.Find("::") - 2);
-}
-
-FColor ULibraryCommon::GetProgressColor(double Value, double InRangeA, double InRangeB, FColor InColor, FColor OutColor)
-{
-	int32 R = UKismetMathLibrary::MapRangeClamped(Value, InRangeA, InRangeB, InColor.R, OutColor.R);
-	int32 G = UKismetMathLibrary::MapRangeClamped(Value, InRangeA, InRangeB, InColor.G, OutColor.G);
-	int32 B = UKismetMathLibrary::MapRangeClamped(Value, InRangeA, InRangeB, InColor.B, OutColor.B);
-	int32 A = UKismetMathLibrary::MapRangeClamped(Value, InRangeA, InRangeB, InColor.A, OutColor.A);
-	
-	return FColor(R, G, B, A);
-}
-
 FString ULibraryCommon::GetHashPrefix(const FString& Name)
 {
 	uint32 NameHash = GetTypeHash(Name);

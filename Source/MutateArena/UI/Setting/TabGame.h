@@ -11,6 +11,7 @@ class MUTATEARENA_API UTabGame : public UCommonActivatableWidget
 
 protected:
 	virtual void NativeOnInitialized() override;
+	virtual void NativeConstruct() override;
 	virtual UWidget* NativeGetDesiredFocusTarget() const override;
 
 	UPROPERTY()
@@ -26,25 +27,28 @@ protected:
 
 	void SetUISavedValue();
 
-	UPROPERTY(meta = (BindWidget))
-	class UComboBoxString* LanguageComboBox;
 	UFUNCTION()
-	void OnLanguageChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
+	UWidget* GenerateComboBoxWidget(FName ItemName);
 
 	UPROPERTY(meta = (BindWidget))
-	UComboBoxString* HideSkinsComboBox;
+	class UCommonComboBox2* LanguageComboBox;
 	UFUNCTION()
-	void OnHideSkinsChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
+	void OnLanguageChanged(FName SelectedItem, ESelectInfo::Type SelectionType);
 
 	UPROPERTY(meta = (BindWidget))
-	UComboBoxString* ObfuscateNameComboBox;
+	UCommonComboBox2* HideSkinsComboBox;
 	UFUNCTION()
-	void OnObfuscateNameChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
+	void OnHideSkinsChanged(FName SelectedItem, ESelectInfo::Type SelectionType);
 
 	UPROPERTY(meta = (BindWidget))
-	UComboBoxString* ObfuscateTextChatComboBox;
+	UCommonComboBox2* ObfuscateNameComboBox;
 	UFUNCTION()
-	void OnObfuscateTextChatChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
+	void OnObfuscateNameChanged(FName SelectedItem, ESelectInfo::Type SelectionType);
+
+	UPROPERTY(meta = (BindWidget))
+	UCommonComboBox2* ObfuscateTextChatComboBox;
+	UFUNCTION()
+	void OnObfuscateTextChatChanged(FName SelectedItem, ESelectInfo::Type SelectionType);
 
 	UPROPERTY(EditAnywhere)
 	FDataTableRowHandle SetDefaultData;

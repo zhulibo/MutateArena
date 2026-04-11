@@ -5,7 +5,6 @@
 #include "EnhancedInputSubsystems.h"
 #include "HumanCharacter.h"
 #include "MetaSoundSource.h"
-#include "MutateArena/Characters/AnimInstMutant.h"
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Components/AutoHostComponent.h"
@@ -29,7 +28,6 @@
 #include "MutateArena/System/UISubsystem.h"
 #include "MutateArena/System/Tags/ProjectTags.h"
 #include "Net/UnrealNetwork.h"
-#include "Perception/AIPerceptionComponent.h"
 
 #define LOCTEXT_NAMESPACE "AMutantCharacter"
 
@@ -79,7 +77,7 @@ void AMutantCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	FString EnumValue = ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(MutantCharacterName));
+	FString EnumValue = StaticEnum<EMutantCharacterName>()->GetNameStringByValue(static_cast<int64>(MutantCharacterName));
 	FDataRegistryId DataRegistryId(DR_MUTANT_CHARACTER_MAIN, FName(EnumValue));
 	if (const FMutantCharacterMain* MutantCharacterMain = UDataRegistrySubsystem::Get()->GetCachedItem<FMutantCharacterMain>(DataRegistryId))
 	{
@@ -665,10 +663,15 @@ bool AMutantCharacter::CanInteract(ABaseCharacter* Interactor)
 	{
 		return false;
 	}
-
+	
 	if (!Interactor || Interactor->bIsDead)
 	{
 		return false;
+	}
+
+	if (AHumanCharacter* Human = Cast<AHumanCharacter>(Interactor))
+	{
+		if (Human->bIsImmune) return false;
 	}
 
 	return true; 

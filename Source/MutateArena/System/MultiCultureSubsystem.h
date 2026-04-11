@@ -10,8 +10,6 @@ class MUTATEARENA_API UMultiCultureSubsystem : public UGameInstanceSubsystem
 	GENERATED_BODY()
 
 public:
-
-protected:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 
 };

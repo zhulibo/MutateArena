@@ -6,13 +6,6 @@
 
 class UImage;
 
-UENUM(BlueprintType)
-enum class ECombatIconType : uint8
-{
-	Cause1000Damage,
-	BeImmune,
-};
-
 enum class ETeam : uint8;
 
 UCLASS()
@@ -28,9 +21,6 @@ public:
 	UCommonTextBlock* Ammo;
 	UPROPERTY(meta = (BindWidget))
 	UCommonTextBlock* CarriedAmmo;
-
-	UPROPERTY(meta = (BindWidget))
-	UCommonTextBlock* CombatIcon;
 
 protected:
 	virtual void NativeOnInitialized() override;
@@ -57,9 +47,5 @@ protected:
 	UMaterialInstanceDynamic* DamageMulMID;
 	void OnDamageMulChange(float TempDamageMul);
 	void OnMeleeDamageMulChange(float TempMeleeDamageMul);
-
-	void OnCombatIconChange(ECombatIconType CombatIconType);
-	FTimerHandle CombatIconTimerHandle;
-	void ClearCombatIcon();
 
 };

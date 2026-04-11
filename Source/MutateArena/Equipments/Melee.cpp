@@ -35,7 +35,7 @@ void AMelee::BeginPlay()
 {
 	Super::BeginPlay();
 
-	FString EnumValue = ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(EquipmentParentName));
+	FString EnumValue = StaticEnum<EEquipmentName>()->GetNameStringByValue(static_cast<int64>(EquipmentParentName));
 	FDataRegistryId DataRegistryId(DR_MELEE_DATA, FName(EnumValue));
 	if (const FMeleeData* MeleeData = UDataRegistrySubsystem::Get()->GetCachedItem<FMeleeData>(DataRegistryId))
 	{

@@ -147,7 +147,7 @@ void ABaseMode::SpawnHumanCharacter(AController* Controller)
 	ABasePlayerState* BasePlayerState = Cast<ABasePlayerState>(Controller->PlayerState);
 	if (BasePlayerState)
 	{
-		CharacterName = ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(BasePlayerState->HumanCharacterName));
+		CharacterName = StaticEnum<EHumanCharacterName>()->GetNameStringByValue(static_cast<int64>(BasePlayerState->HumanCharacterName));
 	}
 
 	// 获取角色类
@@ -240,6 +240,8 @@ void ABaseMode::AddKillLog(ABasePlayerState* AttackerState, AActor* DamageCauser
 {
 	FText CauserName = FText::FromString(TEXT("-1"));
 
+	bool bIsMelee = false;
+	
 	if (const UDamageTypeBase* DamageTypeBase = Cast<UDamageTypeBase>(DamageType))
 	{
 		switch (DamageTypeBase->DamageType)
@@ -247,7 +249,7 @@ void ABaseMode::AddKillLog(ABasePlayerState* AttackerState, AActor* DamageCauser
 		case EDamageCauserType::Equipment:
 			if (AEquipment* CauserEquipment = Cast<AEquipment>(DamageCauser->GetOwner()))
 			{
-				FString EnumValue = ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(CauserEquipment->EquipmentName));
+				FString EnumValue = StaticEnum<EEquipmentName>()->GetNameStringByValue(static_cast<int64>(CauserEquipment->EquipmentName));
 				FDataRegistryId DataRegistryId(DR_EQUIPMENT_MAIN, FName(EnumValue));
 				if (const FEquipmentMain* EquipmentMain = UDataRegistrySubsystem::Get()->GetCachedItem<FEquipmentMain>(DataRegistryId))
 				{
@@ -258,11 +260,13 @@ void ABaseMode::AddKillLog(ABasePlayerState* AttackerState, AActor* DamageCauser
 		case EDamageCauserType::Melee:
 			if (AEquipment* CauserEquipment = Cast<AEquipment>(DamageCauser))
 			{
-				FString EnumValue = ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(CauserEquipment->EquipmentName));
+				FString EnumValue = StaticEnum<EEquipmentName>()->GetNameStringByValue(static_cast<int64>(CauserEquipment->EquipmentName));
 				FDataRegistryId DataRegistryId(DR_EQUIPMENT_MAIN, FName(EnumValue));
 				if (const FEquipmentMain* EquipmentMain = UDataRegistrySubsystem::Get()->GetCachedItem<FEquipmentMain>(DataRegistryId))
 				{
 					CauserName = EquipmentMain->ShowName;
+					
+					bIsMelee = true;
 				}
 			}
 			break;
@@ -285,6 +289,13 @@ void ABaseMode::AddKillLog(ABasePlayerState* AttackerState, AActor* DamageCauser
 	if (BaseGameState)
 	{
 		BaseGameState->MulticastAddKillLog(AttackerState, CauserName, DamagedState);
+		
+		if (bIsMelee)
+		{
+			FText AttackerName = FText::FromString(ULibraryCommon::ObfuscateName(AttackerState->GetPlayerName(), this));
+			FText DamagedName = FText::FromString(ULibraryCommon::ObfuscateName(DamagedState->GetPlayerName(), this));
+			BaseGameState->MulticastMeleeLog(AttackerName, CauserName, DamagedName);
+		}
 	}
 }
 

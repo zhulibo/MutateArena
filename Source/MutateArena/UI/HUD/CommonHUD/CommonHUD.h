@@ -5,6 +5,14 @@
 #include "MutateArena/PlayerControllers/BaseController.h"
 #include "CommonHUD.generated.h"
 
+UENUM(BlueprintType)
+enum class ECombatIconType : uint8
+{
+	Cause1000Damage,
+	Cause1000Rage,
+	BeImmune,
+};
+
 enum class EHUDState : uint8;
 
 // TODO 动态添加 Widget 参考 lyra UUIExtensionSubsystem UUIExtensionPointWidget
@@ -18,6 +26,8 @@ protected:
 
 	UPROPERTY()
 	class ABasePlayerState* LocalPlayerState;
+	UPROPERTY()
+	class UAssetSubsystem* AssetSubsystem;
 
 	UPROPERTY(meta = (BindWidget))
 	class UCommonTextBlock* Announcement;
@@ -30,7 +40,9 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	UCommonTextBlock* KillStreak;
 	void OnKillStreakChange(int32 Num);
-
+	FTimerHandle HiddenKillStreakTimerHandle;
+	void HiddenKillStreak();
+	
 	UPROPERTY(meta = (BindWidget))
 	class UVerticalBox* KillLogContainer;
 	UPROPERTY(EditAnywhere)
@@ -63,5 +75,11 @@ protected:
 	
 	UPROPERTY(meta = (BindWidget))
 	class UHighAlert* HighAlert;
+
+	UPROPERTY(meta = (BindWidget))
+	class UCommonLazyImage* CombatIcon;
+	void OnCombatIconChange(ECombatIconType CombatIconType);
+	FTimerHandle CombatIconTimerHandle;
+	void ClearCombatIcon();
 	
 };

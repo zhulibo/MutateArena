@@ -21,7 +21,7 @@ public:
 
 	// 爬梯子速度占玩家当前最大行走速度的比例
 	UPROPERTY()
-	float LadderSpeedMultiplier = .6f;
+	float LadderSpeedMultiplier = .4f;
     
 	// 梯子上横向移动的灵敏度 (默认 0.5，即左右速度是上下速度的一半)
 	UPROPERTY()

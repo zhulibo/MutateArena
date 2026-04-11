@@ -51,7 +51,7 @@ void AWeapon::BeginPlay()
 // 初始化数据
 void AWeapon::InitData()
 {
-	FString EnumValue = ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(EquipmentParentName));
+	FString EnumValue = StaticEnum<EEquipmentName>()->GetNameStringByValue(static_cast<int64>(EquipmentParentName));
 
 	{
 		FDataRegistryId DataRegistryId(DR_WEAPON_DATA, FName(EnumValue));

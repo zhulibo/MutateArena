@@ -51,7 +51,7 @@ void AWeaponGeneric::Fire(const FVector& HitTarget, float RecoilVert, float Reco
 	if (Projectile)
 	{
 		// 设置 OwnerName
-		Projectile->OwnerName = FName(ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(EquipmentParentName)));
+		Projectile->OwnerName = StaticEnum<EEquipmentName>()->GetNameStringByValue(static_cast<int64>(EquipmentParentName));
 
 		Projectile->InitialPenetrationPower = PenetrationPower;
 

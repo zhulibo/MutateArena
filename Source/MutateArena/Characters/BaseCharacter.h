@@ -75,7 +75,7 @@ protected:
 public:
 	// 标准行走速度参考值，用于计算行走动画播放速度。在子类中会被赋值，赋值时需保证与角色ASC中的MaxWalkSpeed一级速度一致
 	UPROPERTY()
-	float DefaultMaxWalkSpeed = 600.f;
+	float DefaultMaxWalkSpeed = 500.f;
 
 	bool bIsPlayerStateTeamReady = false;
 protected:

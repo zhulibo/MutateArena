@@ -173,7 +173,7 @@ void UStorageSubsystem::ApplySetting()
 	if (CacheSetting == nullptr) return;
 	
 	// 设置语言
-	FInternationalization::Get().SetCurrentCulture(CacheSetting->Language);
+	FInternationalization::Get().SetCurrentCulture(CacheSetting->Language.ToString());
 	
 	// 设置亮度
 	GEngine->DisplayGamma = CacheSetting->Brightness;

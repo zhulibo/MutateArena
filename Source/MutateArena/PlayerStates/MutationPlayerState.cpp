@@ -85,6 +85,8 @@ void AMutationPlayerState::OnRep_Damage(float OldValue)
 
 void AMutationPlayerState::Show1000DamageUI(float TempDamage)
 {
+	if (Team != ETeam::Team1) return;
+	
 	BaseDamage += TempDamage;
 	
 	if (MutationController == nullptr) MutationController = Cast<AMutationController>(GetOwner());
@@ -127,8 +129,52 @@ void AMutationPlayerState::SetRage(float TempRage)
 			}
 		}
 	}
+	
+	ShowRageUI();
 
-	OnRep_Rage();
+	Show1000RageUI(TempRage);
+}
+
+void AMutationPlayerState::OnRep_Rage(float OldValue)
+{
+	ShowRageUI();
+	
+	Show1000RageUI(Rage - OldValue);
+}
+
+void AMutationPlayerState::ShowRageUI()
+{
+	if (MutationController == nullptr) MutationController = Cast<AMutationController>(GetOwner());
+	if (MutationController && MutationController->IsLocalController())
+	{
+		MutationController->SetHUDRage(Rage);
+	}
+}
+
+void AMutationPlayerState::Show1000RageUI(float TempRage)
+{
+	if (Team != ETeam::Team2) return;
+	
+	if (TempRage == RageLevel3)
+	{
+		return; // HACK 初始突变时赋予了满级怒气 直接返回
+	}
+	
+	BaseRage += TempRage;
+	
+	if (MutationController == nullptr) MutationController = Cast<AMutationController>(GetOwner());
+	if (MutationController && MutationController->IsLocalController())
+	{
+		if (BaseRage >= 1000.f)
+		{
+			BaseRage = fmodf(BaseRage, 1000.f);
+
+			if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(MutationController->GetLocalPlayer()))
+			{
+				UISubsystem->OnCause1000Rage.Broadcast();
+			}
+		}
+	}
 }
 
 void AMutationPlayerState::ApplyLevelUpEffect()
@@ -142,15 +188,6 @@ void AMutationPlayerState::ApplyLevelUpEffect()
 		{
 			AbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
 		}
-	}
-}
-
-void AMutationPlayerState::OnRep_Rage()
-{
-	if (MutationController == nullptr) MutationController = Cast<AMutationController>(GetOwner());
-	if (MutationController && MutationController->IsLocalController())
-	{
-		MutationController->SetHUDRage(Rage);
 	}
 }
 

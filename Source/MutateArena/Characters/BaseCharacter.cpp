@@ -79,9 +79,12 @@ ABaseCharacter::ABaseCharacter(const FObjectInitializer& ObjectInitializer)
 	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
 	GetCharacterMovement()->bCanWalkOffLedgesWhenCrouching = true;
 	GetCharacterMovement()->SetCrouchedHalfHeight(50.f);
-	GetCharacterMovement()->AirControl = 0.4;
-	GetCharacterMovement()->AirControlBoostMultiplier = 1;
-
+	// 空中控制
+	GetCharacterMovement()->GravityScale = 1.2f;
+	GetCharacterMovement()->AirControl = 0.4f;
+	GetCharacterMovement()->AirControlBoostMultiplier = 2.f;
+	GetCharacterMovement()->AirControlBoostVelocityThreshold = 40.f;
+	
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 
 	Tags.Add(TAG_CHARACTER_BASE);

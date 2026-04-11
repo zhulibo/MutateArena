@@ -5,7 +5,7 @@
 #include "DataRegistrySubsystem.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
-#include "..\Equipments\Throwing.h"
+#include "MutateArena/Equipments/Throwing.h"
 #include "Components/AutoHostComponent.h"
 #include "MutateArena/Equipments/Data/EquipmentType.h"
 #include "Components/CombatComponent.h"
@@ -19,7 +19,6 @@
 #include "MutateArena/GameModes/TeamDeadMatchMode.h"
 #include "MutateArena/GameStates/MeleeGameState.h"
 #include "MutateArena/PlayerControllers/BaseController.h"
-#include "MutateArena/PlayerControllers/MutationController.h"
 #include "MutateArena/System/AssetSubsystem.h"
 #include "MutateArena/System/DataAssetManager.h"
 #include "MutateArena/System/DevSetting.h"
@@ -39,7 +38,6 @@
 #include "MutateArena/System/UISubsystem.h"
 #include "MutateArena/System/Tags/ProjectTags.h"
 #include "Net/UnrealNetwork.h"
-#include "Perception/AIPerceptionComponent.h"
 #include "MutateArena/Abilities/GameplayAbilityBase.h"
 #include "MutateArena/PlayerStates/BasePlayerState.h"
 
@@ -56,7 +54,7 @@ AHumanCharacter::AHumanCharacter(const FObjectInitializer& ObjectInitializer)
 	
 	BloodColor = C_RED;
 	
-	DefaultMaxWalkSpeed = 600.f;
+	DefaultMaxWalkSpeed = 500.f;
 	GetCharacterMovement()->MaxWalkSpeed = DefaultMaxWalkSpeed;
 	GetCharacterMovement()->MaxWalkSpeedCrouched = DefaultMaxWalkSpeed * 0.5f;
 	
@@ -100,7 +98,6 @@ void AHumanCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 		}
 	}
 
-	// Set up action bindings
 	if (UEnhancedInputComponent* EIC = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
 	{
 		EIC->BindAction(AssetSubsystem->InputAsset->MoveAction, ETriggerEvent::Triggered, AutoHostComp, &UAutoHostComponent::UpdateActiveTime);
@@ -228,58 +225,58 @@ void AHumanCharacter::ServerSpawnEquipments_Implementation(EEquipmentName Primar
 {
 	if (CombatComp == nullptr) return;
 
-	TSubclassOf<AEquipment> PrimaryClass = nullptr;
-	TSubclassOf<AEquipment> SecondaryClass = nullptr;
-	TSubclassOf<AEquipment> MeleeClass = nullptr;
-	TSubclassOf<AEquipment> ThrowingClass = nullptr;
-
-	FName PrimaryName = FName(ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(Primary)));
-	FName SecondaryName = FName(ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(Secondary)));
-	FName MeleeName = FName(ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(Melee)));
-	FName ThrowingName = FName(ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(Throwing)));
-
-	// 近战模式只生成近战装备
-	if (AMeleeGameState* MeleeGameState = GetWorld()->GetGameState<AMeleeGameState>())
-	{
-		PrimaryName = FName();
-		SecondaryName = FName();
-		ThrowingName = FName();
-	}
-
 	// 包括Standalone
 #if UE_EDITOR
 	if (GetDefault<UDevSetting>()->bIsUseCustomEquipment)
 	{
-		PrimaryName = FName(ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(GetDefault<UDevSetting>()->PrimaryEquipment)));
-		SecondaryName = FName(ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(GetDefault<UDevSetting>()->SecondaryEquipment)));
-		MeleeName = FName(ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(GetDefault<UDevSetting>()->MeleeEquipment)));
-		ThrowingName = FName(ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(GetDefault<UDevSetting>()->ThrowingEquipment)));
+		Primary = GetDefault<UDevSetting>()->PrimaryEquipment;
+		Secondary = GetDefault<UDevSetting>()->SecondaryEquipment;
+		Melee = GetDefault<UDevSetting>()->MeleeEquipment;
+		Throwing = GetDefault<UDevSetting>()->ThrowingEquipment;
 	}
 #endif
 
-	if (PrimaryName.IsValid()) {
-		FDataRegistryId DataRegistryId(DR_EQUIPMENT_MAIN, PrimaryName);
+	FString PrimaryName = StaticEnum<EEquipmentName>()->GetNameStringByValue(static_cast<int64>(Primary));
+	FString SecondaryName = StaticEnum<EEquipmentName>()->GetNameStringByValue(static_cast<int64>(Secondary));
+	FString MeleeName = StaticEnum<EEquipmentName>()->GetNameStringByValue(static_cast<int64>(Melee));
+	FString ThrowingName = StaticEnum<EEquipmentName>()->GetNameStringByValue(static_cast<int64>(Throwing));
+
+	// 近战模式只生成近战装备
+	if (AMeleeGameState* MeleeGameState = GetWorld()->GetGameState<AMeleeGameState>())
+	{
+		PrimaryName = FString();
+		SecondaryName = FString();
+		ThrowingName = FString();
+	}
+	
+	TSubclassOf<AEquipment> PrimaryClass = nullptr;
+	TSubclassOf<AEquipment> SecondaryClass = nullptr;
+	TSubclassOf<AEquipment> MeleeClass = nullptr;
+	TSubclassOf<AEquipment> ThrowingClass = nullptr;
+	
+	if (!PrimaryName.IsEmpty()) {
+		FDataRegistryId DataRegistryId(DR_EQUIPMENT_MAIN, FName(PrimaryName));
 		if (const FEquipmentMain* EquipmentMain = UDataRegistrySubsystem::Get()->GetCachedItem<FEquipmentMain>(DataRegistryId))
 		{
 			PrimaryClass = UDataAssetManager::Get().GetSubclass(EquipmentMain->EquipmentClass);
 		}
 	}
-	if (SecondaryName.IsValid()) {
-		FDataRegistryId DataRegistryId(DR_EQUIPMENT_MAIN, SecondaryName);
+	if (!SecondaryName.IsEmpty()) {
+		FDataRegistryId DataRegistryId(DR_EQUIPMENT_MAIN, FName(SecondaryName));
 		if (const FEquipmentMain* EquipmentMain = UDataRegistrySubsystem::Get()->GetCachedItem<FEquipmentMain>(DataRegistryId))
 		{
 			SecondaryClass = UDataAssetManager::Get().GetSubclass(EquipmentMain->EquipmentClass);
 		}
 	}
-	if (MeleeName.IsValid()) {
-		FDataRegistryId DataRegistryId(DR_EQUIPMENT_MAIN, MeleeName);
+	if (!MeleeName.IsEmpty()) {
+		FDataRegistryId DataRegistryId(DR_EQUIPMENT_MAIN, FName(MeleeName));
 		if (const FEquipmentMain* EquipmentMain = UDataRegistrySubsystem::Get()->GetCachedItem<FEquipmentMain>(DataRegistryId))
 		{
 			MeleeClass = UDataAssetManager::Get().GetSubclass(EquipmentMain->EquipmentClass);
 		}
 	}
-	if (ThrowingName.IsValid()) {
-		FDataRegistryId DataRegistryId(DR_EQUIPMENT_MAIN, ThrowingName);
+	if (!ThrowingName.IsEmpty()) {
+		FDataRegistryId DataRegistryId(DR_EQUIPMENT_MAIN, FName(ThrowingName));
 		if (const FEquipmentMain* EquipmentMain = UDataRegistrySubsystem::Get()->GetCachedItem<FEquipmentMain>(DataRegistryId))
 		{
 			ThrowingClass = UDataAssetManager::Get().GetSubclass(EquipmentMain->EquipmentClass);

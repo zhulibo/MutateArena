@@ -99,21 +99,21 @@ void AWoodenPlank::Multicast_TriggerBreak_Implementation(FVector HitLocation, FV
 	GeometryComp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	GeometryComp->SetSimulatePhysics(true);
 	
-	// 防抽搐 TODO 无效
+	// 防角色跨上抽搐 TODO 无效
 	// GeometryComp->CanCharacterStepUpOn = ECB_No;
 	// GeometryComp->SetCollisionResponseToAllChannels(ECR_Ignore);
 	// GeometryComp->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block); 
 	// GeometryComp->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Block);
-	// // 防止掉落的碎块影响 AI 的寻路网格生成
+	
+	// 防止掉落的碎块影响 AI 的寻路网格生成
 	// GeometryComp->SetCanEverAffectNavigation(false);
 	
 	// 创建一个球形衰减场 (Radial Falloff)
 	if (URadialFalloff* RadialStrainField = NewObject<URadialFalloff>())
 	{
 		float StrainMagnitude = 500000.f; // 破坏力大小（必须大于资产中的 Damage Threshold）
-		float FieldRadius = 50.f;        // 破坏场的作用半径（根据你的木板大小调整）
+		float FieldRadius = 100.f;        // 破坏场的作用半径不知道为什么设置太小破坏不了大木板
 		
-		// 参数：破坏力大小, 最小范围, 最大范围, 默认值, 场半径, 场中心位置, 衰减类型
 		RadialStrainField->SetRadialFalloff(
 			StrainMagnitude, 
 			0.f, 

@@ -10,6 +10,12 @@
 #include "MutateArena/System/UISubsystem.h"
 #include "Net/UnrealNetwork.h"
 
+#define LOCTEXT_NAMESPACE "ABaseGameState"
+
+ABaseGameState::ABaseGameState()
+{
+}
+
 void ABaseGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -112,6 +118,18 @@ void ABaseGameState::MulticastAddKillLog_Implementation(ABasePlayerState* Attack
 	}
 }
 
+void ABaseGameState::MulticastMeleeLog_Implementation(const FText& AttackerName, const FText& CauserName, const FText& DamagedName)
+{
+	if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
+	{
+		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(PC->GetLocalPlayer()))
+		{
+			FText LogMessage = FText::Format(LOCTEXT("MeleeLog", "{0} {1} {2}"), AttackerName, CauserName, DamagedName);
+			UISubsystem->OnAnnouncementChange.Broadcast(LogMessage, 5.f);
+		}
+	}
+}
+
 void ABaseGameState::MulticastSendMsg_Implementation(const EMsgType MsgType, const ETeam Team, const FString& PlayerName, const FString& Msg)
 {
 	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetWorld()->GetFirstLocalPlayerFromController()))
@@ -134,3 +152,5 @@ void ABaseGameState::SetAllEquipments()
 		// UE_LOG(LogTemp, Warning, TEXT("Time %f"), Time2 - Time1);
 	}
 }
+
+#undef LOCTEXT_NAMESPACE

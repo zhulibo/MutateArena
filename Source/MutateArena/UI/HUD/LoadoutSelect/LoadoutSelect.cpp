@@ -29,7 +29,7 @@ void ULoadoutSelect::NativeOnInitialized()
 			if (ULoadoutSelectButton* LoadoutSelectButton = CreateWidget<ULoadoutSelectButton>(this, LoadoutSelectButtonClass))
 			{
 				{
-					FString EnumValue = ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(StorageSubsystem->CacheLoadout->Loadouts[i].Primary));
+					FString EnumValue = StaticEnum<EEquipmentName>()->GetNameStringByValue(static_cast<int64>(StorageSubsystem->CacheLoadout->Loadouts[i].Primary));
 					FDataRegistryId DataRegistryId(DR_EQUIPMENT_MAIN, FName(EnumValue));
 					if (const FEquipmentMain* EquipmentMain = UDataRegistrySubsystem::Get()->GetCachedItem<FEquipmentMain>(DataRegistryId))
 					{
@@ -38,7 +38,7 @@ void ULoadoutSelect::NativeOnInitialized()
 				}
 				
 				{
-					FString EnumValue = ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(StorageSubsystem->CacheLoadout->Loadouts[i].Secondary));
+					FString EnumValue = StaticEnum<EEquipmentName>()->GetNameStringByValue(static_cast<int64>(StorageSubsystem->CacheLoadout->Loadouts[i].Secondary));
 					FDataRegistryId DataRegistryId(DR_EQUIPMENT_MAIN, FName(EnumValue));
 					if (const FEquipmentMain* EquipmentMain = UDataRegistrySubsystem::Get()->GetCachedItem<FEquipmentMain>(DataRegistryId))
 					{
@@ -47,7 +47,7 @@ void ULoadoutSelect::NativeOnInitialized()
 				}
 				
 				{
-					FString EnumValue = ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(StorageSubsystem->CacheLoadout->Loadouts[i].Melee));
+					FString EnumValue = StaticEnum<EEquipmentName>()->GetNameStringByValue(static_cast<int64>(StorageSubsystem->CacheLoadout->Loadouts[i].Melee));
 					FDataRegistryId DataRegistryId(DR_EQUIPMENT_MAIN, FName(EnumValue));
 					if (const FEquipmentMain* EquipmentMain = UDataRegistrySubsystem::Get()->GetCachedItem<FEquipmentMain>(DataRegistryId))
 					{
@@ -56,7 +56,7 @@ void ULoadoutSelect::NativeOnInitialized()
 				}
 				
 				{
-					FString EnumValue = ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(StorageSubsystem->CacheLoadout->Loadouts[i].Throwing));
+					FString EnumValue = StaticEnum<EEquipmentName>()->GetNameStringByValue(static_cast<int64>(StorageSubsystem->CacheLoadout->Loadouts[i].Throwing));
 					FDataRegistryId DataRegistryId(DR_EQUIPMENT_MAIN, FName(EnumValue));
 					if (const FEquipmentMain* EquipmentMain = UDataRegistrySubsystem::Get()->GetCachedItem<FEquipmentMain>(DataRegistryId))
 					{

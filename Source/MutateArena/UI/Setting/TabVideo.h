@@ -4,6 +4,21 @@
 #include "CommonActivatableWidget.h"
 #include "TabVideo.generated.h"
 
+USTRUCT()
+struct FResolutionOption
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	FName Name;
+
+	UPROPERTY()
+	FIntPoint Point;
+
+	FResolutionOption() {}
+	FResolutionOption(FName InName, FIntPoint InPoint) : Name(InName), Point(InPoint) {}
+};
+
 // TODO FullscreenMode无法保存，退出游戏后会自动恢复默认
 UCLASS()
 class MUTATEARENA_API UTabVideo : public UCommonActivatableWidget
@@ -35,17 +50,26 @@ protected:
 	UFUNCTION()
 	void OnBrightnessChanged(float Value);
 
-	UPROPERTY(meta = (BindWidget))
-	class UComboBoxString* WindowModeComboBox;
 	UFUNCTION()
-	void OnWindowModeChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
+	UWidget* GenerateComboBoxWidget(FName ItemName);
+
+	UFUNCTION()
+	UWidget* GenerateComboBoxWidget_NoTranslation(FName ItemName);
+
+	UPROPERTY(meta = (BindWidget))
+	class UCommonComboBox2* WindowModeComboBox;
+	UFUNCTION()
+	void OnWindowModeChanged(FName SelectedItem, ESelectInfo::Type SelectionType);
 
 	UPROPERTY()
-	TArray<FIntPoint> Resolutions;
+	TArray<FResolutionOption> Resolutions;
+
+	FName FormatResolutionName(int32 Width, int32 Height) const;
+	
 	UPROPERTY(meta = (BindWidget))
-	UComboBoxString* ScreenResolutionComboBox;
+	UCommonComboBox2* ScreenResolutionComboBox;
 	UFUNCTION()
-	void OnScreenResolutionChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
+	void OnScreenResolutionChanged(FName SelectedItem, ESelectInfo::Type SelectionType);
 
 	UPROPERTY(EditAnywhere)
 	FDataTableRowHandle SetDefaultData;

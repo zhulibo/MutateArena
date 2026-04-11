@@ -11,12 +11,16 @@
 #include "Lobby.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/GameModes/Data/GameModeType.h"
-#include "MutateArena/UI/Common/CommonComboBox.h"
 #include "MutateArena/Utils/LibraryCommon.h"
 #include "MutateArena/Utils/LibraryNotify.h"
 #include "Engine/UserInterfaceSettings.h"
+#include "Internationalization/StringTable.h"
+#include "MutateArena/Assets/Data/CommonAsset.h"
+#include "MutateArena/System/AssetSubsystem.h"
 #include "MutateArena/System/UISubsystem.h"
 #include "MutateArena/System/Tags/ProjectTags.h"
+#include "MutateArena/UI/Common/ComboBoxItem.h"
+#include "MutateArena/UI/Common/CommonComboBox2.h"
 
 #define LOCTEXT_NAMESPACE "UServer"
 
@@ -24,15 +28,25 @@ void UServer::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
 
+	ModeComboBox->OnGenerateItemWidget.BindDynamic(this, &ThisClass::GenerateComboBoxWidget);
+	ModeComboBox->OnGenerateContentWidget.BindDynamic(this, &ThisClass::GenerateComboBoxWidget);
+	
+	MapComboBox->OnGenerateItemWidget.BindDynamic(this, &ThisClass::GenerateComboBoxWidget);
+	MapComboBox->OnGenerateContentWidget.BindDynamic(this, &ThisClass::GenerateComboBoxWidget);
+
 	ModeComboBox->AddOption(ALL);
+	const UEnum* ModeEnum = StaticEnum<ECoolGameMode>();
 	for (int32 i = 0; i < static_cast<int32>(ECoolGameMode::None); ++i)
 	{
-		FString EnumValue = ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(static_cast<ECoolGameMode>(i)));
-		ModeComboBox->AddOption(EnumValue);
+		FName EnumKey = FName(*ModeEnum->GetNameStringByIndex(i));
+		ModeComboBox->AddOption(EnumKey);
 	}
+	
 	ModeComboBox->OnSelectionChanged.AddUniqueDynamic(this, &ThisClass::OnModeComboBoxChanged);
-	ModeComboBox->SetSelectedIndex(0);
-
+	ModeComboBox->SetSelectedOption(ALL);
+	// NativeOnInitialized 中 ModeComboBox->SetSelectedOption 无法触发 OnModeComboBoxChanged 主动调一下
+	OnModeComboBoxChanged(ALL, ESelectInfo::Direct);
+	
 	RefreshServerButton->OnClicked().AddUObject(this, &ThisClass::OnRefreshServerButtonClicked);
 	ResetServerButton->OnClicked().AddUObject(this, &ThisClass::OnResetServerButtonClicked);
 	CreateServerButton->OnClicked().AddUObject(this, &ThisClass::OnCreateServerButtonClicked);
@@ -116,43 +130,76 @@ void UServer::OnCreateLobbyComplete(bool bWasSuccessful)
 	}
 }
 
-void UServer::OnModeComboBoxChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
+void UServer::OnModeComboBoxChanged(FName SelectedItem, ESelectInfo::Type SelectionType)
 {
 	MapComboBox->ClearOptions();
+	MapComboBox->AddOption(ALL);
 
-	if (SelectedItem == ALL)
+	if (SelectedItem == MUTATION) 
 	{
-		MapComboBox->AddOption(ALL);
-	}
-	else if (SelectedItem == MUTATION)
-	{
-		MapComboBox->AddOption(ALL);
+		const UEnum* MapEnum = StaticEnum<EMutationMap>();
 		for (int32 i = 0; i < static_cast<int32>(EMutationMap::None); ++i)
 		{
-			FString EnumValue = ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(static_cast<EMutationMap>(i)));
-			MapComboBox->AddOption(EnumValue);
+			MapComboBox->AddOption(FName(MapEnum->GetNameStringByIndex(i)));
 		}
 	}
 	else if (SelectedItem == MELEE)
 	{
-		MapComboBox->AddOption(ALL);
+		const UEnum* MapEnum = StaticEnum<EMeleeMap>();
 		for (int32 i = 0; i < static_cast<int32>(EMeleeMap::None); ++i)
 		{
-			FString EnumValue = ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(static_cast<EMeleeMap>(i)));
-			MapComboBox->AddOption(EnumValue);
+			MapComboBox->AddOption(FName(MapEnum->GetNameStringByIndex(i)));
 		}
 	}
 	else if (SelectedItem == TEAM_DEAD_MATCH)
 	{
-		MapComboBox->AddOption(ALL);
+		const UEnum* MapEnum = StaticEnum<ETeamDeadMatchMap>();
 		for (int32 i = 0; i < static_cast<int32>(ETeamDeadMatchMap::None); ++i)
 		{
-			FString EnumValue = ULibraryCommon::GetEnumValue(UEnum::GetValueAsString(static_cast<ETeamDeadMatchMap>(i)));
-			MapComboBox->AddOption(EnumValue);
+			MapComboBox->AddOption(FName(MapEnum->GetNameStringByIndex(i)));
 		}
 	}
 
-	MapComboBox->SetSelectedIndex(0);
+	MapComboBox->SetSelectedOption(ALL);
+}
+
+UWidget* UServer::GenerateComboBoxWidget(FName ItemName)
+{
+	UAssetSubsystem* AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+	if (AssetSubsystem == nullptr && AssetSubsystem->CommonAsset == nullptr) return nullptr;
+	
+	UComboBoxItem* ItemWidget = CreateWidget<UComboBoxItem>(this, AssetSubsystem->CommonAsset->ComboBoxItemClass);
+	if (!ItemWidget) return nullptr;
+	
+	FText DisplayText;
+
+	if (ItemName == ALL)
+	{
+		DisplayText = LOCTEXT("All", "ALL");
+	}
+	else
+	{
+		if (AssetSubsystem->CommonAsset->ST_Common)
+		{
+			FText TableText = FText::FromStringTable(AssetSubsystem->CommonAsset->ST_Common->GetStringTableId(), ItemName.ToString());
+			if (!TableText.IsEmpty())
+			{
+				DisplayText = TableText;
+			}
+			else
+			{
+				DisplayText = FText::FromName(ItemName);
+			}
+		}
+		else
+		{
+			DisplayText = FText::FromName(ItemName);
+		}
+	}
+
+	ItemWidget->ItemText->SetText(DisplayText);
+
+	return ItemWidget;
 }
 
 // 查找大厅
@@ -290,7 +337,7 @@ void UServer::OnFindLobbiesComplete(bool bWasSuccessful, const TArray<TSharedRef
 void UServer::OnResetServerButtonClicked()
 {
 	ServerNameEditableTextBox->SetText(FText());
-	ModeComboBox->SetSelectedIndex(0);
+	ModeComboBox->SetSelectedOption(ALL);
 }
 
 void UServer::OnPagePrevButtonClicked()

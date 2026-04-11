@@ -15,7 +15,7 @@ void UDNAButton::UpdateDNAInfo(UDNAAsset2* DNAData)
 			DisplayName->SetText(DNAData->DisplayName);
 		}
 
-		if (Icon && DNAData->Icon)
+		if (Icon && !DNAData->Icon.IsNull())
 		{
 			Icon->SetBrushFromLazyTexture(DNAData->Icon);
 		}

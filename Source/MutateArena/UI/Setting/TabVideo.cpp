@@ -6,10 +6,14 @@
 #include "MutateArena/System/Storage/SaveGameSetting.h"
 #include "MutateArena/System/Storage/DefaultConfig.h"
 #include "MutateArena/System/Storage/StorageSubsystem.h"
-#include "Components/ComboBoxString.h"
 #include "GameFramework/GameUserSettings.h"
 #include "Input/CommonUIInputTypes.h"
 #include "MutateArena/Utils/LibraryCommon.h"
+#include "MutateArena/UI/Common/CommonComboBox2.h"
+#include "MutateArena/UI/Common/ComboBoxItem.h"
+#include "MutateArena/System/AssetSubsystem.h"
+#include "MutateArena/Assets/Data/CommonAsset.h"
+#include "Internationalization/StringTable.h"
 
 void UTabVideo::NativeOnInitialized()
 {
@@ -22,10 +26,18 @@ void UTabVideo::NativeOnInitialized()
 		Tabs[i]->OnHovered().AddUObject(this, &ThisClass::OnTabButtonHovered, i);
 	}
 
+	// 绑定 ComboBox 生成事件
+	WindowModeComboBox->OnGenerateItemWidget.BindDynamic(this, &ThisClass::GenerateComboBoxWidget);
+	WindowModeComboBox->OnGenerateContentWidget.BindDynamic(this, &ThisClass::GenerateComboBoxWidget);
+	
+	// 分辨率框绑定无需翻译的生成事件
+	ScreenResolutionComboBox->OnGenerateItemWidget.BindDynamic(this, &ThisClass::GenerateComboBoxWidget_NoTranslation);
+	ScreenResolutionComboBox->OnGenerateContentWidget.BindDynamic(this, &ThisClass::GenerateComboBoxWidget_NoTranslation);
+
 	// 设置窗口模式下拉项
-	WindowModeComboBox->AddOption("Fullscreen");
-	WindowModeComboBox->AddOption("WindowedFullscreen");
-	WindowModeComboBox->AddOption("Windowed");
+	WindowModeComboBox->AddOption(FULLSCREEN);
+	WindowModeComboBox->AddOption(WIDOWED_FULLSCREEN);
+	WindowModeComboBox->AddOption(WIDOWED);
 
 	// 设置分辨率下拉项
 	// 添加默认分辨率
@@ -34,8 +46,11 @@ void UTabVideo::NativeOnInitialized()
 	{
 		DefaultResolution = DefaultConfig->ScreenResolution;
 	}
-	Resolutions.Add(FIntPoint(DefaultResolution.X, DefaultResolution.Y));
-	ScreenResolutionComboBox->AddOption(FString::FromInt(DefaultResolution.X) + TEXT("x") + FString::FromInt(DefaultResolution.Y));
+	
+	FName DefaultResName = FormatResolutionName(DefaultResolution.X, DefaultResolution.Y);
+	Resolutions.Add(FResolutionOption(DefaultResName, DefaultResolution));
+	ScreenResolutionComboBox->AddOption(DefaultResName);
+	
 	// 添加显示器支持的分辨率（需大于默认分辨率）
 	FScreenResolutionArray TempResolutions;
 	RHIGetAvailableResolutions(TempResolutions, true);
@@ -43,8 +58,9 @@ void UTabVideo::NativeOnInitialized()
 	{
 		if (Resolution.Width > static_cast<uint32>(DefaultResolution.X) && Resolution.Height > static_cast<uint32>(DefaultResolution.Y))
 		{
-			Resolutions.Add(FIntPoint(Resolution.Width, Resolution.Height));
-			ScreenResolutionComboBox->AddOption(FString::FromInt(Resolution.Width) + TEXT("x") + FString::FromInt(Resolution.Height));
+			FName ResName = FormatResolutionName(Resolution.Width, Resolution.Height);
+			Resolutions.Add(FResolutionOption(ResName, FIntPoint(Resolution.Width, Resolution.Height)));
+			ScreenResolutionComboBox->AddOption(ResName);
 		}
 	}
 
@@ -85,6 +101,53 @@ void UTabVideo::OnTabButtonHovered(int Index)
 	}
 }
 
+// 包含多语言查询逻辑的生成函数
+UWidget* UTabVideo::GenerateComboBoxWidget(FName ItemName)
+{
+	UAssetSubsystem* AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+	if (AssetSubsystem == nullptr || AssetSubsystem->CommonAsset == nullptr) return nullptr;
+	
+	UComboBoxItem* ItemWidget = CreateWidget<UComboBoxItem>(this, AssetSubsystem->CommonAsset->ComboBoxItemClass);
+	if (!ItemWidget) return nullptr;
+	
+	FText DisplayText;
+	if (AssetSubsystem->CommonAsset->ST_Common)
+	{
+		FText TableText = FText::FromStringTable(AssetSubsystem->CommonAsset->ST_Common->GetStringTableId(), ItemName.ToString());
+		if (!TableText.IsEmpty())
+		{
+			DisplayText = TableText;
+		}
+		else
+		{
+			DisplayText = FText::FromName(ItemName);
+		}
+	}
+	else
+	{
+		DisplayText = FText::FromName(ItemName);
+	}
+
+	ItemWidget->ItemText->SetText(DisplayText);
+
+	return ItemWidget;
+}
+
+// 专用于分辨率等数字字段的生成函数（跳过 StringTable 检索）
+UWidget* UTabVideo::GenerateComboBoxWidget_NoTranslation(FName ItemName)
+{
+	UAssetSubsystem* AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+	if (AssetSubsystem == nullptr || AssetSubsystem->CommonAsset == nullptr) return nullptr;
+	
+	UComboBoxItem* ItemWidget = CreateWidget<UComboBoxItem>(this, AssetSubsystem->CommonAsset->ComboBoxItemClass);
+	if (!ItemWidget) return nullptr;
+
+	// 直接使用 FName 作为显示文本，不走翻译查询
+	ItemWidget->ItemText->SetText(FText::FromName(ItemName));
+
+	return ItemWidget;
+}
+
 void UTabVideo::SetUISavedValue()
 {
 	if (StorageSubsystem == nullptr) StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
@@ -99,21 +162,22 @@ void UTabVideo::SetUISavedValue()
 			switch (GameUserSettings->GetFullscreenMode())
 			{
 			case EWindowMode::Fullscreen:
-				WindowModeComboBox->SetSelectedOption("Fullscreen");
+				WindowModeComboBox->SetSelectedOption(FULLSCREEN);
 				break;
 			case EWindowMode::WindowedFullscreen:
-				WindowModeComboBox->SetSelectedOption("WindowedFullscreen");
+				WindowModeComboBox->SetSelectedOption(WIDOWED_FULLSCREEN);
 				break;
 			case EWindowMode::Windowed:
-				WindowModeComboBox->SetSelectedOption("Windowed");
+				WindowModeComboBox->SetSelectedOption(WIDOWED);
 				break;
 			}
 
 			FIntPoint CurResolution = GameUserSettings->GetScreenResolution();
-			FString CurResolutionStr = FString::FromInt(CurResolution.X) + TEXT("x") + FString::FromInt(CurResolution.Y);
-			if (Resolutions.Contains(CurResolution))
+			FName CurResName = FormatResolutionName(CurResolution.X, CurResolution.Y);
+			
+			if (Resolutions.ContainsByPredicate([&](const FResolutionOption& Opt) { return Opt.Name == CurResName; }))
 			{
-				ScreenResolutionComboBox->SetSelectedOption(CurResolutionStr);
+				ScreenResolutionComboBox->SetSelectedOption(CurResName);
 			}
 		}
 	}
@@ -135,19 +199,19 @@ void UTabVideo::OnBrightnessChanged(float Value)
 	}
 }
 
-void UTabVideo::OnWindowModeChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
+void UTabVideo::OnWindowModeChanged(FName SelectedItem, ESelectInfo::Type SelectionType)
 {
 	EWindowMode::Type WindowMode = EWindowMode::WindowedFullscreen;
 
-	if (SelectedItem == TEXT("Fullscreen"))
+	if (SelectedItem == FULLSCREEN)
 	{
 		WindowMode = EWindowMode::Fullscreen;
 	}
-	else if (SelectedItem == TEXT("WindowedFullscreen"))
+	else if (SelectedItem == WIDOWED_FULLSCREEN)
 	{
 		WindowMode = EWindowMode::WindowedFullscreen;
 	}
-	else if (SelectedItem == TEXT("Windowed"))
+	else if (SelectedItem == WIDOWED)
 	{
 		WindowMode = EWindowMode::Windowed;
 	}
@@ -168,23 +232,31 @@ void UTabVideo::OnWindowModeChanged(FString SelectedItem, ESelectInfo::Type Sele
 	}
 }
 
-void UTabVideo::OnScreenResolutionChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
+FName UTabVideo::FormatResolutionName(int32 Width, int32 Height) const
 {
-	FIntPoint Resolution = Resolutions[ScreenResolutionComboBox->FindOptionIndex(SelectedItem)];
+	return FName(*FString::Printf(TEXT("%d x %d"), Width, Height));
+}
 
-	if (GameUserSettings == nullptr) GameUserSettings = GetMutableDefault<UGameUserSettings>();
-	if (GameUserSettings)
+void UTabVideo::OnScreenResolutionChanged(FName SelectedItem, ESelectInfo::Type SelectionType)
+{
+	if (const FResolutionOption* FoundOption = Resolutions.FindByPredicate([&](const FResolutionOption& Opt) { return Opt.Name == SelectedItem; }))
 	{
-		GameUserSettings->SetScreenResolution(Resolution);
-		GameUserSettings->ApplyResolutionSettings(false);
-		GameUserSettings->SaveSettings();
-	}
+		FIntPoint Resolution = FoundOption->Point;
 
-	if (StorageSubsystem == nullptr) StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
-	if (StorageSubsystem && StorageSubsystem->CacheSetting)
-	{
-		StorageSubsystem->CacheSetting->ScreenResolution = Resolution;
-		StorageSubsystem->SaveSetting();
+		if (GameUserSettings == nullptr) GameUserSettings = GetMutableDefault<UGameUserSettings>();
+		if (GameUserSettings)
+		{
+			GameUserSettings->SetScreenResolution(Resolution);
+			GameUserSettings->ApplyResolutionSettings(false);
+			GameUserSettings->SaveSettings();
+		}
+
+		if (StorageSubsystem == nullptr) StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
+		if (StorageSubsystem && StorageSubsystem->CacheSetting)
+		{
+			StorageSubsystem->CacheSetting->ScreenResolution = Resolution;
+			StorageSubsystem->SaveSetting();
+		}
 	}
 }
 
@@ -201,17 +273,20 @@ void UTabVideo::SetDefault()
 			switch (DefaultConfig->WindowMode)
 			{
 			case EWindowMode::Fullscreen:
-				WindowModeComboBox->SetSelectedOption("Fullscreen");
+				WindowModeComboBox->SetSelectedOption(FULLSCREEN);
 				break;
 			case EWindowMode::WindowedFullscreen:
-				WindowModeComboBox->SetSelectedOption("WindowedFullscreen");
+				WindowModeComboBox->SetSelectedOption(WIDOWED_FULLSCREEN);
 				break;
 			case EWindowMode::Windowed:
-				WindowModeComboBox->SetSelectedOption("Windowed");
+				WindowModeComboBox->SetSelectedOption(WIDOWED);
 				break;
 			}
 
-			ScreenResolutionComboBox->SetSelectedIndex(ScreenResolutionComboBox->GetOptionCount() - 1);
+			if (Resolutions.Num() > 0)
+			{
+				ScreenResolutionComboBox->SetSelectedOption(Resolutions.Last().Name);
+			}
 
 			if (GameUserSettings == nullptr) GameUserSettings = GetMutableDefault<UGameUserSettings>();
 			if (GameUserSettings)

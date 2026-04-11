@@ -1,6 +1,7 @@
 #include "DefaultConfig.h"
 
 #include "Internationalization/Culture.h"
+#include "MutateArena/MutateArena.h"
 
 UDefaultConfig::UDefaultConfig()
 {
@@ -16,5 +17,5 @@ UDefaultConfig::UDefaultConfig()
 		Loadouts.Add(Loadout);
 	}
 
-	Language = FInternationalization::Get().GetCurrentCulture()->GetName();
+	Language = FName(FInternationalization::Get().GetCurrentCulture()->GetName());
 }

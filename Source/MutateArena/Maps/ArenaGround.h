@@ -43,11 +43,11 @@ public:
 
 	// 平台(顶部)半径
 	UPROPERTY(EditAnywhere)
-	float PlatformRadius = 600.f;
+	float PlatformRadius = 680.f;
 
 	// 平台(底部)半径 —— 产生平缓坡度
 	UPROPERTY(EditAnywhere)
-	float PlatformBottomRadius = 700.f;
+	float PlatformBottomRadius = 760.f;
 
 	// 平台高度
 	UPROPERTY(EditAnywhere)
@@ -55,7 +55,7 @@ public:
 
 	// 中央通道(洞口)的半径
 	UPROPERTY(EditAnywhere)
-	float HoleRadius = 500.f;
+	float HoleRadius = 600.f;
 
 	// 【新增】：下方管道的长度 (向下延伸多深)
 	UPROPERTY(EditAnywhere)

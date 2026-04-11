@@ -37,20 +37,20 @@ public:
 	UPROPERTY(Config, EditAnywhere, Category = "Mutation")
 	int32 TotalRound = 3;
 	UPROPERTY(Config, EditAnywhere, Category = "Mutation")
-	float WarmupTime = 2.f;
+	int32 WarmupTime = 2;
 	UPROPERTY(Config, EditAnywhere, Category = "Mutation")
-	float RoundTime = 100.f;
+	int32 RoundTime = 100;
 	UPROPERTY(Config, EditAnywhere, Category = "Mutation")
-	float MutateTime = 5.f;
+	int32 MutateTime = 5;
 	UPROPERTY(Config, EditAnywhere, Category = "Mutation")
-	float PostRoundTime = 3.f;
+	int32 PostRoundTime = 3;
 	UPROPERTY(Config, EditAnywhere, Category = "Mutation")
-	float CooldownTime = 3.f;
+	int32 CooldownTime = 3;
 	UPROPERTY(Config, EditAnywhere, Category = "Mutation")
 	int32 MutateClientIndex = 2;
 	
 	UPROPERTY(Config, EditAnywhere, Category = "AFK")
-	float AFKHostingTime = 30.f;
+	int32 AFKHostingTime = 30;
 	
 	UPROPERTY(Config, EditAnywhere, Category = "EditorMaps", meta=(AllowedClasses="/Script/Engine.World"))
 	TArray<FSoftObjectPath> EditorMaps;

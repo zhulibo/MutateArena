@@ -5,6 +5,8 @@
 #include "MutateArena/MutateArena.h"
 #include "CommonAsset.generated.h"
 
+enum class ECombatIconType : uint8;
+
 USTRUCT(BlueprintType)
 struct FSprayPaint
 {
@@ -49,6 +51,8 @@ public:
 	TSubclassOf<class UNotifyLayout> NotifyLayoutClass;
 	UPROPERTY(EditAnywhere, Category = "UI")
 	TSubclassOf<class UConfirmScreen> ConfirmScreenClass;
+	UPROPERTY(EditAnywhere, Category = "UI")
+	TSubclassOf<class UComboBoxItem> ComboBoxItemClass;
 
 	// 倒计时
 	UPROPERTY(EditAnywhere, Category = "CountdownSound")
@@ -59,13 +63,25 @@ public:
 	UMetaSoundSource* SpawnPickupSound;
 
 	// 战斗图标
-	UPROPERTY(EditAnywhere, Category = "CombatIconSound")
+	UPROPERTY(EditAnywhere, Category = "CombatIcon")
 	UMetaSoundSource* KillSound;
-	UPROPERTY(EditAnywhere, Category = "CombatIconSound")
+	
+	UPROPERTY(EditAnywhere, Category = "CombatIcon")
+	TSoftObjectPtr<UTexture2D> Cause1000DamageTexture;
+	UPROPERTY(EditAnywhere, Category = "CombatIcon")
 	UMetaSoundSource* Cause1000DamageSound;
-	UPROPERTY(EditAnywhere, Category = "CombatIconSound")
+	
+	UPROPERTY(EditAnywhere, Category = "CombatIcon")
+	TSoftObjectPtr<UTexture2D> Cause1000RageTexture;
+	UPROPERTY(EditAnywhere, Category = "CombatIcon")
+	UMetaSoundSource* Cause1000RageSound;
+	
+	UPROPERTY(EditAnywhere, Category = "CombatIcon")
+	TSoftObjectPtr<UTexture2D> BeImmuneTexture;
+	UPROPERTY(EditAnywhere, Category = "CombatIcon")
 	UMetaSoundSource* BeImmuneSound;
-	UPROPERTY(EditAnywhere, Category = "CombatIconSound")
+	
+	UPROPERTY(EditAnywhere, Category = "CombatIcon")
 	UMetaSoundSource* LevelUpSound;
 
 	// 无线电文本
@@ -82,5 +98,9 @@ public:
 	{
 		return FPrimaryAssetId(ASSET_COMMON, GetFName());
 	}
-
+	
+	// Localization
+	UPROPERTY(EditAnywhere, Category = "Localization")
+	UStringTable* ST_Common;
+	
 };

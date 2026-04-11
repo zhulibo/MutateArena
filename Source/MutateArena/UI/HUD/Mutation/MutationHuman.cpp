@@ -27,8 +27,6 @@ void UMutationHuman::NativeOnInitialized()
 		UISubsystem->OnCarriedAmmoChange.AddUObject(this, &ThisClass::OnCarriedAmmoChange);
 		UISubsystem->OnDamageMulChange.AddUObject(this, &ThisClass::OnDamageMulChange);
 		UISubsystem->OnMeleeDamageMulChange.AddUObject(this, &ThisClass::OnMeleeDamageMulChange);
-		UISubsystem->OnCause1000Damage.AddUObject(this, &ThisClass::OnCombatIconChange, ECombatIconType::Cause1000Damage);
-		UISubsystem->OnBeImmune.AddUObject(this, &ThisClass::OnCombatIconChange, ECombatIconType::BeImmune);
 	}
 }
 
@@ -74,40 +72,4 @@ void UMutationHuman::OnDamageMulChange(float TempDamageMul)
 void UMutationHuman::OnMeleeDamageMulChange(float TempMeleeDamageMul)
 {
 	MeleeDamageMul->SetText(FText::AsPercent(TempMeleeDamageMul));
-}
-
-void UMutationHuman::OnCombatIconChange(ECombatIconType CombatIconType)
-{
-	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-	if (AssetSubsystem == nullptr || AssetSubsystem->CommonAsset == nullptr) return;
-
-	switch (CombatIconType)
-	{
-	case ECombatIconType::Cause1000Damage:
-		CombatIcon->SetText(FText::FromString(TEXT("1000 DAMAGE")));
-		
-		if (UAudioComponent* AudioComponent = UGameplayStatics::SpawnSound2D(this, AssetSubsystem->CommonAsset->Cause1000DamageSound))
-		{
-			// AudioComponent->SetFloatParameter(TEXT("Index"), 1);
-		}
-		
-		break;
-		
-	case ECombatIconType::BeImmune:
-		CombatIcon->SetText(FText::FromString(TEXT("BeImmune")));
-		
-		if (UAudioComponent* AudioComponent = UGameplayStatics::SpawnSound2D(this, AssetSubsystem->CommonAsset->Cause1000DamageSound))
-		{
-			// AudioComponent->SetFloatParameter(TEXT("Index"), 1);
-		}
-		
-		break;
-	}
-
-	GetWorld()->GetTimerManager().SetTimer(CombatIconTimerHandle, this, &ThisClass::ClearCombatIcon, 3.f);
-}
-
-void UMutationHuman::ClearCombatIcon()
-{
-	CombatIcon->SetText(FText());
 }
