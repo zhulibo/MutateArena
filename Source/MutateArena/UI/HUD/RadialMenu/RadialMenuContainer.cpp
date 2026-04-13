@@ -30,6 +30,18 @@ void URadialMenuContainer::NativeOnInitialized()
 	}
 }
 
+void URadialMenuContainer::NativeDestruct()
+{
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer()))
+	{
+		UISubsystem->ShowRadialMenu.RemoveAll(this);
+		UISubsystem->SwitchRadialMenu.RemoveAll(this);
+		UISubsystem->SelectRadialMenu.RemoveAll(this);
+	}
+
+	Super::NativeDestruct();
+}
+
 void URadialMenuContainer::ShowRadialMenu(bool bIsShow)
 {
 	if (bIsShow)

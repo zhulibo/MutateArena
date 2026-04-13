@@ -41,7 +41,12 @@ public:
 	class UAIPerceptionStimuliSourceComponent* StimuliSourceComp;
 	UPROPERTY(EditAnywhere)
 	class UAISenseConfig_Sight* SightConfig;
-
+	
+	UPROPERTY(VisibleAnywhere)
+	class USpringArmComponent* MinimapBoom;
+	UPROPERTY(VisibleAnywhere)
+	USceneCaptureComponent2D* MinimapCapture;
+	
 	virtual void GetActorEyesViewPoint(FVector& OutLocation, FRotator& OutRotation) const override;
 	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;

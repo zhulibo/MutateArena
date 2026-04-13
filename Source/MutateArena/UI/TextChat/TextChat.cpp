@@ -32,6 +32,17 @@ void UTextChat::NativeOnInitialized()
 	}
 }
 
+void UTextChat::NativeDestruct()
+{
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer()))
+	{
+		UISubsystem->ShowTextChat.RemoveAll(this);
+		UISubsystem->OnReceiveMsg.RemoveAll(this);
+	}
+
+	Super::NativeDestruct();
+}
+
 void UTextChat::ShowTextChat()
 {
 	MsgEditableTextBox->SetVisibility(ESlateVisibility::Visible);

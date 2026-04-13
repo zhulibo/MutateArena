@@ -20,8 +20,18 @@ void URadialMenuEquipment::NativeOnInitialized()
     
 	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer()))
 	{
-		UISubsystem->OnTeamChange.AddUObject(this, &ThisClass::OnTeamChange);
+		UISubsystem->OnLocalTeamChange.AddUObject(this, &ThisClass::OnTeamChange);
 	}
+}
+
+void URadialMenuEquipment::NativeDestruct()
+{
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer()))
+	{
+		UISubsystem->OnLocalTeamChange.RemoveAll(this);
+	}
+
+	Super::NativeDestruct();
 }
 
 void URadialMenuEquipment::RefreshRadialMenu()

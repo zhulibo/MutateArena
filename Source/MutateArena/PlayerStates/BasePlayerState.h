@@ -45,11 +45,6 @@ public:
 	virtual void Destroyed() override;
 
 protected:
-	UPROPERTY()
-	class ABaseCharacter* BaseCharacter;
-	UPROPERTY()
-	class ABaseController* BaseController;
-	
 	UFUNCTION(Server, Reliable)
 	void ServerSetHumanCharacterName(EHumanCharacterName Name);
 public:

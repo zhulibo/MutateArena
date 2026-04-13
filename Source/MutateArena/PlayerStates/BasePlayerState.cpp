@@ -54,7 +54,7 @@ void ABasePlayerState::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (!BaseController) BaseController = Cast<ABaseController>(GetOwner());
+	ABaseController* BaseController = Cast<ABaseController>(GetOwner());
 	if (BaseController && BaseController->IsLocalController())
 	{
 		UStorageSubsystem* StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
@@ -138,8 +138,7 @@ void ABasePlayerState::SetTeam(ETeam TempTeam)
 
 void ABasePlayerState::OnRep_Team()
 {
-	BaseCharacter = Cast<ABaseCharacter>(GetPawn());
-	if (BaseCharacter)
+	if (ABaseCharacter* BaseCharacter = Cast<ABaseCharacter>(GetPawn()))
 	{
 		BaseCharacter->bIsPlayerStateTeamReady = false;
 	}
@@ -149,6 +148,17 @@ void ABasePlayerState::OnRep_Team()
 		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(LocalPC->GetLocalPlayer()))
 		{
 			UISubsystem->OnOverheadWidgetNeedUpdate.Broadcast();
+		}
+	}
+	
+	ABaseController* BaseController = Cast<ABaseController>(GetOwner());
+	if (BaseController && BaseController->IsLocalController())
+	{
+		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
+		{
+			BaseController->InitHUD();
+			
+			UISubsystem->OnLocalTeamChange.Broadcast(Team);
 		}
 	}
 }
@@ -184,7 +194,7 @@ void ABasePlayerState::OnRep_Damage(float OldValue)
 
 void ABasePlayerState::ShowDamageUI(float TempDamage)
 {
-	if (BaseController == nullptr) BaseController = Cast<ABaseController>(GetOwner());
+	ABaseController* BaseController = Cast<ABaseController>(GetOwner());
 	if (BaseController && BaseController->IsLocalController())
 	{
 		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
@@ -238,7 +248,7 @@ void ABasePlayerState::OnRep_KillStreak()
 	
 	if (KillStreak > 0)
 	{
-		if (BaseController == nullptr) BaseController = Cast<ABaseController>(GetOwner());
+		ABaseController* BaseController = Cast<ABaseController>(GetOwner());
 		if (BaseController && BaseController->IsLocalController())
 		{
 			UAssetSubsystem* AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
@@ -259,7 +269,7 @@ void ABasePlayerState::ResetKillStreak()
 
 void ABasePlayerState::OnKillStreakChange()
 {
-	if (BaseController == nullptr) BaseController = Cast<ABaseController>(GetOwner());
+	ABaseController* BaseController = Cast<ABaseController>(GetOwner());
 	if (BaseController && BaseController->IsLocalController())
 	{
 		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))

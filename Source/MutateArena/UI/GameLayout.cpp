@@ -14,6 +14,16 @@ void UGameLayout::NativeOnInitialized()
 	}
 }
 
+void UGameLayout::NativeDestruct()
+{
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer()))
+	{
+		UISubsystem->ShowPauseMenu.RemoveAll(this);
+	}
+
+	Super::NativeDestruct();
+}
+
 void UGameLayout::NativeConstruct()
 {
 	Super::NativeConstruct();

@@ -31,9 +31,9 @@ public:
 	TArray<ABasePlayerState*> Team2PlayerStates;
 protected:
 	UFUNCTION()
-	virtual void OnRep_Team1PlayerStates() {}
+	virtual void OnRep_Team1PlayerStates();
 	UFUNCTION()
-	virtual void OnRep_Team2PlayerStates() {}
+	virtual void OnRep_Team2PlayerStates();
 public:
 	void GetPlayerStates(TOptional<ETeam> Team, TArray<ABasePlayerState*>& OutPlayerStates) const;
 	virtual void AddToPlayerStates(ABasePlayerState* BasePlayerState, ETeam Team);

@@ -70,6 +70,11 @@ void ABaseGameState::AddToPlayerStates(ABasePlayerState* BasePlayerState, ETeam 
 		Team2PlayerStates.AddUnique(BasePlayerState);
 		break;
 	}
+	
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetWorld()->GetFirstLocalPlayerFromController()))
+	{
+		UISubsystem->OnTeamPlayerStatesUpdated.Broadcast();
+	}
 }
 
 void ABaseGameState::RemoveFromPlayerStates(ABasePlayerState* BasePlayerState, ETeam Team)
@@ -82,6 +87,27 @@ void ABaseGameState::RemoveFromPlayerStates(ABasePlayerState* BasePlayerState, E
 	case ETeam::Team2:
 		Team2PlayerStates.Remove(BasePlayerState);
 		break;
+	}
+	
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetWorld()->GetFirstLocalPlayerFromController()))
+	{
+		UISubsystem->OnTeamPlayerStatesUpdated.Broadcast();
+	}
+}
+
+void ABaseGameState::OnRep_Team1PlayerStates()
+{
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetWorld()->GetFirstLocalPlayerFromController()))
+	{
+		UISubsystem->OnTeamPlayerStatesUpdated.Broadcast();
+	}
+}
+
+void ABaseGameState::OnRep_Team2PlayerStates()
+{
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetWorld()->GetFirstLocalPlayerFromController()))
+	{
+		UISubsystem->OnTeamPlayerStatesUpdated.Broadcast();
 	}
 }
 

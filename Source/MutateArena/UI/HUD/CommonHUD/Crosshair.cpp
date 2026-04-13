@@ -21,6 +21,17 @@ void UCrosshair::NativeOnInitialized()
 	}
 }
 
+void UCrosshair::NativeDestruct()
+{
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer()))
+	{
+		UISubsystem->ChangeCrosshairSpread.RemoveAll(this);
+		UISubsystem->OnCrosshairHidden.RemoveAll(this);
+	}
+
+	Super::NativeDestruct();
+}
+
 void UCrosshair::ChangeCrosshairSpread(float Spread)
 {
 	if (CrosshairMID)

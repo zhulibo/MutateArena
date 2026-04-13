@@ -27,6 +27,16 @@ void UScoreboard::NativeOnInitialized()
 	}
 }
 
+void UScoreboard::NativeDestruct()
+{
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer()))
+	{
+		UISubsystem->ShowScoreboard.RemoveAll(this);
+	}
+
+	Super::NativeDestruct();
+}
+
 void UScoreboard::ShowScoreboard(bool bIsShow)
 {
 	if (bIsShow)

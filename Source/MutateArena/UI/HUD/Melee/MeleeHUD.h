@@ -28,7 +28,8 @@ public:
 
 protected:
 	virtual void NativeOnInitialized() override;
-
+	virtual void NativeDestruct() override;
+	
 	void OnMatchCountdownChange(int32 CountdownTime);
 	void OnHumanHealthChange(float TempHealth);
 	void OnAmmoChange(int32 TempAmmo);

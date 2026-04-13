@@ -41,32 +41,11 @@ void AMutationPlayerState::Reset()
 void AMutationPlayerState::SetTeam(ETeam TempTeam)
 {
 	Super::SetTeam(TempTeam);
-	
-	if (MutationController == nullptr) MutationController = Cast<AMutationController>(GetOwner());
-	if (MutationController && MutationController->IsLocalController())
-	{
-		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(MutationController->GetLocalPlayer()))
-		{
-			UISubsystem->OnTeamChange.Broadcast(TempTeam);
-		}
-	}
 }
 
 void AMutationPlayerState::OnRep_Team()
 {
 	Super::OnRep_Team();
-
-	if (MutationController == nullptr) MutationController = Cast<AMutationController>(GetOwner());
-	if (MutationController && MutationController->IsLocalController())
-	{
-		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(MutationController->GetLocalPlayer()))
-		{
-			UISubsystem->OnTeamChange.Broadcast(Team);
-		}
-		
-		// AMutationController::InitHUD依赖Team，OnRep_Team后主动调一下InitHUD。
-		MutationController->InitHUD();
-	}
 }
 
 void AMutationPlayerState::AddDamage(float TempDamage)

@@ -27,6 +27,19 @@ void UMutationMutant::NativeOnInitialized()
 	SkillButton->OnClicked().AddUObject(this, &ThisClass::OnSkillButtonClicked);
 }
 
+void UMutationMutant::NativeDestruct()
+{
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer()))
+	{
+		UISubsystem->OnMutantHealthChange.RemoveAll(this);
+		UISubsystem->OnSkillChange.RemoveAll(this);
+		UISubsystem->OnRageChange.RemoveAll(this);
+		UISubsystem->OnLevelChange.RemoveAll(this);
+	}
+
+	Super::NativeDestruct();
+}
+
 void UMutationMutant::NativeConstruct()
 {
 	Super::NativeConstruct();

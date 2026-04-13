@@ -20,6 +20,20 @@ void UTeamDeadMatchHUD::NativeOnInitialized()
 	}
 }
 
+void UTeamDeadMatchHUD::NativeDestruct()
+{
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer()))
+	{
+		UISubsystem->OnMatchCountdownChange.RemoveAll(this);
+		UISubsystem->OnHumanHealthChange.RemoveAll(this);
+		UISubsystem->OnAmmoChange.RemoveAll(this);
+		UISubsystem->OnCarriedAmmoChange.RemoveAll(this);
+		UISubsystem->OnTeamScoreChange.RemoveAll(this);
+	}
+
+	Super::NativeDestruct();
+}
+
 void UTeamDeadMatchHUD::OnMatchCountdownChange(int32 CountdownTime)
 {
 	FString CountdownText = ULibraryCommon::GetFormatTime(CountdownTime);

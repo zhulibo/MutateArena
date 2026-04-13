@@ -24,6 +24,16 @@ void USpectator::NativeOnInitialized()
 	}
 }
 
+void USpectator::NativeDestruct()
+{
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer()))
+	{
+		UISubsystem->OnViewTargetChange.RemoveAll(this);
+	}
+
+	Super::NativeDestruct();
+}
+
 void USpectator::OnViewTargetChange(AActor* ViewTarget)
 {
 	if (ABaseCharacter* BaseCharacter = Cast<ABaseCharacter>(ViewTarget))

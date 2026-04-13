@@ -13,7 +13,8 @@ class MUTATEARENA_API UMutationContainer : public UCommonActivatableWidget
 
 protected:
 	virtual void NativeOnInitialized() override;
-
+	virtual void NativeDestruct() override;
+	
 	void OnTeamChange(ETeam Team);
 	void OnHUDStateChange(EHUDState HUDState);
 

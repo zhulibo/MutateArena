@@ -226,11 +226,6 @@ void AMutationController::InitHUD()
 		{
 			InitMutantHUD();
 		}
-
-		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
-		{
-			UISubsystem->OnTeamChange.Broadcast(MutationPlayerState->Team);
-		}
 	}
 }
 

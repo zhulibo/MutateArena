@@ -40,7 +40,8 @@ public:
 protected:
 	virtual void NativeOnInitialized() override;
 	virtual void NativeConstruct() override;
-
+	virtual void NativeDestruct() override;
+	
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UPauseMenu> PauseMenuClass;
 	void ShowPauseMenu();

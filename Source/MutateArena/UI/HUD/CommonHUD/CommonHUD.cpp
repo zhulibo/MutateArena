@@ -46,6 +46,24 @@ void UCommonHUD::NativeOnInitialized()
 	TextChat->MsgContainer->SetScrollBarVisibility(ESlateVisibility::Hidden);
 }
 
+void UCommonHUD::NativeDestruct()
+{
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer()))
+	{
+		UISubsystem->OnAnnouncementChange.RemoveAll(this);
+		UISubsystem->OnKillStreakChange.RemoveAll(this);
+		UISubsystem->OnHUDStateChange.RemoveAll(this);
+		UISubsystem->OnCauseDamage.RemoveAll(this);
+		UISubsystem->OnAddKillLog.RemoveAll(this);
+		UISubsystem->OnAFKHosting.RemoveAll(this);
+		UISubsystem->OnCause1000Damage.RemoveAll(this);
+		UISubsystem->OnCause1000Rage.RemoveAll(this);
+		UISubsystem->OnBeImmune.RemoveAll(this);
+	}
+
+	Super::NativeDestruct();
+}
+
 void UCommonHUD::OnAnnouncementChange(const FText& Text, float DisplayTime)
 {
 	if (!Announcement) return;

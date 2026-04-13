@@ -14,6 +14,8 @@ class MUTATEARENA_API UMutantSelect : public UCommonActivatableWidget
 
 protected:
 	virtual void NativeOnInitialized() override;
+	virtual void NativeDestruct() override;
+	
 	virtual UWidget* NativeGetDesiredFocusTarget() const override;
 
 	UPROPERTY()

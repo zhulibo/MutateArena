@@ -73,6 +73,16 @@ void UMutantSelect::NativeOnInitialized()
 	}
 }
 
+void UMutantSelect::NativeDestruct()
+{
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer()))
+	{
+		UISubsystem->OnRoundEnded.RemoveAll(this);
+	}
+
+	Super::NativeDestruct();
+}
+
 UWidget* UMutantSelect::NativeGetDesiredFocusTarget() const
 {
 	if (AMutantCharacter* MutantCharacter = Cast<AMutantCharacter>(GetOwningPlayerPawn()))

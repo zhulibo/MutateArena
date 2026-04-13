@@ -23,7 +23,8 @@ class MUTATEARENA_API UCommonHUD : public UCommonUserWidget
 
 protected:
 	virtual void NativeOnInitialized() override;
-
+	virtual void NativeDestruct() override;
+	
 	UPROPERTY()
 	class ABasePlayerState* LocalPlayerState;
 	UPROPERTY()
@@ -81,5 +82,8 @@ protected:
 	void OnCombatIconChange(ECombatIconType CombatIconType);
 	FTimerHandle CombatIconTimerHandle;
 	void ClearCombatIcon();
+
+	UPROPERTY(meta = (BindWidget))
+	class UMinimap* Minimap;
 	
 };

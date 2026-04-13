@@ -113,6 +113,32 @@ ABaseCharacter::ABaseCharacter(const FObjectInitializer& ObjectInitializer)
 	StimuliSourceComp->RegisterWithPerceptionSystem();
 	
 	AutoHostComp = CreateDefaultSubobject<UAutoHostComponent>(TEXT("AutoHostComponent"));
+	
+	// 小地图
+	MinimapBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("MinimapBoom"));
+	MinimapBoom->SetupAttachment(GetCapsuleComponent()); // 挂载到胶囊体上，避免受角色动画影响
+	// MinimapBoom->SetUsingAbsoluteRotation(true);
+	MinimapBoom->SetRelativeRotation(FRotator(-90.f, 0.f, 0.f)); // 绝对俯视视角
+	MinimapBoom->TargetArmLength = 2000.f; // 小地图相机高度（视你的地图大小调整）
+	MinimapBoom->bDoCollisionTest = false; // 必须关闭，防止碰到天花板相机拉近
+	MinimapBoom->bInheritPitch = false;
+	MinimapBoom->bInheritRoll = false;
+	MinimapBoom->bInheritYaw = true;       // 如果设为 true，小地图会随着玩家视角旋转；如果设为 false，小地图固定上北下南
+
+	MinimapCapture = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("MinimapCapture"));
+	MinimapCapture->SetupAttachment(MinimapBoom, USpringArmComponent::SocketName);
+	MinimapCapture->ProjectionType = ECameraProjectionMode::Orthographic; // 小地图必须用正交投影
+	MinimapCapture->OrthoWidth = GameConstants::MinimapOrthoWidth; // 捕获的范围宽度（视需求调整）
+	MinimapCapture->CaptureSource = ESceneCaptureSource::SCS_FinalColorLDR; // LDR 颜色直接给 UI 用最好
+	MinimapCapture->bCaptureEveryFrame = false;
+	MinimapCapture->bCaptureOnMovement = false;
+	MinimapCapture->ShowFlags.SetLighting(false);
+	MinimapCapture->ShowFlags.SetDynamicShadows(false);
+	MinimapCapture->ShowFlags.SetPostProcessing(true);
+	MinimapCapture->ShowFlags.SetAtmosphere(false);
+	MinimapCapture->ShowFlags.SetFog(false);
+	MinimapCapture->ShowFlags.SetParticles(false);
+	MinimapCapture->ShowFlags.SetSkeletalMeshes(false); 
 }
 
 void ABaseCharacter::GetActorEyesViewPoint(FVector& OutLocation, FRotator& OutRotation) const
@@ -284,6 +310,11 @@ void ABaseCharacter::OnLocallyControllerReady()
 	if (AutoHostComp)
 	{
 		AutoHostComp->StartAFKCheck();
+	}
+	
+	if (MinimapCapture)
+	{
+		MinimapCapture->bCaptureEveryFrame = true;
 	}
 }
 

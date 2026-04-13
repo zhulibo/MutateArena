@@ -19,6 +19,19 @@ void UMutationHUD::NativeOnInitialized()
 	}
 }
 
+void UMutationHUD::NativeDestruct()
+{
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer()))
+	{
+		UISubsystem->OnMatchCountdownChange.RemoveAll(this);
+		UISubsystem->OnTeamNumChange.RemoveAll(this);
+		UISubsystem->OnCurRoundChange.RemoveAll(this);
+		UISubsystem->OnTotalRoundChange.RemoveAll(this);
+	}
+
+	Super::NativeDestruct();
+}
+
 void UMutationHUD::OnMatchCountdownChange(int32 CountdownTime)
 {
 	FString CountdownText = ULibraryCommon::GetFormatTime(CountdownTime);

@@ -4,6 +4,12 @@
 
 #include "CoreMinimal.h"
 
+namespace GameConstants
+{
+	// 小地图正交宽度（厘米/虚幻单位）
+	static constexpr float MinimapOrthoWidth = 3000.f;
+}
+
 // 颜色
 #define C_RED FColor(170, 0, 0, 255)
 #define C_GREEN FColor(0, 130, 0, 255)

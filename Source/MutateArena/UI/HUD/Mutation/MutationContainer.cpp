@@ -11,9 +11,20 @@ void UMutationContainer::NativeOnInitialized()
 
 	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer()))
 	{
-		UISubsystem->OnTeamChange.AddUObject(this, &ThisClass::OnTeamChange);
+		UISubsystem->OnLocalTeamChange.AddUObject(this, &ThisClass::OnTeamChange);
 		UISubsystem->OnHUDStateChange.AddUObject(this, &ThisClass::OnHUDStateChange);
 	}
+}
+
+void UMutationContainer::NativeDestruct()
+{
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer()))
+	{
+		UISubsystem->OnLocalTeamChange.RemoveAll(this);
+		UISubsystem->OnHUDStateChange.RemoveAll(this);
+	}
+
+	Super::NativeDestruct();
 }
 
 void UMutationContainer::OnTeamChange(ETeam Team)

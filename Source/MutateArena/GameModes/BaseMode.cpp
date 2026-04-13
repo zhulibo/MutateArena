@@ -112,11 +112,8 @@ void ABaseMode::Logout(AController* Exiting)
 	Super::Logout(Exiting);
 }
 
-// 离开地图
-void ABaseMode::HandleLeavingMap()
+void ABaseMode::EndMatch()
 {
-	Super::HandleLeavingMap();
-	
 	if (GetWorld()->WorldType == EWorldType::PIE)
 	{
 		if (GetDefault<UDevSetting>()->bUseMutationSettings)
@@ -124,6 +121,15 @@ void ABaseMode::HandleLeavingMap()
 			if (GetDefault<UDevSetting>()->bKeepInMap) return;
 		}
 	}
+	
+	Super::EndMatch();
+}
+
+// 离开地图
+void ABaseMode::HandleLeavingMap()
+{
+	Super::HandleLeavingMap();
+	
 	// 游戏结束服务端退出，或ABaseMode::Logout 中服务端退出失败，强制服务端退出。
 	FTimerHandle TimerHandle;
 	FTimerDelegate TimerDelegate;

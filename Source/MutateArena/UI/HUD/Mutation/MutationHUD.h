@@ -26,7 +26,8 @@ public:
 
 protected:
 	virtual void NativeOnInitialized() override;
-
+	virtual void NativeDestruct() override;
+	
 	void OnMatchCountdownChange(int32 CountdownTime);
 	void OnTeamNumChange(int32 TeamNum, ETeam Team);
 	void OnCurRoundChange(int32 Round);

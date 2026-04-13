@@ -12,9 +12,9 @@ class MUTATEARENA_API UScoreboard : public UCommonUserWidget
 	GENERATED_BODY()
 
 protected:
-	UFUNCTION()
 	virtual void NativeOnInitialized() override;
-
+	virtual void NativeDestruct() override;
+	
 	UPROPERTY()
 	class ABaseGameState* BaseGameState;
 	

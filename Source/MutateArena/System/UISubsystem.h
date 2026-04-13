@@ -37,9 +37,10 @@ DECLARE_MULTICAST_DELEGATE(FOnRoundEnded);
 DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnAddKillLog, ABasePlayerState* AttackerState, const FText& CauserName, ABasePlayerState* DamagedState);
 DECLARE_MULTICAST_DELEGATE_FourParams(FOnReceiveMsg, EMsgType MsgType, ETeam Team, const FString& PlayerName, const FString& Msg);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnAFKHosting, bool bIsHosting);
+DECLARE_MULTICAST_DELEGATE(FOnTeamPlayerStatesUpdated);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnLocalTeamChange, ETeam Team);
 
 // Mutation
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnTeamChange, ETeam Team);
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnTeamNumChange, int32 TeamNum, ETeam Team);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnCurRoundChange, int32 Round);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnTotalRoundChange, int32 Round);
@@ -62,11 +63,10 @@ UCLASS()
 class MUTATEARENA_API UUISubsystem : public ULocalPlayerSubsystem
 {
 	GENERATED_BODY()
-
-protected:
-	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	
 public:
+	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
+	
 	void RegisterGameLayout(class ULayoutBase* Layout);
 	void UnregisterGameLayout(ULayoutBase* Layout);
 	
@@ -104,9 +104,10 @@ public:
 	FOnAddKillLog OnAddKillLog;
 	FOnReceiveMsg OnReceiveMsg;
 	FOnAFKHosting OnAFKHosting;
+	FOnTeamPlayerStatesUpdated OnTeamPlayerStatesUpdated;
+	FOnLocalTeamChange OnLocalTeamChange;
 	
 	// Mutation
-	FOnTeamChange OnTeamChange;
 	FOnTeamNumChange OnTeamNumChange;
 	FOnCurRoundChange OnCurRoundChange;
 	FOnTotalRoundChange OnTotalRoundChange;

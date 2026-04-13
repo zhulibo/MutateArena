@@ -11,8 +11,10 @@ class MUTATEARENA_API AMutationController : public ABaseController
 {
 	GENERATED_BODY()
 	
-protected:
+public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	
+protected:
 	virtual void BeginPlay() override;
 
 	UPROPERTY()

@@ -30,6 +30,20 @@ void UMutationHuman::NativeOnInitialized()
 	}
 }
 
+void UMutationHuman::NativeDestruct()
+{
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer()))
+	{
+		UISubsystem->OnHumanHealthChange.RemoveAll(this);
+		UISubsystem->OnAmmoChange.RemoveAll(this);
+		UISubsystem->OnCarriedAmmoChange.RemoveAll(this);
+		UISubsystem->OnDamageMulChange.RemoveAll(this);
+		UISubsystem->OnMeleeDamageMulChange.RemoveAll(this);
+	}
+
+	Super::NativeDestruct();
+}
+
 void UMutationHuman::NativeConstruct()
 {
 	Super::NativeConstruct();

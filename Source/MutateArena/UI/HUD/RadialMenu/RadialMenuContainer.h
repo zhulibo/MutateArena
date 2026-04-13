@@ -16,7 +16,8 @@ public:
 
 protected:
 	virtual void NativeOnInitialized() override;
-
+	virtual void NativeDestruct() override;
+	
 	UPROPERTY(meta = (BindWidget))
 	class UCommonTextBlock* TitleEquipment;
 	UPROPERTY(meta = (BindWidget))

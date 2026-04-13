@@ -18,6 +18,17 @@ void UInteract::NativeOnInitialized()
 	}
 }
 
+void UInteract::NativeDestruct()
+{
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer()))
+	{
+		UISubsystem->OnInteractStarted.RemoveAll(this);
+		UISubsystem->OnInteractEnded.RemoveAll(this);
+	}
+
+	Super::NativeDestruct();
+}
+
 void UInteract::NativeConstruct()
 {
 	Super::NativeConstruct();
