@@ -138,7 +138,7 @@ ABaseCharacter::ABaseCharacter(const FObjectInitializer& ObjectInitializer)
 	MinimapCapture->ShowFlags.SetAtmosphere(false);
 	MinimapCapture->ShowFlags.SetFog(false);
 	MinimapCapture->ShowFlags.SetParticles(false);
-	MinimapCapture->ShowFlags.SetSkeletalMeshes(false); 
+	MinimapCapture->ShowFlags.SetSkeletalMeshes(false);
 }
 
 void ABaseCharacter::GetActorEyesViewPoint(FVector& OutLocation, FRotator& OutRotation) const
@@ -314,7 +314,19 @@ void ABaseCharacter::OnLocallyControllerReady()
 	
 	if (MinimapCapture)
 	{
-		MinimapCapture->bCaptureEveryFrame = true;
+		// TODO 每帧开启会导致骨骼网格体开启了Nanite的角色没有动画
+		// MinimapCapture->bCaptureEveryFrame = true;
+		
+		MinimapCapture->bAlwaysPersistRenderingState = true; // 保留通道信息
+		GetWorldTimerManager().SetTimer(MinimapUpdateTimer, this, &ABaseCharacter::UpdateMinimapCapture, 0.05f, true);
+	}
+}
+
+void ABaseCharacter::UpdateMinimapCapture()
+{
+	if (MinimapCapture)
+	{
+		MinimapCapture->CaptureScene();
 	}
 }
 
@@ -388,6 +400,8 @@ void ABaseCharacter::Destroyed()
 		{
 			PlayerSubsystem->SetIsDead();
 		}
+		
+		GetWorldTimerManager().ClearTimer(MinimapUpdateTimer);
 	}
 
 	Super::Destroyed();

@@ -90,6 +90,8 @@ protected:
 	void PollInit_ControllerAndPSAndTeam();
 	bool bIsLocallyControllerReady = false;
 	virtual void OnLocallyControllerReady();
+	FTimerHandle MinimapUpdateTimer;
+	void UpdateMinimapCapture();
 	
 	UPROPERTY(Replicated)
 	float ControllerPitch;

@@ -13,7 +13,7 @@ struct FResolutionOption
 	FName Name;
 
 	UPROPERTY()
-	FIntPoint Point;
+	FIntPoint Point = FIntPoint::ZeroValue;
 
 	FResolutionOption() {}
 	FResolutionOption(FName InName, FIntPoint InPoint) : Name(InName), Point(InPoint) {}
