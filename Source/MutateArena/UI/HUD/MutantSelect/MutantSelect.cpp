@@ -59,10 +59,10 @@ void UMutantSelect::NativeOnInitialized()
 				if (UWrapBoxSlot* NewSlot = Cast<UWrapBoxSlot>(MutantSelectButtonContainer->AddChild(MutantSelectButton))) 
 					NewSlot->SetPadding(FMargin(20, 20, 0, 0));
 
-				if (ItemValue.MutantCharacterName == EMutantCharacterName::Cook
+				if (ItemValue.MutantCharacterName == EMutantCharacterName::CorpseDriver
+					|| ItemValue.MutantCharacterName == EMutantCharacterName::Cook
 					|| ItemValue.MutantCharacterName == EMutantCharacterName::Echo
 					|| ItemValue.MutantCharacterName == EMutantCharacterName::Generator
-					|| ItemValue.MutantCharacterName == EMutantCharacterName::CorpseDriver
 					|| ItemValue.MutantCharacterName == EMutantCharacterName::Venom)
 				{
 					MutantSelectButton->Desc->SetText(FText::FromString(TEXT("In Development")));

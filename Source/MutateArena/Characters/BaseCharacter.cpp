@@ -117,7 +117,6 @@ ABaseCharacter::ABaseCharacter(const FObjectInitializer& ObjectInitializer)
 	// 小地图
 	MinimapBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("MinimapBoom"));
 	MinimapBoom->SetupAttachment(GetCapsuleComponent()); // 挂载到胶囊体上，避免受角色动画影响
-	// MinimapBoom->SetUsingAbsoluteRotation(true);
 	MinimapBoom->SetRelativeRotation(FRotator(-90.f, 0.f, 0.f)); // 绝对俯视视角
 	MinimapBoom->TargetArmLength = 2000.f; // 小地图相机高度（视你的地图大小调整）
 	MinimapBoom->bDoCollisionTest = false; // 必须关闭，防止碰到天花板相机拉近

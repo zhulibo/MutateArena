@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 UENUM(BlueprintType)
-enum class ECoolGameMode : uint8
+enum class EGameMode2 : uint8
 {
 	Mutation,
 	// Cataclysm,

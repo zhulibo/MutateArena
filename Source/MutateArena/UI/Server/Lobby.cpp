@@ -124,8 +124,8 @@ void ULobby::SetUIAttr()
 	LastServerName = FText::FromString(ServerName);
 
 	ModeComboBox->ClearOptions();
-	const UEnum* ModeEnum = StaticEnum<ECoolGameMode>();
-	for (int32 i = 0; i < static_cast<int32>(ECoolGameMode::None); ++i)
+	const UEnum* ModeEnum = StaticEnum<EGameMode2>();
+	for (int32 i = 0; i < static_cast<int32>(EGameMode2::None); ++i)
 	{
 		FName EnumKey = FName(*ModeEnum->GetNameStringByIndex(i));
 		ModeComboBox->AddOption(EnumKey);

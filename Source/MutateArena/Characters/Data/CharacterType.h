@@ -19,10 +19,10 @@ enum class EMutantCharacterName : uint8
 	Ghost,
 	Smoker,
 	Cutter,
+	CorpseDriver,
 	Cook,
 	Echo,
 	Generator,
-	CorpseDriver,
 	Venom,
 
 	None

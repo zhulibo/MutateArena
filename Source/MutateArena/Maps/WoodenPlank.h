@@ -15,11 +15,10 @@ class MUTATEARENA_API AWoodenPlank : public AActor
 public:	
 	AWoodenPlank();
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	
 protected:
 	virtual void BeginPlay() override;
-
-	// 必须重写此函数以注册需要网络同步的变量
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 public:	
 	UPROPERTY(VisibleAnywhere)
