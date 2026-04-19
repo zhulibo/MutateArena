@@ -32,6 +32,7 @@
 #include "Data/DNAAsset2.h"
 #include "MutateArena/GameStates/BaseGameState.h"
 #include "MutateArena/Assets/Data/CommonAsset.h"
+#include "MutateArena/System/DevSetting.h"
 #include "MutateArena/System/Storage/SaveGameLoadout.h"
 #include "MutateArena/System/Tags/ProjectTags.h"
 #include "MutateArena/UI/TextChat/TextChat.h"
@@ -311,13 +312,22 @@ void ABaseCharacter::OnLocallyControllerReady()
 		AutoHostComp->StartAFKCheck();
 	}
 	
-	if (MinimapCapture)
+	// 多个客户端 PIE 时，共用一个 ReaderTarget，导致雷达背景重叠闪烁，直接禁用了（不影响 Standalone 和打包版）
+	bool bShowMiniMap = true;
+	if (GetWorld()->WorldType == EWorldType::PIE)
 	{
-		// TODO 每帧开启会导致骨骼网格体开启了Nanite的角色没有动画
-		// MinimapCapture->bCaptureEveryFrame = true;
+		bShowMiniMap = GetDefault<UDevSetting>()->bShowMiniMap;
+	}
+	if (bShowMiniMap)
+	{
+		if (MinimapCapture)
+		{
+			// TODO 每帧开启会导致骨骼网格体开启了Nanite的角色没有动画
+			// MinimapCapture->bCaptureEveryFrame = true;
 		
-		MinimapCapture->bAlwaysPersistRenderingState = true; // 保留通道信息
-		GetWorldTimerManager().SetTimer(MinimapUpdateTimer, this, &ABaseCharacter::UpdateMinimapCapture, 0.05f, true);
+			MinimapCapture->bAlwaysPersistRenderingState = true; // 保留通道信息
+			GetWorldTimerManager().SetTimer(MinimapUpdateTimer, this, &ABaseCharacter::UpdateMinimapCapture, 0.05f, true);
+		}
 	}
 }
 

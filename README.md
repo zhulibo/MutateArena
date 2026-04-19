@@ -16,21 +16,13 @@ This repository does not include binary files. You can download the complete pro
 ## Art Assets
 
 .blender and .ssp files are available on [OneDrive](https://1drv.ms/f/c/c8d6dc43bb25e3ee/IgDu4yW7Q9zWIIDIowoAAAAAAZE-GKmT3dQX2dS5ddXecZM?e=KLbs87).
-The version is Blender 5.0 and Substance 3D Painter 11.1
+The version is Blender 5.1 and Substance 3D Painter 11.1
 
-The traditional High-to-Low Poly workflow was not used (I used Nanite), and many parts of the model remain unbeveled to allow for easier change later.
-
-If you want import fbx to UE, you need change source code
-form  
-bIsBlenderArmatureBone = (GrandFather == nullptr || GrandFather == SDKScene->GetRootNode()) && (RootBoneParentName.Compare(TEXT("armature"), ESearchCase::IgnoreCase) == 0);  
-to  
-bIsBlenderArmatureBone = (GrandFather == nullptr || GrandFather == SDKScene->GetRootNode()) && (RootBoneParentName.Compare(TEXT("￩ﾪﾨ￦ﾞﾶ"), ESearchCase::IgnoreCase) == 0);  
-(The "armature" is hardcoded, and my Chinese version .blender file is named "骨架", and it will be garbled when imported into UE.)  
-Otherwise, your root bone will have an extra bone named "骨架".
+[README_ART.md](Misc/README_ART.md)
 
 ## Setup
 
-If you want to run your own version of the game, you need to register your project at https://dev.epicgames.com/portal,  
+If you want to run your own version game, you need to register your project at https://dev.epicgames.com/portal,  
 and replace the IDs under the [OnlineServices.EOS](Config/DefaultEngine.ini) section in DefaultEngine.ini. 
 
 Please pay attention to the comments in the [/Script/Engine.Engine](Config/DefaultEngine.ini) section of DefaultEngine.ini.
@@ -39,12 +31,14 @@ Please pay attention to the comments in the [/Script/Engine.Engine](Config/Defau
 
 It's currently in its earliest playable state and will remain in development for an extended period.
 
-## README FOR PLAYERS
+## Known issues
 
-[README_PLAYER.txt](README_PLAYER.txt)
+...
 
 ## Links
 
 [www.mutatearena.com](https://www.mutatearena.com/)
 
 [哔哩哔哩](https://space.bilibili.com/11741743/)
+
+[README_PLAYER.txt](Misc/README_PLAYER.txt)

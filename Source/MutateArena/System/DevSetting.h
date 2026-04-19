@@ -31,6 +31,9 @@ public:
 
 	UPROPERTY(Config, EditAnywhere, Category = "Dev")
 	bool bKeepInMap = true;
+	
+	UPROPERTY(Config, EditAnywhere, Category = "Dev")
+	bool bShowMiniMap = false;
 
 	UPROPERTY(Config, EditAnywhere, Category = "Mutation")
 	bool bUseMutationSettings = true;
