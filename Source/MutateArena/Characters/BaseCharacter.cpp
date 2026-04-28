@@ -582,6 +582,7 @@ void ABaseCharacter::LookStick(const FInputActionValue& Value)
 	AddControllerPitchInput(AxisVector.Y * StorageSubsystem->CacheSetting->ControllerSensitivity);
 }
 
+// TODO 实现 蹲跳 > 跳蹲 > 普通跳
 void ABaseCharacter::JumpButtonPressed(const FInputActionValue& Value)
 {
 	if (MovementComp && MovementComp->MovementMode == MOVE_Custom && MovementComp->CustomMovementMode == CMOVE_Ladder)
@@ -597,37 +598,36 @@ void ABaseCharacter::JumpButtonPressed(const FInputActionValue& Value)
 		return;
 	}
 	
-	if (bIsCrouched)
-	{
-		UnCrouch();
-	}
-	else
-	{
-		Jump();
-	}
+	// if (bIsCrouched)
+	// {
+	// 	UnCrouch();
+	// }
+	// else
+	// {
+	// 	Jump();
+	// }
+	Jump();
 }
 
 // 键鼠为长按蹲
 void ABaseCharacter::CrouchButtonPressed(const FInputActionValue& Value)
 {
-	if (!GetCharacterMovement()->IsFalling())
-	{
-		Crouch();
-	}
+	// if (GetCharacterMovement()->IsFalling()) return;
+	
+	Crouch();
 }
 
 void ABaseCharacter::CrouchButtonReleased(const FInputActionValue& Value)
 {
-	if (!GetCharacterMovement()->IsFalling())
-	{
-		UnCrouch();
-	}
+	// if (GetCharacterMovement()->IsFalling()) return;
+	
+	UnCrouch();
 }
 
 // 手柄为切换蹲
 void ABaseCharacter::CrouchControllerButtonPressed(const FInputActionValue& Value)
 {
-	if (GetCharacterMovement()->IsFalling()) return;
+	// if (GetCharacterMovement()->IsFalling()) return;
 
 	if (bIsCrouched)
 	{

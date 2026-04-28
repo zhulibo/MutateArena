@@ -1,4 +1,4 @@
-#include "ArenaGround.h"
+#include "DM_ArenaGround.h"
 #include "GeometryScript/MeshPrimitiveFunctions.h"
 #include "GeometryScript/MeshBooleanFunctions.h"
 #include "GeometryScript/MeshMaterialFunctions.h" 
@@ -6,7 +6,7 @@
 #include "UDynamicMesh.h"
 #include "Components/DynamicMeshComponent.h"
 
-AArenaGround::AArenaGround()
+ADM_ArenaGround::ADM_ArenaGround()
 {
     PrimaryActorTick.bCanEverTick = false;
 
@@ -18,19 +18,19 @@ AArenaGround::AArenaGround()
     DynamicMeshComponent->CollisionType = ECollisionTraceFlag::CTF_UseComplexAsSimple;
 }
 
-void AArenaGround::BeginPlay()
+void ADM_ArenaGround::BeginPlay()
 {
     Super::BeginPlay();
 }
 
-void AArenaGround::OnConstruction(const FTransform& Transform)
+void ADM_ArenaGround::OnConstruction(const FTransform& Transform)
 {
     Super::OnConstruction(Transform);
     
     Generate();
 }
 
-void AArenaGround::Generate()
+void ADM_ArenaGround::Generate()
 {
     if (!DynamicMeshComponent) return;
     UDynamicMesh* TargetMesh = DynamicMeshComponent->GetDynamicMesh();

@@ -63,8 +63,9 @@ protected:
 	UMaterialInstanceDynamic* DynamicPointerMat;
 	UPROPERTY()
 	float MaxPointerRadius = 150.0f;
+	// 当指针推到足够远（超过死区），才进行扇区选择（变色）
 	UPROPERTY()
-	float DeadzoneThreshold = 0.6f;
+	float DeadzoneThreshold = 0.65f;
 	// 迟滞缓冲值（当已经选中某项时，死区阈值降低多少，防止在边界闪烁） 比如：推到 0.6 才能进去，但退回到 0.55 才会出来
 	UPROPERTY()
 	float DeadzoneHysteresis = 0.05f;

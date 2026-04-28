@@ -1,5 +1,7 @@
 #include "MAMovementComponent.h"
 
+#include "GameFramework/Character.h"
+
 UMAMovementComponent::UMAMovementComponent()
 {
 }
@@ -88,3 +90,99 @@ void UMAMovementComponent::PhysLadder(float deltaTime, int32 Iterations)
        }
     }
 }
+
+// void UMAMovementComponent::CalcVelocity(float DeltaTime, float Friction, bool bFluid, float BrakingDeceleration)
+// {
+//    // 处理空中加速
+//    if (MovementMode == MOVE_Falling && CustomMovementMode == CMOVE_None && !HasAnimRootMotion() && !CurrentRootMotion.HasActiveRootMotionSources())
+//    {
+//       float OriginalZ = Velocity.Z;
+//       FVector WishDir = Acceleration.GetSafeNormal2D();
+//       float WishSpeed = WishDir.IsNearlyZero() ? 0.0f : MaxAirSpeed;
+//
+//       ApplyQuakeAirAccelerate(DeltaTime, WishDir, WishSpeed);
+//
+//       Velocity.Z = OriginalZ;
+//       return; // 绕过默认截断
+//    }
+//
+//    // 处理地面连跳摩擦力豁免
+//    if (MovementMode == MOVE_Walking)
+//    {
+//       float TimeSinceLanded = GetWorld()->GetTimeSeconds() - LastLandedTime;
+//       bool bJumpBuffered = CharacterOwner && CharacterOwner->bPressedJump;
+//
+//       if (bJumpBuffered && TimeSinceLanded <= BhopFrictionToleranceTime)
+//       {
+//          // 强行把传给父类的地表摩擦力和刹车力度设为 0
+//          Friction = 0.0f;
+//          BrakingDeceleration = 0.0f;
+//       }
+//    }
+//
+//    // 其他状态（含处理过摩擦力的地面状态、梯子状态）走默认逻辑
+//    Super::CalcVelocity(DeltaTime, Friction, bFluid, BrakingDeceleration);
+// }
+//
+// void UMAMovementComponent::ApplyQuakeAirAccelerate(float DeltaTime, FVector WishDir, float WishSpeed)
+// {
+//    // 如果玩家在空中松开了键盘，不提供额外加速（保留现有动量）
+//    if (WishSpeed == 0.0f) 
+//    {
+//       return;
+//    }
+//
+//    // 1. 获取当前速度的平面向量 (忽略 Z 轴)
+//    FVector Velocity2D = FVector(Velocity.X, Velocity.Y, 0.0f);
+//
+//    // 2. 【核心：基于向量点乘的投影】计算当前平面速度在玩家期望方向 (WishDir) 上的投影大小
+//    float CurrentSpeed = FVector::DotProduct(Velocity2D, WishDir);
+//
+//    // 3. 计算加速余量 (期望速度 - 投影速度)
+//    float AddSpeed = WishSpeed - CurrentSpeed;
+//
+//    // 如果投影方向上的速度已经达到或超过了期望速度，停止在该方向施加加速度
+//    // 这就是为什么鼠标转动能突破速度限制：只要鼠标转得够快，投影速度 CurrentSpeed 就会很小甚至为负！
+//    if (AddSpeed <= 0.0f) 
+//    {
+//       return;
+//    }
+//
+//    // 4. 计算当前帧理论上能提供的加速度
+//    float AccelSpeed = AirAcceleration * DeltaTime;
+//
+//    // 5. 截断加速量，防止加速过猛超过了加成余量
+//    AccelSpeed = FMath::Min(AccelSpeed, AddSpeed);
+//
+//    // 6. 将计算得出的纯净加速量应用到总速度上
+//    Velocity += AccelSpeed * WishDir;
+// }
+//
+// void UMAMovementComponent::ProcessLanded(const FHitResult& Hit, float remainingTime, int32 Iterations)
+// {
+//    Super::ProcessLanded(Hit, remainingTime, Iterations);
+//
+//    // 记录落地瞬间的时间
+//    LastLandedTime = GetWorld()->GetTimeSeconds();
+// }
+//
+// void UMAMovementComponent::ApplyVelocityBraking(float DeltaTime, float Friction, float BrakingDeceleration)
+// {
+//    // 检查是否处于宽恕期
+//    if (MovementMode == MOVE_Walking)
+//    {
+//       float TimeSinceLanded = GetWorld()->GetTimeSeconds() - LastLandedTime;
+// 		
+//       // 检查玩家是否正在按住跳跃键（即跳跃指令已被缓冲）
+//       // 注意：如果你的 GAS Jump 逻辑不修改 bPressedJump，你需要在这里读取你的 GameplayTag 状态
+//       bool bJumpBuffered = CharacterOwner && CharacterOwner->bPressedJump;
+//
+//       if (bJumpBuffered && TimeSinceLanded <= BhopFrictionToleranceTime)
+//       {
+//          // 在连跳宽恕窗口内，直接跳过刹车减速，保留动量
+//          return;
+//       }
+//    }
+//
+//    Super::ApplyVelocityBraking(DeltaTime, Friction, BrakingDeceleration);
+// }

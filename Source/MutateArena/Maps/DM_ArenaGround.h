@@ -2,17 +2,17 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "ArenaGround.generated.h"
+#include "DM_ArenaGround.generated.h"
 
 class UDynamicMeshComponent;
 
 UCLASS()
-class MUTATEARENA_API AArenaGround : public AActor
+class MUTATEARENA_API ADM_ArenaGround : public AActor
 {
 	GENERATED_BODY()
 
 public:
-	AArenaGround();
+	ADM_ArenaGround();
 
 	// 核心组件：动态网格体
 	UPROPERTY(VisibleAnywhere)

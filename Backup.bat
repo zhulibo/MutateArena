@@ -3,41 +3,56 @@ REM Set console to UTF-8 to prevent character encoding issues
 chcp 65001 >nul
 setlocal
 
+REM Set 7-Zip executable path
+set "SEVENZIP=C:\Program Files\7-Zip\7z.exe"
 set "SOURCE_DIR=%~dp0"
-set "TEMP_FILE=C:\Users\yoyoy\Desktop\Temp\MutateArena_temp.zip"
+set "TEMP_ZIP=C:\Users\yoyoy\Desktop\Temp\MutateArena_temp.zip"
 set "DEST_FILE=C:\Users\yoyoy\OneDrive\Backup\MutateArena\MutateArena.zip"
 
-set "EXCLUDE_ITEMS=.git, .idea, Binaries, Build, DerivedDataCache, Intermediate, Saved"
+REM Set exclusion list using -xr! for recursive exclusion
+set "EXCLUDES=-xr!.git -xr!.idea -xr!Binaries -xr!Build -xr!DerivedDataCache -xr!Intermediate -xr!Saved"
+
+REM Check if 7-Zip exists at the specified path
+if not exist "%SEVENZIP%" (
+    powershell -Command "Write-Host 'Error: 7-Zip not found! Please check the path: %SEVENZIP%' -ForegroundColor Red"
+    pause
+    exit /b
+)
 
 echo.
-powershell -Command "Write-Host 'Skip %EXCLUDE_ITEMS%' -ForegroundColor Cyan"
+set "DISPLAY_LIST=%EXCLUDES:-xr!=%"
+powershell -Command "Write-Host 'Skip %DISPLAY_LIST%' -ForegroundColor Cyan"
 echo.
 
-echo Starting backup...
+echo Starting ultra-fast backup using 7-Zip...
 
-REM Use try-catch to ensure exit code 1 on failure (Single-line to prevent Batch parsing errors)
-powershell -NoProfile -Command "$ErrorActionPreference = 'Stop'; try { $exclude = '%EXCLUDE_ITEMS%' -split ',' | ForEach-Object { $_.Trim() }; Get-ChildItem -Path '%SOURCE_DIR%' -Exclude $exclude | Compress-Archive -DestinationPath '%TEMP_FILE%' -Force } catch { exit 1 }"
-    
-REM Check the exit code of the PowerShell command
+REM Execute 7-Zip compression
+REM a: Add to archive
+REM -tzip: Format as zip
+REM -mx5: Compression level 5 (Standard)
+REM -ssw: Compress files open for writing
+"%SEVENZIP%" a -tzip "%TEMP_ZIP%" "%SOURCE_DIR%*" %EXCLUDES% -mx5 -ssw
+
+REM Check the exit code of the 7-Zip command
 if %errorlevel% equ 0 (
     REM Replace the old backup only if the compression succeeded
-    move /y "%TEMP_FILE%" "%DEST_FILE%" >nul
+    move /y "%TEMP_ZIP%" "%DEST_FILE%" >nul
     echo.
     
     REM Print success message in Green
     powershell -Command "Write-Host 'Backup successful!' -ForegroundColor Green"
     echo.
     
-    REM Close automatically after 3 seconds on success
+    REM Close automatically after 5 seconds on success
     timeout /t 5
     exit /b
 ) else (
     REM Clean up the corrupted temporary file if it exists
-    if exist "%TEMP_FILE%" del "%TEMP_FILE%"
+    if exist "%TEMP_ZIP%" del "%TEMP_ZIP%"
     echo.
     
     REM Print error message in Red
-    powershell -Command "Write-Host 'Backup failed! (Please check if Unreal Editor is closed)' -ForegroundColor Red"
+    powershell -Command "Write-Host 'Backup failed! (Error code: %errorlevel%)' -ForegroundColor Red"
     echo.
     
     REM Pause and keep the window open on failure
