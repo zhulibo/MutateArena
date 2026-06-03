@@ -21,7 +21,7 @@ bool UGA_Equipment_Swap::CanActivateAbility(const FGameplayAbilitySpecHandle Han
 	{
 		return false;
 	}
-	
+
 	return true;
 }
 
@@ -32,7 +32,7 @@ void UGA_Equipment_Swap::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;
 	}
-	
+
 	UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
 	AHumanCharacter* HumanChar = GetHumanCharacter();
 	UCombatComponent* CombatComp = HumanChar ? HumanChar->CombatComp : nullptr;
@@ -48,7 +48,7 @@ void UGA_Equipment_Swap::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;
 	}
-	
+
 	// 获取这次按键传进来的目标装备类型
 	TargetEquipmentType = static_cast<EEquipmentType>(TriggerEventData->EventMagnitude);
 	TargetEquipment = CombatComp->GetEquipmentByType(TargetEquipmentType);

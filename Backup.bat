@@ -6,8 +6,28 @@ setlocal
 REM Set 7-Zip executable path
 set "SEVENZIP=C:\Program Files\7-Zip\7z.exe"
 set "SOURCE_DIR=%~dp0"
-set "TEMP_ZIP=C:\Users\yoyoy\Desktop\Temp\MutateArena_temp.zip"
-set "DEST_FILE=C:\Users\yoyoy\OneDrive\Backup\MutateArena\MutateArena.zip"
+
+REM Set temporary directory and temporary zip file path, prevent ZIP file from being deleted if the script fails to run.
+set "TEMP_DIR=C:\Users\yoyoy\Desktop\Temp"
+set "TEMP_ZIP=%TEMP_DIR%\MutateArena_temp.zip"
+
+REM Set destination directory and final file path
+set "DEST_DIR=C:\Users\yoyoy\OneDrive\MutateArena"
+set "DEST_FILE=%DEST_DIR%\MutateArena.zip"
+
+REM Check temporary directory
+if not exist "%TEMP_DIR%\" (
+    powershell -Command "Write-Host 'Error: Temp directory not found! Please create: %TEMP_DIR%' -ForegroundColor Red"
+    pause
+    exit /b
+)
+
+REM Check destination directory
+if not exist "%DEST_DIR%\" (
+    powershell -Command "Write-Host 'Error: OneDrive destination directory not found! Please check: %DEST_DIR%' -ForegroundColor Red"
+    pause
+    exit /b
+)
 
 REM Set exclusion list using -xr! for recursive exclusion
 set "EXCLUDES=-xr!.git -xr!.idea -xr!Binaries -xr!Build -xr!DerivedDataCache -xr!Intermediate -xr!Saved"

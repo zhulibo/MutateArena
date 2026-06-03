@@ -84,8 +84,8 @@ void ULoginLayout::ShowDevContainer()
 	
 	DevContainer->SetVisibility(ESlateVisibility::Visible);
 
-	Login1Button->ButtonText->SetText(FText::FromString(TEXT("dust9923")));
-	Login1Button->OnClicked().AddUObject(this, &ThisClass::OnLoginButtonClicked, ECoolLoginType::DevAuth, FString(TEXT("127.0.0.1:2333")), FString(TEXT("dust9923")));
+	Login1Button->ButtonText->SetText(FText::FromString(TEXT("dust532")));
+	Login1Button->OnClicked().AddUObject(this, &ThisClass::OnLoginButtonClicked, ECoolLoginType::DevAuth, FString(TEXT("127.0.0.1:2333")), FString(TEXT("dust532")));
 
 	Login2Button->ButtonText->SetText(FText::FromString(TEXT("MutateArena-g")));
 	Login2Button->OnClicked().AddUObject(this, &ThisClass::OnLoginButtonClicked, ECoolLoginType::DevAuth, FString(TEXT("127.0.0.1:2333")), FString(TEXT("MutateArena-g")));

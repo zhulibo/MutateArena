@@ -16,7 +16,6 @@ enum class EMutationMap : uint8
 {
 	ConstructionSite,
 	Playground,
-	RoseManor,
 
 	None
 };

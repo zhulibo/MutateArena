@@ -133,8 +133,11 @@ void AHumanCharacter::PossessedBy(AController* NewController)
 	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
 	if (AssetSubsystem && AssetSubsystem->CharacterAsset && ASC)
 	{
+		// TODO 切枪有时不生效 待排查原因
+		UE_LOG(LogTemp, Warning, TEXT("AHumanCharacter::PossessedBy"));
 		for (TSubclassOf<UGameplayAbility> AbilityClass : AssetSubsystem->CharacterAsset->HumanDefaultAbilities)
 		{
+			UE_LOG(LogTemp, Warning, TEXT("Ability Class: %s"), *AbilityClass->GetName());
 			FGameplayAbilitySpec AbilitySpec(AbilityClass, 1, INDEX_NONE, this);
 			ASC->GiveAbility(AbilitySpec);
 		}
@@ -507,7 +510,7 @@ void AHumanCharacter::SendSwapEquipmentEvent(EEquipmentType TargetEquipmentType)
 {
 	// 如果玩家想切的目标，就是他现在使用的或正在努力切过去的装备，直接返回
 	if (CombatComp && CombatComp->DesiredEquipmentType == TargetEquipmentType) return;
-	
+
 	if (ASC)
 	{
 		FScopedPredictionWindow PredictionWindow(ASC, IsLocallyControlled() && !HasAuthority());

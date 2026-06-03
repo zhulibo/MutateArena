@@ -99,7 +99,7 @@ void UEOSSubsystem::Login(FPlatformUserId TempPlatformUserId, ECoolLoginType Log
 
 			OnLoginComplete.Broadcast(true, TEXT("Success"));
 			
-			// 临时代码
+			// 临时代码 待删除
 			GetWorld()->GetTimerManager().SetTimer(TickNumTimerHandle, this, &ThisClass::ChangeLobbyMemberTickNum, 2.f, true);
 		}
 		else
@@ -216,7 +216,7 @@ void UEOSSubsystem::CreateLobby()
 	Params.Attributes.Emplace(LOBBY_VERSION, ULibraryCommon::GetProjectVersion());
 	Params.Attributes.Emplace(LOBBY_SERVER_NAME, FString(TEXT("Default Name")));
 	Params.Attributes.Emplace(LOBBY_MODE_NAME, MUTATION.ToString());
-	Params.Attributes.Emplace(LOBBY_MAP_NAME, FString(TEXT("RoseManor")));
+	Params.Attributes.Emplace(LOBBY_MAP_NAME, FString(TEXT("ConstructionSite")));
 	Params.Attributes.Emplace(LOBBY_MATCH_ROUND, static_cast<int64>(DEFAULT_MATCH_ROUND));
 	Params.Attributes.Emplace(LOBBY_MATCH_TIME, static_cast<int64>(DEFAULT_MATCH_TIME));
 	Params.Attributes.Emplace(LOBBY_STATUS, static_cast<int64>(0));

@@ -85,6 +85,7 @@ ABaseCharacter::ABaseCharacter(const FObjectInitializer& ObjectInitializer)
 	GetCharacterMovement()->AirControl = 0.4f;
 	GetCharacterMovement()->AirControlBoostMultiplier = 2.f;
 	GetCharacterMovement()->AirControlBoostVelocityThreshold = 40.f;
+	GetCharacterMovement()->SetWalkableFloorAngle(50.f);
 	
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 
