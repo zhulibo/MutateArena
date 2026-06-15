@@ -583,7 +583,7 @@ void ABaseCharacter::LookStick(const FInputActionValue& Value)
 	AddControllerPitchInput(AxisVector.Y * StorageSubsystem->CacheSetting->ControllerSensitivity);
 }
 
-// TODO 实现 蹲跳 > 跳蹲 > 普通跳
+// TODO 实现 蹲跳 > 跳跳蹲 > 跳蹲 > 普通跳
 void ABaseCharacter::JumpButtonPressed(const FInputActionValue& Value)
 {
 	if (MovementComp && MovementComp->MovementMode == MOVE_Custom && MovementComp->CustomMovementMode == CMOVE_Ladder)
