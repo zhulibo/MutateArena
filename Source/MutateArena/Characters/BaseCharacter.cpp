@@ -33,6 +33,7 @@
 #include "MutateArena/GameStates/BaseGameState.h"
 #include "MutateArena/Assets/Data/CommonAsset.h"
 #include "MutateArena/System/DevSetting.h"
+#include "MutateArena/System/Storage/DefaultConfig.h"
 #include "MutateArena/System/Storage/SaveGameLoadout.h"
 #include "MutateArena/System/Tags/ProjectTags.h"
 #include "MutateArena/UI/TextChat/TextChat.h"
@@ -473,8 +474,19 @@ void ABaseCharacter::OnASCInit()
 				{
 					if (UDNAAsset2* DNAAsset2 = StorageSubsystem->GetDNAAssetByType(StorageSubsystem->CacheLoadout->DNA2))
 					{
-						BasePlayerState->ServerSetDNA(DNAAsset1->DNA, DNAAsset2->DNA);
-						// BasePlayerState->ServerSetDNA(EDNA::HighBoneDensity, EDNA::SubconsciousAwareness);
+						EDNA DNA1 = DNAAsset1->DNA;
+						EDNA DNA2 = DNAAsset2->DNA;
+						
+						if (GetWorld()->WorldType == EWorldType::PIE)
+						{
+							if (GetDefault<UDevSetting>()->DNA1 != EDNA::None && GetDefault<UDevSetting>()->DNA2 != EDNA::None)
+							{
+								DNA1 = GetDefault<UDevSetting>()->DNA1;
+								DNA2 = GetDefault<UDevSetting>()->DNA2;
+							}
+						}
+						
+						BasePlayerState->ServerSetDNA(DNA1, DNA2);
 					}
 				}
 			}

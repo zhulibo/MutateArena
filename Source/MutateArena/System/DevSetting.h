@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DeveloperSettings.h"
+#include "MutateArena/Characters/Data/CharacterType.h"
 #include "Storage/ConfigType.h"
 #include "DevSetting.generated.h"
 
@@ -13,7 +14,6 @@ class MUTATEARENA_API UDevSetting : public UDeveloperSettings
 	GENERATED_BODY()
 
 public:
-	
 	UDevSetting();
 	
 	UPROPERTY(Config, EditAnywhere, Category = "Equipment")
@@ -54,6 +54,11 @@ public:
 	
 	UPROPERTY(Config, EditAnywhere, Category = "AFK")
 	int32 AFKHostingTime = 30;
+	
+	UPROPERTY(Config, EditAnywhere, Category = "DNA")
+	EDNA DNA1 = EDNA::None;
+	UPROPERTY(Config, EditAnywhere, Category = "DNA")
+	EDNA DNA2 = EDNA::None;
 	
 	UPROPERTY(Config, EditAnywhere, Category = "EditorMaps", meta=(AllowedClasses="/Script/Engine.World"))
 	TArray<FSoftObjectPath> EditorMaps;

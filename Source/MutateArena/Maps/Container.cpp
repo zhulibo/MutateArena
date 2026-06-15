@@ -19,19 +19,6 @@ AContainer::AContainer()
 
 	BackRightDoor = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BackRightDoor"));
 	BackRightDoor->SetupAttachment(RootComponent);
-
-	// 设置默认值
-	CurrentColor = EContainerColor::White;
-
-	bShowFrontLeftDoor = true;
-	FrontLeftDoorAngle = 0.0f;
-	bShowFrontRightDoor = true;
-	FrontRightDoorAngle = 0.0f;
-
-	bShowBackLeftDoor = true;
-	BackLeftDoorAngle = 0.0f;
-	bShowBackRightDoor = true;
-	BackRightDoorAngle = 0.0f;
 }
 
 void AContainer::OnConstruction(const FTransform& Transform)

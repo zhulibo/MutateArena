@@ -229,7 +229,7 @@ void AHumanCharacter::ServerSpawnEquipments_Implementation(EEquipmentName Primar
 	if (CombatComp == nullptr) return;
 
 	// 包括Standalone
-#if UE_EDITOR
+#if WITH_EDITOR
 	if (GetDefault<UDevSetting>()->bIsUseCustomEquipment)
 	{
 		Primary = GetDefault<UDevSetting>()->PrimaryEquipment;

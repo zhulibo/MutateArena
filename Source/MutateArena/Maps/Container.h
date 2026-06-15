@@ -59,26 +59,24 @@ protected:
 	TMap<EContainerColor, FContainerSkin> SkinMap;
 
 	UPROPERTY(EditAnywhere)
-	EContainerColor CurrentColor;
+	EContainerColor CurrentColor = EContainerColor::White;
 
 	UPROPERTY(EditAnywhere)
-	bool bShowFrontLeftDoor;
+	bool bShowFrontLeftDoor = true;
+	UPROPERTY(EditAnywhere)
+	bool bShowFrontRightDoor = true;
+	UPROPERTY(EditAnywhere)
+	bool bShowBackLeftDoor = true;
+	UPROPERTY(EditAnywhere)
+	bool bShowBackRightDoor = true;
+	
 	UPROPERTY(EditAnywhere, meta = (EditCondition = "bShowFrontLeftDoor", UIMin = "-180", UIMax = "180"))
-	float FrontLeftDoorAngle;
-
-	UPROPERTY(EditAnywhere)
-	bool bShowFrontRightDoor;
+	float FrontLeftDoorAngle = 0.f;
 	UPROPERTY(EditAnywhere, meta = (EditCondition = "bShowFrontRightDoor", UIMin = "-180", UIMax = "180"))
-	float FrontRightDoorAngle;
-
-	UPROPERTY(EditAnywhere)
-	bool bShowBackLeftDoor;
+	float FrontRightDoorAngle = 0.f;
 	UPROPERTY(EditAnywhere, meta = (EditCondition = "bShowBackLeftDoor", UIMin = "-180", UIMax = "180"))
-	float BackLeftDoorAngle;
-
-	UPROPERTY(EditAnywhere)
-	bool bShowBackRightDoor;
+	float BackLeftDoorAngle = 0.f;
 	UPROPERTY(EditAnywhere, meta = (EditCondition = "bShowBackRightDoor", UIMin = "-180", UIMax = "180"))
-	float BackRightDoorAngle;
+	float BackRightDoorAngle = 0.f;
 	
 };
