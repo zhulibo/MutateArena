@@ -55,6 +55,10 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Flashbang")
 	UMaterialInterface* MI_Flashbang;
 	
+	// DNA
+	UPROPERTY(EditAnywhere, Category = "DNA")
+	UMaterialParameterCollection* MPC_EnhancedVision;
+	
 	virtual FPrimaryAssetId GetPrimaryAssetId() const override
 	{
 		return FPrimaryAssetId(ASSET_CHARACTER, GetFName());

@@ -8,8 +8,6 @@
 ABounceFan::ABounceFan()
 {
     PrimaryActorTick.bCanEverTick = false;
-    
-    bReplicates = true;
 
     DefaultRootComp = CreateDefaultSubobject<USceneComponent>(TEXT("DefaultRootComp"));
     RootComponent = DefaultRootComp;

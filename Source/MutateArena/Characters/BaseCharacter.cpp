@@ -30,6 +30,9 @@
 #include "Components/SceneCaptureComponent2D.h"
 #include "Components/StateTreeComponent.h"
 #include "Data/DNAAsset2.h"
+#include "Kismet/KismetMaterialLibrary.h"
+#include "Materials/MaterialParameterCollection.h"
+#include "Materials/MaterialParameterCollectionInstance.h"
 #include "MutateArena/GameStates/BaseGameState.h"
 #include "MutateArena/Assets/Data/CommonAsset.h"
 #include "MutateArena/System/DevSetting.h"
@@ -460,6 +463,8 @@ void ABaseCharacter::OnASCInit()
 	{
 		ASC->GetGameplayAttributeValueChangeDelegate(AttributeSetBase->GetMaxHealthAttribute()).AddUObject(this, &ThisClass::OnMaxHealthChanged);
 		ASC->GetGameplayAttributeValueChangeDelegate(AttributeSetBase->GetHealthAttribute()).AddUObject(this, &ThisClass::OnHealthChanged);
+		
+		ASC->RegisterGameplayTagEvent(TAG_STATE_DNA_EnhancedVision, EGameplayTagEventType::NewOrRemoved).AddUObject(this, &ThisClass::OnEnhancedVisionTagChanged);
 	}
 	
 	if (IsLocallyControlled())
@@ -490,6 +495,21 @@ void ABaseCharacter::OnASCInit()
 					}
 				}
 			}
+		}
+	}
+}
+
+// EnhancedVision能看穿迷幕
+void ABaseCharacter::OnEnhancedVisionTagChanged(FGameplayTag GameplayTag, int NewCount)
+{
+	if (!IsLocallyControlled()) return;
+	
+	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+	if (AssetSubsystem && AssetSubsystem->CharacterAsset && AssetSubsystem->CharacterAsset->MPC_EnhancedVision)
+	{
+		if (UMaterialParameterCollectionInstance* MPCI = GetWorld()->GetParameterCollectionInstance(AssetSubsystem->CharacterAsset->MPC_EnhancedVision))
+		{
+			MPCI->SetScalarParameterValue(TEXT("OpacityMul"), NewCount > 0 ? 0.9f : 1.0f);
 		}
 	}
 }

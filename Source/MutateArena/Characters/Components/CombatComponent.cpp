@@ -476,52 +476,52 @@ void UCombatComponent::InterpFOV(float DeltaSeconds)
 
 void UCombatComponent::CalcCameraToScopeRotator()
 {
-	// double Time1 = FPlatformTime::Seconds();
-
-	if (HumanChar == nullptr || GetCurWeapon() == nullptr || !GetCurWeapon()->bIsPIP) return;
-
-	const UCameraComponent* CameraComponent = HumanChar->FindComponentByClass<UCameraComponent>();
-	const USkeletalMeshComponent* EquipmentMesh = GetCurWeapon()->EquipmentMesh;
-	if (CameraComponent == nullptr || EquipmentMesh == nullptr) return;
-
-	const FVector CameraLocation = CameraComponent->GetComponentLocation();
-	const FVector ScopeStartLocation = EquipmentMesh->GetSocketLocation(SOCKET_SCOPE_START);
-	const FVector ScopeEndLocation = EquipmentMesh->GetSocketLocation(SOCKET_SCOPE_END);
+    const auto* CurWeapon = GetCurWeapon();
+    if (HumanChar == nullptr || CurWeapon == nullptr || !CurWeapon->bIsPIP) return;
 	
-	FVector WorldToScopeStartVector = ScopeStartLocation - CameraLocation;
-	FVector WorldToScopeEndVector = ScopeEndLocation - ScopeStartLocation;
-	
-	WorldToScopeStartVector.Normalize();
-	WorldToScopeEndVector.Normalize();
+	const UCameraComponent* CameraComponent = HumanChar->Camera;
+    const USkeletalMeshComponent* EquipmentMesh = CurWeapon->EquipmentMesh;
+    if (CameraComponent == nullptr || EquipmentMesh == nullptr) return;
 
-	// 转换为摄像机本地坐标系
-	const FTransform& CameraTransform = CameraComponent->GetComponentTransform();
-	const FVector LocalToScopStartVector = CameraTransform.InverseTransformVector(WorldToScopeStartVector);
-	const FVector LocalToScopeEndVector = CameraTransform.InverseTransformVector(WorldToScopeEndVector);
+    // 获取空间位置
+    const FVector CameraLocation = CameraComponent->GetComponentLocation();
+    const FVector ScopeStartLocation = EquipmentMesh->GetSocketLocation(SOCKET_SCOPE_START);
+    const FVector ScopeEndLocation = EquipmentMesh->GetSocketLocation(SOCKET_SCOPE_END);
+    
+    // 计算方向并标准化
+    FVector WorldToScopeStartDir = ScopeStartLocation - CameraLocation;
+    FVector WorldToScopeEndDir = ScopeEndLocation - ScopeStartLocation;
+    
+    WorldToScopeStartDir.Normalize();
+    WorldToScopeEndDir.Normalize();
 
-	const FQuat RotationQuat = FQuat::FindBetween(LocalToScopStartVector, LocalToScopeEndVector);
-	const FRotator CameraToScopeRotator = RotationQuat.Rotator();
+    // 转换为摄像机本地坐标系 
+    const FTransform& CameraTransform = CameraComponent->GetComponentTransform();
+    const FVector LocalToScopeStartDir = CameraTransform.InverseTransformVectorNoScale(WorldToScopeStartDir);
+    const FVector LocalToScopeEndDir = CameraTransform.InverseTransformVectorNoScale(WorldToScopeEndDir);
 
-	// 镜片效果
-	if (AssetSubsystem == nullptr) AssetSubsystem = HumanChar->GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-	if (AssetSubsystem && AssetSubsystem->EquipmentAsset && AssetSubsystem->EquipmentAsset->MPC_Scope)
-	{
-		if (UMaterialParameterCollectionInstance* MPCI = GetWorld()->GetParameterCollectionInstance(AssetSubsystem->EquipmentAsset->MPC_Scope))
-		{
-			const FVector RotatorAsVector = FVector(CameraToScopeRotator.Pitch, CameraToScopeRotator.Yaw, CameraToScopeRotator.Roll);
-			MPCI->SetVectorParameterValue(TEXT("CameraToScopeRotator"), RotatorAsVector);
-			
-			// float Num = FMath::RandRange(0, 100);
-			// if (Num < 2)
-			// {
-			// 	UE_LOG(LogTemp, Warning, TEXT("LocalToScopStartVector %s LocalToScopeEndVector %s CameraToScopeRotator %s"), *LocalToScopStartVector.ToString(), *LocalToScopeEndVector.ToString(), *CameraToScopeRotator.ToString());
-			// 	UE_LOG(LogTemp, Warning, TEXT("RotatorAsVector %s"), *RotatorAsVector.ToString());
-			// }
-		}
-	}
+    // 计算旋转
+    const FQuat RotationQuat = FQuat::FindBetweenNormals(LocalToScopeStartDir, LocalToScopeEndDir);
+    const FRotator CameraToScopeRotator = RotationQuat.Rotator();
 
-	// double Time2 = FPlatformTime::Seconds();
-	// UE_LOG(LogTemp, Warning, TEXT("CalcCameraToScopeRotator cost time %f"), Time2 - Time1);
+    if (CachedScopeMPCI == nullptr)
+    {
+        if (AssetSubsystem == nullptr) 
+        {
+            AssetSubsystem = HumanChar->GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+        }
+        
+        if (AssetSubsystem && AssetSubsystem->EquipmentAsset && AssetSubsystem->EquipmentAsset->MPC_Scope)
+        {
+            CachedScopeMPCI = GetWorld()->GetParameterCollectionInstance(AssetSubsystem->EquipmentAsset->MPC_Scope);
+        }
+    }
+
+    if (CachedScopeMPCI)
+    {
+        const FVector RotatorAsVector(CameraToScopeRotator.Pitch, CameraToScopeRotator.Yaw, CameraToScopeRotator.Roll);
+        CachedScopeMPCI->SetVectorParameterValue(TEXT("CameraToScopeRotator"), RotatorAsVector);
+    }
 }
 
 // 检测准星对应游戏世界的物体

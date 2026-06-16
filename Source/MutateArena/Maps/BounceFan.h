@@ -10,7 +10,7 @@ class UCapsuleComponent;
 class UArrowComponent;
 
 UCLASS()
-class ABounceFan : public AActor
+class MUTATEARENA_API ABounceFan : public AActor
 {
 	GENERATED_BODY()
     

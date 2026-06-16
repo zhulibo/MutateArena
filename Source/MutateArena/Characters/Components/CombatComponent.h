@@ -100,6 +100,8 @@ public:
 	bool IsAiming();
 	void LocalSetAiming(bool TempBIsAiming);
 protected:
+	UPROPERTY(Transient)
+	UMaterialParameterCollectionInstance* CachedScopeMPCI = nullptr;
 	void CalcCameraToScopeRotator();
 
 	// 射击

@@ -113,6 +113,8 @@ protected:
 	TSubclassOf<class UGameplayEffect> DefaultAttrEffect;
 	void InitAbilityActorInfo();
 	virtual void OnASCInit();
+	void OnEnhancedVisionTagChanged(FGameplayTag GameplayTag, int NewCount);
+	
 public:
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 	UAttributeSetBase* GetAttributeSetBase();
