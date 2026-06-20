@@ -5,6 +5,7 @@
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "TimerManager.h"
 #include "Blueprint/WidgetLayoutLibrary.h"
+#include "Engine/LocalPlayer.h"
 #include "MutateArena/Equipments/Weapon.h"
 #include "MutateArena/PlayerControllers/BaseController.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -53,7 +54,7 @@ void UCrosshairComponent::SetHUDCrosshair(float DeltaSeconds)
 	AWeapon* Weapon = HumanCharacter->CombatComp->GetCurWeapon();
 	if (Weapon == nullptr)
 	{
-		UISubsystem->ChangeCrosshairSpread.Broadcast(0.04); // 需与材质节点的默认 Spread 一致
+		UISubsystem->ChangeCrosshairSpread.Broadcast(0.04f); // 需与材质节点的默认 Spread 一致
 		return;
 	}
 
@@ -90,7 +91,7 @@ void UCrosshairComponent::SetHUDCrosshair(float DeltaSeconds)
 	
 	// float DPIScale = UWidgetLayoutLibrary::GetViewportScale(GetWorld());
 	
-	if (UVSpread > 0.4) UVSpread = 0.4;
+	if (UVSpread > 0.4f) UVSpread = 0.4f;
 	
 	UISubsystem->ChangeCrosshairSpread.Broadcast(UVSpread);
 }

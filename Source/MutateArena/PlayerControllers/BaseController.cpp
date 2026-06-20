@@ -136,7 +136,6 @@ void ABaseController::RadialMenuSwitchButtonPressed(const FInputActionValue& Val
 	}
 }
 
-// 已关闭 项目-增强输入-应只触发弦中最后操作/bShouldOnlyTriggerLastActionInChord
 void ABaseController::RadialMenuSelect(const FInputActionValue& Value)
 {
 	FVector2D AxisVector = Value.Get<FVector2D>();

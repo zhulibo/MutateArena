@@ -4,7 +4,7 @@
 #include "GameFramework/SaveGame.h"
 #include "SaveGameLoadout.generated.h"
 
-enum class EDNA : uint8;
+enum class EDNA2 : uint8;
 enum class EMutantCharacterName : uint8;
 enum class EHumanCharacterName : uint8;
 
@@ -30,8 +30,8 @@ public:
 	EMutantCharacterName MutantCharacterName;
 
 	UPROPERTY()
-	EDNA DNA1;
+	EDNA2 DNA1;
 	UPROPERTY()
-	EDNA DNA2;
+	EDNA2 DNA2;
 
 };

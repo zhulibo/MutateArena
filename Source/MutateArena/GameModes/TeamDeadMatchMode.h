@@ -5,7 +5,7 @@
 #include "MutateArena/MutateArena.h"
 #include "TeamDeadMatchMode.generated.h"
 
-UCLASS()
+UCLASS(Abstract)
 class MUTATEARENA_API ATeamDeadMatchMode : public ABaseMode
 {
 	GENERATED_BODY()

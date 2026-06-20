@@ -56,9 +56,9 @@ public:
 	int32 AFKHostingTime = 30;
 	
 	UPROPERTY(Config, EditAnywhere, Category = "DNA")
-	EDNA DNA1 = EDNA::None;
+	EDNA2 DNA1 = EDNA2::None;
 	UPROPERTY(Config, EditAnywhere, Category = "DNA")
-	EDNA DNA2 = EDNA::None;
+	EDNA2 DNA2 = EDNA2::None;
 	
 	UPROPERTY(Config, EditAnywhere, Category = "EditorMaps", meta=(AllowedClasses="/Script/Engine.World"))
 	TArray<FSoftObjectPath> EditorMaps;

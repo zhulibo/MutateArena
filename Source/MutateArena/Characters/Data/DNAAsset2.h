@@ -6,7 +6,7 @@
 #include "MutateArena/MutateArena.h"
 #include "DNAAsset2.generated.h"
 
-enum class EDNA : uint8;
+enum class EDNA2 : uint8;
 class UGameplayEffect;
 
 UCLASS(BlueprintType)
@@ -16,7 +16,7 @@ class MUTATEARENA_API UDNAAsset2 : public UPrimaryDataAsset
 
 public:
 	UPROPERTY(EditAnywhere)
-	EDNA DNA = EDNA::None;
+	EDNA2 DNA = EDNA2::None;
 
 	UPROPERTY(EditAnywhere)
 	FText DisplayName;

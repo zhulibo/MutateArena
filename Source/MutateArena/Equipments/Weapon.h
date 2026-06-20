@@ -46,7 +46,7 @@ public:
 	UAnimMontage* ADSMontage_E;
 
 	UPROPERTY()
-	float AimingFOVMul = 0.9; // 缩放倍数
+	float AimingFOVMul = 0.9f; // 缩放倍数
 	UPROPERTY()
 	bool bIsPIP = false;
 	UPROPERTY()

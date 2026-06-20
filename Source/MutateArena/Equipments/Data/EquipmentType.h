@@ -161,7 +161,7 @@ struct FWeaponData : public FTableRowBase
 	float PenetrationPower = 0.f;
 
 	UPROPERTY(EditAnywhere)
-	float AimingFOVMul = 0.9;
+	float AimingFOVMul = 0.9f;
 	UPROPERTY(EditAnywhere)
 	float WalkSpeedMul = 1.f;
 	UPROPERTY(EditAnywhere)

@@ -20,13 +20,13 @@ struct FContainerSkin
 	GENERATED_BODY()
 
 	UPROPERTY(EditDefaultsOnly)
-	class UMaterialInterface* BodyMaterial;
+	class UMaterialInterface* BodyMaterial = nullptr;
 
 	UPROPERTY(EditDefaultsOnly)
-	UMaterialInterface* DoorLeftMaterial;
+	UMaterialInterface* DoorLeftMaterial = nullptr;
 
 	UPROPERTY(EditDefaultsOnly)
-	UMaterialInterface* DoorRightMaterial;
+	UMaterialInterface* DoorRightMaterial = nullptr;
 };
 
 UCLASS()

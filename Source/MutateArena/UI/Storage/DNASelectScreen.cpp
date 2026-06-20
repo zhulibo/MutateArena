@@ -12,9 +12,9 @@ void UDNASelectScreen::NativeOnInitialized()
 	UStorageSubsystem* StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
 	if (!StorageSubsystem) return;
 	
-	for (uint8 i = 0; i < static_cast<uint8>(EDNA::None); ++i)
+	for (uint8 i = 0; i < static_cast<uint8>(EDNA2::None); ++i)
 	{
-		EDNA CurrentType = static_cast<EDNA>(i);
+		EDNA2 CurrentType = static_cast<EDNA2>(i);
         
 		if (UDNAAsset2* DNAData = StorageSubsystem->GetDNAAssetByType(CurrentType))
 		{

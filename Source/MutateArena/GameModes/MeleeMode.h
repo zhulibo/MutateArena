@@ -5,7 +5,7 @@
 #include "MutateArena/MutateArena.h"
 #include "MeleeMode.generated.h"
 
-UCLASS()
+UCLASS(Abstract)
 class MUTATEARENA_API AMeleeMode : public ABaseMode
 {
 	GENERATED_BODY()

@@ -715,8 +715,12 @@ void ULobby::OnStartServerButtonClicked()
 			{LOBBY_STATUS, static_cast<int64>(1)},
 		});
 	}
-
-	FString MapPath = "/Game/Maps/Map_" + EOSSubsystem->GetLobbyModeName() + "/" + EOSSubsystem->GetLobbyMapName() + "/" + EOSSubsystem->GetLobbyMapName() + "?listen";
+	
+	FString ModeName = EOSSubsystem->GetLobbyModeName();
+	if (ModeName == FString("TeamDeadMatch")) ModeName = FString("TDM");
+	FString MapName = EOSSubsystem->GetLobbyMapName();
+	
+	FString MapPath = "/Game/Maps/" + ModeName + "_" + MapName + "/" + MapName + "?listen";
 
 	UE_LOG(LogTemp, Warning, TEXT("ServerTravel ------------------------------------------"));
 	GetWorld()->ServerTravel(MapPath, ETravelType::TRAVEL_Absolute);

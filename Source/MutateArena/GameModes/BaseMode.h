@@ -6,7 +6,7 @@
 
 enum class ETeam : uint8;
 
-UCLASS()
+UCLASS(Abstract)
 class MUTATEARENA_API ABaseMode : public AModularGameMode
 {
 	GENERATED_BODY()

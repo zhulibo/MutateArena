@@ -245,9 +245,9 @@ void UStorageSubsystem::BuildDNACache()
 	}
 }
 
-UDNAAsset2* UStorageSubsystem::GetDNAAssetByType(EDNA InDNA) const
+UDNAAsset2* UStorageSubsystem::GetDNAAssetByType(EDNA2 InDNA) const
 {
-	if (InDNA == EDNA::None)
+	if (InDNA == EDNA2::None)
 	{
 		return nullptr;
 	}

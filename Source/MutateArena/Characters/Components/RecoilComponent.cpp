@@ -3,6 +3,7 @@
 #include "CombatComponent.h"
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "TimerManager.h"
+#include "Curves/CurveFloat.h"
 #include "Curves/CurveVector.h"
 #include "MutateArena/Equipments/Weapon.h"
 

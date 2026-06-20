@@ -33,9 +33,9 @@ public:
 	UPROPERTY()
 	EMutantCharacterName MutantCharacterName = EMutantCharacterName::Tank;
 	UPROPERTY()
-	EDNA DNA1 = EDNA::HighBoneDensity;
+	EDNA2 DNA1 = EDNA2::HighBoneDensity;
 	UPROPERTY()
-	EDNA DNA2 = EDNA::AcceleratedClotting;
+	EDNA2 DNA2 = EDNA2::AcceleratedClotting;
 
 	UPROPERTY()
 	FName Language;

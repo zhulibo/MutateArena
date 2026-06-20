@@ -111,10 +111,10 @@ void UTabGame::SetUISavedValue()
 		// UE_LOG(LogTemp, Warning, TEXT("Language: %s"), *StorageSubsystem->CacheSetting->Language.ToString());
 		
 		FName Language = StorageSubsystem->CacheSetting->Language;
+		// TODO 存在漏洞 可能是 zh-Hant/zh-Hans 不等于 zh 最终下拉框显示了en
 		if (Language != EN || Language != ZH)
 		{
 			Language = EN;
-			UE_LOG(LogTemp, Warning, TEXT(""));
 		}
 		LanguageComboBox->SetSelectedOption(Language);
 		
@@ -174,6 +174,7 @@ void UTabGame::SetDefault()
 		if (StorageSubsystem && StorageSubsystem->CacheSetting)
 		{
 			FName Language = DefaultConfig->Language;
+			// TODO 存在漏洞 可能是 zh-Hant/zh-Hans 不等于 zh 最终下拉框显示了en
 			if (Language != EN || Language != ZH)
 			{
 				Language = EN;

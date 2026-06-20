@@ -279,7 +279,7 @@ void ABasePlayerState::OnKillStreakChange()
 	}
 }
 
-void ABasePlayerState::ServerSetDNA_Implementation(EDNA TempDNA1, EDNA TempDNA2)
+void ABasePlayerState::ServerSetDNA_Implementation(EDNA2 TempDNA1, EDNA2 TempDNA2)
 {
 	DNA1 = TempDNA1;
 	DNA2 = TempDNA2;
@@ -288,7 +288,7 @@ void ABasePlayerState::ServerSetDNA_Implementation(EDNA TempDNA1, EDNA TempDNA2)
 	ApplyDNAGameplayEffect(TempDNA2);
 }
 
-void ABasePlayerState::ApplyDNAGameplayEffect(EDNA DNA)
+void ABasePlayerState::ApplyDNAGameplayEffect(EDNA2 DNA)
 {
 	if (!AbilitySystemComponent) return;
 	

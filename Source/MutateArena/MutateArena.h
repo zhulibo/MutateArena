@@ -70,8 +70,8 @@ namespace GameConstants
 #define DEFAULT_MATCH_TIME 10
 
 // 设置
-#define ON FName(TEXT("on"))
-#define OFF FName(TEXT("off"))
+#define ON FName(TEXT("on.")) // TODO on作为UComboBoxKey的key有bug
+#define OFF FName(TEXT("off."))
 #define FULLSCREEN FName(TEXT("Fullscreen"))
 #define WIDOWED_FULLSCREEN FName(TEXT("WindowedFullscreen"))
 #define WIDOWED FName(TEXT("Windowed"))
@@ -107,7 +107,4 @@ namespace GameConstants
 #define DR_WEAPON_DATA FName(TEXT("DR_WeaponData"))
 #define DR_MELEE_DATA FName(TEXT("DR_MeleeData"))
 #define DR_EQUIPMENT_RECOIL FName(TEXT("DR_EquipmentRecoil"))
-
-// 多语言
-#define CULTURE_EQUIPMENT_TYPE FString(TEXT("EquipmentType"))
 

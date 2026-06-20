@@ -13,7 +13,7 @@ namespace MatchState
 
 enum class ESpawnMutantReason : uint8;
 
-UCLASS()
+UCLASS(Abstract)
 class MUTATEARENA_API AMutationMode : public ABaseMode
 {
 	GENERATED_BODY()

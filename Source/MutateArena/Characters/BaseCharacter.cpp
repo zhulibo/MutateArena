@@ -10,6 +10,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "MetaSoundSource.h"
 #include "CommonInputSubsystem.h"
+#include "TimerManager.h"
 #include "MutateArena/Abilities/AttributeSetBase.h"
 #include "MutateArena/Abilities/MAAbilitySystemComponent.h"
 #include "MutateArena/Equipments/Data/DamageTypeFall.h"
@@ -28,15 +29,16 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Data/InputAsset.h"
 #include "Components/SceneCaptureComponent2D.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "Components/StateTreeComponent.h"
 #include "Data/DNAAsset2.h"
-#include "Kismet/KismetMaterialLibrary.h"
+#include "Engine/GameInstance.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/MaterialParameterCollection.h"
 #include "Materials/MaterialParameterCollectionInstance.h"
 #include "MutateArena/GameStates/BaseGameState.h"
 #include "MutateArena/Assets/Data/CommonAsset.h"
 #include "MutateArena/System/DevSetting.h"
-#include "MutateArena/System/Storage/DefaultConfig.h"
 #include "MutateArena/System/Storage/SaveGameLoadout.h"
 #include "MutateArena/System/Tags/ProjectTags.h"
 #include "MutateArena/UI/TextChat/TextChat.h"
@@ -178,7 +180,8 @@ void ABaseCharacter::PostInitializeComponents()
 void ABaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	UE_LOG(LogTemp, Warning, TEXT("111111111111111"));
+	UE_LOG(LogTemp, Warning, TEXT("哈哈哈"));
 	if (GetCapsuleComponent())
 	{
 		GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnLadderBeginOverlap);
@@ -479,12 +482,12 @@ void ABaseCharacter::OnASCInit()
 				{
 					if (UDNAAsset2* DNAAsset2 = StorageSubsystem->GetDNAAssetByType(StorageSubsystem->CacheLoadout->DNA2))
 					{
-						EDNA DNA1 = DNAAsset1->DNA;
-						EDNA DNA2 = DNAAsset2->DNA;
+						EDNA2 DNA1 = DNAAsset1->DNA;
+						EDNA2 DNA2 = DNAAsset2->DNA;
 						
 						if (GetWorld()->WorldType == EWorldType::PIE)
 						{
-							if (GetDefault<UDevSetting>()->DNA1 != EDNA::None && GetDefault<UDevSetting>()->DNA2 != EDNA::None)
+							if (GetDefault<UDevSetting>()->DNA1 != EDNA2::None && GetDefault<UDevSetting>()->DNA2 != EDNA2::None)
 							{
 								DNA1 = GetDefault<UDevSetting>()->DNA1;
 								DNA2 = GetDefault<UDevSetting>()->DNA2;
@@ -631,28 +634,27 @@ void ABaseCharacter::JumpButtonPressed(const FInputActionValue& Value)
 		return;
 	}
 	
-	// if (bIsCrouched)
-	// {
-	// 	UnCrouch();
-	// }
-	// else
-	// {
-	// 	Jump();
-	// }
-	Jump();
+	if (bIsCrouched)
+	{
+		UnCrouch();
+	}
+	else
+	{
+		Jump();
+	}
 }
 
 // 键鼠为长按蹲
 void ABaseCharacter::CrouchButtonPressed(const FInputActionValue& Value)
 {
-	// if (GetCharacterMovement()->IsFalling()) return;
+	if (GetCharacterMovement()->IsFalling()) return;
 	
 	Crouch();
 }
 
 void ABaseCharacter::CrouchButtonReleased(const FInputActionValue& Value)
 {
-	// if (GetCharacterMovement()->IsFalling()) return;
+	if (GetCharacterMovement()->IsFalling()) return;
 	
 	UnCrouch();
 }
@@ -660,7 +662,7 @@ void ABaseCharacter::CrouchButtonReleased(const FInputActionValue& Value)
 // 手柄为切换蹲
 void ABaseCharacter::CrouchControllerButtonPressed(const FInputActionValue& Value)
 {
-	// if (GetCharacterMovement()->IsFalling()) return;
+	if (GetCharacterMovement()->IsFalling()) return;
 
 	if (bIsCrouched)
 	{

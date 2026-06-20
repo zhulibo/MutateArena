@@ -5,7 +5,7 @@
 #include "DNAButton.generated.h"
 
 class UDNAAsset2;
-enum class EDNA : uint8;
+enum class EDNA2 : uint8;
 
 UCLASS(Abstract)
 class MUTATEARENA_API UDNAButton : public UCommonButtonBase
@@ -20,7 +20,7 @@ public:
 	class UCommonLazyImage* Icon;
 	
 	UPROPERTY()
-	EDNA DNA;
+	EDNA2 DNA;
 
 	void UpdateDNAInfo(class UDNAAsset2* DNAData);
 	

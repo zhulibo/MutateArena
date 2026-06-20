@@ -13,11 +13,11 @@ void UDNASelectButton::Setup(UDNAAsset2* DNAData)
 	Desc->SetText(DNAData->Desc);
 	Icon->SetBrushFromLazyTexture(DNAData->Icon);
 	
-	if (DNAData->DNA == EDNA::AcceleratedMetabolism 
-		|| DNAData->DNA == EDNA::ThermalRegulation
-		|| DNAData->DNA == EDNA::ToxicityImmunity
-		|| DNAData->DNA == EDNA::PainModulation
-		|| DNAData->DNA == EDNA::CoreMaintenance)
+	if (DNAData->DNA == EDNA2::AcceleratedMetabolism 
+		|| DNAData->DNA == EDNA2::ThermalRegulation
+		|| DNAData->DNA == EDNA2::ToxicityImmunity
+		|| DNAData->DNA == EDNA2::PainModulation
+		|| DNAData->DNA == EDNA2::CoreMaintenance)
 	{
 		Desc->SetText(FText::FromString(TEXT("In Development")));
 		SetIsEnabled(false);

@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include "GameModeType.generated.h"
+
 UENUM(BlueprintType)
 enum class EGameMode2 : uint8
 {

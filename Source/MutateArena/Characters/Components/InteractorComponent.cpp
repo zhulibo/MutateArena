@@ -1,5 +1,7 @@
 #include "InteractorComponent.h"
 #include "Camera/CameraComponent.h"
+#include "Engine/LocalPlayer.h"
+#include "Engine/World.h"
 #include "MutateArena/Characters/BaseCharacter.h"
 #include "MutateArena/GameStates/BaseGameState.h"
 #include "MutateArena/Interfaces/Interactable.h"

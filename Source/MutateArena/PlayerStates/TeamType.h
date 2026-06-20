@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include "TeamType.generated.h"
+
 UENUM(BlueprintType)
 enum class ETeam : uint8
 {

@@ -1,6 +1,8 @@
 #include "AnimInstMutant.h"
 
 #include "Components/MAMovementComponent.h"
+#include "Engine/LocalPlayer.h"
+#include "Engine/World.h"
 #include "MutateArena/Characters/MutantCharacter.h"
 #include "MutateArena/System/PlayerSubsystem.h"
 #include "GameFramework/CharacterMovementComponent.h"

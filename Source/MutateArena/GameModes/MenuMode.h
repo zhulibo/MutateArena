@@ -4,7 +4,7 @@
 #include "ModularGameMode.h"
 #include "MenuMode.generated.h"
 
-UCLASS()
+UCLASS(Abstract)
 class MUTATEARENA_API AMenuMode : public AModularGameModeBase
 {
 	GENERATED_BODY()

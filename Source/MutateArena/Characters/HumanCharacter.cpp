@@ -5,6 +5,7 @@
 #include "DataRegistrySubsystem.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "TimerManager.h"
 #include "MutateArena/Equipments/Throwing.h"
 #include "Components/AutoHostComponent.h"
 #include "MutateArena/Equipments/Data/EquipmentType.h"
@@ -29,10 +30,12 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/CrosshairComponent.h"
 #include "Components/RecoilComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "Data/CharacterAsset.h"
 #include "Data/CharacterType.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Data/InputAsset.h"
+#include "Engine/GameInstance.h"
 #include "MutateArena/Abilities/AttributeSetBase.h"
 #include "MutateArena/Abilities/MAAbilitySystemComponent.h"
 #include "MutateArena/System/UISubsystem.h"
@@ -134,10 +137,10 @@ void AHumanCharacter::PossessedBy(AController* NewController)
 	if (AssetSubsystem && AssetSubsystem->CharacterAsset && ASC)
 	{
 		// TODO 切枪有时不生效 待排查原因
-		UE_LOG(LogTemp, Warning, TEXT("AHumanCharacter::PossessedBy"));
+		// UE_LOG(LogTemp, Warning, TEXT("AHumanCharacter::PossessedBy"));
 		for (TSubclassOf<UGameplayAbility> AbilityClass : AssetSubsystem->CharacterAsset->HumanDefaultAbilities)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Ability Class: %s"), *AbilityClass->GetName());
+			// UE_LOG(LogTemp, Warning, TEXT("Ability Class: %s"), *AbilityClass->GetName());
 			FGameplayAbilitySpec AbilitySpec(AbilityClass, 1, INDEX_NONE, this);
 			ASC->GiveAbility(AbilitySpec);
 		}

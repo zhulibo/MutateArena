@@ -1,10 +1,13 @@
 #include "AutoHostComponent.h"
+
+#include "TimerManager.h"
 #include "MutateArena/Characters/BaseCharacter.h"
 #include "MutateArena/PlayerControllers/BaseController.h"
 #include "MutateArena/PlayerStates/BasePlayerState.h"
 #include "MutateArena/System/DevSetting.h"
 #include "MutateArena/System/UISubsystem.h"
 #include "Components/StateTreeComponent.h"
+#include "Engine/LocalPlayer.h"
 #include "Perception/AIPerceptionComponent.h"
 #include "Perception/AISense_Sight.h"
 

@@ -3,9 +3,11 @@ setlocal
 
 set baseDir=%~dp0
 
-set source=%baseDir%Misc\README_PLAYER.txt
-set target=%baseDir%Build\Windows\
+set source=%baseDir%README_PLAYER.txt
 
+set target=%baseDir%..\Build\Windows\
+
+REM 复制文件
 copy "%source%" "%target%"
 
 echo Copy README_PLAYER.txt complete!

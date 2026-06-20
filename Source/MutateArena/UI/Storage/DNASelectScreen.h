@@ -5,7 +5,7 @@
 #include "DNASelectScreen.generated.h"
 
 class UWrapBox;
-enum class EDNA : uint8;
+enum class EDNA2 : uint8;
 class UDNASelectButton;
 
 DECLARE_DELEGATE_OneParam(FDNASelectComplete, class UDNAAsset2*);

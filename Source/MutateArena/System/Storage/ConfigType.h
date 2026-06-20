@@ -1,4 +1,5 @@
 ﻿#pragma once
+
 #include "MutateArena/Equipments/Data/EquipmentType.h"
 
 #include "ConfigType.generated.h"
