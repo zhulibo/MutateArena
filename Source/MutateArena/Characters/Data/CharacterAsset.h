@@ -59,6 +59,10 @@ public:
 	UPROPERTY(EditAnywhere, Category = "DNA")
 	UMaterialParameterCollection* MPC_EnhancedVision;
 	
+	// 脚印贴花
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UMaterialInterface> MI_Footprint;
+	
 	virtual FPrimaryAssetId GetPrimaryAssetId() const override
 	{
 		return FPrimaryAssetId(ASSET_CHARACTER, GetFName());

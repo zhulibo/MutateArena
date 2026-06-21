@@ -54,7 +54,7 @@ void AProjectileBullet::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, 
     {
         auto DecalComponent = UGameplayStatics::SpawnDecalAttached(
             ImpactDecal,
-            FVector(5.f, 6.f, 6.f),
+            FVector(5.f, 5.f, 5.f),
             OtherComp, NAME_None,
             Hit.ImpactPoint,
             Hit.ImpactNormal.Rotation(),
