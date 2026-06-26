@@ -1,6 +1,7 @@
 #include "GC_MutantCutterSkill.h"
 
 #include "MetaSoundSource.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "MutateArena/Characters/Mutants/MutantCutter.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"

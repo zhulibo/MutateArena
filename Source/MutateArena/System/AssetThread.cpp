@@ -1,7 +1,7 @@
 ﻿#include "AssetThread.h"
 
 #include "AssetSubsystem.h"
-#include "MutateArena/MutateArena.h"
+#include "HAL/Runnable.h"
 
 AssetThread::AssetThread(UAssetSubsystem* TempAssetSubsystem)
 {

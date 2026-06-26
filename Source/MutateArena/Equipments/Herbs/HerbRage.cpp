@@ -1,5 +1,6 @@
 #include "HerbRage.h"
 
+#include "TimerManager.h"
 #include "MutateArena/Characters/MutantCharacter.h"
 #include "MutateArena/PlayerStates/MutationPlayerState.h"
 

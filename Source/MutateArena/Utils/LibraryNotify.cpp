@@ -1,5 +1,7 @@
 #include "LibraryNotify.h"
 
+#include "Engine/Engine.h"
+#include "Engine/LocalPlayer.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/System/PlayerSubsystem.h"
 

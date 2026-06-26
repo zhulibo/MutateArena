@@ -11,7 +11,9 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "MetaSoundSource.h"
 #include "NiagaraFunctionLibrary.h"
+#include "TimerManager.h"
 #include "Camera/CameraComponent.h"
+#include "Camera/CameraShakeBase.h"
 
 AStun::AStun()
 {

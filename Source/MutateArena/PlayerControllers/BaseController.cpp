@@ -4,6 +4,7 @@
 #include "CommonInputTypeEnum.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "Engine/GameInstance.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/PlayerStates/TeamType.h"
 #include "MutateArena/System/PlayerSubsystem.h"

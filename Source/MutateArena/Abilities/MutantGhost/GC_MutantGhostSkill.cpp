@@ -3,7 +3,9 @@
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemGlobals.h"
 #include "MetaSoundSource.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "MutateArena/Characters/Mutants/MutantGhost.h"
 #include "MutateArena/System/Tags/ProjectTags.h"
 

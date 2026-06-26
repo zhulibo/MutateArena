@@ -10,6 +10,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "MetaSoundSource.h"
 #include "NiagaraFunctionLibrary.h"
+#include "TimerManager.h"
+#include "GameFramework/DamageType.h"
 
 AGrenade::AGrenade()
 {

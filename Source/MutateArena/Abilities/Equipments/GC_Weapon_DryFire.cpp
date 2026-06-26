@@ -1,6 +1,7 @@
 #include "GC_Weapon_DryFire.h"
 
 #include "MetaSoundSource.h"
+#include "Engine/GameInstance.h"
 #include "Kismet/GameplayStatics.h"
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "MutateArena/Characters/Mutants/MutantTank.h"

@@ -9,6 +9,7 @@
 #include "MutateArena/PlayerStates/TeamType.h"
 #include "MutateArena/Utils/LibraryCommon.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "Data/DamageTypeMelee.h"
 #include "Kismet/GameplayStatics.h"
 #include "Herbs/Herb.h"

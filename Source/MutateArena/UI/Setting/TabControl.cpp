@@ -21,6 +21,7 @@
 #include "Components/ScrollBoxSlot.h"
 #include "Components/VerticalBox.h"
 #include "Components/VerticalBoxSlot.h"
+#include "Engine/GameInstance.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/PlayerControllers/BaseController.h"
 #include "MutateArena/Utils/LibraryNotify.h"

@@ -1,5 +1,6 @@
 #include "MutationGameState.h"
 
+#include "Engine/World.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/GameModes/MutationMode.h"
 #include "MutateArena/PlayerControllers/MutationController.h"

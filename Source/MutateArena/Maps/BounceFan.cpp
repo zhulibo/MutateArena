@@ -19,7 +19,8 @@ ABounceFan::ABounceFan()
     LaunchDirectionArrow->SetupAttachment(RootComponent);
     LaunchDirectionArrow->SetRelativeRotation(FRotator(90.f, 0.f, 0.f));
     LaunchDirectionArrow->SetRelativeLocation(FVector(0.f, 0.f, 10.f));
-
+    LaunchDirectionArrow->ArrowColor = FColor::Cyan;
+    
     NS_Wind = CreateDefaultSubobject<UNiagaraComponent>(TEXT("NS_Wind"));
     NS_Wind->SetupAttachment(LaunchDirectionArrow);
 

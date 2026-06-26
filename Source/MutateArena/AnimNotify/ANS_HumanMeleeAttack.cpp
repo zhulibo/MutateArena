@@ -1,5 +1,6 @@
 #include "ANS_HumanMeleeAttack.h"
 
+#include "Components/SkeletalMeshComponent.h"
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "MutateArena/Characters/Components/CombatComponent.h"
 

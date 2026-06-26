@@ -1,5 +1,6 @@
 #include "MeleeGameState.h"
 
+#include "Engine/World.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/GameModes/MeleeMode.h"
 #include "MutateArena/PlayerControllers/MeleeController.h"

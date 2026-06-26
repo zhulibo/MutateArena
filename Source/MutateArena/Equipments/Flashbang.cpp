@@ -10,6 +10,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "MetaSoundSource.h"
 #include "NiagaraFunctionLibrary.h"
+#include "TimerManager.h"
 #include "MutateArena/Characters/Components/OverheadWidget.h"
 #include "MutateArena/Characters/Data/CharacterAsset.h"
 #include "MutateArena/GameStates/BaseGameState.h"

@@ -1,5 +1,6 @@
 #include "PauseMenu.h"
 #include "CommonTextBlock.h"
+#include "Engine/GameInstance.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "MutateArena/Characters/Components/CombatComponent.h"

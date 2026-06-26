@@ -1,6 +1,8 @@
 #include "PlayerSubsystem.h"
 
 #include "AssetSubsystem.h"
+#include "TimerManager.h"
+#include "Engine/GameInstance.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/UI/Notify/NotifyLayout.h"
 #include "MutateArena/Utils/LibraryNotify.h"

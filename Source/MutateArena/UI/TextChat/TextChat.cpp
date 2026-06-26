@@ -13,6 +13,7 @@
 #include "MutateArena/Utils/LibraryNotify.h"
 #include "Components/EditableTextBox.h"
 #include "Components/ScrollBoxSlot.h"
+#include "Engine/GameInstance.h"
 #include "MutateArena/System/UISubsystem.h"
 
 #define LOCTEXT_NAMESPACE "UTextChat"

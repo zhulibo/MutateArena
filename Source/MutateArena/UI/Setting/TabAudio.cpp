@@ -3,6 +3,7 @@
 #include "CommonButtonBase.h"
 #include "CommonHierarchicalScrollBox.h"
 #include "CommonTextBlock.h"
+#include "Engine/GameInstance.h"
 #include "MutateArena/System/Storage/SaveGameSetting.h"
 #include "MutateArena/System/Storage/DefaultConfig.h"
 #include "MutateArena/System/Storage/StorageSubsystem.h"

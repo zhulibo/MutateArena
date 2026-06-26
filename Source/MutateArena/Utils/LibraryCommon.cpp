@@ -1,11 +1,13 @@
 #include "LibraryCommon.h"
 
 #include "ObfuscateWords.h"
+#include "Engine/GameInstance.h"
 #include "GameFramework/GameStateBase.h"
 #include "Internationalization/Culture.h"
 #include "MutateArena/System/Storage/SaveGameSetting.h"
 #include "MutateArena/System/Storage/StorageSubsystem.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Misc/ConfigCacheIni.h"
 #include "MutateArena/PlayerStates/BasePlayerState.h"
 
 FString ULibraryCommon::GetProjectVersion()

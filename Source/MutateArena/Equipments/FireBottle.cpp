@@ -7,6 +7,7 @@
 #include "MetaSoundSource.h"
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
+#include "TimerManager.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/PlayerControllers/BaseController.h"
 #include "Components/AudioComponent.h"

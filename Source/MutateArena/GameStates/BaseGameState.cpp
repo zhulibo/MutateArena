@@ -1,5 +1,8 @@
 #include "BaseGameState.h"
 
+#include "TimerManager.h"
+#include "Engine/LocalPlayer.h"
+#include "Engine/World.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/Equipments/Equipment.h"
 #include "MutateArena/GameModes/MutationMode.h"

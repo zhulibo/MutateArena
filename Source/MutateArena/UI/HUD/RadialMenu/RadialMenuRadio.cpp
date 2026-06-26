@@ -1,4 +1,6 @@
 #include "RadialMenuRadio.h"
+
+#include "Engine/GameInstance.h"
 #include "MutateArena/System/AssetSubsystem.h"
 #include "MutateArena/Assets/Data/CommonAsset.h"
 

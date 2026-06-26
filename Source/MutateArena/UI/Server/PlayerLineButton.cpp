@@ -1,6 +1,7 @@
 #include "PlayerLineButton.h"
 
 #include "CommonTextBlock.h"
+#include "Engine/GameInstance.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/System/EOSSubsystem.h"
 #include "MutateArena/UI/Common/CommonButton.h"

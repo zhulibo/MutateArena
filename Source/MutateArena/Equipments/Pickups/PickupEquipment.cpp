@@ -1,6 +1,7 @@
 #include "PickupEquipment.h"
 
 #include "Components/SphereComponent.h"
+#include "Engine/World.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "MutateArena/Equipments/Equipment.h"

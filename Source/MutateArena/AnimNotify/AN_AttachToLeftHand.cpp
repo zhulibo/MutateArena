@@ -1,5 +1,6 @@
 #include "AN_AttachToLeftHand.h"
 
+#include "Components/SkeletalMeshComponent.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "MutateArena/Characters/Components/CombatComponent.h"

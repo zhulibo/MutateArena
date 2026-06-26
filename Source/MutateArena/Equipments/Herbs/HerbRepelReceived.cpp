@@ -1,6 +1,7 @@
 #include "HerbRepelReceived.h"
 
 #include "AbilitySystemComponent.h"
+#include "TimerManager.h"
 #include "MutateArena/Characters/MutantCharacter.h"
 
 AHerbRepelReceived::AHerbRepelReceived()

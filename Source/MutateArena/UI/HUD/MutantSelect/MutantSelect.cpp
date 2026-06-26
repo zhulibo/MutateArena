@@ -18,6 +18,7 @@
 #include "Components/ScrollBoxSlot.h"
 #include "Components/WrapBox.h"
 #include "Components/WrapBoxSlot.h"
+#include "Engine/GameInstance.h"
 #include "Widgets/CommonActivatableWidgetContainer.h"
 #include "MutateArena/Abilities/Mutants/GA_MutantChange.h"
 #include "MutateArena/PlayerStates/BasePlayerState.h"

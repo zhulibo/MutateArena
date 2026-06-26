@@ -1,5 +1,6 @@
 #include "ANS_MutantLeftHandAttack.h"
 
+#include "Components/SkeletalMeshComponent.h"
 #include "MutateArena/Characters/MutantCharacter.h"
 
 void UANS_MutantLeftHandAttack::NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,

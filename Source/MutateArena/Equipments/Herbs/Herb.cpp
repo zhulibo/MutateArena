@@ -2,6 +2,9 @@
 
 #include "MutateArena/GameStates/MutationGameState.h"
 #include "Components/SphereComponent.h"
+#include "Components/StaticMeshComponent.h"
+#include "Engine/LocalPlayer.h"
+#include "Engine/World.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/System/UISubsystem.h"
 #include "Net/UnrealNetwork.h"

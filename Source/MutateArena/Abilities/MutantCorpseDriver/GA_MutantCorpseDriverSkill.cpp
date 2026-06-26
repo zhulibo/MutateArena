@@ -2,6 +2,7 @@
 
 #include "AbilitySystemComponent.h"
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
+#include "Engine/World.h"
 #include "GameFramework/Character.h"
 #include "MutateArena/Characters/Mutants/Corpse/CorpseCharacter.h"
 #include "MutateArena/System/Tags/ProjectTags.h"

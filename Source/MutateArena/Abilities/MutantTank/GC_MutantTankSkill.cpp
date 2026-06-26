@@ -1,6 +1,7 @@
 #include "GC_MutantTankSkill.h"
 
 #include "MetaSoundSource.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "MutateArena/Characters/Mutants/MutantTank.h"
 

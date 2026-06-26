@@ -11,6 +11,7 @@
 #include "MutateArena/Utils/LibraryCommon.h"
 #include "MutateArena/Utils/LibraryNotify.h"
 #include "Components/WrapBoxSlot.h"
+#include "Engine/GameInstance.h"
 
 #define LOCTEXT_NAMESPACE "UShop"
 

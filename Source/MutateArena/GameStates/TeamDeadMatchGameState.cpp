@@ -1,5 +1,6 @@
 #include "TeamDeadMatchGameState.h"
 
+#include "Engine/World.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/GameModes/TeamDeadMatchMode.h"
 #include "MutateArena/PlayerControllers/TeamDeadMatchController.h"

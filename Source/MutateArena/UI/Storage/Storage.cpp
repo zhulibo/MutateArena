@@ -24,6 +24,8 @@
 #include "Components/ScrollBoxSlot.h"
 #include "Components/WrapBox.h"
 #include "Components/WrapBoxSlot.h"
+#include "Engine/GameInstance.h"
+#include "Engine/Texture2D.h"
 #include "Internationalization/StringTable.h"
 #include "MutateArena/Assets/Data/CommonAsset.h"
 #include "MutateArena/Characters/Data/DNAAsset2.h"

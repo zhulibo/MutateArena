@@ -2,6 +2,8 @@
 
 #include "DataRegistrySubsystem.h"
 #include "EngineUtils.h"
+#include "TimerManager.h"
+#include "Engine/GameInstance.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/Abilities/AttributeSetBase.h"
 #include "MutateArena/Characters/HumanCharacter.h"
@@ -51,6 +53,27 @@ void AMutationMode::BeginPlay()
 			PostRoundTime = GetDefault<UDevSetting>()->PostRoundTime;
 			CooldownTime = GetDefault<UDevSetting>()->CooldownTime;
 		}
+		
+#if WITH_EDITOR
+		// 使用反射获取PIE设置中的玩家数量，避免Runtime模块强依赖UnrealEd导致打包失败
+		int32 PIEPlayerCount = 1;
+		if (UClass* PlaySettingsClass = FindObject<UClass>(nullptr, TEXT("/Script/UnrealEd.LevelEditorPlaySettings")))
+		{
+			if (UObject* PlaySettings = PlaySettingsClass->GetDefaultObject())
+			{
+				if (FIntProperty* NumClientsProp = FindFProperty<FIntProperty>(PlaySettingsClass, TEXT("PlayNumberOfClients")))
+				{
+					PIEPlayerCount = NumClientsProp->GetPropertyValue_InContainer(PlaySettings);
+				}
+			}
+		}
+
+		if (PIEPlayerCount > 0)
+		{
+			WarmupTime *= PIEPlayerCount;
+		}
+#endif
+		
 	}
 
 	MutationGameState = GetGameState<AMutationGameState>();

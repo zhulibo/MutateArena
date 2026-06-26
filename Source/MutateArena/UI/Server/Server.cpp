@@ -9,6 +9,8 @@
 #include "Components/EditableTextBox.h"
 #include "Widgets/CommonActivatableWidgetContainer.h"
 #include "Lobby.h"
+#include "Engine/Engine.h"
+#include "Engine/GameInstance.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/GameModes/Data/GameModeType.h"
 #include "MutateArena/Utils/LibraryCommon.h"

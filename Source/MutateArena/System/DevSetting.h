@@ -38,22 +38,22 @@ public:
 	UPROPERTY(Config, EditAnywhere, Category = "Mutation")
 	bool bUseMutationSettings = true;
 	UPROPERTY(Config, EditAnywhere, Category = "Mutation")
-	int32 TotalRound = 3;
+	int32 TotalRound = 12;
 	UPROPERTY(Config, EditAnywhere, Category = "Mutation")
-	int32 WarmupTime = 2;
+	int32 WarmupTime = 1;
 	UPROPERTY(Config, EditAnywhere, Category = "Mutation")
-	int32 RoundTime = 100;
+	int32 RoundTime = 180;
 	UPROPERTY(Config, EditAnywhere, Category = "Mutation")
 	int32 MutateTime = 5;
 	UPROPERTY(Config, EditAnywhere, Category = "Mutation")
-	int32 PostRoundTime = 3;
+	int32 PostRoundTime = 7;
 	UPROPERTY(Config, EditAnywhere, Category = "Mutation")
-	int32 CooldownTime = 3;
+	int32 CooldownTime = 5;
 	UPROPERTY(Config, EditAnywhere, Category = "Mutation")
 	int32 MutateClientIndex = 2;
 	
 	UPROPERTY(Config, EditAnywhere, Category = "AFK")
-	int32 AFKHostingTime = 30;
+	int32 AFKHostingTime = 300;
 	
 	UPROPERTY(Config, EditAnywhere, Category = "DNA")
 	EDNA2 DNA1 = EDNA2::None;

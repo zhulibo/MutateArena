@@ -1,5 +1,7 @@
 #include "ObjectPoolSubsystem.h"
 
+#include "Engine/World.h"
+#include "GameFramework/Actor.h"
 #include "MutateArena/Interfaces/Poolable.h"
 
 

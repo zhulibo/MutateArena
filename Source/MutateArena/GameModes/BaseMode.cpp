@@ -3,6 +3,8 @@
 #include "DataRegistryId.h"
 #include "DataRegistrySubsystem.h"
 #include "EngineUtils.h"
+#include "TimerManager.h"
+#include "Engine/GameInstance.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "MutateArena/Equipments/Equipment.h"

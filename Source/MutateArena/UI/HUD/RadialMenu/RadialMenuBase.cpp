@@ -5,6 +5,7 @@
 #include "Components/CanvasPanelSlot.h"
 #include "Components/Image.h"
 #include "Components/Overlay.h"
+#include "Materials/MaterialInstanceDynamic.h"
 
 void URadialMenuBase::NativeOnInitialized()
 {

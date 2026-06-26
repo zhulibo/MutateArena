@@ -3,6 +3,8 @@
 #include "DataRegistrySubsystem.h"
 #include "Components/BoxComponent.h"
 #include "NiagaraFunctionLibrary.h"
+#include "Components/StaticMeshComponent.h"
+#include "Curves/CurveFloat.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/Equipments/Data/EquipmentType.h"
 
@@ -41,18 +43,18 @@ void AProjectile::BeginPlay()
 
 void AProjectile::SpawnTrailEffect()
 {
-	if (TrailEffect)
-	{
-		TrailEffectComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
-			TrailEffect,
-			GetRootComponent(),
-			TEXT(""),
-			FVector::ZeroVector,
-			FRotator::ZeroRotator,
-			EAttachLocation::KeepRelativeOffset,
-			true
-		);
-	}
+	// if (TrailEffect)
+	// {
+	// 	TrailEffectComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
+	// 		TrailEffect,
+	// 		GetRootComponent(),
+	// 		TEXT(""),
+	// 		FVector::ZeroVector,
+	// 		FRotator::ZeroRotator,
+	// 		EAttachLocation::KeepRelativeOffset,
+	// 		true
+	// 	);
+	// }
 }
 
 void AProjectile::SpawnTracerEffect()

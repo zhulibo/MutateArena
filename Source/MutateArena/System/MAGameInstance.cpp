@@ -1,6 +1,7 @@
 #include "MAGameInstance.h"
 
 #include "EOSSubsystem.h"
+#include "Engine/Engine.h"
 #include "MutateArena/MutateArena.h"
 
 void UMAGameInstance::Init()

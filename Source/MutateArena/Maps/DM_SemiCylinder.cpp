@@ -3,6 +3,7 @@
 #include "GeometryScript/MeshBooleanFunctions.h"
 #include "UDynamicMesh.h"
 #include "Components/DynamicMeshComponent.h"
+#include "Engine/CollisionProfile.h"
 
 ADM_SemiCylinder::ADM_SemiCylinder()
 {

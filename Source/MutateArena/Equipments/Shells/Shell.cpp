@@ -3,6 +3,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "MetaSoundSource.h"
+#include "TimerManager.h"
+#include "Components/StaticMeshComponent.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/System/AssetSubsystem.h"
 #include "MutateArena/System/ObjectPoolSubsystem.h"
@@ -19,6 +21,9 @@ AShell::AShell()
 
 	ShellMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	ShellMesh->SetCollisionResponseToChannel(ECC_WorldStatic, ECollisionResponse::ECR_Block);
+	ShellMesh->SetCollisionResponseToChannel(ECC_WorldDynamic, ECollisionResponse::ECR_Block);
+	// 开启连续碰撞检测，防止高速小物体穿模
+	ShellMesh->BodyInstance.bUseCCD = true;
 	
 	ShellMesh->SetSimulatePhysics(true);
 	ShellMesh->SetEnableGravity(true);
@@ -41,9 +46,10 @@ void AShell::OnSpawnedFromPool()
 	ShellMesh->SetNotifyRigidBodyCollision(true); // 恢复声音触发
 
 	// 5. 定时器：替代原先的 SetLifeSpan，时间到后回收对象
-	float LifeTime = FMath::FRandRange(3.f, 5.f);
+	float LifeTime = FMath::FRandRange(30.f, 50.f);
 	GetWorldTimerManager().SetTimer(LifeSpanTimer, this, &ThisClass::ReturnToPool, LifeTime, false);
 }
+
 void AShell::LaunchShell(const FVector& CharacterVelocity)
 {
 	// 更新初速度
@@ -56,6 +62,7 @@ void AShell::LaunchShell(const FVector& CharacterVelocity)
 	const FVector RandomShell = UKismetMathLibrary::RandomUnitVectorInConeInDegrees(GetActorForwardVector(), 10.f);
 	ShellMesh->AddImpulse(RandomShell * 300.f, NAME_None, true);
 }
+
 void AShell::OnReturnedToPool()
 {
 	// 清除所有定时器，防止在池中意外触发
@@ -94,7 +101,8 @@ void AShell::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveC
 
 	FCollisionObjectQueryParams ObjectQueryParams;
 	ObjectQueryParams.AddObjectTypesToQuery(ECC_WorldStatic);
-
+	ObjectQueryParams.AddObjectTypesToQuery(ECC_WorldDynamic);
+	
 	GetWorld()->LineTraceSingleByObjectType(
 		HitResult, 
 		Start, 

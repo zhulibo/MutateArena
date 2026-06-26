@@ -3,6 +3,8 @@
 #include "CommonLazyImage.h"
 #include "CommonTextBlock.h"
 #include "ScoreBoardLineButton.h"
+#include "TimerManager.h"
+#include "Engine/GameInstance.h"
 #include "Kismet/GameplayStatics.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/Characters/Data/DNAAsset2.h"

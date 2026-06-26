@@ -8,6 +8,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "AudioModulationStatics.h"
 #include "MetaSoundSource.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Engine/GameInstance.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/Assets/Data/CommonAsset.h"
 #include "MutateArena/System/AssetSubsystem.h"

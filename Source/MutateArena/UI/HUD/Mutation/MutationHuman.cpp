@@ -8,6 +8,7 @@
 #include "Components/AudioComponent.h"
 #include "Components/Image.h"
 #include "Kismet/GameplayStatics.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/System/UISubsystem.h"
 

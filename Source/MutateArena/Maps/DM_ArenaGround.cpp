@@ -5,6 +5,7 @@
 #include "Materials/MaterialInterface.h"          
 #include "UDynamicMesh.h"
 #include "Components/DynamicMeshComponent.h"
+#include "Engine/CollisionProfile.h"
 
 ADM_ArenaGround::ADM_ArenaGround()
 {

@@ -1,4 +1,8 @@
 #include "MeleeMode.h"
+
+#include "TimerManager.h"
+#include "Engine/GameInstance.h"
+#include "Engine/World.h"
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "MutateArena/PlayerControllers/MeleeController.h"
 #include "MutateArena/PlayerStates/MeleePlayerState.h"
@@ -25,6 +29,27 @@ void AMeleeMode::BeginPlay()
 		{
 			WarmupTime = GetDefault<UDevSetting>()->WarmupTime;
 		}
+				
+#if WITH_EDITOR
+		// 使用反射获取PIE设置中的玩家数量，避免Runtime模块强依赖UnrealEd导致打包失败
+		int32 PIEPlayerCount = 1;
+		if (UClass* PlaySettingsClass = FindObject<UClass>(nullptr, TEXT("/Script/UnrealEd.LevelEditorPlaySettings")))
+		{
+			if (UObject* PlaySettings = PlaySettingsClass->GetDefaultObject())
+			{
+				if (FIntProperty* NumClientsProp = FindFProperty<FIntProperty>(PlaySettingsClass, TEXT("PlayNumberOfClients")))
+				{
+					PIEPlayerCount = NumClientsProp->GetPropertyValue_InContainer(PlaySettings);
+				}
+			}
+		}
+
+		if (PIEPlayerCount > 0)
+		{
+			WarmupTime *= PIEPlayerCount;
+		}
+#endif
+		
 	}
 }
 

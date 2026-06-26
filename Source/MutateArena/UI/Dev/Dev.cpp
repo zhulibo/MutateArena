@@ -4,8 +4,14 @@
 #include "KnownIssueLine.h"
 #include "Components/VerticalBox.h"
 #include "Components/VerticalBoxSlot.h"
+#include "Dom/JsonObject.h"
+#include "Engine/GameInstance.h"
+#include "Misc/EngineVersion.h"
+#include "Misc/FileHelper.h"
 #include "MutateArena/System/EOSSubsystem.h"
 #include "MutateArena/Utils/LibraryCommon.h"
+#include "Serialization/JsonReader.h"
+#include "Serialization/JsonSerializer.h"
 
 void UDev::NativeOnInitialized()
 {

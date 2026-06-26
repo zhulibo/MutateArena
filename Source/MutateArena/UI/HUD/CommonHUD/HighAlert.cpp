@@ -6,6 +6,7 @@
 #include "Camera/CameraComponent.h"
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemGlobals.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/GameStates/BaseGameState.h"
 #include "MutateArena/PlayerStates/BasePlayerState.h"

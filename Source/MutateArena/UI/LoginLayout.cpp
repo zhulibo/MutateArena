@@ -6,7 +6,9 @@
 #include "MutateArena/System/PlayerSubsystem.h"
 #include "Common/CommonButton.h"
 #include "Components/SizeBox.h"
+#include "Engine/GameInstance.h"
 #include "Kismet/GameplayStatics.h"
+#include "Misc/CommandLine.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/Utils/LibraryNotify.h"
 

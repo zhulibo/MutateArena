@@ -3,6 +3,7 @@
 #include "MutateArena/Equipments/Equipment.h"
 #include "Animation/AnimInstance.h"
 #include "Animation/AnimMontage.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "MutateArena/Equipments/AnimInstEquipment.h"
 
 UGC_Equipment_SwapOut_Reverse::UGC_Equipment_SwapOut_Reverse()

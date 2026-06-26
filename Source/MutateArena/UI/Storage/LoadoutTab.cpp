@@ -8,6 +8,7 @@
 #include "CommonTextBlock.h"
 #include "MetaSoundSource.h"
 #include "Components/SizeBox.h"
+#include "Engine/GameInstance.h"
 #include "Kismet/GameplayStatics.h"
 #include "MutateArena/Assets/Data/CommonAsset.h"
 #include "MutateArena/System/AssetSubsystem.h"

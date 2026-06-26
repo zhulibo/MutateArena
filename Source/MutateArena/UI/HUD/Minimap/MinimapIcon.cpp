@@ -1,5 +1,6 @@
 #include "MinimapIcon.h"
 #include "Components/Image.h"
+#include "Materials/MaterialInstanceDynamic.h"
 
 void UMinimapIcon::NativeOnInitialized()
 {

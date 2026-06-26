@@ -4,6 +4,7 @@
 #include "MetaSoundSource.h"
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
+#include "TimerManager.h"
 #include "Components/AudioComponent.h"
 #include "Components/SphereComponent.h"
 #include "Sub/SmokeBlocker.h"

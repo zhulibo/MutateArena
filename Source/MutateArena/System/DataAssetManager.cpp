@@ -1,5 +1,7 @@
 #include "DataAssetManager.h"
 
+#include "Engine/Engine.h"
+
 UDataAssetManager::UDataAssetManager()
 {
 }

@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
+#include "Subsystems/LocalPlayerSubsystem.h"
 #include "UISubsystem.generated.h"
 
 enum class EHUDState : uint8;

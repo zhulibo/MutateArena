@@ -6,6 +6,7 @@
 #include "MutateArena/Characters/Components/CombatComponent.h"
 #include "MutateArena/Utils/LibraryCommon.h"
 #include "Components/BoxComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"

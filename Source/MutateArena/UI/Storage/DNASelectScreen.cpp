@@ -2,6 +2,7 @@
 #include "DNASelectButton.h"
 #include "Components/WrapBox.h"
 #include "Components/WrapBoxSlot.h"
+#include "Engine/GameInstance.h"
 #include "MutateArena/Characters/Data/DNAAsset2.h"
 #include "MutateArena/System/Storage/StorageSubsystem.h"
 

@@ -9,6 +9,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "MetaSoundSource.h"
+#include "TimerManager.h"
+#include "Engine/GameInstance.h"
 #include "MutateArena/Equipments/Data/EquipmentAsset.h"
 #include "MutateArena/System/AssetSubsystem.h"
 #include "MutateArena/Utils/LibraryCommon.h"

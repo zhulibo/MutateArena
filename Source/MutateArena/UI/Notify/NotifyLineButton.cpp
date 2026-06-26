@@ -1,5 +1,7 @@
 #include "NotifyLineButton.h"
 
+#include "TimerManager.h"
+
 void UNotifyLineButton::NativeConstruct()
 {
 	Super::NativeConstruct();
