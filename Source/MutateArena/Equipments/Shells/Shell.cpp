@@ -17,14 +17,12 @@ AShell::AShell()
 	SetRootComponent(ShellMesh);
 
 	ShellMesh->SetCollisionObjectType(ECollisionChannel::ECC_WorldDynamic);
-	ShellMesh->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
+	ShellMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 
 	ShellMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	ShellMesh->SetCollisionResponseToChannel(ECC_WorldStatic, ECollisionResponse::ECR_Block);
 	ShellMesh->SetCollisionResponseToChannel(ECC_WorldDynamic, ECollisionResponse::ECR_Block);
-	// 开启连续碰撞检测，防止高速小物体穿模
-	ShellMesh->BodyInstance.bUseCCD = true;
-	
+	ShellMesh->SetUseCCD(true);
 	ShellMesh->SetSimulatePhysics(true);
 	ShellMesh->SetEnableGravity(true);
 	ShellMesh->SetNotifyRigidBodyCollision(true);
@@ -42,7 +40,7 @@ void AShell::OnSpawnedFromPool()
 	// 1. 恢复显示与物理状态
 	SetActorHiddenInGame(false);
 	ShellMesh->SetSimulatePhysics(true);
-	ShellMesh->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
+	ShellMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	ShellMesh->SetNotifyRigidBodyCollision(true); // 恢复声音触发
 
 	// 5. 定时器：替代原先的 SetLifeSpan，时间到后回收对象
