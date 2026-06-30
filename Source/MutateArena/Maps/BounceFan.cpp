@@ -1,9 +1,12 @@
 #include "BounceFan.h"
+
+#include "MetaSoundSource.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/ArrowComponent.h"
 #include "GameFramework/Character.h"
 #include "NiagaraComponent.h"
+#include "Components/AudioComponent.h"
 
 ABounceFan::ABounceFan()
 {
@@ -26,6 +29,12 @@ ABounceFan::ABounceFan()
 
     TriggerCapsule = CreateDefaultSubobject<UCapsuleComponent>(TEXT("TriggerCapsule"));
     TriggerCapsule->SetupAttachment(RootComponent);
+    
+    // 初始化循环音效组件
+    FanLoopAudioComp = CreateDefaultSubobject<UAudioComponent>(TEXT("FanLoopAudioComp"));
+    FanLoopAudioComp->SetupAttachment(RootComponent);
+    // 禁用自动激活，我们可以在资源加载好之后手动播放
+    FanLoopAudioComp->bAutoActivate = false;
 }
 
 void ABounceFan::BeginPlay()
@@ -35,6 +44,13 @@ void ABounceFan::BeginPlay()
     SetReplicateMovement(true);
 
     TriggerCapsule->OnComponentBeginOverlap.AddDynamic(this, &ABounceFan::OnOverlapBegin);
+    
+   
+    if (FanLoopSound)
+    {
+        FanLoopAudioComp->SetSound(FanLoopSound);
+        FanLoopAudioComp->Play();
+    }
 }
 
 void ABounceFan::OnOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)

@@ -2,7 +2,10 @@
 
 #include "CoreMinimal.h"
 #include "CommonActivatableWidget.h"
+#include "Engine/DataTable.h"
 #include "TabGame.generated.h"
+
+class UGameUserSettings;
 
 UCLASS()
 class MUTATEARENA_API UTabGame : public UCommonActivatableWidget

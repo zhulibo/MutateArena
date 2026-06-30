@@ -70,7 +70,7 @@ void AMelee::SetAttackCapsuleCollision()
 		}
 
 		AttackCapsule->SetCollisionResponseToChannel(ECC_MESH_HREB, ECollisionResponse::ECR_Overlap);
-		AttackCapsule->SetCollisionResponseToChannel(ECC_WorldDynamic, ECollisionResponse::ECR_Overlap);
+		// AttackCapsule->SetCollisionResponseToChannel(ECC_WorldDynamic, ECollisionResponse::ECR_Overlap);
 	}
 }
 

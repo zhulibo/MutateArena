@@ -145,6 +145,7 @@ void UShop::OnItemButtonClicked(UItemButton* ItemButton)
 	{
 		TArray<FPurchaseOffer> Offers;
 		Offers.Add(FPurchaseOffer{ ItemButton->Offer.OfferId, 1 });
+		// TODO 附加内容 Add-On Offer.PurchaseLimit 为 1，后端应该做了限制，此处并未做限制
 		EOSSubsystem->Checkout(Offers);
 	}
 }

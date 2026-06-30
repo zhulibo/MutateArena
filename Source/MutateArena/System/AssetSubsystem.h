@@ -10,6 +10,8 @@ class MUTATEARENA_API UAssetSubsystem : public UGameInstanceSubsystem
 	GENERATED_BODY()
 
 public:
+	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
+	
 	UPROPERTY()
 	class UCommonAsset* CommonAsset;
 	UPROPERTY()
@@ -24,8 +26,6 @@ public:
 	void Test();
 
 protected:
-	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
-
 	// 编辑器中资源命名必须是 Prefix + 类名
 	FPrimaryAssetId CommonAssetId;
 	FPrimaryAssetId InputAssetId;

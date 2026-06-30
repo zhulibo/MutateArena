@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "CommonActivatableWidget.h"
+#include "Engine/DataTable.h"
 #include "TabControl.generated.h"
 
 class UInputAction;

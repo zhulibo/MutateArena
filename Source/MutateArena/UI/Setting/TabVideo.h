@@ -2,7 +2,10 @@
 
 #include "CoreMinimal.h"
 #include "CommonActivatableWidget.h"
+#include "Engine/DataTable.h"
 #include "TabVideo.generated.h"
+
+class UGameUserSettings;
 
 USTRUCT()
 struct FResolutionOption

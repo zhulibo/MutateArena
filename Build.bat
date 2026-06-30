@@ -55,7 +55,6 @@ call %UAT_BAT% BuildCookRun ^
     -prereqs ^
     -applocaldirectory="$(EngineDir)/Binaries/ThirdParty/AppLocalDependencies" ^
     -CrashReporter ^
-    -nodebuginfo ^
     -nocompile ^
     -nocompileuat
 

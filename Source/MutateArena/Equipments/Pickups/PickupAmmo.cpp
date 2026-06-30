@@ -15,13 +15,16 @@ void APickupAmmo::BeginPlay()
 
 void APickupAmmo::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
+	UE_LOG(LogTemp, Warning, TEXT("a"));
 	if (!HasAuthority()) return;
 
 	AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(OtherActor);
 	if (HumanCharacter && HumanCharacter->CombatComp)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("b"));
 		if (AWeapon* PrimaryEquipment = HumanCharacter->CombatComp->PrimaryEquipment)
 		{
+			UE_LOG(LogTemp, Warning, TEXT("c"));
 			PrimaryEquipment->SetAmmo(PrimaryEquipment->MagCapacity);
 			PrimaryEquipment->SetCarriedAmmo(PrimaryEquipment->MaxCarriedAmmo);
 			

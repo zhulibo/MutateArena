@@ -4,6 +4,8 @@
 #include "GameFramework/Actor.h"
 #include "BounceFan.generated.h"
 
+class UMetaSoundSource;
+class UAudioComponent;
 class UStaticMeshComponent;
 class UNiagaraComponent;
 class UCapsuleComponent;
@@ -47,5 +49,11 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	bool bZOverride = true;
+	
+	UPROPERTY(VisibleAnywhere)
+	UAudioComponent* FanLoopAudioComp;
+
+	UPROPERTY(EditAnywhere)
+	UMetaSoundSource* FanLoopSound;
 	
 };

@@ -4,6 +4,11 @@
 #include "GameFramework/SaveGame.h"
 #include "SaveGameSetting.generated.h"
 
+namespace EWindowMode
+{
+	enum Type : int;
+}
+
 enum class EMutantCharacterName : uint8;
 enum class EHumanCharacterName : uint8;
 

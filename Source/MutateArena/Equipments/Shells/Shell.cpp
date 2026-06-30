@@ -44,7 +44,7 @@ void AShell::OnSpawnedFromPool()
 	ShellMesh->SetNotifyRigidBodyCollision(true); // 恢复声音触发
 
 	// 5. 定时器：替代原先的 SetLifeSpan，时间到后回收对象
-	float LifeTime = FMath::FRandRange(30.f, 50.f);
+	float LifeTime = FMath::FRandRange(3.f, 5.f);
 	GetWorldTimerManager().SetTimer(LifeSpanTimer, this, &ThisClass::ReturnToPool, LifeTime, false);
 }
 

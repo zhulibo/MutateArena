@@ -136,11 +136,8 @@ void AHumanCharacter::PossessedBy(AController* NewController)
 	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
 	if (AssetSubsystem && AssetSubsystem->CharacterAsset && ASC)
 	{
-		// TODO 切枪有时不生效 待排查原因
-		// UE_LOG(LogTemp, Warning, TEXT("AHumanCharacter::PossessedBy"));
 		for (TSubclassOf<UGameplayAbility> AbilityClass : AssetSubsystem->CharacterAsset->HumanDefaultAbilities)
 		{
-			// UE_LOG(LogTemp, Warning, TEXT("Ability Class: %s"), *AbilityClass->GetName());
 			FGameplayAbilitySpec AbilitySpec(AbilityClass, 1, INDEX_NONE, this);
 			ASC->GiveAbility(AbilitySpec);
 		}

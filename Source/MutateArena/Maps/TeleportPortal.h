@@ -4,6 +4,8 @@
 #include "GameFramework/Actor.h"
 #include "TeleportPortal.generated.h"
 
+class UAudioComponent;
+class UMetaSoundSource;
 class UBoxComponent;
 class UArrowComponent;
 class UStaticMeshComponent;
@@ -49,5 +51,11 @@ public:
 
 	// 记录每个对象上次传送的时间，使用弱指针防止子弹/弹壳销毁后产生悬指针
 	TMap<TWeakObjectPtr<AActor>, float> ActorTeleportCooldowns;
+	
+	UPROPERTY(VisibleAnywhere)
+	UAudioComponent* PortalLoopAudioComp;
+
+	UPROPERTY(EditAnywhere)
+	UMetaSoundSource* PortalLoopSound;
 	
 };

@@ -1,6 +1,9 @@
 #include "TeleportPortal.h"
+
+#include "MetaSoundSource.h"
 #include "Components/BoxComponent.h"
 #include "Components/ArrowComponent.h"
+#include "Components/AudioComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/Character.h"
@@ -27,6 +30,12 @@ ATeleportPortal::ATeleportPortal()
     ExitPoint = CreateDefaultSubobject<UArrowComponent>(TEXT("ExitPoint"));
     ExitPoint->SetupAttachment(RootComponent);
     ExitPoint->ArrowColor = FColor::Cyan;
+   
+   // 初始化循环音效组件
+   PortalLoopAudioComp = CreateDefaultSubobject<UAudioComponent>(TEXT("PortalLoopAudioComp"));
+   PortalLoopAudioComp->SetupAttachment(RootComponent);
+   // 禁用自动激活，我们可以在资源加载好之后手动播放
+   PortalLoopAudioComp->bAutoActivate = false;
 }
 
 void ATeleportPortal::BeginPlay()
@@ -38,6 +47,12 @@ void ATeleportPortal::BeginPlay()
     {
        TriggerBox->OnComponentBeginOverlap.AddDynamic(this, &ATeleportPortal::OnOverlapBegin);
     }
+   
+   if (PortalLoopSound)
+   {
+      PortalLoopAudioComp->SetSound(PortalLoopSound);
+      PortalLoopAudioComp->Play();
+   }
 }
 
 void ATeleportPortal::OnOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -65,6 +80,10 @@ void ATeleportPortal::OnOverlapBegin(UPrimitiveComponent* OverlappedComponent, A
     {
        return; 
     }
+
+    // 在执行 TeleportTo 触发同步 Overlap 之前，提前锁定双方传送门的冷却 防止传送瞬间目标传送门再次触发 OnOverlapBegin 导致无限递归栈溢出
+    this->ActorTeleportCooldowns.Add(WeakOtherActor, CurrentTime);
+    TargetPortal->ActorTeleportCooldowns.Add(WeakOtherActor, CurrentTime);
 
     // 预先计算好进出传送门的空间转换变量，供所有类型的传送对象共用
     FTransform EntryTransform = this->ExitPoint->GetComponentTransform();
@@ -159,7 +178,7 @@ void ATeleportPortal::OnOverlapBegin(UPrimitiveComponent* OverlappedComponent, A
 
           // 转换角速度
           FVector LocalAngVel = EntryTransform.InverseTransformVectorNoScale(CurrentAngVel);
-          FVector FlippedLocalAngVel = Flip180.RotateVector(CurrentAngVel); // 修复原代码直接使用世界角速度的隐患
+          FVector FlippedLocalAngVel = Flip180.RotateVector(CurrentAngVel); 
           FVector NewAngVel = ExitTransform.TransformVectorNoScale(FlippedLocalAngVel);
 
           // 转换 Actor 的朝向
@@ -178,10 +197,10 @@ void ATeleportPortal::OnOverlapBegin(UPrimitiveComponent* OverlappedComponent, A
        }
     }
 
-    // 如果成功执行了传送，则锁定双方传送门针对【当前对象】的冷却时间
-    if (bHasTeleported)
+    // 【容错处理】：如果最终因为类型不匹配等原因没有发生实际传送，需回退冷却状态
+    if (!bHasTeleported)
     {
-       this->ActorTeleportCooldowns.Add(WeakOtherActor, CurrentTime);
-       TargetPortal->ActorTeleportCooldowns.Add(WeakOtherActor, CurrentTime);
+       this->ActorTeleportCooldowns.Remove(WeakOtherActor);
+       TargetPortal->ActorTeleportCooldowns.Remove(WeakOtherActor);
     }
 }

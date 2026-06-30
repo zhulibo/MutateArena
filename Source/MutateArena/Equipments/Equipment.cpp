@@ -77,7 +77,6 @@ void AEquipment::BeginPlay()
 		EquipmentCate = EquipmentMain->EquipmentCate;
 		EquipmentType = EquipmentMain->EquipmentType;
 
-		// TODO 待测试屏蔽皮肤
 		// 屏蔽皮肤
 		bool bIsMyOwnWeapon = false;
 		if (APawn* OwningPawn = Cast<APawn>(GetOwner()))
@@ -85,6 +84,7 @@ void AEquipment::BeginPlay()
 			if (OwningPawn->IsLocallyControlled()) bIsMyOwnWeapon = true;
 		}
 		if (StorageSubsystem == nullptr) StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
+		if (StorageSubsystem == nullptr || StorageSubsystem->CacheSetting == nullptr) return;
 		if (StorageSubsystem->CacheSetting->bHideSkins && !bIsMyOwnWeapon && EquipmentName != EquipmentParentName)
 		{
 			FString EnumValue2 = StaticEnum<EEquipmentName>()->GetNameStringByValue(static_cast<int64>(EquipmentParentName));
@@ -93,6 +93,7 @@ void AEquipment::BeginPlay()
 			{
 				USkeletalMesh* DefaultSkeletalMesh = UDataAssetManager::Get().GetAsset(EquipmentMain2->DefaultSkeletalMesh);
 				EquipmentMesh->SetSkeletalMesh(DefaultSkeletalMesh);
+				EquipmentMesh->EmptyOverrideMaterials();
 			}
 		}
 	}

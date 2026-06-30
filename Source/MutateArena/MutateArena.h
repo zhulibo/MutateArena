@@ -78,10 +78,11 @@ namespace GameConstants
 #define EN FName(TEXT("en"))
 #define ZH FName(TEXT("zh"))
 
-// 角色碰撞通道
+// 碰撞通道
 #define ECC_MESH_TEAM1 ECollisionChannel::ECC_GameTraceChannel1
 #define ECC_MESH_TEAM2 ECollisionChannel::ECC_GameTraceChannel2
 #define ECC_MESH_HREB ECollisionChannel::ECC_GameTraceChannel3
+#define ECC_WEAPON_TRACE ECollisionChannel::ECC_GameTraceChannel4
 
 // EOS大厅属性
 #define LOBBY_SCHEMA_ID FName(TEXT("GameLobby"))
