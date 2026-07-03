@@ -20,11 +20,6 @@ public:
 	virtual void HeavyAttackButtonReleased(const FInputActionValue& Value) override;
 
 protected:
-	virtual void OnRightHandCapsuleOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) override;
-	virtual void OnLeftHandCapsuleOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) override;
-
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<UGameplayEffect> BleedEffectClass;
 

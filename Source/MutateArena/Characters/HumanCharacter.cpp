@@ -50,18 +50,18 @@ AHumanCharacter::AHumanCharacter(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 	PrimaryActorTick.bCanEverTick = true;
+	
+	Tags.Add(TAG_CHARACTER_HUMAN);
+	
+	BloodColor = C_RED;
 
 	CombatComp = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
 	RecoilComp = CreateDefaultSubobject<URecoilComponent>(TEXT("RecoilComponent"));
 	CrosshairComp = CreateDefaultSubobject<UCrosshairComponent>(TEXT("CrosshairComponent"));
 	
-	BloodColor = C_RED;
-	
 	DefaultMaxWalkSpeed = 500.f;
 	GetCharacterMovement()->MaxWalkSpeed = DefaultMaxWalkSpeed;
 	GetCharacterMovement()->MaxWalkSpeedCrouched = DefaultMaxWalkSpeed * 0.5f;
-	
-	Tags.Add(TAG_CHARACTER_HUMAN);
 }
 
 void AHumanCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

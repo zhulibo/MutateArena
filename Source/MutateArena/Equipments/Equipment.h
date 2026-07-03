@@ -18,6 +18,9 @@ class MUTATEARENA_API AEquipment : public AActor
 public:
 	AEquipment();
 	
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void BeginPlay() override;
+	
 	UPROPERTY(VisibleAnywhere)
 	class USphereComponent* CollisionSphere;
 	UPROPERTY(VisibleAnywhere)
@@ -48,9 +51,6 @@ public:
 	virtual void OnStartSwapOut() {};
 
 protected:
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-	virtual void BeginPlay() override;
-
 	UPROPERTY()
 	UAnimInstEquipment* EquipmentAnimInst;
 	UPROPERTY()

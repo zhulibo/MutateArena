@@ -114,6 +114,14 @@ struct FMutantCharacterMain : public FTableRowBase
 	UPROPERTY(EditAnywhere)
 	FText Desc;
 
+	UPROPERTY(EditAnywhere)
+	TArray<FName> TraceSockets_R;
+	UPROPERTY(EditAnywhere)
+	float TraceRadius_R = 10.f;
+	UPROPERTY(EditAnywhere)
+	TArray<FName> TraceSockets_L;
+	UPROPERTY(EditAnywhere)
+	float TraceRadius_L = 10.f;
 };
 
 UENUM(BlueprintType)

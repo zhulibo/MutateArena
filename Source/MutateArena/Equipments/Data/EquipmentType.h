@@ -188,7 +188,13 @@ struct FMeleeData : public FTableRowBase
 
 	UPROPERTY(EditAnywhere)
 	float WalkSpeedMul = 1.f;
-
+	
+	UPROPERTY(EditAnywhere)
+	TArray<FName> TraceSockets;
+	
+	UPROPERTY(EditAnywhere)
+	float TraceRadius = 10.f;
+	
 };
 
 USTRUCT(BlueprintType)

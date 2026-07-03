@@ -5,6 +5,10 @@
 #include "MutateArena/MutateArena.h"
 #include "CharacterAsset.generated.h"
 
+class UTextureRenderTarget2D;
+class UMaterialParameterCollection;
+class UMaterialInterface;
+
 UCLASS()
 class MUTATEARENA_API UCharacterAsset : public UPrimaryDataAsset
 {
@@ -62,6 +66,18 @@ public:
 	// 脚印贴花
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UMaterialInterface> MI_Footprint;
+
+	// AMutantCharacter击墙
+	UPROPERTY(EditAnywhere, Category = "HitWall")
+	UMaterialInterface* WallMarkDecal;
+	UPROPERTY(EditAnywhere, Category = "HitWall")
+	UMetaSoundSource* HitWall_Concrete;
+	UPROPERTY(EditAnywhere, Category = "HitWall")
+	UMetaSoundSource* HitWall_Dirt;
+	UPROPERTY(EditAnywhere, Category = "HitWall")
+	UMetaSoundSource* HitWall_Metal;
+	UPROPERTY(EditAnywhere, Category = "HitWall")
+	UMetaSoundSource* HitWall_Wood;
 	
 	virtual FPrimaryAssetId GetPrimaryAssetId() const override
 	{

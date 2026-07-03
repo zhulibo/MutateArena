@@ -5,6 +5,10 @@
 #include "MutateArena/MutateArena.h"
 #include "EquipmentAsset.generated.h"
 
+class UMaterialInterface;
+class UTextureRenderTarget2D;
+class UMaterialParameterCollection;
+
 UCLASS()
 class MUTATEARENA_API UEquipmentAsset : public UPrimaryDataAsset
 {
@@ -34,6 +38,18 @@ public:
 	UTextureRenderTarget2D* RT_Scope;
 	UPROPERTY(EditAnywhere, Category = "Scope")
 	UMaterialParameterCollection* MPC_Scope;
+
+	// melee击墙
+	UPROPERTY(EditAnywhere, Category = "HitWall")
+	UMaterialInterface* WallMarkDecal;
+	UPROPERTY(EditAnywhere, Category = "HitWall")
+	UMetaSoundSource* HitWall_Concrete;
+	UPROPERTY(EditAnywhere, Category = "HitWall")
+	UMetaSoundSource* HitWall_Dirt;
+	UPROPERTY(EditAnywhere, Category = "HitWall")
+	UMetaSoundSource* HitWall_Metal;
+	UPROPERTY(EditAnywhere, Category = "HitWall")
+	UMetaSoundSource* HitWall_Wood;
 	
 	virtual FPrimaryAssetId GetPrimaryAssetId() const override
 	{

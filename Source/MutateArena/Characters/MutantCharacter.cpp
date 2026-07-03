@@ -1,6 +1,7 @@
 #include "MutantCharacter.h"
 
 #include "DataRegistrySubsystem.h"
+#include "DrawDebugHelpers.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "HumanCharacter.h"
@@ -41,24 +42,6 @@ AMutantCharacter::AMutantCharacter(const FObjectInitializer& ObjectInitializer)
 
 	BloodColor = C_GREEN;
 
-	RightHandCapsule = CreateDefaultSubobject<UCapsuleComponent>(TEXT("RightHandCapsule"));
-	RightHandCapsule->SetupAttachment(GetMesh(), SOCKET_HAND_RIGHT);
-	RightHandCapsule->SetGenerateOverlapEvents(true);
-	RightHandCapsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	RightHandCapsule->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
-	RightHandCapsule->SetCollisionResponseToChannel(ECC_MESH_TEAM1, ECollisionResponse::ECR_Overlap);
-	// RightHandCapsule->SetCollisionResponseToChannel(ECC_WorldDynamic, ECollisionResponse::ECR_Overlap);
-	RightHandCapsule->OnComponentBeginOverlap.AddUniqueDynamic(this, &ThisClass::OnRightHandCapsuleOverlap);
-
-	LeftHandCapsule = CreateDefaultSubobject<UCapsuleComponent>(TEXT("LeftHandCapsule"));
-	LeftHandCapsule->SetupAttachment(GetMesh(), SOCKET_HAND_LEFT);
-	LeftHandCapsule->SetGenerateOverlapEvents(true);
-	LeftHandCapsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	LeftHandCapsule->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
-	LeftHandCapsule->SetCollisionResponseToChannel(ECC_MESH_TEAM1, ECollisionResponse::ECR_Overlap);
-	// LeftHandCapsule->SetCollisionResponseToChannel(ECC_WorldDynamic, ECollisionResponse::ECR_Overlap);
-	LeftHandCapsule->OnComponentBeginOverlap.AddUniqueDynamic(this, &ThisClass::OnLeftHandCapsuleOverlap);
-
 	Tags.Add(TAG_CHARACTER_MUTANT);
 }
 
@@ -86,6 +69,11 @@ void AMutantCharacter::BeginPlay()
 	{
 		LightAttackDamage = MutantCharacterMain->LightAttackDamage;
 		HeavyAttackDamage = MutantCharacterMain->HeavyAttackDamage;
+		
+		TraceSockets_R = MutantCharacterMain->TraceSockets_R;
+		TraceRadius_R = MutantCharacterMain->TraceRadius_R;
+		TraceSockets_L = MutantCharacterMain->TraceSockets_L;
+		TraceRadius_L = MutantCharacterMain->TraceRadius_L;
 	}
 
 	if (HasAuthority())
@@ -94,6 +82,8 @@ void AMutantCharacter::BeginPlay()
 	}
 
 	UGameplayStatics::SpawnSoundAttached(MutantBornSound, GetMesh());
+	
+	SetMutantTraceObjectTypes();
 }
 
 void AMutantCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -136,6 +126,15 @@ void AMutantCharacter::Tick(float DeltaSeconds)
 	// {
 	// 	AddMovementInput(GetActorForwardVector(), 1);
 	// }
+	
+	if (bIsRightHandAttacking)
+	{
+		PerformHandTrace(TraceSockets_R, RightHandPreviousSocketLocations, true);
+	}
+	if (bIsLeftHandAttacking)
+	{
+		PerformHandTrace(TraceSockets_L, LeftHandPreviousSocketLocations, false);
+	}
 }
 
 void AMutantCharacter::PossessedBy(AController* NewController)
@@ -353,63 +352,187 @@ void AMutantCharacter::HeavyAttackButtonReleased(const FInputActionValue& Value)
 		ASC->HandleGameplayEvent(TAG_EVENT_MUTANT_ATTACK_RELEASED, &Payload);
 	}
 }
-
 void AMutantCharacter::RightHandAttackBegin()
 {
-	RightHandCapsule->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-}
+	bIsRightHandAttacking = true;
+	RightHandHitEnemies.Empty();
+	RightHandPreviousSocketLocations.Empty();
 
-void AMutantCharacter::RightHandAttackEnd()
-{
-	RightHandCapsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-}
-
-void AMutantCharacter::LeftHandAttackBegin()
-{
-	LeftHandCapsule->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-}
-
-void AMutantCharacter::LeftHandAttackEnd()
-{
-	LeftHandCapsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-}
-
-void AMutantCharacter::OnRightHandCapsuleOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{
-	if (OtherActor->ActorHasTag(TAG_CHARACTER_MUTANT)) return;
-	
-	if (!RightHandHitEnemies.Contains(OtherActor))
+	if (GetMesh())
 	{
-		RightHandHitEnemies.Add(OtherActor);
-
-		float Damage = bIsLightAttack ? LightAttackDamage : HeavyAttackDamage;
-
-		DropBlood(OverlappedComponent, OtherActor, OtherComp, Damage);
-
-		if (IsLocallyControlled())
+		for (const FName& SocketName : TraceSockets_R)
 		{
-			ServerApplyDamage(OtherActor, Damage);
+			RightHandPreviousSocketLocations.Add(SocketName, GetMesh()->GetSocketLocation(SocketName));
 		}
 	}
 }
 
-void AMutantCharacter::OnLeftHandCapsuleOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void AMutantCharacter::RightHandAttackEnd()
 {
-	if (OtherActor->ActorHasTag(TAG_CHARACTER_MUTANT)) return;
-	
-	if (!LeftHandHitEnemies.Contains(OtherActor))
+	bIsRightHandAttacking = false;
+}
+
+void AMutantCharacter::LeftHandAttackBegin()
+{
+	bIsLeftHandAttacking = true;
+	LeftHandHitEnemies.Empty();
+	LeftHandPreviousSocketLocations.Empty();
+
+	if (GetMesh())
 	{
-		LeftHandHitEnemies.Add(OtherActor);
-		
-		float Damage = bIsLightAttack ? LightAttackDamage : HeavyAttackDamage;
-
-		DropBlood(OverlappedComponent, OtherActor, OtherComp, Damage);
-
-		if (IsLocallyControlled())
+		for (const FName& SocketName : TraceSockets_L)
 		{
-			ServerApplyDamage(OtherActor, Damage);
+			LeftHandPreviousSocketLocations.Add(SocketName, GetMesh()->GetSocketLocation(SocketName));
+		}
+	}
+}
+
+void AMutantCharacter::LeftHandAttackEnd()
+{
+	bIsLeftHandAttacking = false;
+}
+
+void AMutantCharacter::SetMutantTraceObjectTypes()
+{
+	MutantObjectQueryParams = FCollisionObjectQueryParams();
+	
+	MutantObjectQueryParams.AddObjectTypesToQuery(ECC_MESH_TEAM1);
+	MutantObjectQueryParams.AddObjectTypesToQuery(ECC_WorldStatic);
+	MutantObjectQueryParams.AddObjectTypesToQuery(ECC_WorldDynamic);
+}
+
+void AMutantCharacter::PerformHandTrace(const TArray<FName>& TraceSockets, TMap<FName, FVector>& PreviousSocketLocations, bool bIsRightHand)
+{
+	if (!GetMesh()) return;
+
+	for (const FName& SocketName : TraceSockets)
+	{
+		FVector CurrentLocation = GetMesh()->GetSocketLocation(SocketName);
+		
+		if (PreviousSocketLocations.Contains(SocketName))
+		{
+			FVector PreviousLocation = PreviousSocketLocations[SocketName];
+			FVector TraceDirection = (CurrentLocation - PreviousLocation).GetSafeNormal();
+
+			FHitResult HitResult;
+			FCollisionQueryParams QueryParams;
+			QueryParams.AddIgnoredActor(this);
+			QueryParams.bTraceComplex = true;
+			QueryParams.bReturnPhysicalMaterial = true; // 开启物理材质检测
+
+			float TraceRadius = bIsRightHand ? TraceRadius_R : TraceRadius_L;
+			
+			FCollisionShape SphereShape = FCollisionShape::MakeSphere(TraceRadius);
+
+			bool bHit = GetWorld()->SweepSingleByObjectType(
+				HitResult,
+				PreviousLocation,
+				CurrentLocation,
+				FQuat::Identity,
+				MutantObjectQueryParams,
+				SphereShape,
+				QueryParams
+			);
+			
+			// 绘制胶囊体来可视化扫掠轨迹
+			// FVector TraceVector = CurrentLocation - PreviousLocation;
+			// float TraceDistance = TraceVector.Size();
+			// if (TraceDistance > UE_KINDA_SMALL_NUMBER)
+			// {
+			//    FVector Center = PreviousLocation + TraceVector * 0.5f;
+			//    float HalfHeight = (TraceDistance * 0.5f) + TraceRadius;
+			//    FQuat CapsuleRot = FQuat::FindBetweenNormals(FVector::UpVector, TraceVector.GetSafeNormal());
+			//    DrawDebugCapsule(GetWorld(), Center, HalfHeight, TraceRadius, CapsuleRot, FColor::Red, false, 10.f, 0, 1.f);
+			// }
+			
+			if (bHit)
+			{
+				ProcessMutantHit(HitResult, TraceDirection, bIsRightHand);
+			}
+		}
+		
+		PreviousSocketLocations.Add(SocketName, CurrentLocation);
+	}
+}
+
+void AMutantCharacter::ProcessMutantHit(const FHitResult& HitResult, const FVector& TraceDirection, bool bIsRightHand)
+{
+	AActor* OtherActor = HitResult.GetActor();
+	UPrimitiveComponent* OtherComp = HitResult.GetComponent();
+
+	// 防止重复检测
+	TArray<AActor*>& TargetHitEnemies = bIsRightHand ? RightHandHitEnemies : LeftHandHitEnemies;
+	if (TargetHitEnemies.Contains(OtherActor)) return;
+	
+	TargetHitEnemies.Add(OtherActor);
+
+	float Damage = bIsLightAttack ? LightAttackDamage : HeavyAttackDamage;
+
+	if (OtherActor->ActorHasTag(TAG_CHARACTER_HUMAN))
+	{
+		DropBlood(GetMesh(), OtherActor, OtherComp, Damage, HitResult);
+	}
+	else if (OtherComp && OtherComp->GetCollisionObjectType() == ECC_WorldStatic)
+	{
+		// 处理击中墙体/静态网格体的贴花与音效
+		SpawnHitWallEffects(HitResult, TraceDirection);
+	}
+	
+	if (IsLocallyControlled())
+	{
+		ServerApplyDamage(OtherActor, Damage);
+	}
+}
+
+void AMutantCharacter::SpawnHitWallEffects(const FHitResult& HitResult, const FVector& TraceDirection)
+{
+	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+	if (AssetSubsystem && AssetSubsystem->CharacterAsset)
+	{
+		// 生成墙壁刀痕贴花
+		if (AssetSubsystem->CharacterAsset->WallMarkDecal)
+		{
+			FVector ProjectionDirection = -HitResult.ImpactNormal;
+			FVector SurfaceTangent = FVector::VectorPlaneProject(TraceDirection, HitResult.ImpactNormal).GetSafeNormal();
+
+			FRotator DecalRotation = FRotationMatrix::MakeFromXY(ProjectionDirection, SurfaceTangent).Rotator();
+
+			UGameplayStatics::SpawnDecalAttached(
+				AssetSubsystem->CharacterAsset->WallMarkDecal,
+				FVector(10.f, 20.f, 20.f), 
+				HitResult.GetComponent(),
+				NAME_None,
+				HitResult.ImpactPoint,
+				DecalRotation,
+				EAttachLocation::KeepWorldPosition,
+				10.f 
+			);
+		}
+
+		// 根据物理材质播放对应的击打音效
+		UMetaSoundSource* HitSound = nullptr;
+		switch (UGameplayStatics::GetSurfaceType(HitResult))
+		{
+		case EPhysicalSurface::SurfaceType1:
+			HitSound = AssetSubsystem->CharacterAsset->HitWall_Concrete;
+			break;
+		case EPhysicalSurface::SurfaceType2:
+			HitSound = AssetSubsystem->CharacterAsset->HitWall_Dirt;
+			break;
+		case EPhysicalSurface::SurfaceType3:
+			HitSound = AssetSubsystem->CharacterAsset->HitWall_Metal;
+			break;
+		case EPhysicalSurface::SurfaceType4:
+			HitSound = AssetSubsystem->CharacterAsset->HitWall_Wood;
+			break;
+		default:
+			HitSound = AssetSubsystem->CharacterAsset->HitWall_Concrete;
+			break;
+		}
+
+		if (HitSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(GetWorld(), HitSound, HitResult.ImpactPoint);
 		}
 	}
 }
@@ -456,57 +579,33 @@ void AMutantCharacter::ServerApplyDamage_Implementation(AActor* OtherActor, floa
 	}
 }
 
-void AMutantCharacter::DropBlood(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, float Damage)
+void AMutantCharacter::DropBlood(USkeletalMeshComponent* MeshComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, float Damage, const FHitResult& TraceHitResult)
 {
 	ABaseCharacter* OverlappedCharacter = Cast<ABaseCharacter>(OtherActor);
 
 	if (OverlappedCharacter == nullptr || OverlappedCharacter->BloodEffect == nullptr) return;
 
-	TArray<FHitResult> TraceResults;
-
-	auto Start = OverlappedComponent->GetComponentLocation();
-	auto End = OverlappedCharacter->GetActorLocation();
-
-	GetWorld()->SweepMultiByObjectType(
-		TraceResults,
-		Start,
-		End,
-		FQuat::Identity,
-		FCollisionObjectQueryParams(OverlappedCharacter->GetMesh()->GetCollisionObjectType()),
-		FCollisionShape::MakeSphere(10.f)
+	auto BloodEffectComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+		GetWorld(),
+		OverlappedCharacter->BloodEffect,
+		TraceHitResult.ImpactPoint,
+		TraceHitResult.ImpactNormal.Rotation()
 	);
-
-	// DrawDebugLine(GetWorld(), Start, End, C_YELLOW, true);
-
-	for (auto TraceResult : TraceResults)
+	if (BloodEffectComponent)
 	{
-		if (TraceResult.GetComponent()->GetUniqueID() == OtherComp->GetUniqueID())
-		{
-			auto BloodEffectComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
-				GetWorld(),
-				OverlappedCharacter->BloodEffect,
-				TraceResult.ImpactPoint,
-				TraceResult.ImpactNormal.Rotation()
-			);
-			if (BloodEffectComponent)
-			{
-				BloodEffectComponent->SetVariableInt(TEXT("Count"), ULibraryCommon::GetBloodParticleCount(Damage));
-				BloodEffectComponent->SetVariableLinearColor(TEXT("Color"), OverlappedCharacter->BloodColor);
-			}
-			
-			auto BloodSmokeEffectComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
-				GetWorld(),
-				OverlappedCharacter->BloodSmokeEffect,
-				TraceResult.ImpactPoint,
-				TraceResult.ImpactNormal.Rotation()
-			);
-			if (BloodSmokeEffectComponent)
-			{
-				BloodSmokeEffectComponent->SetVariableLinearColor(TEXT("SmokeColor"), OverlappedCharacter->BloodColor);
-			}
-
-			break;
-		}
+		BloodEffectComponent->SetVariableInt(TEXT("Count"), ULibraryCommon::GetBloodParticleCount(Damage));
+		BloodEffectComponent->SetVariableLinearColor(TEXT("Color"), OverlappedCharacter->BloodColor);
+	}
+	
+	auto BloodSmokeEffectComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+		GetWorld(),
+		OverlappedCharacter->BloodSmokeEffect,
+		TraceHitResult.ImpactPoint,
+		TraceHitResult.ImpactNormal.Rotation()
+	);
+	if (BloodSmokeEffectComponent)
+	{
+		BloodSmokeEffectComponent->SetVariableLinearColor(TEXT("SmokeColor"), OverlappedCharacter->BloodColor);
 	}
 }
 
@@ -544,8 +643,6 @@ void AMutantCharacter::OnRep_bIsDead()
 		GetMesh()->SetSimulatePhysics(true);
 		GetMesh()->SetEnableGravity(true);
 		GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-		RightHandCapsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		LeftHandCapsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		
 		FTimerHandle TimerHandle;
 		FTimerDelegate TimerDelegate;

@@ -44,6 +44,9 @@ set "DISPLAY_LIST=%EXCLUDES:-xr!=%"
 powershell -Command "Write-Host 'Skip %DISPLAY_LIST%' -ForegroundColor Cyan"
 echo.
 
+REM Ensure no leftover temp file exists from a previous failed or interrupted run
+if exist "%TEMP_ZIP%" del /f /q "%TEMP_ZIP%"
+
 echo Starting ultra-fast backup using 7-Zip...
 
 REM Execute 7-Zip compression

@@ -18,11 +18,6 @@ class MUTATEARENA_API AMutantCharacter : public ABaseCharacter, public IInteract
 public:
 	AMutantCharacter(const FObjectInitializer& ObjectInitializer);
 
-	UPROPERTY(VisibleAnywhere)
-	UCapsuleComponent* RightHandCapsule;
-	UPROPERTY(VisibleAnywhere)
-	UCapsuleComponent* LeftHandCapsule;
-
 	UPROPERTY(EditAnywhere)
 	UAnimMontage* LightAttackMontage;
 	UPROPERTY(EditAnywhere)
@@ -103,12 +98,26 @@ public:
 	virtual void LeftHandAttackBegin();
 	virtual void LeftHandAttackEnd();
 protected:
-	UFUNCTION()
-	virtual void OnRightHandCapsuleOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-	UFUNCTION()
-	virtual void OnLeftHandCapsuleOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	UPROPERTY()
+	TArray<FName> TraceSockets_R;
+	UPROPERTY()
+	float TraceRadius_R = 10.f;
+	UPROPERTY()
+	TArray<FName> TraceSockets_L;
+	UPROPERTY()
+	float TraceRadius_L = 10.f;
+	bool bIsRightHandAttacking = false;
+	bool bIsLeftHandAttacking = false;
+	TMap<FName, FVector> RightHandPreviousSocketLocations;
+	TMap<FName, FVector> LeftHandPreviousSocketLocations;
+	FCollisionObjectQueryParams MutantObjectQueryParams;
+	void SetMutantTraceObjectTypes();
+	// 统一处理手的扫掠
+	void PerformHandTrace(const TArray<FName>& TraceSockets, TMap<FName, FVector>& PreviousSocketLocations, bool bIsRightHand);
+	// 处理检测击中
+	void ProcessMutantHit(const FHitResult& HitResult, const FVector& TraceDirection, bool bIsRightHand);
+	// 播放击中墙体/静态物体的贴花与音效
+	void SpawnHitWallEffects(const FHitResult& HitResult, const FVector& TraceDirection);
 	
 public:
 	UFUNCTION(Server, Reliable)
@@ -116,7 +125,7 @@ public:
 	virtual void ServerApplyDamage_Implementation(AActor* OtherActor, float Damage);
 protected:
 	UFUNCTION()
-	virtual void DropBlood(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, float Damage);
+	virtual void DropBlood(USkeletalMeshComponent* MeshComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, float Damage, const FHitResult& TraceHitResult);
 
 	UFUNCTION()
 	void MutantReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* AttackerController, AActor* DamageCauser);

@@ -4,6 +4,8 @@
 #include "Equipment.h"
 #include "Weapon.generated.h"
 
+class USceneCaptureComponent2D;
+
 UCLASS()
 class MUTATEARENA_API AWeapon : public AEquipment
 {
@@ -11,6 +13,9 @@ class MUTATEARENA_API AWeapon : public AEquipment
 
 public:
 	AWeapon();
+	
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void BeginPlay() override;
 	
 	UPROPERTY(VisibleAnywhere)
 	USceneCaptureComponent2D* ScopeCapture;
@@ -98,9 +103,6 @@ public:
 	void SetScopeActive(bool bIsActive);
 
 protected:
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-	virtual void BeginPlay() override;
-	
 	void InitData();
 	
 	UFUNCTION()

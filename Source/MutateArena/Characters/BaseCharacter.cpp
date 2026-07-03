@@ -55,6 +55,8 @@ ABaseCharacter::ABaseCharacter(const FObjectInitializer& ObjectInitializer)
 {
 	PrimaryActorTick.bCanEverTick = true;
 
+	Tags.Add(TAG_CHARACTER_BASE);
+
 	GetMesh()->SetGenerateOverlapEvents(true);
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
@@ -95,8 +97,6 @@ ABaseCharacter::ABaseCharacter(const FObjectInitializer& ObjectInitializer)
 	GetCharacterMovement()->JumpZVelocity = 440.f;
 	
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
-
-	Tags.Add(TAG_CHARACTER_BASE);
 	
 	InteractorComp = CreateDefaultSubobject<UInteractorComponent>(TEXT("InteractorComponent"));
 	
@@ -789,121 +789,123 @@ void ABaseCharacter::MulticastPlayOuchSound_Implementation(float DamageRate)
 
 void ABaseCharacter::PlayFootSound()
 {
-    FHitResult HitResult;
-    FVector Start = GetActorLocation();
-    FVector End = Start - FVector(0.f, 0.f, 100.f);
+	FHitResult HitResult;
+	FVector Start = GetActorLocation();
+	FVector End = Start - FVector(0.f, 0.f, 100.f);
 
-    FCollisionQueryParams Params;
-    Params.AddIgnoredActor(this);
-    Params.bReturnPhysicalMaterial = true;
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(this);
+	Params.bReturnPhysicalMaterial = true;
 
-    GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECollisionChannel::ECC_Visibility, Params);
-    if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-    if (HitResult.bBlockingHit && AssetSubsystem && AssetSubsystem->CharacterAsset)
-    {
-       UMetaSoundSource* Sound = AssetSubsystem->CharacterAsset->FootSound_Concrete;
-       switch (UGameplayStatics::GetSurfaceType(HitResult))
-       {
-       case EPhysicalSurface::SurfaceType1:
-          Sound = AssetSubsystem->CharacterAsset->FootSound_Concrete;
-          break;
-       case EPhysicalSurface::SurfaceType2:
-          Sound = AssetSubsystem->CharacterAsset->FootSound_Dirt;
-          break;
-       case EPhysicalSurface::SurfaceType3:
-          Sound = AssetSubsystem->CharacterAsset->FootSound_Metal;
-          break;
-       case EPhysicalSurface::SurfaceType4:
-          Sound = AssetSubsystem->CharacterAsset->FootSound_Wood;
-          break;
-       }
-       
-       float VolumeMultiplier;
-       USoundAttenuation* DynamicAttenuation;
-       GetFootstepAudioSettings(VolumeMultiplier, DynamicAttenuation);
+	GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECollisionChannel::ECC_Visibility, Params);
+	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+	if (HitResult.bBlockingHit && AssetSubsystem && AssetSubsystem->CharacterAsset)
+	{
+		UMetaSoundSource* Sound = nullptr;
+		switch (UGameplayStatics::GetSurfaceType(HitResult))
+		{
+		case EPhysicalSurface::SurfaceType1:
+			Sound = AssetSubsystem->CharacterAsset->FootSound_Concrete;
+			break;
+		case EPhysicalSurface::SurfaceType2:
+			Sound = AssetSubsystem->CharacterAsset->FootSound_Dirt;
+			break;
+		case EPhysicalSurface::SurfaceType3:
+			Sound = AssetSubsystem->CharacterAsset->FootSound_Metal;
+			break;
+		case EPhysicalSurface::SurfaceType4:
+			Sound = AssetSubsystem->CharacterAsset->FootSound_Wood;
+			break;
+		default:
+			Sound = AssetSubsystem->CharacterAsset->FootSound_Concrete;
+		}
 
-       // 正常播放脚步声（所有人依据衰减听到）
-       UGameplayStatics::PlaySoundAtLocation(
-          this, 
-          Sound, 
-          HitResult.Location, 
-          VolumeMultiplier, 
-          1.0f, 
-          0.0f, 
-          DynamicAttenuation
-       );
-       
-       // 判断是否应该显示脚印
-       bool bShouldShowFootprint = false;
-       
-       // 获取本地玩家控制器
-       if (APlayerController* LocalPC = GetWorld()->GetFirstPlayerController())
-       {
-           // 获取本地玩家的 PlayerState
-           if (ABasePlayerState* LocalPS = Cast<ABasePlayerState>(LocalPC->PlayerState))
-           {
-               // 获取本地玩家的 AbilitySystemComponent
-               if (UAbilitySystemComponent* LocalASC = LocalPS->GetAbilitySystemComponent())
-               {
-                   // 通过 GameplayTag 判断是否拥有嗅觉增强能力
-                   bool bHasEnhancedSmell = LocalASC->HasMatchingGameplayTag(TAG_STATE_DNA_EnhancedSmell);
-                   if (bHasEnhancedSmell)
-                   {
-                       // 获取当前发出脚步声角色（this）的 PlayerState
-                       if (ABasePlayerState* CurrentCharacterPS = Cast<ABasePlayerState>(GetPlayerState()))
-                       {
-                           // 判断是否为敌对阵营（确保双方都不处于 NoTeam 状态且阵营不同）
-                           if (LocalPS->Team != ETeam::NoTeam && 
-                               CurrentCharacterPS->Team != ETeam::NoTeam && 
-                               LocalPS->Team != CurrentCharacterPS->Team)
-                           {
-                               bShouldShowFootprint = true;
-                           }
-                       }
-                   }
-               }
-           }
-       }
+		float VolumeMultiplier;
+		USoundAttenuation* DynamicAttenuation;
+		GetFootstepAudioSettings(VolumeMultiplier, DynamicAttenuation);
 
-       // 脚印贴花
-       if (bShouldShowFootprint)
-       {
-          // 1. 设置贴花尺寸 (X: 投影深度, Y: 宽度, Z: 长度)
-          FVector DecalSize = FVector(5.f, 30.f, 15.f);
+		// 正常播放脚步声（所有人依据衰减听到）
+		UGameplayStatics::PlaySoundAtLocation(
+			this,
+			Sound,
+			HitResult.Location,
+			VolumeMultiplier,
+			1.0f,
+			0.0f,
+			DynamicAttenuation
+		);
 
-          // 2. 计算贴花旋转
-          FVector DecalProjectionDir = -HitResult.ImpactNormal; 
-          FVector CharacterForward = GetActorForwardVector();
-    
-          // 将角色前向向量投影到地面法线平面，防止在斜坡上出现透视变形
-          FVector ForwardOnSurface = FVector::VectorPlaneProject(CharacterForward, HitResult.ImpactNormal).GetSafeNormal();
+		// 判断是否应该显示脚印
+		bool bShouldShowFootprint = false;
 
-          // 在传入 Y 轴参数时加上负号，使贴花水平旋转 180 度修正方向
-          FRotator DecalRotation = FRotationMatrix::MakeFromXY(DecalProjectionDir, -ForwardOnSurface).Rotator();
+		// 获取本地玩家控制器
+		if (APlayerController* LocalPC = GetWorld()->GetFirstPlayerController())
+		{
+			// 获取本地玩家的 PlayerState
+			if (ABasePlayerState* LocalPS = Cast<ABasePlayerState>(LocalPC->PlayerState))
+			{
+				// 获取本地玩家的 AbilitySystemComponent
+				if (UAbilitySystemComponent* LocalASC = LocalPS->GetAbilitySystemComponent())
+				{
+					// 通过 GameplayTag 判断是否拥有嗅觉增强能力
+					if (bool bHasEnhancedSmell = LocalASC->HasMatchingGameplayTag(TAG_STATE_DNA_EnhancedSmell))
+					{
+						// 获取当前发出脚步声角色（this）的 PlayerState
+						if (ABasePlayerState* CurrentCharacterPS = Cast<ABasePlayerState>(GetPlayerState()))
+						{
+							// 判断是否为敌对阵营（确保双方都不处于 NoTeam 状态且阵营不同）
+							if (LocalPS->Team != ETeam::NoTeam &&
+								CurrentCharacterPS->Team != ETeam::NoTeam &&
+								LocalPS->Team != CurrentCharacterPS->Team)
+							{
+								bShouldShowFootprint = true;
+							}
+						}
+					}
+				}
+			}
+		}
 
-          // 3. 检查被击中的组件是否有效，使用 SpawnDecalAttached
-          if (UPrimitiveComponent* HitComponent = HitResult.GetComponent())
-          {
-             float LifeSpan = 8.0f;
-             UDecalComponent* FootprintDecal = UGameplayStatics::SpawnDecalAttached(
-                AssetSubsystem->CharacterAsset->MI_Footprint,
-                DecalSize,
-                HitComponent,                 // 附着到的目标组件
-                HitResult.BoneName,           // 附着到特定骨骼
-                HitResult.Location,           // 生成位置
-                DecalRotation,                // 生成旋转
-                EAttachLocation::KeepWorldPosition, // 保持世界坐标系下的位置和旋转
-                LifeSpan
-             );
+		// 脚印贴花
+		if (bShouldShowFootprint)
+		{
+			// 1. 设置贴花尺寸 (X: 投影深度, Y: 宽度, Z: 长度)
+			FVector DecalSize = FVector(5.f, 30.f, 15.f);
 
-             // 4. 设置渐隐效果
-             if (FootprintDecal)
-             {
-                FootprintDecal->SetFadeOut(LifeSpan - 4.0f, 4.0f, false);
-             }
-          }
-       }
-    }
+			// 2. 计算贴花旋转
+			FVector DecalProjectionDir = -HitResult.ImpactNormal;
+			FVector CharacterForward = GetActorForwardVector();
+
+			// 将角色前向向量投影到地面法线平面，防止在斜坡上出现透视变形
+			FVector ForwardOnSurface = FVector::VectorPlaneProject(CharacterForward, HitResult.ImpactNormal).
+				GetSafeNormal();
+
+			// 在传入 Y 轴参数时加上负号，使贴花水平旋转 180 度修正方向
+			FRotator DecalRotation = FRotationMatrix::MakeFromXY(DecalProjectionDir, -ForwardOnSurface).Rotator();
+
+			// 3. 检查被击中的组件是否有效，使用 SpawnDecalAttached
+			if (UPrimitiveComponent* HitComponent = HitResult.GetComponent())
+			{
+				float LifeSpan = 8.0f;
+				UDecalComponent* FootprintDecal = UGameplayStatics::SpawnDecalAttached(
+					AssetSubsystem->CharacterAsset->MI_Footprint,
+					DecalSize,
+					HitComponent, // 附着到的目标组件
+					HitResult.BoneName, // 附着到特定骨骼
+					HitResult.Location, // 生成位置
+					DecalRotation, // 生成旋转
+					EAttachLocation::KeepWorldPosition, // 保持世界坐标系下的位置和旋转
+					LifeSpan
+				);
+
+				// 4. 设置渐隐效果
+				if (FootprintDecal)
+				{
+					FootprintDecal->SetFadeOut(LifeSpan - 4.0f, 4.0f, false);
+				}
+			}
+		}
+	}
 }
 
 void ABaseCharacter::PlayFootLandSound()

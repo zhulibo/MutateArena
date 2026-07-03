@@ -25,8 +25,6 @@ namespace GameConstants
 #define SOCKET_SHELL_EJECT FName(TEXT("ShellEject"))
 #define SOCKET_SCOPE_START FName(TEXT("ScopeStartSocket"))
 #define SOCKET_SCOPE_END FName(TEXT("ScopeEndSocket"))
-#define SOCKET_HAND_RIGHT FName(TEXT("RightHandCapsule"))
-#define SOCKET_HAND_LEFT FName(TEXT("LeftHandCapsule"))
 #define SOCKET_SUFFIX_R FName(TEXT("_R"))
 #define SOCKET_SUFFIX_L FName(TEXT("_L"))
 #define SOCKET_SHOULDER_R FName(TEXT("Shoulder_R"))
