@@ -14,24 +14,23 @@ class MUTATEARENA_API UAutoHostComponent : public UActorComponent
 public:	
 	UAutoHostComponent();
 	
+	virtual void BeginPlay() override;
+	
 	void StartAFKCheck();
 	void UpdateActiveTime();
 	UFUNCTION()
 	AActor* GetBestPerceivedTarget();
 
 protected:
-	virtual void BeginPlay() override;
-
 	UPROPERTY()
 	class ABaseCharacter* BaseChar;
 	UPROPERTY()
 	class UStateTreeComponent* StateTreeComp;
 	UPROPERTY()
 	class UAIPerceptionComponent* AIPerceptionComp;
-
-	float LastActiveTime;
+	
 	FTimerHandle AFKCheckTimerHandle;
-	bool bIsAutoHosting;
+	bool bIsAutoHosting = false;
 	
 	UFUNCTION()
 	void CheckIdleStatus();

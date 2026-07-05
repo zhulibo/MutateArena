@@ -5,12 +5,18 @@
 #include "MutateArena/System/EOSSubsystem.h"
 #include "MutateArena/System/PlayerSubsystem.h"
 #include "Common/CommonButton.h"
+#include "Common/ConfirmScreen.h"
 #include "Components/SizeBox.h"
 #include "Engine/GameInstance.h"
 #include "Kismet/GameplayStatics.h"
 #include "Misc/CommandLine.h"
 #include "MutateArena/MutateArena.h"
+#include "MutateArena/Assets/Data/CommonAsset.h"
+#include "MutateArena/System/AssetSubsystem.h"
+#include "MutateArena/System/UISubsystem.h"
+#include "MutateArena/System/Tags/ProjectTags.h"
 #include "MutateArena/Utils/LibraryNotify.h"
+#include "Widgets/CommonActivatableWidgetContainer.h"
 
 #define LOCTEXT_NAMESPACE "ULoginLayout"
 
@@ -29,12 +35,21 @@ void ULoginLayout::NativeOnInitialized()
 	DevButton->OnClicked().AddUObject(this, &ThisClass::OnDevButtonClicked);
 	
 	QuitButton->OnClicked().AddUObject(this, &ThisClass::OnQuitButtonClicked);
-
+	
+	StatusLinkButton->OnClicked().AddUObject(this, &ThisClass::OnStatusLinkButtonClicked);
+	
 	EOSSubsystem = GetGameInstance()->GetSubsystem<UEOSSubsystem>();
 	if (EOSSubsystem)
 	{
 		EOSSubsystem->OnLoginComplete.AddUObject(this, &ThisClass::OnLoginComplete);
 	}
+}
+
+void ULoginLayout::NativeConstruct()
+{
+	Super::NativeConstruct();
+	
+	RegisterLayer(TAG_UI_LAYER_MODAL, ModalStack);
 }
 
 UWidget* ULoginLayout::NativeGetDesiredFocusTarget() const
@@ -106,8 +121,37 @@ void ULoginLayout::OnDevButtonClicked()
 
 void ULoginLayout::OnQuitButtonClicked()
 {
-	APlayerController* PlayerController = UGameplayStatics::GetPlayerController(this, 0);
-	UKismetSystemLibrary::QuitGame(this, PlayerController, EQuitPreference::Quit, false);
+	if (AssetSubsystem == nullptr) AssetSubsystem = GetWorld()->GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+	if (UISubsystem == nullptr) UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer());
+	if (UISubsystem && AssetSubsystem && AssetSubsystem->CommonAsset)
+	{
+		FConfirmScreenComplete ResultCallback = FConfirmScreenComplete::CreateUObject(this, &ThisClass::Quit);
+		
+		if (auto Layer = UISubsystem->GetLayerStack(TAG_UI_LAYER_MODAL))
+		{
+			Layer->AddWidget<UConfirmScreen>(
+				AssetSubsystem->CommonAsset->ConfirmScreenClass,
+				[ResultCallback](UConfirmScreen& Dialog) {
+					Dialog.Setup(LOCTEXT("SureToQuit", "Sure to quit?"), ResultCallback);
+				}
+			);
+		}
+	}
+}
+
+void ULoginLayout::Quit(EMsgResult MsgResult)
+{
+	if (MsgResult == EMsgResult::Confirm)
+	{
+		APlayerController* PlayerController = UGameplayStatics::GetPlayerController(this, 0);
+		UKismetSystemLibrary::QuitGame(this, PlayerController, EQuitPreference::Quit, false);
+	}
+}
+
+void ULoginLayout::OnStatusLinkButtonClicked()
+{
+	FString StatusURL = TEXT("https://status.epicgames.com/");
+	FPlatformProcess::LaunchURL(*StatusURL, nullptr, nullptr);
 }
 
 #undef LOCTEXT_NAMESPACE

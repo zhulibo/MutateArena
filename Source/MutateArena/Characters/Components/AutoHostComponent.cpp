@@ -14,8 +14,6 @@
 UAutoHostComponent::UAutoHostComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
-	bIsAutoHosting = false;
-	LastActiveTime = 0.f;
 }
 
 void UAutoHostComponent::BeginPlay()
@@ -38,17 +36,19 @@ void UAutoHostComponent::BeginPlay()
 void UAutoHostComponent::StartAFKCheck()
 {
 	if (!GetWorld()) return;
-
-	LastActiveTime = GetWorld()->GetTimeSeconds();
+	
 	GetWorld()->GetTimerManager().SetTimer(AFKCheckTimerHandle, this, &ThisClass::CheckIdleStatus, 1.0f, true);
 }
 
 void UAutoHostComponent::UpdateActiveTime()
 {
-	if (!GetWorld()) return;
-
-	LastActiveTime = GetWorld()->GetTimeSeconds();
- 
+	if (!GetWorld() || BaseChar == nullptr) return;
+	
+	ABaseController* BaseController = Cast<ABaseController>(BaseChar->GetController());
+	if (BaseController == nullptr) return;
+	
+	BaseController->LastActiveTime = GetWorld()->GetTimeSeconds();
+	
 	if (bIsAutoHosting)
 	{
 		StopAutoHost();
@@ -57,8 +57,11 @@ void UAutoHostComponent::UpdateActiveTime()
 
 void UAutoHostComponent::CheckIdleStatus()
 {
-	if (!GetWorld()) return;
+	if (!GetWorld() || BaseChar == nullptr) return;
 
+	ABaseController* BaseController = Cast<ABaseController>(BaseChar->GetController());
+	if (BaseController == nullptr) return;
+	
 	const float CurrentTime = GetWorld()->GetTimeSeconds();
 	
 	float AFKHostingTime = 30.f;
@@ -67,7 +70,7 @@ void UAutoHostComponent::CheckIdleStatus()
 		AFKHostingTime = GetDefault<UDevSetting>()->AFKHostingTime;
 	}
 	
-	if (CurrentTime - LastActiveTime > AFKHostingTime)
+	if (CurrentTime - BaseController->LastActiveTime > AFKHostingTime)
 	{
 		if (!bIsAutoHosting)
 		{
@@ -127,6 +130,7 @@ void UAutoHostComponent::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus St
 
 AActor* UAutoHostComponent::GetBestPerceivedTarget()
 {
+	UE_LOG(LogTemp, Warning, TEXT("a"));
 	if (AIPerceptionComp == nullptr || BaseChar == nullptr) return nullptr;
 
 	TArray<AActor*> PerceivedActors;
@@ -135,13 +139,14 @@ AActor* UAutoHostComponent::GetBestPerceivedTarget()
 	AActor* BestTarget = nullptr;
 	float MinDistSq = FLT_MAX;
 	FVector MyLoc = BaseChar->GetActorLocation();
-
+	UE_LOG(LogTemp, Warning, TEXT("b"));
 	ABasePlayerState* MyPlayerState = BaseChar->GetPlayerState<ABasePlayerState>();
 
 	for (AActor* Target : PerceivedActors)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("c"));
 		if (Target == nullptr || Target == BaseChar) continue;
-		
+		UE_LOG(LogTemp, Warning, TEXT("d"));
 		ABaseCharacter* TargetBaseCharacter = Cast<ABaseCharacter>(Target);
 		if (MyPlayerState && TargetBaseCharacter)
 		{

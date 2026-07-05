@@ -270,7 +270,7 @@ void UCombatComponent::InstantSwap(EEquipmentType TargetType)
 	}
 	
 	// 更新子弹
-	if (BaseController == nullptr) BaseController = Cast<ABaseController>(HumanChar->Controller);
+	if (BaseController == nullptr) BaseController = Cast<ABaseController>(HumanChar->GetController());
 	if (HumanChar->IsLocallyControlled() && BaseController)
 	{
 		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
@@ -408,7 +408,7 @@ void UCombatComponent::LocalSetAiming(bool bIsAiming)
 		// 打开画中画
 		GetCurWeapon()->SetScopeActive(bIsAiming);
 
-		if (BaseController == nullptr) BaseController = Cast<ABaseController>(HumanChar->Controller);
+		if (BaseController == nullptr) BaseController = Cast<ABaseController>(HumanChar->GetController());
 		if (BaseController)
 		{
 			if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))

@@ -4,6 +4,9 @@
 #include "LayoutBase.h"
 #include "LoginLayout.generated.h"
 
+class UVersion;
+class UEOSSubsystem;
+enum class EMsgResult : uint8;
 enum class ECoolLoginType : uint8;
 
 UCLASS()
@@ -13,11 +16,20 @@ class MUTATEARENA_API ULoginLayout : public ULayoutBase
 
 protected:
 	virtual void NativeOnInitialized() override;
+	virtual void NativeConstruct() override;
 	virtual UWidget* NativeGetDesiredFocusTarget() const override;
 	
+	// 模态层
+	UPROPERTY(meta = (BindWidget))
+	UCommonActivatableWidgetStack* ModalStack;
+	
 	UPROPERTY()
-	class UEOSSubsystem* EOSSubsystem;
-
+	UEOSSubsystem* EOSSubsystem;
+	UPROPERTY()
+	class UUISubsystem* UISubsystem;
+	UPROPERTY()
+	class UAssetSubsystem* AssetSubsystem;
+	
 	UPROPERTY()
 	class ALoginController* LoginController;
 	
@@ -47,5 +59,13 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	UCommonButton* QuitButton;
 	void OnQuitButtonClicked();
+	void Quit(EMsgResult MsgResult);
 
+	UPROPERTY(meta = (BindWidget))
+	UCommonButton* StatusLinkButton;
+	void OnStatusLinkButtonClicked();
+	
+	UPROPERTY(meta = (BindWidget))
+	UVersion* Version;
+	
 };

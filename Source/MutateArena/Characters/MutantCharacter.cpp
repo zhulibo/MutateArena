@@ -569,7 +569,7 @@ void AMutantCharacter::ServerApplyDamage_Implementation(AActor* OtherActor, floa
 	{
 		if (!DamagedCharacter->bIsDead && !DamagedCharacter->bIsImmune)
 		{
-			ABaseController* DamagedController = Cast<ABaseController>(DamagedCharacter->Controller);
+			ABaseController* DamagedController = Cast<ABaseController>(DamagedCharacter->GetController());
 			if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
 			if (MutationMode)
 			{

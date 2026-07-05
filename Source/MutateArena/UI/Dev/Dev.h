@@ -5,6 +5,8 @@
 #include "Online/TitleFile.h"
 #include "Dev.generated.h"
 
+class UVersion;
+
 UCLASS()
 class MUTATEARENA_API UDev : public UCommonActivatableWidget
 {
@@ -17,11 +19,9 @@ protected:
 
 	UPROPERTY()
 	class UEOSSubsystem* EOSSubsystem;
-
+	
 	UPROPERTY(meta = (BindWidget))
-	class UCommonTextBlock* ProjectVersion;
-	UPROPERTY(meta = (BindWidget))
-	UCommonTextBlock* EngineVersion;
+	UVersion* Version;
 	
 	UPROPERTY(meta = (BindWidget))
 	class UVerticalBox* KnownIssuesContainer;

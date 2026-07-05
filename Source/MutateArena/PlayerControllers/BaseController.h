@@ -88,4 +88,6 @@ public:
 	UFUNCTION()
 	void GiveEquipment(FString EquipmentName);
 	
+	float LastActiveTime;
+	
 };

@@ -153,7 +153,7 @@ void ABaseCharacter::GetActorEyesViewPoint(FVector& OutLocation, FRotator& OutRo
 {
 	if (USkeletalMeshComponent* MeshComp = GetMesh())
 	{
-		const FName HeadBoneName = FName("Head");
+		const FName HeadBoneName = FName("CameraSocket");
 		if (MeshComp->DoesSocketExist(HeadBoneName))
 		{
 			OutLocation = MeshComp->GetSocketLocation(HeadBoneName);
@@ -725,13 +725,13 @@ void ABaseCharacter::OnHealthChanged(const FOnAttributeChangeData& Data)
 void ABaseCharacter::Landed(const FHitResult& Hit)
 {
 	Super::Landed(Hit);
-
+	UE_LOG(LogTemp, Warning, TEXT("1"));
+	// 计算扣血倍率
+	float DamageRate = CalcFallDamageRate();
+	if (DamageRate == 0.f) return;
+	UE_LOG(LogTemp, Warning, TEXT("2"));
 	if (HasAuthority())
 	{
-		// 计算扣血倍率
-		float DamageRate = CalcFallDamageRate();
-		if (DamageRate == 0.f) return;
-
 		// 播放叫声
 		MulticastPlayOuchSound(DamageRate);
 
@@ -741,7 +741,7 @@ void ABaseCharacter::Landed(const FHitResult& Hit)
 	
 	if (IsLocallyControlled())
 	{
-		UGameplayStatics::PlaySoundAtLocation(this, OuchSound, GetActorLocation());
+		LocalPlayOuchSound(DamageRate);
 	}
 }
 
@@ -752,22 +752,26 @@ float ABaseCharacter::CalcFallDamageRate()
 	{
 		return 0.f; 
 	}
-	
-	FVector Velocity = GetCharacterMovement()->Velocity; // Landed判定的时机是即将落地时，此时速度达到最大
-	float Gravity = GetCharacterMovement()->GetGravityZ();
-	float DiffHighMeter = Velocity.Z / Gravity;
-
-	// 角色降落时不遵循自由落体，大致模拟跌落伤害
-	float DamageRate; // 跌落扣血比例（占MaxHealth）
-	if (DiffHighMeter < 1.f) // 大约对应游戏里5m
+    
+	// 获取落地瞬间的绝对速度与重力
+	float VelocityZ = FMath::Abs(GetCharacterMovement()->Velocity.Z); 
+	float Gravity = FMath::Abs(GetCharacterMovement()->GetGravityZ());
+    
+	// 根据物理公式 h = v^2 / 2g 计算等效掉落高度
+	float FallHeightCm = (VelocityZ * VelocityZ) / (2.f * Gravity);
+	// 将高度转换为米
+	float DiffHighMeter = FallHeightCm / 100.f; 
+    
+	float DamageRate;
+	if (DiffHighMeter < 4.f) 
 	{
 		DamageRate = 0.f;
 	}
-	else if (DiffHighMeter >= 1.f && DiffHighMeter < 1.2f)
+	else if (DiffHighMeter >= 4.f && DiffHighMeter < 6.f)
 	{
 		DamageRate = 0.05f;
 	}
-	else if (DiffHighMeter >= 1.2f && DiffHighMeter < 1.5f)
+	else if (DiffHighMeter >= 6.f && DiffHighMeter < 8.f)
 	{
 		DamageRate = 0.1f;
 	}
@@ -783,8 +787,13 @@ void ABaseCharacter::MulticastPlayOuchSound_Implementation(float DamageRate)
 {
 	if (!IsLocallyControlled())
 	{
-		UGameplayStatics::PlaySoundAtLocation(this, OuchSound, GetActorLocation());
+		LocalPlayOuchSound(DamageRate);
 	}
+}
+
+void ABaseCharacter::LocalPlayOuchSound(float DamageRate)
+{
+	UGameplayStatics::PlaySoundAtLocation(this, OuchSound, GetActorLocation());
 }
 
 void ABaseCharacter::PlayFootSound()

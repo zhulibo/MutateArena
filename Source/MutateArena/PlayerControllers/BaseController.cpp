@@ -35,6 +35,8 @@ void ABaseController::BeginPlay()
 		}
 
 		AddGameLayout();
+		
+		LastActiveTime = GetWorld()->GetTimeSeconds();
 	}
 }
 

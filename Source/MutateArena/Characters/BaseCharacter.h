@@ -6,6 +6,7 @@
 #include "ModularCharacter.h"
 #include "BaseCharacter.generated.h"
 
+class USceneCaptureComponent2D;
 enum class ECommonInputType : uint8;
 
 UCLASS()
@@ -164,6 +165,7 @@ protected:
 	class UMetaSoundSource* OuchSound;
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastPlayOuchSound(float DamageRate);
+	void LocalPlayOuchSound(float DamageRate);
 public:
 	void PlayFootSound();
 	void PlayFootLandSound();

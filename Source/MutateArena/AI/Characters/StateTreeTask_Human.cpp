@@ -65,11 +65,17 @@ EStateTreeRunStatus FStateTreeTask_HumanChase::Tick(FStateTreeExecutionContext& 
 	// 计算距离的平方 (DistSquared)。
 	// 计算机算平方根 (Sqrt) 很慢，所以游戏开发中通常比较“距离的平方”和“半径的平方”，效果一样但性能更好。
 	float DistSq = FVector::DistSquared(MyLoc, TargetLoc);
+	
+	float DynamicAcceptanceRadius = InstanceData.AcceptanceRadius; 
+	if (MyHumanCharacter->CombatComp && MyHumanCharacter->CombatComp->CurEquipmentType == EEquipmentType::Melee)
+	{
+		DynamicAcceptanceRadius = InstanceData.AcceptanceRadius_Melee;
+	}
 
 	// [4. 判断是否到达终点]
 	// 如果当前距离 < 设定的停止距离 (AcceptanceRadius)，说明走到了。
 	// 返回 Succeeded，StateTree 就会切到下一个节点 (比如开始攻击)。
-	if (DistSq < FMath::Square(InstanceData.AcceptanceRadius))
+	if (DistSq < FMath::Square(DynamicAcceptanceRadius))
 	{
 		return EStateTreeRunStatus::Succeeded;
 	}
@@ -170,15 +176,21 @@ EStateTreeRunStatus FStateTreeTask_HumanFire::EnterState(FStateTreeExecutionCont
 				InstanceData.bIsShooting = true;
 				InstanceData.CurrentStateTimer = 0.0f;
 				InstanceData.CurrentTargetDuration = FMath::RandRange(0.5f, 0.9f);
-
 				MyHumanCharacter->FireButtonPressed(FInputActionValue());
-
 				return EStateTreeRunStatus::Running;
 			}
 			else
 			{
-				return EStateTreeRunStatus::Succeeded;
+				return EStateTreeRunStatus::Succeeded; // 没子弹了，返回成功以切到 Reload
 			}
+		}
+		else if (AMelee* Melee = MyHumanCharacter->CombatComp->GetCurMelee())
+		{
+			InstanceData.bIsShooting = true;
+			InstanceData.CurrentStateTimer = 0.0f;
+			InstanceData.CurrentTargetDuration = FMath::RandRange(0.5f, 0.9f);
+			MyHumanCharacter->FireButtonPressed(FInputActionValue()); 
+			return EStateTreeRunStatus::Running;
 		}
 	}
 	
@@ -187,71 +199,88 @@ EStateTreeRunStatus FStateTreeTask_HumanFire::EnterState(FStateTreeExecutionCont
 
 EStateTreeRunStatus FStateTreeTask_HumanFire::Tick(FStateTreeExecutionContext& Context, const float DeltaTime) const
 {
-	FInstanceDataType& InstanceData = Context.GetInstanceData<FInstanceDataType>(*this);
-	if (InstanceData.TargetActor == nullptr) return EStateTreeRunStatus::Failed;
-	
-	ABaseCharacter* TargetBaseCharacter = Cast<ABaseCharacter>(InstanceData.TargetActor);
-	AHumanCharacter* MyHumanCharacter = Cast<AHumanCharacter>(Context.GetOwner());
-	
-	if (TargetBaseCharacter == nullptr || TargetBaseCharacter->bIsDead || MyHumanCharacter == nullptr) return EStateTreeRunStatus::Failed;
+    FInstanceDataType& InstanceData = Context.GetInstanceData<FInstanceDataType>(*this);
+    if (InstanceData.TargetActor == nullptr) return EStateTreeRunStatus::Failed;
+    
+    ABaseCharacter* TargetBaseCharacter = Cast<ABaseCharacter>(InstanceData.TargetActor);
+    AHumanCharacter* MyHumanCharacter = Cast<AHumanCharacter>(Context.GetOwner());
+    
+    if (TargetBaseCharacter == nullptr || TargetBaseCharacter->bIsDead || MyHumanCharacter == nullptr) return EStateTreeRunStatus::Failed;
 
-	ABasePlayerState* TargetBasePlayerState = TargetBaseCharacter->GetPlayerState<ABasePlayerState>();
-	ABasePlayerState* MyBasePlayerState = MyHumanCharacter->GetPlayerState<ABasePlayerState>();
-	if (TargetBasePlayerState && MyBasePlayerState)
-	{
-		if (TargetBasePlayerState->Team == MyBasePlayerState->Team)
-		{
-			return EStateTreeRunStatus::Failed;
-		}
-	}
-	
-	// 没有弹药了
-	if (MyHumanCharacter->CombatComp)
-	{
-		if (AWeapon* Weapon = MyHumanCharacter->CombatComp->GetCurWeapon())
-		{
-			if (Weapon->Ammo == 0)
-			{
-				return EStateTreeRunStatus::Succeeded;
-			}
-		}
-	}
-	
-	// 累积已运行时间
-	InstanceData.CurrentStateTimer += DeltaTime;
+    ABasePlayerState* TargetBasePlayerState = TargetBaseCharacter->GetPlayerState<ABasePlayerState>();
+    ABasePlayerState* MyBasePlayerState = MyHumanCharacter->GetPlayerState<ABasePlayerState>();
+    if (TargetBasePlayerState && MyBasePlayerState)
+    {
+       if (TargetBasePlayerState->Team == MyBasePlayerState->Team)
+       {
+          return EStateTreeRunStatus::Failed;
+       }
+    }
+    
+    // 提前获取位置，用于计算距离和转向
+    FVector MyLoc = MyHumanCharacter->GetActorLocation();
+    FVector TargetLoc = InstanceData.TargetActor->GetActorLocation();
+    float DistSq = FVector::DistSquared(MyLoc, TargetLoc);
 
-	// 射击或停顿已运行时间达到要求
-	if (InstanceData.CurrentStateTimer >= InstanceData.CurrentTargetDuration)
-	{
-		InstanceData.CurrentStateTimer = 0.f;
-		InstanceData.bIsShooting = !InstanceData.bIsShooting;
+    // 状态退出检查
+    if (MyHumanCharacter->CombatComp)
+    {
+       if (AWeapon* Weapon = MyHumanCharacter->CombatComp->GetCurWeapon())
+       {
+          if (Weapon->Ammo == 0)
+          {
+             return EStateTreeRunStatus::Succeeded;
+          }
+          
+          // 如果敌人跑出了枪械的有效射击范围容差 停止射击去追
+          if (DistSq > FMath::Square(InstanceData.EscapeRadius))
+          {
+             return EStateTreeRunStatus::Succeeded;
+          }
+       }
+       else if (AMelee* Melee = MyHumanCharacter->CombatComp->GetCurMelee())
+       {
+          // 如果敌人跑出了近战攻击的容差范围 停止挥刀去追
+          if (DistSq > FMath::Square(InstanceData.EscapeRadius_Melee))
+          {
+             return EStateTreeRunStatus::Succeeded;
+          }
+       }
+    }
+    
+    // 累积已运行时间
+    InstanceData.CurrentStateTimer += DeltaTime;
 
-		if (InstanceData.bIsShooting)
-		{
-			InstanceData.CurrentTargetDuration = FMath::RandRange(0.6f, 0.8f);
-			MyHumanCharacter->FireButtonPressed(FInputActionValue());
-		}
-		else
-		{
-			InstanceData.CurrentTargetDuration = FMath::RandRange(2.f, 3.f);
-			MyHumanCharacter->FireButtonReleased(FInputActionValue());
-		}
-	}
-	
-	if (APlayerController* PC = Cast<APlayerController>(MyHumanCharacter->GetController()))
-	{
-		FVector MyLoc = MyHumanCharacter->GetActorLocation();
-		FVector TargetLoc = InstanceData.TargetActor->GetActorLocation();
+    // 射击或停顿已运行时间达到要求
+    if (InstanceData.CurrentStateTimer >= InstanceData.CurrentTargetDuration)
+    {
+       InstanceData.CurrentStateTimer = 0.f;
+       InstanceData.bIsShooting = !InstanceData.bIsShooting;
 
-		FRotator LookAtRot = UKismetMathLibrary::FindLookAtRotation(MyLoc + FVector(0, 0, 60), TargetLoc + FVector(0, 0, 60));
+       if (InstanceData.bIsShooting)
+       {
+          InstanceData.CurrentTargetDuration = FMath::RandRange(0.6f, 0.8f);
+          MyHumanCharacter->FireButtonPressed(FInputActionValue());
+       }
+       else
+       {
+          InstanceData.CurrentTargetDuration = FMath::RandRange(2.f, 3.f);
+          MyHumanCharacter->FireButtonReleased(FInputActionValue());
+       }
+    }
+    
+    // 转向逻辑
+    if (APlayerController* PC = Cast<APlayerController>(MyHumanCharacter->GetController()))
+    {
+       FRotator LookAtRot = UKismetMathLibrary::FindLookAtRotation(MyLoc + FVector(0, 0, 60), TargetLoc + FVector(0, 0, 60));
 
-		FRotator CurrentRot = PC->GetControlRotation();
-		FRotator NewRot = FMath::RInterpTo(CurrentRot, LookAtRot, DeltaTime, InstanceData.RotationInterpSpeed);
+       FRotator CurrentRot = PC->GetControlRotation();
+       FRotator NewRot = FMath::RInterpTo(CurrentRot, LookAtRot, DeltaTime, InstanceData.RotationInterpSpeed);
 
-		PC->SetControlRotation(NewRot);
-	}
+       PC->SetControlRotation(NewRot);
+    }
 
-	return EStateTreeRunStatus::Running;
+    return EStateTreeRunStatus::Running;
 }
 
 void FStateTreeTask_HumanFire::ExitState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const

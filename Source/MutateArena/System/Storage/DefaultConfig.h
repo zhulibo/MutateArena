@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "MutateArena/Characters/Data/CharacterType.h"
 #include "ConfigType.h"
+#include "GenericPlatform/GenericWindow.h"
 #include "MutateArena/Equipments/Data/EquipmentType.h"
 #include "DefaultConfig.generated.h"
 

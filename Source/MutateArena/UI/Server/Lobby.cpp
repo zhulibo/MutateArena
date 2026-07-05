@@ -614,12 +614,14 @@ void ULobby::OnLobbyAttrChanged(const FLobbyAttributesChanged& LobbyAttributesCh
 			{
 				TextChat->ShowMsg(EMsgType::Start, PlayerTeam, PlayerName);
 
-				SetUIButtonState();
-
 				// 如果玩家处于准备状态，则加入游戏
 				if (EOSSubsystem->GetMemberReady(EOSSubsystem->GetLocalMember()))
 				{
 					OnJoinServerButtonClicked();
+				}
+				else
+				{
+					SetUIButtonState();
 				}
 			}
 		}

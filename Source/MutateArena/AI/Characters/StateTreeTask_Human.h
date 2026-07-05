@@ -14,6 +14,8 @@ struct MUTATEARENA_API FStateTreeTask_HumanChase_InstanceData
 
 	UPROPERTY(EditAnywhere, Category = "Parameter")
 	float AcceptanceRadius = 1000.f;
+	UPROPERTY(EditAnywhere, Category = "Parameter")
+	float AcceptanceRadius_Melee = 100.f;
 
 	UPROPERTY(EditAnywhere, Category = "Parameter")
 	float RotationInterpSpeed = 5.f;
@@ -54,6 +56,12 @@ struct MUTATEARENA_API FStateTreeTask_HumanFire_InstanceData
 
 	UPROPERTY()
 	bool bIsShooting = false; // 当前是否处于扣动扳机的状态
+	
+	// 丧失目标半径 需大于AcceptanceRadius
+	UPROPERTY(EditAnywhere, Category = "Parameter")
+	float EscapeRadius = 1500.f;
+	UPROPERTY(EditAnywhere, Category = "Parameter")
+	float EscapeRadius_Melee = 200.f;
 	
 };
 
