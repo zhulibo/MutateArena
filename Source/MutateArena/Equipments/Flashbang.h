@@ -29,7 +29,7 @@ protected:
 	float MaxFlashTime = 6.f;
 	// 残影留存时间
 	UPROPERTY()
-	float MaxCapTime = 8.f;
+	float MaxCapTime = 10.f;
 
 	UFUNCTION()
 	void ServerExplode();

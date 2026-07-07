@@ -66,5 +66,7 @@ protected:
 	// 血条延迟显示的时间
 	UPROPERTY()
 	float HealthBarLingerTime = 1.f;
+	// 用于判断是否是首次更新血量，防止出生同步时播放动画
+	bool bIsFirstHealthSync = true;
 	
 };

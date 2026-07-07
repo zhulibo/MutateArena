@@ -200,11 +200,18 @@ void UOverheadWidget::OnHealthChange(float OldHealth, float NewHealth)
 
 	if (HealthBarMID)
 	{
+		if (bIsFirstHealthSync)
+		{
+			bIsFirstHealthSync = false;
+			HealthBarMID->SetScalarParameterValue(FName("OldValue"), NewValue);
+			HealthBarMID->SetScalarParameterValue(FName("NewValue"), NewValue);
+			return;
+		}
+		
 		HealthBarMID->SetScalarParameterValue(FName("OldValue"), OldValue);
 		HealthBarMID->SetScalarParameterValue(FName("NewValue"), NewValue);
 
 		float PlaybackSpeed = FMath::Abs(NewValue - OldValue) * 3;
-
 		if (OldValue > NewValue)
 		{
 			PlayAnimationTimeRange(HealthDec, 1 - OldValue, 1 - NewValue, 1,  EUMGSequencePlayMode::Forward, PlaybackSpeed);

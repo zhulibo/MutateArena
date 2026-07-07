@@ -748,11 +748,6 @@ void ABaseCharacter::Landed(const FHitResult& Hit)
 // 计算跌落伤害比例
 float ABaseCharacter::CalcFallDamageRate()
 {
-	if (ASC && ASC->HasMatchingGameplayTag(TAG_STATE_DNA_HighBoneDensity))
-	{
-		return 0.f; 
-	}
-    
 	// 获取落地瞬间的绝对速度与重力
 	float VelocityZ = FMath::Abs(GetCharacterMovement()->Velocity.Z); 
 	float Gravity = FMath::Abs(GetCharacterMovement()->GetGravityZ());
@@ -780,6 +775,11 @@ float ABaseCharacter::CalcFallDamageRate()
 		DamageRate = 0.15f;
 	}
 
+	if (ASC && ASC->HasMatchingGameplayTag(TAG_STATE_DNA_HighBoneDensity))
+	{
+		DamageRate = DamageRate * 0.2f; 
+	}
+	
 	return DamageRate;
 }
 
