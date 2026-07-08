@@ -763,10 +763,7 @@ void AMutantCharacter::ExecuteRootMotionPush(FVector HitDirection, float PushStr
 
 bool AMutantCharacter::CanInteract(ABaseCharacter* Interactor)
 {
-	if (!bIsDead || bSuckedDry)
-	{
-		return false;
-	}
+	if (!bIsDead || bSuckedDry || !bKilledByMelee) return false;
 	
 	if (!Interactor || Interactor->bIsDead)
 	{
@@ -777,7 +774,7 @@ bool AMutantCharacter::CanInteract(ABaseCharacter* Interactor)
 	{
 		if (Human->bIsImmune) return false;
 	}
-
+	
 	return true; 
 }
 

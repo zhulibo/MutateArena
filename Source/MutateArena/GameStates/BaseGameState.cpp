@@ -34,34 +34,6 @@ void ABaseGameState::BeginPlay()
 	GetWorld()->GetTimerManager().SetTimer(SetAllEquipmentsTimerHandle, this, &ThisClass::SetAllEquipments, 2.f, true);
 }
 
-void ABaseGameState::OnRep_MatchState()
-{
-	Super::OnRep_MatchState();
-
-	if (MatchState == MatchState::PostRound)
-	{
-		HandleRoundHasEnded();
-	}
-}
-
-void ABaseGameState::HandleMatchHasStarted()
-{
-	Super::HandleMatchHasStarted();
-
-	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetWorld()->GetFirstLocalPlayerFromController()))
-	{
-		UISubsystem->OnRoundStarted.Broadcast();
-	}
-}
-
-void ABaseGameState::HandleRoundHasEnded()
-{
-	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetWorld()->GetFirstLocalPlayerFromController()))
-	{
-		UISubsystem->OnRoundEnded.Broadcast();
-	}
-}
-
 void ABaseGameState::AddToPlayerStates(ABasePlayerState* BasePlayerState, ETeam Team)
 {
 	switch (Team)
@@ -95,6 +67,18 @@ void ABaseGameState::RemoveFromPlayerStates(ABasePlayerState* BasePlayerState, E
 	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetWorld()->GetFirstLocalPlayerFromController()))
 	{
 		UISubsystem->OnTeamPlayerStatesUpdated.Broadcast();
+	}
+}
+
+void ABaseGameState::ClearAllTeamStates()
+{
+	Team1PlayerStates.Empty();
+	Team2PlayerStates.Empty();
+
+	if (HasAuthority())
+	{
+		OnRep_Team1PlayerStates();
+		OnRep_Team2PlayerStates();
 	}
 }
 

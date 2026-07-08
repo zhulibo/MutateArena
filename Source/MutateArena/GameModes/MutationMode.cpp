@@ -238,6 +238,14 @@ void AMutationMode::HandleMatchHasStarted()
 				Equipment->Destroy();
 			}
 		}
+		
+		// 重置GameState中的回合专属状态与玩家阵营
+		if (MutationGameState == nullptr) MutationGameState = GetGameState<AMutationGameState>();
+		if (MutationGameState)
+		{
+			MutationGameState->ResetRoundDamageModifiers();
+			MutationGameState->ClearAllTeamStates();
+		}
 	}
 
 	// 生成角色

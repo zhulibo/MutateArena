@@ -725,11 +725,11 @@ void ABaseCharacter::OnHealthChanged(const FOnAttributeChangeData& Data)
 void ABaseCharacter::Landed(const FHitResult& Hit)
 {
 	Super::Landed(Hit);
-	UE_LOG(LogTemp, Warning, TEXT("1"));
+
 	// 计算扣血倍率
 	float DamageRate = CalcFallDamageRate();
 	if (DamageRate == 0.f) return;
-	UE_LOG(LogTemp, Warning, TEXT("2"));
+
 	if (HasAuthority())
 	{
 		// 播放叫声

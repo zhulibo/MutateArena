@@ -23,7 +23,6 @@ void APickupEquipment::BeginPlay()
 void APickupEquipment::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	UE_LOG(LogTemp, Warning, TEXT("1"));
 	// 取消补给箱装备隐藏
 	if (HasAuthority() && Equipment)
 	{
@@ -33,7 +32,6 @@ void APickupEquipment::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent,
 	AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(OtherActor);
 	if (HumanCharacter && HumanCharacter->IsLocallyControlled())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("2"));
 		HumanCharacter->bCanSwitchLoadout = false;
 		HumanCharacter->ServerGivePickupEquipment(this);
 	}

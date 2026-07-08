@@ -15,24 +15,28 @@ UCLASS()
 class MUTATEARENA_API ATeleportPortal : public AActor
 {
 	GENERATED_BODY()
-    
-public: 
+
+public:
 	ATeleportPortal();
+
+	// 核心传送逻辑接口，供 Overlap（角色）和 Hit（子弹）共同调用
+	bool TryTeleportActor(AActor* ActorToTeleport);
 
 protected:
 	virtual void BeginPlay() override;
 
-	// 触发器重叠事件
+	// 触发器重叠事件（供角色使用）
 	UFUNCTION()
-	void OnOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	void OnOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
+	                    const FHitResult& SweepResult);
 
 public:
 	UPROPERTY(VisibleAnywhere)
 	USceneComponent* SceneRoot;
-    
+
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* PortalMesh;
-    
+
 	// 触发区域
 	UPROPERTY(VisibleAnywhere)
 	UBoxComponent* TriggerBox;
@@ -51,11 +55,10 @@ public:
 
 	// 记录每个对象上次传送的时间，使用弱指针防止子弹/弹壳销毁后产生悬指针
 	TMap<TWeakObjectPtr<AActor>, float> ActorTeleportCooldowns;
-	
+
 	UPROPERTY(VisibleAnywhere)
 	UAudioComponent* PortalLoopAudioComp;
 
 	UPROPERTY(EditAnywhere)
 	UMetaSoundSource* PortalLoopSound;
-	
 };

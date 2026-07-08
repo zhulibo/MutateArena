@@ -1,11 +1,13 @@
 #include "MutationGameState.h"
 
+#include "Engine/LocalPlayer.h"
 #include "Engine/World.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/GameModes/MutationMode.h"
 #include "MutateArena/PlayerControllers/MutationController.h"
 #include "MutateArena/PlayerStates/MutationPlayerState.h"
 #include "MutateArena/PlayerStates/TeamType.h"
+#include "MutateArena/System/UISubsystem.h"
 #include "Net/UnrealNetwork.h"
 
 AMutationGameState::AMutationGameState()
@@ -30,6 +32,35 @@ void AMutationGameState::Tick(float DeltaTime)
 	if (HasAuthority())
 	{
 		WatchGameState();
+	}
+}
+
+void AMutationGameState::OnRep_MatchState()
+{
+	Super::OnRep_MatchState();
+
+	if (MatchState == MatchState::PostRound)
+	{
+		HandleRoundHasEnded();
+	}
+}
+
+// 对局开始
+void AMutationGameState::HandleMatchHasStarted()
+{
+	Super::HandleMatchHasStarted();
+	
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetWorld()->GetFirstLocalPlayerFromController()))
+	{
+		UISubsystem->OnRoundStarted.Broadcast();
+	}
+}
+
+void AMutationGameState::HandleRoundHasEnded()
+{
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetWorld()->GetFirstLocalPlayerFromController()))
+	{
+		UISubsystem->OnRoundEnded.Broadcast();
 	}
 }
 
@@ -122,7 +153,7 @@ void AMutationGameState::UpdateMeleeDamageMul()
 	if (MatchState != MatchState::InProgress) return;
 	if (Team1PlayerStates.IsEmpty() || Team2PlayerStates.IsEmpty()) return;
 
-	float PlayerMul = Team1PlayerStates.Num() / Team2PlayerStates.Num();
+	float PlayerMul = static_cast<float>(Team1PlayerStates.Num()) / static_cast<float>(Team2PlayerStates.Num());
 	float TempMeleeDamageMul = 1.f;
 
 	if (PlayerMul <= .5f)
@@ -161,6 +192,18 @@ void AMutationGameState::OnRep_MeleeDamageMul()
 	if (MutationController)
 	{
 		MutationController->SetHUDMeleeDamageMul(MeleeDamageMul);
+	}
+}
+
+void AMutationGameState::ResetRoundDamageModifiers()
+{
+	DamageMul = 1.f;
+	MeleeDamageMul = 1.f;
+	
+	if (HasAuthority())
+	{
+		OnRep_DamageMul();
+		OnRep_MeleeDamageMul();
 	}
 }
 

@@ -19,11 +19,6 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void BeginPlay() override;
 
-	virtual void OnRep_MatchState() override;
-protected:
-	virtual void HandleMatchHasStarted() override;
-	virtual void HandleRoundHasEnded();
-
 public:
 	UPROPERTY(ReplicatedUsing = OnRep_Team1PlayerStates)
 	TArray<ABasePlayerState*> Team1PlayerStates;
@@ -38,7 +33,8 @@ public:
 	void GetPlayerStates(TOptional<ETeam> Team, TArray<ABasePlayerState*>& OutPlayerStates) const;
 	virtual void AddToPlayerStates(ABasePlayerState* BasePlayerState, ETeam Team);
 	virtual void RemoveFromPlayerStates(ABasePlayerState* BasePlayerState, ETeam Team);
-
+	void ClearAllTeamStates();
+	
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastAddKillLog(ABasePlayerState* AttackerState, const FText& CauserName, ABasePlayerState* DamagedState);
 	

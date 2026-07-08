@@ -550,7 +550,7 @@ void UCombatComponent::TraceUnderCrosshair(FHitResult& TraceHitResult)
 		FCollisionQueryParams Params;
 		Params.AddIgnoredActor(HumanChar);
 		Params.AddIgnoredActor(GetCurEquipment());
-		GetWorld()->LineTraceSingleByChannel(TraceHitResult, Start, End, ECC_WEAPON_TRACE);
+		GetWorld()->LineTraceSingleByChannel(TraceHitResult, Start, End, ECC_TRACE);
 		if (!TraceHitResult.bBlockingHit)
 		{
 			TraceHitResult.ImpactPoint = End;

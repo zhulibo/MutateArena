@@ -12,10 +12,13 @@ class MUTATEARENA_API AMutationGameState : public ABaseGameState
 public:
 	AMutationGameState();
 
-protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void Tick(float DeltaTime) override;
 
+	virtual void OnRep_MatchState() override;
+	virtual void HandleMatchHasStarted() override;
+	virtual void HandleRoundHasEnded();
+	
 	UPROPERTY()
 	class AMutationMode* MutationMode;
 	UPROPERTY()
@@ -37,8 +40,9 @@ protected:
 	void UpdateMeleeDamageMul();
 	UFUNCTION()
 	void OnRep_MeleeDamageMul();
-
 public:
+	void ResetRoundDamageModifiers();
+	
 	virtual void AddToPlayerStates(ABasePlayerState* BasePlayerState, ETeam Team) override;
 	virtual void RemoveFromPlayerStates(ABasePlayerState* BasePlayerState, ETeam Team) override;
 protected:

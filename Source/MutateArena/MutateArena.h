@@ -80,7 +80,8 @@ namespace GameConstants
 #define ECC_MESH_TEAM1 ECollisionChannel::ECC_GameTraceChannel1
 #define ECC_MESH_TEAM2 ECollisionChannel::ECC_GameTraceChannel2
 #define ECC_MESH_HREB ECollisionChannel::ECC_GameTraceChannel3
-#define ECC_WEAPON_TRACE ECollisionChannel::ECC_GameTraceChannel4
+#define ECC_TRACE ECollisionChannel::ECC_GameTraceChannel4
+#define ECC_PROJECTILE ECollisionChannel::ECC_GameTraceChannel5
 
 // EOS大厅属性
 #define LOBBY_SCHEMA_ID FName(TEXT("GameLobby"))
