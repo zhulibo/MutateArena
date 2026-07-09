@@ -94,7 +94,10 @@ ABaseCharacter::ABaseCharacter(const FObjectInitializer& ObjectInitializer)
 	GetCharacterMovement()->AirControlBoostMultiplier = 2.f;
 	GetCharacterMovement()->AirControlBoostVelocityThreshold = 40.f;
 	GetCharacterMovement()->SetWalkableFloorAngle(50.f);
-	GetCharacterMovement()->JumpZVelocity = 440.f;
+	// 临时方案 从高于此高度跌落可触发Landed，可接着按跳完成跳跳蹲（向上迈步不受此值影响，在 UMAMovementComponent::StepUp 中重写了）
+	GetCharacterMovement()->MaxStepHeight = 30.f;
+	// 最好使用平地检测，胶囊体底部的圆弧会影响下落状态
+	GetCharacterMovement()->bUseFlatBaseForFloorChecks = true;
 	
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 	
@@ -258,6 +261,20 @@ void ABaseCharacter::Tick(float DeltaSeconds)
 	if (IsLocallyControlled())
 	{
 		UpdateHurtEffect(DeltaSeconds);
+		
+#if WITH_EDITOR
+		if (GetDefault<UDevSetting>()->bShowSpeed)
+		{
+			if (GEngine)
+			{
+				FVector CurrentVelocity = GetVelocity();
+				float Speed2D = CurrentVelocity.Size2D();
+				float Speed3D = CurrentVelocity.Size();
+				GEngine->AddOnScreenDebugMessage(999, 0.0f, FColor::Green,FString::Printf(TEXT("Player Speed -> 2D: %.2f | 3D: %.2f"), Speed2D, Speed3D));
+			}
+		}
+#endif
+		
 	}
 }
 
@@ -466,6 +483,7 @@ void ABaseCharacter::OnASCInit()
 	{
 		ASC->GetGameplayAttributeValueChangeDelegate(AttributeSetBase->GetMaxHealthAttribute()).AddUObject(this, &ThisClass::OnMaxHealthChanged);
 		ASC->GetGameplayAttributeValueChangeDelegate(AttributeSetBase->GetHealthAttribute()).AddUObject(this, &ThisClass::OnHealthChanged);
+		ASC->GetGameplayAttributeValueChangeDelegate(AttributeSetBase->GetJumpZVelocityAttribute()).AddUObject(this, &ThisClass::OnJumpZVelocityChanged);
 		
 		ASC->RegisterGameplayTagEvent(TAG_STATE_DNA_EnhancedVision, EGameplayTagEventType::NewOrRemoved).AddUObject(this, &ThisClass::OnEnhancedVisionTagChanged);
 	}
@@ -618,7 +636,7 @@ void ABaseCharacter::LookStick(const FInputActionValue& Value)
 	AddControllerPitchInput(AxisVector.Y * StorageSubsystem->CacheSetting->ControllerSensitivity);
 }
 
-// TODO 实现 蹲跳 > 跳跳蹲 > 跳蹲 > 普通跳
+// TODO 跳蹲胶囊体中心点变化造成镜头卡顿怎么解决？
 void ABaseCharacter::JumpButtonPressed(const FInputActionValue& Value)
 {
 	if (MovementComp && MovementComp->MovementMode == MOVE_Custom && MovementComp->CustomMovementMode == CMOVE_Ladder)
@@ -634,6 +652,22 @@ void ABaseCharacter::JumpButtonPressed(const FInputActionValue& Value)
 		return;
 	}
 	
+	if (MovementComp)
+	{
+		float CurrentTime = GetWorld()->GetTimeSeconds();
+		LastJumpPressedTime = CurrentTime;
+
+		// 在极短的落地窗口期内再次起跳（连跳），且确保此时位于地面，给予跳跃力度乘区
+		if ((CurrentTime - LastLandedTime <= JumpBufferWindow) && !MovementComp->IsFalling())
+		{
+			MovementComp->JumpZVelocity = GetJumpZVelocity() * ComboJumpZMultiplier;
+		}
+		else
+		{
+			MovementComp->JumpZVelocity = GetJumpZVelocity();
+		}
+	}
+	
 	if (bIsCrouched)
 	{
 		UnCrouch();
@@ -647,14 +681,14 @@ void ABaseCharacter::JumpButtonPressed(const FInputActionValue& Value)
 // 键鼠为长按蹲
 void ABaseCharacter::CrouchButtonPressed(const FInputActionValue& Value)
 {
-	if (GetCharacterMovement()->IsFalling()) return;
+	// if (GetCharacterMovement()->IsFalling()) return;
 	
 	Crouch();
 }
 
 void ABaseCharacter::CrouchButtonReleased(const FInputActionValue& Value)
 {
-	if (GetCharacterMovement()->IsFalling()) return;
+	// if (GetCharacterMovement()->IsFalling()) return;
 	
 	UnCrouch();
 }
@@ -662,7 +696,7 @@ void ABaseCharacter::CrouchButtonReleased(const FInputActionValue& Value)
 // 手柄为切换蹲
 void ABaseCharacter::CrouchControllerButtonPressed(const FInputActionValue& Value)
 {
-	if (GetCharacterMovement()->IsFalling()) return;
+	// if (GetCharacterMovement()->IsFalling()) return;
 
 	if (bIsCrouched)
 	{
@@ -721,27 +755,56 @@ void ABaseCharacter::OnHealthChanged(const FOnAttributeChangeData& Data)
 	}
 }
 
+void ABaseCharacter::OnJumpZVelocityChanged(const FOnAttributeChangeData& Data)
+{
+	if (MovementComp)
+	{
+		MovementComp->JumpZVelocity = Data.NewValue;
+	}
+}
+
 // 落地事件（只在本地和服务端执行）
 void ABaseCharacter::Landed(const FHitResult& Hit)
 {
 	Super::Landed(Hit);
 
-	// 计算扣血倍率
-	float DamageRate = CalcFallDamageRate();
-	if (DamageRate == 0.f) return;
-
-	if (HasAuthority())
+	// 记录落地时间，用于判断跳跳蹲的窗口期
+	LastLandedTime = GetWorld()->GetTimeSeconds();
+	// 落地时恢复原本的跳跃高度
+	if (MovementComp)
 	{
-		// 播放叫声
-		MulticastPlayOuchSound(DamageRate);
-
-		// 应用伤害
-		UGameplayStatics::ApplyDamage(this, GetMaxHealth() * DamageRate, Controller, this, UDamageTypeFall::StaticClass());
+		MovementComp->JumpZVelocity = GetJumpZVelocity();
 	}
 	
-	if (IsLocallyControlled())
+	// 如果落地时间和最后一次按下跳跃键的时间差，在缓冲窗口期内
+	if (LastLandedTime - LastJumpPressedTime <= JumpBufferWindow)
 	{
-		LocalPlayOuchSound(DamageRate);
+		if (MovementComp)
+		{
+			// 在落地瞬间强行赋予连跳倍率
+			MovementComp->JumpZVelocity = GetJumpZVelocity() * ComboJumpZMultiplier;
+		}
+		// 自动替玩家执行跳跃，实现完美的“落地秒跳”
+		Jump(); 
+	}
+	
+	// 计算扣血倍率
+	float DamageRate = CalcFallDamageRate();
+	if (DamageRate > 0.f)
+	{
+		if (HasAuthority())
+		{
+			// 播放叫声
+			MulticastPlayOuchSound(DamageRate);
+
+			// 应用伤害
+			UGameplayStatics::ApplyDamage(this, GetMaxHealth() * DamageRate, Controller, this, UDamageTypeFall::StaticClass());
+		}
+	
+		if (IsLocallyControlled())
+		{
+			LocalPlayOuchSound(DamageRate);
+		}
 	}
 }
 

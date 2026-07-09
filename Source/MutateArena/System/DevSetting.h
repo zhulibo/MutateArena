@@ -34,6 +34,9 @@ public:
 	
 	UPROPERTY(Config, EditAnywhere, Category = "Dev")
 	bool bShowMiniMap = false;
+	
+	UPROPERTY(Config, EditAnywhere, Category = "Dev")
+	bool bShowSpeed = false;
 
 	UPROPERTY(Config, EditAnywhere, Category = "Mutation")
 	bool bUseMutationSettings = true;

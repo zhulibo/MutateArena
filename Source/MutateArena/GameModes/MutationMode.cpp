@@ -180,6 +180,14 @@ void AMutationMode::EndRound()
 // 开启下一回合
 void AMutationMode::StartNextRound()
 {
+	if (GetWorld()->WorldType == EWorldType::PIE)
+	{
+		if (GetDefault<UDevSetting>()->bUseMutationSettings)
+		{
+			if (GetDefault<UDevSetting>()->bKeepInMap) return;
+		}
+	}
+	
 	CurRound++;
 	RoundStartTime = GetWorld()->GetTimeSeconds();
 	SetMatchState(MatchState::InProgress);

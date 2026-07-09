@@ -157,7 +157,18 @@ public:
 protected:
 	void OnMaxHealthChanged(const FOnAttributeChangeData& Data);
 	virtual void OnHealthChanged(const FOnAttributeChangeData& Data);
-
+	void OnJumpZVelocityChanged(const FOnAttributeChangeData& Data);
+	
+	// 连跳 测试结果 跳1.1m 跳蹲1.3m 连跳1.5m 跳跳蹲1.7m
+	UPROPERTY()
+	float JumpBufferWindow = 0.2f;
+	UPROPERTY()
+	float ComboJumpZMultiplier = 1.2f;
+	UPROPERTY()
+	float LastLandedTime = 0.f;
+	// 记录按下跳跃键的时间
+	float LastJumpPressedTime = -999.f;
+	
 	// 跌落
 	virtual void Landed(const FHitResult& Hit) override;
 	float CalcFallDamageRate();

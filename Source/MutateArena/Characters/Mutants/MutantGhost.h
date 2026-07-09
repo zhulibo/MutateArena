@@ -21,8 +21,4 @@ public:
 	virtual void HeavyAttackButtonPressed(const FInputActionValue& Value) override;
 	virtual void HeavyAttackButtonReleased(const FInputActionValue& Value) override;
 	
-protected:
-	virtual void OnASCInit() override;
-	void OnJumpZVelocityChanged(const FOnAttributeChangeData& Data);
-	
 };

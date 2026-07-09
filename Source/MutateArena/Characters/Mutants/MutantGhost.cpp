@@ -42,21 +42,6 @@ void AMutantGhost::HeavyAttackButtonReleased(const FInputActionValue& Value)
 	Super::HeavyAttackButtonReleased(Value);
 }
 
-void AMutantGhost::OnASCInit()
-{
-	Super::OnASCInit();
-
-	if (ASC && AttributeSetBase)
-	{
-		ASC->GetGameplayAttributeValueChangeDelegate(AttributeSetBase->GetJumpZVelocityAttribute()).AddUObject(this, &ThisClass::OnJumpZVelocityChanged);
-	}
-}
-
-void AMutantGhost::OnJumpZVelocityChanged(const FOnAttributeChangeData& Data)
-{
-	GetCharacterMovement()->JumpZVelocity = Data.NewValue;
-}
-
 void AMutantGhost::ShowOverheadWidget(bool bIsShow)
 {
 	if (OverheadWidgetClass)
