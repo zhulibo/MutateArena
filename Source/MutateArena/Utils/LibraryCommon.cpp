@@ -133,20 +133,20 @@ FString ULibraryCommon::ObfuscateTextChat(FString Msg, const UObject* Context)
 FString ULibraryCommon::ObfuscateText(FString Text)
 {
 	FString ObfuscatedString;
-
 	static constexpr TCHAR ReplacementTable[] = TEXT("~!@#$%^&*()_+-={}|[]<>?,./");
-	static constexpr int32 TableSize = UE_ARRAY_COUNT(ReplacementTable) - 1; // 去掉结尾的'\0'
+	static constexpr int32 TableSize = UE_ARRAY_COUNT(ReplacementTable) - 1; 
 
 	for (TCHAR Character : Text)
 	{
-		// 获取字符的ASCII码偏移量
 		int32 AsciiOffset = static_cast<int32>(Character) % TableSize;
+        
+		// 防越界
+		if (AsciiOffset < 0 || AsciiOffset >= TableSize)
+		{
+			AsciiOffset = 0;
+		}
 
-		// 替换字符
-		TCHAR ReplacedCharacter = ReplacementTable[AsciiOffset];
-
-		// 追加到结果字符串
-		ObfuscatedString.AppendChar(ReplacedCharacter);
+		ObfuscatedString.AppendChar(ReplacementTable[AsciiOffset]);
 	}
 
 	return ObfuscatedString + FString::FromInt(Text.Len());
