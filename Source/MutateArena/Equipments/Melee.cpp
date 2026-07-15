@@ -157,6 +157,8 @@ void AMelee::SetAttackCollisionEnabled(bool bIsEnabled)
 		ClearHitEnemies();
 		PreviousSocketLocations.Empty();
 
+		bHasHitWall = false;
+		
 		// 攻击开始时记录第一帧位置，防止从原点(0,0,0)发出射线
 		if (EquipmentMesh)
 		{
@@ -191,10 +193,14 @@ void AMelee::ProcessMeleeHit(const FHitResult& HitResult, const FVector& TraceDi
 				Herb->ServerDestroy();
 			}
 		}
-		else if (OtherComp && OtherComp->GetCollisionObjectType() == ECC_WorldStatic)
+		else if (OtherComp && (OtherComp->GetCollisionObjectType() == ECC_WorldStatic || OtherComp->GetCollisionObjectType() == ECC_WorldDynamic))
 		{
 			// 处理击中墙体/静态网格体的贴花与音效，传入挥刀方向
-			SpawnHitWallEffects(HitResult, TraceDirection);
+			if (!bHasHitWall)
+			{
+				bHasHitWall = true;
+				SpawnHitWallEffects(HitResult, TraceDirection);
+			}
 		}
 
 		if (InstigatorCharacter->IsLocallyControlled())
@@ -249,9 +255,6 @@ void AMelee::SpawnHitWallEffects(const FHitResult& HitResult, const FVector& Tra
 			break;
 		case EPhysicalSurface::SurfaceType4:
 			HitSound = AssetSubsystem->EquipmentAsset->HitWall_Wood;
-			break;
-		default:
-			HitSound = AssetSubsystem->EquipmentAsset->HitWall_Concrete;
 			break;
 		}
 

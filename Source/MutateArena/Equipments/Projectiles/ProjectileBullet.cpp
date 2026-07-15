@@ -127,11 +127,11 @@ void AProjectileBullet::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, 
 
 	if (bIsWood && CurrentPenetrationPower > 0.f && OtherComp)
 	{
-		FVector TraceStart = Hit.ImpactPoint + (ShotDirection * 200.f);
+		FVector TraceStart = Hit.ImpactPoint + (ShotDirection * 200.f); // 为避免打到中空箱子内壁，从背后向前打射线
 		FCollisionQueryParams QueryParams;
 		QueryParams.bTraceComplex = true;
-
-		if (OtherComp->LineTraceComponent(ExitHit, TraceStart, Hit.ImpactPoint, QueryParams))
+		
+		if (OtherComp->LineTraceComponent(ExitHit, TraceStart, Hit.ImpactPoint, QueryParams)) // 组件局部射线检测，避免打到其他物体
 		{
 			float PenetrationDistance = FVector::Distance(Hit.ImpactPoint, ExitHit.ImpactPoint);
 			float Cost = PenetrationDistance * Resistance1cm;

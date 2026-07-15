@@ -118,6 +118,10 @@ protected:
 	void ProcessMutantHit(const FHitResult& HitResult, const FVector& TraceDirection, bool bIsRightHand);
 	// 播放击中墙体/静态物体的贴花与音效
 	void SpawnHitWallEffects(const FHitResult& HitResult, const FVector& TraceDirection);
+	// 记录单次右手挥击中是否已经击中过墙壁
+	bool bRightHandHasHitWall = false;
+	// 记录单次左手挥击中是否已经击中过墙壁
+	bool bLeftHandHasHitWall = false;
 	
 public:
 	UFUNCTION(Server, Reliable)

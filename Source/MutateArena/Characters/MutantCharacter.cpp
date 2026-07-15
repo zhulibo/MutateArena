@@ -357,7 +357,8 @@ void AMutantCharacter::RightHandAttackBegin()
 	bIsRightHandAttacking = true;
 	RightHandHitEnemies.Empty();
 	RightHandPreviousSocketLocations.Empty();
-
+	bRightHandHasHitWall = false;
+	
 	if (GetMesh())
 	{
 		for (const FName& SocketName : TraceSockets_R)
@@ -377,7 +378,8 @@ void AMutantCharacter::LeftHandAttackBegin()
 	bIsLeftHandAttacking = true;
 	LeftHandHitEnemies.Empty();
 	LeftHandPreviousSocketLocations.Empty();
-
+	bLeftHandHasHitWall = false;
+	
 	if (GetMesh())
 	{
 		for (const FName& SocketName : TraceSockets_L)
@@ -472,10 +474,19 @@ void AMutantCharacter::ProcessMutantHit(const FHitResult& HitResult, const FVect
 	{
 		DropBlood(GetMesh(), OtherActor, OtherComp, Damage, HitResult);
 	}
-	else if (OtherComp && OtherComp->GetCollisionObjectType() == ECC_WorldStatic)
+	else if (OtherComp && (OtherComp->GetCollisionObjectType() == ECC_WorldStatic || OtherComp->GetCollisionObjectType() == ECC_WorldDynamic))
 	{
-		// 处理击中墙体/静态网格体的贴花与音效
-		SpawnHitWallEffects(HitResult, TraceDirection);
+		// 处理击中墙体/静态网格体的贴花与音效，区分左右手确保单次挥击只触发一次击墙效果
+		if (bIsRightHand && !bRightHandHasHitWall)
+		{
+			bRightHandHasHitWall = true;
+			SpawnHitWallEffects(HitResult, TraceDirection);
+		}
+		else if (!bIsRightHand && !bLeftHandHasHitWall)
+		{
+			bLeftHandHasHitWall = true;
+			SpawnHitWallEffects(HitResult, TraceDirection);
+		}
 	}
 	
 	if (IsLocallyControlled())
@@ -524,9 +535,6 @@ void AMutantCharacter::SpawnHitWallEffects(const FHitResult& HitResult, const FV
 			break;
 		case EPhysicalSurface::SurfaceType4:
 			HitSound = AssetSubsystem->CharacterAsset->HitWall_Wood;
-			break;
-		default:
-			HitSound = AssetSubsystem->CharacterAsset->HitWall_Concrete;
 			break;
 		}
 

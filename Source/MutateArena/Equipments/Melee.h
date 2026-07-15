@@ -84,4 +84,6 @@ protected:
 
 	// 处理检测击中 (新增 TraceDirection 参数)
 	void ProcessMeleeHit(const FHitResult& HitResult, const FVector& TraceDirection);
+	
+	bool bHasHitWall = false;
 };

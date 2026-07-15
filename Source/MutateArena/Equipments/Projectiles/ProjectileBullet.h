@@ -36,7 +36,7 @@ protected:
 
 public:
 	UPROPERTY()
-	float InitialPenetrationPower = 100.f;
+	float InitialPenetrationPower = 140.f;
 
 protected:
 	// 当前剩余穿甲力
