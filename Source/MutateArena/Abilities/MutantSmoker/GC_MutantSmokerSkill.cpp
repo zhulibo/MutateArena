@@ -9,7 +9,7 @@
 #include "MutateArena/Characters/Mutants/MutantSmoker.h"
 #include "Components/SphereComponent.h"
 #include "Kismet/GameplayStatics.h"
-#include "MutateArena/System/Tags/ProjectTags.h"
+#include "MutateArena/System/GameplayTags.h"
 
 AGC_MutantSmokerSkill::AGC_MutantSmokerSkill()
 {

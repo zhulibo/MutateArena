@@ -128,13 +128,13 @@ UENUM(BlueprintType)
 enum class ESpawnMutantReason : uint8
 {
 	// 开局随机突变
-	RoundStart,
+	RoundStartMutate,
 	// 突变倒计时已结束时进入游戏
 	FirstJoinGame,
 	// 被感染
-	MutantInfect,
+	Infected,
 	// 被突变体造成伤害
-	MutantDamage,
+	Damaged,
 	// 通过菜单选择突变体
 	SelectMutant,
 	// 突变体死亡重生

@@ -41,6 +41,7 @@ namespace GameConstants
 #define ASSET_CHARACTER FName(TEXT("Character"))
 #define ASSET_EQUIPMENT FName(TEXT("Equipment"))
 #define ASSET_INPUT FName(TEXT("Input"))
+#define ASSET_ENVIRONMENT FName(TEXT("Environment"))
 
 // tag
 #define TAG_CHARACTER_BASE FName(TEXT("BaseCharacter"))

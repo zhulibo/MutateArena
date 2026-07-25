@@ -23,7 +23,9 @@
 #include "GameFramework/PlayerStart.h"
 #include "MutateArena/Equipments/Herbs/HerbRage.h"
 #include "MutateArena/Equipments/Herbs/HerbRepelReceived.h"
+#include "MutateArena/Maps/Environment/EnvironmentManager.h"
 #include "MutateArena/System/EOSSubsystem.h"
+#include "MutateArena/System/GameplayTags.h"
 
 namespace MatchState
 {
@@ -53,7 +55,7 @@ void AMutationMode::BeginPlay()
 			PostRoundTime = GetDefault<UDevSetting>()->PostRoundTime;
 			CooldownTime = GetDefault<UDevSetting>()->CooldownTime;
 		}
-		
+
 #if WITH_EDITOR
 		// 使用反射获取PIE设置中的玩家数量，避免Runtime模块强依赖UnrealEd导致打包失败
 		int32 PIEPlayerCount = 1;
@@ -73,7 +75,6 @@ void AMutationMode::BeginPlay()
 			WarmupTime *= PIEPlayerCount;
 		}
 #endif
-		
 	}
 
 	MutationGameState = GetGameState<AMutationGameState>();
@@ -187,7 +188,7 @@ void AMutationMode::StartNextRound()
 			if (GetDefault<UDevSetting>()->bKeepInMap) return;
 		}
 	}
-	
+
 	CurRound++;
 	RoundStartTime = GetWorld()->GetTimeSeconds();
 	SetMatchState(MatchState::InProgress);
@@ -246,7 +247,7 @@ void AMutationMode::HandleMatchHasStarted()
 				Equipment->Destroy();
 			}
 		}
-		
+
 		// 重置GameState中的回合专属状态与玩家阵营
 		if (MutationGameState == nullptr) MutationGameState = GetGameState<AMutationGameState>();
 		if (MutationGameState)
@@ -284,7 +285,7 @@ void AMutationMode::HandleMatchHasStarted()
 void AMutationMode::OnPostLogin(AController* Controller)
 {
 	Super::OnPostLogin(Controller);
-	
+
 	if (MatchState == MatchState::InProgress || MatchState == MatchState::PostRound || MatchState == MatchState::WaitingPostMatch)
 	{
 		// 突变倒计时未结束生成人类
@@ -310,7 +311,7 @@ void AMutationMode::RoundStartMutate()
 
 	TArray<ABasePlayerState*> PlayerStates;
 	BaseGameState->GetPlayerStates(ETeam::Team1, PlayerStates);
-	
+
 	int32 MutateNum;
 	if (PlayerStates.Num() <= 6)
 	{
@@ -332,7 +333,7 @@ void AMutationMode::RoundStartMutate()
 	for (int i = 0; i < MutateNum; ++i)
 	{
 		int32 RandomIndex = FMath::RandRange(0, PlayerStates.Num() - 1);
-		
+
 		if (GetWorld()->WorldType == EWorldType::PIE)
 		{
 			RandomIndex = GetDefault<UDevSetting>()->MutateClientIndex;
@@ -350,12 +351,12 @@ void AMutationMode::RoundStartMutate()
 			{
 				BasePlayerState->GetAttributeSetBase()->SetCharacterLevel(3.f);
 			}
-			
+
 			if (AController* Controller = Cast<AController>(BasePlayerState->GetOwner()))
 			{
-				Mutate(Controller->GetCharacter(), Controller, ESpawnMutantReason::RoundStart);
+				Mutate(Controller->GetCharacter(), Controller, ESpawnMutantReason::RoundStartMutate);
 			}
-			
+
 			// 初始突变体拥有满怒气
 			if (AMutationPlayerState* MutationPlayerState = Cast<AMutationPlayerState>(BasePlayerState))
 			{
@@ -371,11 +372,16 @@ void AMutationMode::RoundStartMutate()
 	// 定时生成草药
 	GetWorldTimerManager().SetTimer(SpawnHerbRageTimerHandle, this, &ThisClass::SpawnHerbRages, FMath::FRandRange(10.f, 20.f));
 	GetWorldTimerManager().SetTimer(SpawnHerbRepelReceivedTimerHandle, this, &ThisClass::SpawnHerbRepelReceived, 100.f);
+	// 改变环境
+	GetWorldTimerManager().SetTimer(ChangeEnvTimerHandle, this, &ThisClass::ChangeEnv, 10.f);
+	GetWorldTimerManager().SetTimer(ChangeEnvTimerHandle2, this, &ThisClass::ChangeEnv2, 20.f);
+	GetWorldTimerManager().SetTimer(ChangeEnvTimerHandle3, this, &ThisClass::ChangeEnv3, 30.f);
+	GetWorldTimerManager().SetTimer(ChangeEnvTimerHandle4, this, &ThisClass::ChangeEnv4, 40.f);
 }
 
 // 人类受到伤害
 void AMutationMode::HumanReceiveDamage(AHumanCharacter* DamagedCharacter, ABaseController* DamagedController,
-	float Damage, const UDamageType* DamageType, AController* AttackerController, AActor* DamageCauser)
+                                       float Damage, const UDamageType* DamageType, AController* AttackerController, AActor* DamageCauser)
 {
 	if (DamagedCharacter == nullptr || DamagedController == nullptr || AttackerController == nullptr || DamageCauser == nullptr) return;
 
@@ -396,7 +402,7 @@ void AMutationMode::HumanReceiveDamage(AHumanCharacter* DamagedCharacter, ABaseC
 		// 增加攻击者伤害分数
 		AttackerState->AddDamage(TakenDamage);
 	}
-	
+
 	// 人类死亡
 	if (DamagedCharacter->GetHealth() <= 0.f)
 	{
@@ -417,7 +423,7 @@ void AMutationMode::HumanReceiveDamage(AHumanCharacter* DamagedCharacter, ABaseC
 			{
 				bMutateImmediately = true;
 
-				Mutate(DamagedCharacter, DamagedController, ESpawnMutantReason::MutantDamage);
+				Mutate(DamagedCharacter, DamagedController, ESpawnMutantReason::Damaged);
 			}
 		}
 
@@ -431,7 +437,7 @@ void AMutationMode::HumanReceiveDamage(AHumanCharacter* DamagedCharacter, ABaseC
 
 // 人类受到感染
 void AMutationMode::GetInfect(AHumanCharacter* DamagedCharacter, ABaseController* DamagedController,
-	AMutantCharacter* AttackerCharacter, ABaseController* AttackerController)
+                              AMutantCharacter* AttackerCharacter, ABaseController* AttackerController)
 {
 	if (DamagedCharacter == nullptr || DamagedController == nullptr || AttackerController == nullptr) return;
 
@@ -451,7 +457,7 @@ void AMutationMode::GetInfect(AHumanCharacter* DamagedCharacter, ABaseController
 	AddKillLog(AttackerState, AttackerCharacter, GetDefault<UDamageTypeMutantInfect>(), DamagedState);
 
 	// 人类感染后突变
-	Mutate(DamagedCharacter, DamagedController, ESpawnMutantReason::MutantInfect);
+	Mutate(DamagedCharacter, DamagedController, ESpawnMutantReason::Infected);
 }
 
 // 人类突变为突变体
@@ -494,7 +500,7 @@ void AMutationMode::SelectMutant(ACharacter* Character, AController* Controller)
 
 // 突变体受到伤害
 void AMutationMode::MutantReceiveDamage(AMutantCharacter* DamagedCharacter, ABaseController* DamagedController,
-	float Damage, const UDamageType* DamageType, AController* AttackerController, AActor* DamageCauser)
+                                        float Damage, const UDamageType* DamageType, AController* AttackerController, AActor* DamageCauser)
 {
 	if (MutationGameState == nullptr) MutationGameState = GetGameState<AMutationGameState>();
 	if (MutationGameState == nullptr) return;
@@ -513,7 +519,7 @@ void AMutationMode::MutantReceiveDamage(AMutantCharacter* DamagedCharacter, ABas
 		float ForceMagnitude = ProjectileBullet->GetImpulse(Damage) * DamagedState->GetRepelReceivedMul();
 		DamagedCharacter->ApplySuppressionForce(ImpulseDirection, ForceMagnitude);
 	}
-	
+
 	// 设置受伤者血量
 	float TakenDamage = Damage * MutationGameState->DamageMul * DamagedState->GetDamageReceivedMul();
 	const UDamageTypeBase* DamageTypeBase = Cast<UDamageTypeBase>(DamageType);
@@ -576,7 +582,7 @@ void AMutationMode::MutantRespawn(ACharacter* Character, ABaseController* BaseCo
 
 // 生成突变体角色
 void AMutationMode::SpawnMutantCharacter(AController* Controller, ESpawnMutantReason SpawnMutantReason,
-	FVector Location, FRotator ActorRotation, FRotator ViewRotation)
+                                         FVector Location, FRotator ActorRotation, FRotator ViewRotation)
 {
 	if (Controller == nullptr) return;
 
@@ -623,7 +629,66 @@ void AMutationMode::SpawnMutantCharacter(AController* Controller, ESpawnMutantRe
 	// 如果是突变体重生，重置俯仰
 	if (SpawnMutantReason == ESpawnMutantReason::Respawn)
 	{
+		Controller->SetControlRotation(MutantCharacter->GetActorRotation());
 		Controller->ClientSetRotation(MutantCharacter->GetActorRotation());
+	}
+	// 瞬时切换角色，维持俯仰
+	if (SpawnMutantReason == ESpawnMutantReason::RoundStartMutate
+		|| SpawnMutantReason == ESpawnMutantReason::Infected
+		|| SpawnMutantReason == ESpawnMutantReason::Damaged
+		|| SpawnMutantReason == ESpawnMutantReason::SelectMutant
+	)
+	{
+		Controller->SetControlRotation(ViewRotation);
+		Controller->ClientSetRotation(ViewRotation);
+	}
+}
+
+void AMutationMode::ChangeEnv()
+{
+	if (MutationGameState == nullptr) MutationGameState = GetGameState<AMutationGameState>();
+	if (MutationGameState)
+	{
+		if (AEnvironmentManager* EnvManager = MutationGameState->EnvironmentManager)
+		{
+			EnvManager->ActivateEnvironment(TAG_STATE_ENV_BLOODMOON);
+		}
+	}
+}
+
+void AMutationMode::ChangeEnv2()
+{
+	if (MutationGameState == nullptr) MutationGameState = GetGameState<AMutationGameState>();
+	if (MutationGameState)
+	{
+		if (AEnvironmentManager* EnvManager = MutationGameState->EnvironmentManager)
+		{
+			EnvManager->ActivateEnvironment(TAG_STATE_ENV_FOG);
+		}
+	}
+}
+
+void AMutationMode::ChangeEnv3()
+{
+	if (MutationGameState == nullptr) MutationGameState = GetGameState<AMutationGameState>();
+	if (MutationGameState)
+	{
+		if (AEnvironmentManager* EnvManager = MutationGameState->EnvironmentManager)
+		{
+			EnvManager->DeactivateEnvironment(TAG_STATE_ENV_BLOODMOON);
+		}
+	}
+}
+
+void AMutationMode::ChangeEnv4()
+{
+	if (MutationGameState == nullptr) MutationGameState = GetGameState<AMutationGameState>();
+	if (MutationGameState)
+	{
+		if (AEnvironmentManager* EnvManager = MutationGameState->EnvironmentManager)
+		{
+			EnvManager->DeactivateEnvironment(TAG_STATE_ENV_FOG);
+		}
 	}
 }
 

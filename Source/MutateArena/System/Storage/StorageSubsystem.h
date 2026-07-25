@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Engine/TimerHandle.h"
 #include "MutateArena/System/EOSSubsystem.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "StorageSubsystem.generated.h"
@@ -55,7 +56,7 @@ protected:
 	// 用于缓存所有 DNA 资产的字典
 	UPROPERTY(Transient)
 	TMap<EDNA2, UDNAAsset2*> CachedDNAAssets;
-	void BuildDNACache();
+	void SyncBuildDNACache();
 public:
 	UDNAAsset2* GetDNAAssetByType(EDNA2 InDNA) const;
 	

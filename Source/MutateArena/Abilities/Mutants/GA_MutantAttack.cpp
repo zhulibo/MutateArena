@@ -3,7 +3,7 @@
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
 #include "AbilitySystemComponent.h"
 #include "MutateArena/Characters/MutantCharacter.h"
-#include "MutateArena/System/Tags/ProjectTags.h"
+#include "MutateArena/System/GameplayTags.h"
 
 UGA_MutantAttack::UGA_MutantAttack()
 {

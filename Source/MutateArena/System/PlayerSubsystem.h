@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Tickable.h"
 #include "MutateArena/System/EOSSubsystem.h"
 #include "Subsystems/LocalPlayerSubsystem.h"
 #include "PlayerSubsystem.generated.h"

@@ -4,6 +4,7 @@
 #include "ModularGameState.h"
 #include "BaseGameState.generated.h"
 
+class AEnvironmentManager;
 class ABasePlayerState;
 enum class ETeam : uint8;
 enum class EMsgType : uint8;
@@ -15,39 +16,44 @@ class MUTATEARENA_API ABaseGameState : public AModularGameState
 
 public:
 	ABaseGameState();
-	
+
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void BeginPlay() override;
 
-public:
 	UPROPERTY(ReplicatedUsing = OnRep_Team1PlayerStates)
 	TArray<ABasePlayerState*> Team1PlayerStates;
 	UPROPERTY(ReplicatedUsing = OnRep_Team2PlayerStates)
 	TArray<ABasePlayerState*> Team2PlayerStates;
+
 protected:
 	UFUNCTION()
 	virtual void OnRep_Team1PlayerStates();
 	UFUNCTION()
 	virtual void OnRep_Team2PlayerStates();
+
 public:
 	void GetPlayerStates(TOptional<ETeam> Team, TArray<ABasePlayerState*>& OutPlayerStates) const;
 	virtual void AddToPlayerStates(ABasePlayerState* BasePlayerState, ETeam Team);
 	virtual void RemoveFromPlayerStates(ABasePlayerState* BasePlayerState, ETeam Team);
 	void ClearAllTeamStates();
-	
+
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastAddKillLog(ABasePlayerState* AttackerState, const FText& CauserName, ABasePlayerState* DamagedState);
-	
+
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastMeleeLog(const FText& AttackerName, const FText& CauserName, const FText& DamagedName);
-	
+
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastSendMsg(EMsgType MsgType, ETeam Team, const FString& PlayerName, const FString& Msg = FString());
-	
+
 	UPROPERTY()
 	TArray<AActor*> AllEquipments;
+
 protected:
 	FTimerHandle SetAllEquipmentsTimerHandle;
 	void SetAllEquipments();
-	
+
+public:
+	UPROPERTY(Replicated, Transient)
+	AEnvironmentManager* EnvironmentManager;
 };

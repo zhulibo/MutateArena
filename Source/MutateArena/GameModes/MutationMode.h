@@ -109,4 +109,17 @@ protected:
 	void SpawnMutantCharacter(AController* Controller, ESpawnMutantReason SpawnMutantReason,
 	FVector Location = FVector::ZeroVector, FRotator ActorRotation = FRotator::ZeroRotator, FRotator ViewRotation = FRotator::ZeroRotator);
 
+	FTimerHandle ChangeEnvTimerHandle;
+	UFUNCTION()
+	void ChangeEnv();
+	FTimerHandle ChangeEnvTimerHandle2;
+	UFUNCTION()
+	void ChangeEnv2();
+	FTimerHandle ChangeEnvTimerHandle3;
+	UFUNCTION()
+	void ChangeEnv3();
+	FTimerHandle ChangeEnvTimerHandle4;
+	UFUNCTION()
+	void ChangeEnv4();
+	
 };

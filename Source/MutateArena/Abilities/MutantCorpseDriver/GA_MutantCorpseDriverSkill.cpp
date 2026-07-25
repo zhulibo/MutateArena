@@ -5,7 +5,7 @@
 #include "Engine/World.h"
 #include "GameFramework/Character.h"
 #include "MutateArena/Characters/Mutants/Corpse/CorpseCharacter.h"
-#include "MutateArena/System/Tags/ProjectTags.h"
+#include "MutateArena/System/GameplayTags.h"
 
 UGA_MutantCorpseDriverSkill::UGA_MutantCorpseDriverSkill()
 {

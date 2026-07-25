@@ -4,7 +4,7 @@ Mutate Arena is an online multiplayer first-person shooter game, the main gamepl
 
 ## Overview
 
-Built with Unreal Engine 5.8
+Built with Unreal Engine 5.8.0
 
 Currently, the same model and animation are used for both first-person and third-person perspectives.
 This maintains consistency and reduces workload, but some issues remain. This approach will be re-evaluated in the future.
@@ -16,7 +16,7 @@ This repository does not include binary files. You can download the complete pro
 ## Art Assets
 
 .blender and .ssp files are available on [OneDrive](https://1drv.ms/f/c/c8d6dc43bb25e3ee/IgDu4yW7Q9zWIIDIowoAAAAAAZE-GKmT3dQX2dS5ddXecZM?e=KLbs87).
-The version is Blender 5.1 and Substance 3D Painter 11.1
+The version is Blender 5.2.0 and Substance 3D Painter 12.1.0
 
 [README_ART.md](Misc/README_ART.md)
 

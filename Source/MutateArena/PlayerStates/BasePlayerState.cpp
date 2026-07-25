@@ -20,7 +20,7 @@
 #include "MutateArena/System/Storage/DefaultConfig.h"
 #include "MutateArena/System/Storage/SaveGameLoadout.h"
 #include "MutateArena/System/Storage/StorageSubsystem.h"
-#include "MutateArena/System/Tags/ProjectTags.h"
+#include "MutateArena/System/GameplayTags.h"
 
 ABasePlayerState::ABasePlayerState()
 {

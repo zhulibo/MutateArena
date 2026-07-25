@@ -5,13 +5,8 @@
 
 UMMC_MutantHealth::UMMC_MutantHealth()
 {
-	MaxHealthDef.AttributeToCapture = UAttributeSetBase::GetMaxHealthAttribute();
-	MaxHealthDef.AttributeSource = EGameplayEffectAttributeCaptureSource::Target;
-	MaxHealthDef.bSnapshot = false;
-
-	HealthDef.AttributeToCapture = UAttributeSetBase::GetHealthAttribute();
-	HealthDef.AttributeSource = EGameplayEffectAttributeCaptureSource::Target;
-	HealthDef.bSnapshot = false;
+	MaxHealthDef = FGameplayEffectAttributeCaptureDefinition(UAttributeSetBase::GetMaxHealthAttribute(), EGameplayEffectAttributeCaptureSource::Target, false);
+	HealthDef = FGameplayEffectAttributeCaptureDefinition(UAttributeSetBase::GetHealthAttribute(), EGameplayEffectAttributeCaptureSource::Target, false);
 
 	RelevantAttributesToCapture.Add(MaxHealthDef);
 	RelevantAttributesToCapture.Add(HealthDef);

@@ -24,7 +24,7 @@
 #include "MutateArena/Equipments/Throwing.h"
 #include "MutateArena/Equipments/Data/EquipmentAsset.h"
 #include "MutateArena/System/UISubsystem.h"
-#include "MutateArena/System/Tags/ProjectTags.h"
+#include "MutateArena/System/GameplayTags.h"
 #include "Net/UnrealNetwork.h"
 
 UCombatComponent::UCombatComponent()

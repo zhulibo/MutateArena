@@ -11,7 +11,7 @@
 #include "MutateArena/GameStates/BaseGameState.h"
 #include "MutateArena/PlayerStates/BasePlayerState.h"
 #include "MutateArena/System/UISubsystem.h"
-#include "MutateArena/System/Tags/ProjectTags.h"
+#include "MutateArena/System/GameplayTags.h"
 #include "MutateArena/Characters/BaseCharacter.h" 
 
 void UHighAlert::NativeOnInitialized()

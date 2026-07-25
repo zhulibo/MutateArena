@@ -13,7 +13,7 @@
 #include "MutateArena/System/Storage/SaveGameLoadout.h"
 #include "MutateArena/System/Storage/StorageSubsystem.h"
 #include "MutateArena/UI/GameLayout.h"
-#include "MutateArena/System/Tags/ProjectTags.h"
+#include "MutateArena/System/GameplayTags.h"
 #include "MutateArena/UI/Common/CommonButton.h"
 #include "MutateArena/Utils/LibraryCommon.h"
 #include "Widgets/CommonActivatableWidgetContainer.h"

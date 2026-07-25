@@ -7,7 +7,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "MutateArena/Characters/Mutants/MutantGhost.h"
-#include "MutateArena/System/Tags/ProjectTags.h"
+#include "MutateArena/System/GameplayTags.h"
 
 AGC_MutantGhostSkill::AGC_MutantGhostSkill()
 {

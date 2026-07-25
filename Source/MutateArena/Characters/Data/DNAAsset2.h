@@ -9,7 +9,7 @@
 enum class EDNA2 : uint8;
 class UGameplayEffect;
 
-UCLASS(BlueprintType)
+UCLASS()
 class MUTATEARENA_API UDNAAsset2 : public UPrimaryDataAsset
 {
 	GENERATED_BODY()

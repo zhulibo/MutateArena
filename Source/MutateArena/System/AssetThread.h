@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
+#include "HAL/Runnable.h"
 
 class AssetThread : public FRunnable
 {

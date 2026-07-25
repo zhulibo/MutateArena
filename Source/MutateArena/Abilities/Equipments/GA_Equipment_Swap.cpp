@@ -8,7 +8,7 @@
 #include "MutateArena/Characters/Components/CombatComponent.h"
 #include "MutateArena/Equipments/AnimInstEquipment.h"
 #include "MutateArena/Equipments/Equipment.h"
-#include "MutateArena/System/Tags/ProjectTags.h"
+#include "MutateArena/System/GameplayTags.h"
 
 UGA_Equipment_Swap::UGA_Equipment_Swap()
 {

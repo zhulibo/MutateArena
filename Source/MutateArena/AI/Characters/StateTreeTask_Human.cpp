@@ -12,7 +12,7 @@
 #include "MutateArena/Characters/Components/CombatComponent.h"
 #include "MutateArena/Equipments/Weapon.h"
 #include "MutateArena/PlayerStates/BasePlayerState.h"
-#include "MutateArena/System/Tags/ProjectTags.h"
+#include "MutateArena/System/GameplayTags.h"
 
 // 追逐目标
 EStateTreeRunStatus FStateTreeTask_HumanChase::EnterState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const

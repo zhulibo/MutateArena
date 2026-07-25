@@ -39,7 +39,7 @@
 #include "MutateArena/Abilities/AttributeSetBase.h"
 #include "MutateArena/Abilities/MAAbilitySystemComponent.h"
 #include "MutateArena/System/UISubsystem.h"
-#include "MutateArena/System/Tags/ProjectTags.h"
+#include "MutateArena/System/GameplayTags.h"
 #include "Net/UnrealNetwork.h"
 #include "MutateArena/Abilities/GameplayAbilityBase.h"
 #include "MutateArena/PlayerStates/BasePlayerState.h"

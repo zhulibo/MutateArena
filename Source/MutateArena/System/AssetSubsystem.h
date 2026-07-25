@@ -1,8 +1,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameplayTagContainer.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "AssetSubsystem.generated.h"
+
+class UEnvironmentAsset;
 
 UCLASS()
 class MUTATEARENA_API UAssetSubsystem : public UGameInstanceSubsystem
@@ -11,6 +14,8 @@ class MUTATEARENA_API UAssetSubsystem : public UGameInstanceSubsystem
 
 public:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
+
+	void Test();
 	
 	UPROPERTY()
 	class UCommonAsset* CommonAsset;
@@ -21,15 +26,23 @@ public:
 	UPROPERTY()
 	class UEquipmentAsset* EquipmentAsset;
 
-	void LoadCompleted();
-
-	void Test();
-
 protected:
 	// 编辑器中资源命名必须是 Prefix + 类名
 	FPrimaryAssetId CommonAssetId;
 	FPrimaryAssetId InputAssetId;
 	FPrimaryAssetId CharacterAssetId;
 	FPrimaryAssetId EquipmentAssetId;
+
+	void SyncLoadAsset();
+	
+	// 环境资产缓存
+public:
+	void BuildEnvironmentCacheAsync();
+	void OnEnvLoadCompleted(TArray<FPrimaryAssetId> LoadedAssetIds);
+	UEnvironmentAsset* GetEnvironmentAssetByTag(FGameplayTag InTag) const;
+
+protected:
+	UPROPERTY(Transient)
+	TMap<FGameplayTag, UEnvironmentAsset*> CachedEnvironmentAssets;
 
 };

@@ -1,7 +1,7 @@
 #include "MenuLayout.h"
 #include "Widgets/CommonActivatableWidgetContainer.h"
 #include "Menu.h"
-#include "MutateArena/System/Tags/ProjectTags.h"
+#include "MutateArena/System/GameplayTags.h"
 
 void UMenuLayout::NativeOnInitialized()
 {

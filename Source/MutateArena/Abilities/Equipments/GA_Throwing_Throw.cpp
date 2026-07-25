@@ -6,7 +6,7 @@
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "MutateArena/Characters/Components/CombatComponent.h"
 #include "MutateArena/Equipments/Throwing.h"
-#include "MutateArena/System/Tags/ProjectTags.h"
+#include "MutateArena/System/GameplayTags.h"
 
 UGA_Throwing_Throw::UGA_Throwing_Throw()
 {

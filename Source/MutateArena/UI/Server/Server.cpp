@@ -20,7 +20,7 @@
 #include "MutateArena/Assets/Data/CommonAsset.h"
 #include "MutateArena/System/AssetSubsystem.h"
 #include "MutateArena/System/UISubsystem.h"
-#include "MutateArena/System/Tags/ProjectTags.h"
+#include "MutateArena/System/GameplayTags.h"
 #include "MutateArena/UI/Common/ComboBoxItem.h"
 #include "MutateArena/UI/Common/CommonComboBox2.h"
 

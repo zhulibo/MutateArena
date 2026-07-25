@@ -38,9 +38,10 @@
 #include "Materials/MaterialParameterCollectionInstance.h"
 #include "MutateArena/GameStates/BaseGameState.h"
 #include "MutateArena/Assets/Data/CommonAsset.h"
+#include "MutateArena/Maps/Environment/EnvironmentManager.h"
 #include "MutateArena/System/DevSetting.h"
 #include "MutateArena/System/Storage/SaveGameLoadout.h"
-#include "MutateArena/System/Tags/ProjectTags.h"
+#include "MutateArena/System/GameplayTags.h"
 #include "MutateArena/UI/TextChat/TextChat.h"
 #include "Net/UnrealNetwork.h"
 #include "Perception/AIPerceptionComponent.h"
@@ -172,7 +173,6 @@ void ABaseCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(ThisClass, ControllerPitch);
 	DOREPLIFETIME(ThisClass, bIsDead);
 }
 
@@ -367,24 +367,20 @@ void ABaseCharacter::UpdateMinimapCapture()
 // 计算俯仰
 void ABaseCharacter::CalcAimPitch()
 {
-	// 服务端把ControllerPitch复制到客户端
-	if (HasAuthority())
+	float TargetPitch = 0.f;
+
+	// 本地玩家
+	if (AController* PitchController = GetController())
 	{
-		ControllerPitch = MappingAimPitch(GetViewRotation().Pitch);
-		AimPitch = ControllerPitch;
+		TargetPitch = PitchController->GetControlRotation().Pitch;
 	}
+	// 第三方模拟端从网络还原 Pitch
 	else
 	{
-		if (IsLocallyControlled())
-		{
-			AimPitch = MappingAimPitch(GetViewRotation().Pitch);
-		}
-		// 非本地使用服务端复制下来的ControllerPitch
-		else
-		{
-			AimPitch = ControllerPitch;
-		}
+		TargetPitch = GetBaseAimRotation().Pitch;
 	}
+
+	AimPitch = MappingAimPitch(TargetPitch);
 }
 
 float ABaseCharacter::MappingAimPitch(float TempAimPitch)
@@ -414,6 +410,13 @@ void ABaseCharacter::PossessedBy(AController* NewController)
 		if (SpecHandle.IsValid())
 		{
 			ASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), ASC);
+		}
+		
+		// Apply all active environments to the character
+		if (BaseGameState == nullptr) BaseGameState = GetWorld()->GetGameState<ABaseGameState>();
+		if (BaseGameState && BaseGameState->EnvironmentManager)
+		{
+			BaseGameState->EnvironmentManager->ApplyAllActiveEnvironmentsToCharacter(this);
 		}
 	}
 }

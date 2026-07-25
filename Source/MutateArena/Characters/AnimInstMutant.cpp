@@ -39,14 +39,15 @@ void UAnimInstMutant::NativeUpdateAnimation(float DeltaSeconds)
 	AimYaw = DiffRotation.Yaw;
 
 	/**
-	 * 人类被感染、开局被选为突变体、突变体切换角色等瞬间切换角色时，需要保持被销毁角色的AimPitch，但新角色生成后头几帧AimPitch为0，角色躯体闪动。
-	 * 因为Character中的Controller未就绪，无法获取APawn::GetViewRotation > AController::GetControlRotation。
+	 * 瞬时切换角色，需要保持被销毁角色的AimPitch，但新角色生成后头几帧AimPitch为0，角色躯体闪动。
+	 * 因为Character中的Controller未就绪，无法获取 APawn::GetViewRotation > AController::GetControlRotation。
 	 */
 	AimPitch = MutantChar->AimPitch;
 
 	// HACK 本地死亡时，直接获取GetFirstPlayerController中的GetControlRotation().Pitch
 	if (AimPitch == 0.f)
 	{
+		// UE_LOG(LogTemp, Warning, TEXT("AimPitch == 0.f"));
 		if (PlayerSubsystem == nullptr) PlayerSubsystem = ULocalPlayer::GetSubsystem<UPlayerSubsystem>(GetWorld()->GetFirstLocalPlayerFromController());
 		if (PlayerSubsystem && PlayerSubsystem->IsDead) // IsDead状态只持续很短时间，尽可能避免将本地AimPitch应用给非本地角色，同时也可避免影响到重生（3s）的本地角色
 		{

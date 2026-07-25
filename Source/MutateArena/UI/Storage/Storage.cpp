@@ -32,7 +32,7 @@
 #include "MutateArena/System/AssetSubsystem.h"
 #include "MutateArena/System/DataAssetManager.h"
 #include "MutateArena/System/UISubsystem.h"
-#include "MutateArena/System/Tags/ProjectTags.h"
+#include "MutateArena/System/GameplayTags.h"
 #include "Serialization/ObjectAndNameAsStringProxyArchive.h"
 #include "Widgets/CommonActivatableWidgetContainer.h"
 

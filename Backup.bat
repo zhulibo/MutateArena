@@ -54,7 +54,8 @@ REM a: Add to archive
 REM -tzip: Format as zip
 REM -mx5: Compression level 5 (Standard)
 REM -ssw: Compress files open for writing
-"%SEVENZIP%" a -tzip "%TEMP_ZIP%" "%SOURCE_DIR%*" %EXCLUDES% -mx5 -ssw
+REM -sccUTF-8: Set console output charset to UTF-8 to prevent garbled Chinese filenames
+"%SEVENZIP%" a -tzip "%TEMP_ZIP%" "%SOURCE_DIR%*" %EXCLUDES% -mx5 -ssw -sccUTF-8
 
 REM Check the exit code of the 7-Zip command
 if %errorlevel% equ 0 (

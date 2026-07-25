@@ -13,7 +13,7 @@
 #include "Components/AudioComponent.h"
 #include "Components/SphereComponent.h"
 #include "MutateArena/Equipments/Data/DamageTypeEquipment.h"
-#include "MutateArena/System/Tags/ProjectTags.h"
+#include "MutateArena/System/GameplayTags.h"
 
 AFireBottle::AFireBottle()
 {

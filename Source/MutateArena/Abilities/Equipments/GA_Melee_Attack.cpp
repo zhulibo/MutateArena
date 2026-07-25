@@ -4,7 +4,7 @@
 #include "AbilitySystemComponent.h"
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "MutateArena/Equipments/Melee.h"
-#include "MutateArena/System/Tags/ProjectTags.h"
+#include "MutateArena/System/GameplayTags.h"
 
 UGA_Melee_Attack::UGA_Melee_Attack()
 {

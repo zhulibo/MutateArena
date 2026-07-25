@@ -30,7 +30,7 @@
 #include "Engine/GameInstance.h"
 #include "Kismet/GameplayStatics.h"
 #include "MutateArena/System/UISubsystem.h"
-#include "MutateArena/System/Tags/ProjectTags.h"
+#include "MutateArena/System/GameplayTags.h"
 #include "Net/UnrealNetwork.h"
 
 #define LOCTEXT_NAMESPACE "AMutantCharacter"

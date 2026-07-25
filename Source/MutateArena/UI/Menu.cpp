@@ -16,7 +16,7 @@
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/System/EOSSubsystem.h"
 #include "MutateArena/System/UISubsystem.h"
-#include "MutateArena/System/Tags/ProjectTags.h"
+#include "MutateArena/System/GameplayTags.h"
 #include "MutateArena/Utils/LibraryCommon.h"
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"

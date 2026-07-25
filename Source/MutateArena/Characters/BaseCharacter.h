@@ -94,8 +94,6 @@ protected:
 	FTimerHandle MinimapUpdateTimer;
 	void UpdateMinimapCapture();
 	
-	UPROPERTY(Replicated)
-	float ControllerPitch;
 public:
 	UPROPERTY()
 	float AimPitch;

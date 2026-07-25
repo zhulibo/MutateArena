@@ -25,7 +25,7 @@
 #include "MutateArena/System/UISubsystem.h"
 #include "MutateArena/System/Storage/SaveGameLoadout.h"
 #include "MutateArena/UI/GameLayout.h"
-#include "MutateArena/System/Tags/ProjectTags.h"
+#include "MutateArena/System/GameplayTags.h"
 #include "MutateArena/Utils/LibraryCommon.h"
 #include "MutateArena/Utils/LibraryNotify.h"
 

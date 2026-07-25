@@ -17,7 +17,7 @@ void UStorageSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
 
-	BuildDNACache();
+	SyncBuildDNACache();
 	
 	EOSSubsystem = GetGameInstance()->GetSubsystem<UEOSSubsystem>();
 	if (EOSSubsystem)
@@ -226,7 +226,7 @@ void UStorageSubsystem::SetAudio(float Value, ESoundClassType SoundClassType)
 	}
 }
 
-void UStorageSubsystem::BuildDNACache()
+void UStorageSubsystem::SyncBuildDNACache()
 {
 	CachedDNAAssets.Empty();
 

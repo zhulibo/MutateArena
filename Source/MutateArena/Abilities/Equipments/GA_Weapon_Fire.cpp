@@ -9,7 +9,7 @@
 #include "MutateArena/Characters/Components/RecoilComponent.h"
 #include "MutateArena/Equipments/Weapon.h"
 #include "MutateArena/Characters/AnimInstHuman.h"
-#include "MutateArena/System/Tags/ProjectTags.h"
+#include "MutateArena/System/GameplayTags.h"
 
 UGA_Weapon_Fire::UGA_Weapon_Fire()
 {

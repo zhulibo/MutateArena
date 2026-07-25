@@ -4,7 +4,7 @@
 #include "MutateArena/Characters/Components/CombatComponent.h"
 #include "MutateArena/Equipments/Equipment.h"
 #include "MutateArena/Equipments/Pickups/PickupEquipment.h"
-#include "MutateArena/System/Tags/ProjectTags.h"
+#include "MutateArena/System/GameplayTags.h"
 
 UGA_Equipment_Drop::UGA_Equipment_Drop()
 {

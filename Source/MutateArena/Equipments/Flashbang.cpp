@@ -20,7 +20,7 @@
 #include "Components/WidgetComponent.h"
 #include "Materials/MaterialParameterCollectionInstance.h"
 #include "MutateArena/MutateArena.h"
-#include "MutateArena/System/Tags/ProjectTags.h"
+#include "MutateArena/System/GameplayTags.h"
 
 AFlashbang::AFlashbang()
 {

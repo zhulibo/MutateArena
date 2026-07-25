@@ -10,6 +10,7 @@
 #include "MutateArena/PlayerStates/BasePlayerState.h"
 #include "MutateArena/PlayerStates/TeamType.h"
 #include "Kismet/GameplayStatics.h"
+#include "MutateArena/Maps/Environment/EnvironmentManager.h"
 #include "MutateArena/System/UISubsystem.h"
 #include "Net/UnrealNetwork.h"
 
@@ -23,6 +24,7 @@ void ABaseGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
+	DOREPLIFETIME(ThisClass, EnvironmentManager);
 	DOREPLIFETIME(ThisClass, Team1PlayerStates);
 	DOREPLIFETIME(ThisClass, Team2PlayerStates);
 }
@@ -32,6 +34,12 @@ void ABaseGameState::BeginPlay()
 	Super::BeginPlay();
 
 	GetWorld()->GetTimerManager().SetTimer(SetAllEquipmentsTimerHandle, this, &ThisClass::SetAllEquipments, 2.f, true);
+	
+	if (HasAuthority())
+	{
+		EnvironmentManager = Cast<AEnvironmentManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AEnvironmentManager::StaticClass()));
+		if (!EnvironmentManager) UE_LOG(LogTemp, Warning, TEXT("EnvironmentManager is not set!"));
+	}
 }
 
 void ABaseGameState::AddToPlayerStates(ABasePlayerState* BasePlayerState, ETeam Team)

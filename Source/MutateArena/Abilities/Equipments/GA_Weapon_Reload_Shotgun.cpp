@@ -5,7 +5,7 @@
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "MutateArena/Equipments/Weapon.h"
-#include "MutateArena/System/Tags/ProjectTags.h"
+#include "MutateArena/System/GameplayTags.h"
 
 UGA_Weapon_Reload_Shotgun::UGA_Weapon_Reload_Shotgun()
 {
