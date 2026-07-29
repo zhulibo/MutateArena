@@ -33,6 +33,7 @@ protected:
 	void ScoreboardButtonReleased(const FInputActionValue& Value);
 	
 	void PauseMenuButtonPressed(const FInputActionValue& Value);
+	void DebugMenuButtonPressed(const FInputActionValue& Value);
 
 	void RadialMenuButtonPressed(const FInputActionValue& Value);
 	void RadialMenuButtonReleased(const FInputActionValue& Value);

@@ -150,6 +150,8 @@ public:
 	bool bIsDead = false;
 	UFUNCTION()
 	virtual void OnRep_bIsDead();
+	UFUNCTION()
+	virtual void OnDead();
 	void SetHealth(float TempHealth);
 
 protected:

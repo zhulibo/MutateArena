@@ -15,7 +15,6 @@ void UDNASelectButton::Setup(UDNAAsset2* DNAData)
 	
 	if (DNAData->DNA == EDNA2::AcceleratedMetabolism 
 		|| DNAData->DNA == EDNA2::ThermalRegulation
-		|| DNAData->DNA == EDNA2::ToxicityImmunity
 		|| DNAData->DNA == EDNA2::PainModulation
 		|| DNAData->DNA == EDNA2::CoreMaintenance)
 	{

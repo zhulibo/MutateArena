@@ -16,6 +16,12 @@ class MUTATEARENA_API UEnvironmentAsset : public UPrimaryDataAsset
 public:
 	UPROPERTY(EditAnywhere)
 	FGameplayTag EnvironmentTag;
+	
+	UPROPERTY(EditAnywhere)
+	FText ShowName;
+	
+	UPROPERTY(EditAnywhere)
+	FText Desc;
 
 	UPROPERTY(EditAnywhere)
 	TArray<TSubclassOf<UGameplayEffect>> HumanEffects;

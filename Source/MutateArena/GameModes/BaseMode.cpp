@@ -32,7 +32,7 @@ ABaseMode::ABaseMode()
 void ABaseMode::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
 {
 	Super::InitGame(MapName, Options, ErrorMessage);
-	
+
 	// 强制覆盖当前加载地图的 KillZ
 	if (UWorld* World = GetWorld())
 	{
@@ -46,7 +46,7 @@ void ABaseMode::InitGame(const FString& MapName, const FString& Options, FString
 void ABaseMode::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
 	LevelStartTime = GetWorld()->GetTimeSeconds();
 }
 
@@ -110,7 +110,7 @@ void ABaseMode::Logout(AController* Exiting)
 			PlayerController->ClientTravel(MAP_MENU, ETravelType::TRAVEL_Absolute);
 		}
 	}
-	
+
 	Super::Logout(Exiting);
 }
 
@@ -123,7 +123,7 @@ void ABaseMode::EndMatch()
 			if (GetDefault<UDevSetting>()->bKeepInMap) return;
 		}
 	}
-	
+
 	Super::EndMatch();
 }
 
@@ -131,11 +131,12 @@ void ABaseMode::EndMatch()
 void ABaseMode::HandleLeavingMap()
 {
 	Super::HandleLeavingMap();
-	
+
 	// 游戏结束服务端退出，或ABaseMode::Logout 中服务端退出失败，强制服务端退出。
 	FTimerHandle TimerHandle;
 	FTimerDelegate TimerDelegate;
-	TimerDelegate.BindWeakLambda(this, [this]() {
+	TimerDelegate.BindWeakLambda(this, [this]()
+	{
 		if (APlayerController* PlayerController = GetWorld()->GetFirstPlayerController())
 		{
 			UE_LOG(LogTemp, Warning, TEXT("HandleLeavingMap ------------------------------------------"));
@@ -249,19 +250,22 @@ void ABaseMode::AddKillLog(ABasePlayerState* AttackerState, AActor* DamageCauser
 	FText CauserName = FText::FromString(TEXT("-1"));
 
 	bool bIsMelee = false;
-	
+
 	if (const UDamageTypeBase* DamageTypeBase = Cast<UDamageTypeBase>(DamageType))
 	{
 		switch (DamageTypeBase->DamageType)
 		{
 		case EDamageCauserType::Equipment:
-			if (AEquipment* CauserEquipment = Cast<AEquipment>(DamageCauser->GetOwner()))
+			if (DamageCauser && DamageCauser->GetOwner())
 			{
-				FString EnumValue = StaticEnum<EEquipmentName>()->GetNameStringByValue(static_cast<int64>(CauserEquipment->EquipmentName));
-				FDataRegistryId DataRegistryId(DR_EQUIPMENT_MAIN, FName(EnumValue));
-				if (const FEquipmentMain* EquipmentMain = UDataRegistrySubsystem::Get()->GetCachedItem<FEquipmentMain>(DataRegistryId))
+				if (AEquipment* CauserEquipment = Cast<AEquipment>(DamageCauser->GetOwner()))
 				{
-					CauserName = EquipmentMain->ShowName;
+					FString EnumValue = StaticEnum<EEquipmentName>()->GetNameStringByValue(static_cast<int64>(CauserEquipment->EquipmentName));
+					FDataRegistryId DataRegistryId(DR_EQUIPMENT_MAIN, FName(EnumValue));
+					if (const FEquipmentMain* EquipmentMain = UDataRegistrySubsystem::Get()->GetCachedItem<FEquipmentMain>(DataRegistryId))
+					{
+						CauserName = EquipmentMain->ShowName;
+					}
 				}
 			}
 			break;
@@ -273,7 +277,7 @@ void ABaseMode::AddKillLog(ABasePlayerState* AttackerState, AActor* DamageCauser
 				if (const FEquipmentMain* EquipmentMain = UDataRegistrySubsystem::Get()->GetCachedItem<FEquipmentMain>(DataRegistryId))
 				{
 					CauserName = EquipmentMain->ShowName;
-					
+
 					bIsMelee = true;
 				}
 			}
@@ -287,6 +291,9 @@ void ABaseMode::AddKillLog(ABasePlayerState* AttackerState, AActor* DamageCauser
 		case EDamageCauserType::Bleed:
 			CauserName = LOCTEXT("Bleed", "Bleed");
 			break;
+		case EDamageCauserType::AcidRain:
+			CauserName = LOCTEXT("AcidRain", "Acid Rain");
+			break;
 		case EDamageCauserType::Fall:
 			CauserName = LOCTEXT("Fall", "Fall");
 			break;
@@ -297,11 +304,12 @@ void ABaseMode::AddKillLog(ABasePlayerState* AttackerState, AActor* DamageCauser
 	if (BaseGameState)
 	{
 		BaseGameState->MulticastAddKillLog(AttackerState, CauserName, DamagedState);
-		
+
 		if (bIsMelee && BaseGameState->ActorHasTag(TAG_GAME_STATE_MUTATION))
 		{
-			FText AttackerName = FText::FromString(ULibraryCommon::ObfuscateName(AttackerState->GetPlayerName(), this));
-			FText DamagedName = FText::FromString(ULibraryCommon::ObfuscateName(DamagedState->GetPlayerName(), this));
+			FText AttackerName = AttackerState ? FText::FromString(ULibraryCommon::ObfuscateName(AttackerState->GetPlayerName(), this)) : FText::GetEmpty();
+			FText DamagedName = DamagedState ? FText::FromString(ULibraryCommon::ObfuscateName(DamagedState->GetPlayerName(), this)) : FText::GetEmpty();
+
 			BaseGameState->MulticastMeleeLog(AttackerName, CauserName, DamagedName);
 		}
 	}

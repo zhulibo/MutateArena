@@ -11,6 +11,8 @@ class MUTATEARENA_API AThrowing : public AEquipment
 
 public:
 	AThrowing();
+	
+	virtual void BeginPlay() override;
 
 	UPROPERTY(VisibleAnywhere)
 	class UProjectileMovementComponent* ProjectileMovement;
@@ -21,11 +23,9 @@ public:
 	UAnimMontage* ThrowMontage_E;
 	virtual void ThrowOut();
 	
-protected:
-	virtual void BeginPlay() override;
-	
 	virtual void OnRep_EquipmentState(EEquipmentState OldState) override;
 	
+protected:
 	bool bHasBounced = false;
 	UPROPERTY(EditAnywhere)
 	class UMetaSoundSource* HitSound;

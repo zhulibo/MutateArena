@@ -41,7 +41,6 @@ public:
 	void OnEnvLoadCompleted(TArray<FPrimaryAssetId> LoadedAssetIds);
 	UEnvironmentAsset* GetEnvironmentAssetByTag(FGameplayTag InTag) const;
 
-protected:
 	UPROPERTY(Transient)
 	TMap<FGameplayTag, UEnvironmentAsset*> CachedEnvironmentAssets;
 

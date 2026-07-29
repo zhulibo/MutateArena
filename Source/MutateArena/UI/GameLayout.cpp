@@ -4,6 +4,7 @@
 #include "MutateArena/System/UISubsystem.h"
 #include "MutateArena/System/GameplayTags.h"
 #include "MutateArena/UI/HUD/PauseMenu.h"
+#include "MutateArena/UI/Debug/DebugMenu.h"
 #include "Widgets/CommonActivatableWidgetContainer.h"
 
 void UGameLayout::NativeOnInitialized()
@@ -11,6 +12,7 @@ void UGameLayout::NativeOnInitialized()
 	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer()))
 	{
 		UISubsystem->ShowPauseMenu.AddUObject(this, &ThisClass::ShowPauseMenu);
+		UISubsystem->ShowDebugMenu.AddUObject(this, &ThisClass::ShowDebugMenu);
 	}
 }
 
@@ -19,6 +21,7 @@ void UGameLayout::NativeDestruct()
 	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer()))
 	{
 		UISubsystem->ShowPauseMenu.RemoveAll(this);
+		UISubsystem->ShowDebugMenu.RemoveAll(this);
 	}
 
 	Super::NativeDestruct();
@@ -41,4 +44,14 @@ void UGameLayout::ShowPauseMenu()
 	}
 	
 	MenuStack->AddWidget(PauseMenuClass);
+}
+
+void UGameLayout::ShowDebugMenu()
+{
+	if (ABaseController* BaseController = Cast<ABaseController>(GetOwningPlayer()))
+	{
+		BaseController->FocusUI();
+	}
+	
+	MenuStack->AddWidget(DebugMenuClass);
 }

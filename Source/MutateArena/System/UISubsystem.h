@@ -19,6 +19,7 @@ DECLARE_MULTICAST_DELEGATE(FOnMatchEnd);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnMatchCountdownChange, int32 CountdownTime);
 DECLARE_MULTICAST_DELEGATE_OneParam(FShowScoreboard, bool bIsShow);
 DECLARE_MULTICAST_DELEGATE(FShowPauseMenu);
+DECLARE_MULTICAST_DELEGATE(FShowDebugMenu);
 DECLARE_MULTICAST_DELEGATE_OneParam(FShowRadialMenu, bool bIsShow);
 DECLARE_MULTICAST_DELEGATE(FSwitchRadialMenu);
 DECLARE_MULTICAST_DELEGATE_TwoParams(FSelectRadialMenu, double X, double Y);
@@ -86,6 +87,7 @@ public:
 	FOnMatchCountdownChange OnMatchCountdownChange;
 	FShowScoreboard ShowScoreboard;
 	FShowPauseMenu ShowPauseMenu;
+	FShowDebugMenu ShowDebugMenu;
 	FShowRadialMenu ShowRadialMenu;
 	FSwitchRadialMenu SwitchRadialMenu;
 	FSelectRadialMenu SelectRadialMenu;

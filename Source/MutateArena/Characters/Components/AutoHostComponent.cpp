@@ -130,7 +130,6 @@ void UAutoHostComponent::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus St
 
 AActor* UAutoHostComponent::GetBestPerceivedTarget()
 {
-	UE_LOG(LogTemp, Warning, TEXT("a"));
 	if (AIPerceptionComp == nullptr || BaseChar == nullptr) return nullptr;
 
 	TArray<AActor*> PerceivedActors;
@@ -139,14 +138,12 @@ AActor* UAutoHostComponent::GetBestPerceivedTarget()
 	AActor* BestTarget = nullptr;
 	float MinDistSq = FLT_MAX;
 	FVector MyLoc = BaseChar->GetActorLocation();
-	UE_LOG(LogTemp, Warning, TEXT("b"));
 	ABasePlayerState* MyPlayerState = BaseChar->GetPlayerState<ABasePlayerState>();
 
 	for (AActor* Target : PerceivedActors)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("c"));
 		if (Target == nullptr || Target == BaseChar) continue;
-		UE_LOG(LogTemp, Warning, TEXT("d"));
+		
 		ABaseCharacter* TargetBaseCharacter = Cast<ABaseCharacter>(Target);
 		if (MyPlayerState && TargetBaseCharacter)
 		{

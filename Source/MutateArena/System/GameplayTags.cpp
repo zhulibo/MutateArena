@@ -46,6 +46,7 @@ UE_DEFINE_GAMEPLAY_TAG(TAG_STATE_DNA_EnhancedSmell, "State.DNA.EnhancedSmell");
 UE_DEFINE_GAMEPLAY_TAG(TAG_STATE_DNA_SubconsciousAwareness, "State.DNA.SubconsciousAwareness");
 UE_DEFINE_GAMEPLAY_TAG(TAG_STATE_DNA_HighBoneDensity, "State.DNA.HighBoneDensity");
 UE_DEFINE_GAMEPLAY_TAG(TAG_STATE_DNA_AcceleratedClotting, "State.DNA.AcceleratedClotting");
+UE_DEFINE_GAMEPLAY_TAG(TAG_STATE_DNA_ToxicityImmunity, "State.DNA.ToxicityImmunity");
 
 // Mutant
 UE_DEFINE_GAMEPLAY_TAG(TAG_ABILITY_MUTANT_CHANGE, "Ability.Mutant.Change");
@@ -75,20 +76,24 @@ UE_DEFINE_GAMEPLAY_TAG(TAG_EVENT_MUTANT_ATTACK_RELEASED, "Event.Mutant.Attack.Re
 UE_DEFINE_GAMEPLAY_TAG(TAG_EVENT_MUTANT_ATTACK_FIRSTSECTIONEND, "Event.Mutant.Attack.FirstSectionEnd");
 
 // Environment
-UE_DEFINE_GAMEPLAY_TAG(TAG_STATE_ENV_BLOODMOON, "State.Environment.BloodMoon");
 UE_DEFINE_GAMEPLAY_TAG(TAG_STATE_ENV_ACIDRAIN, "State.Environment.AcidRain");
-UE_DEFINE_GAMEPLAY_TAG(TAG_STATE_ENV_SNOW, "State.Environment.Snow");
+UE_DEFINE_GAMEPLAY_TAG(TAG_STATE_ENV_BLOODMOON, "State.Environment.BloodMoon");
 UE_DEFINE_GAMEPLAY_TAG(TAG_STATE_ENV_FOG, "State.Environment.Fog");
+UE_DEFINE_GAMEPLAY_TAG(TAG_STATE_ENV_SNOW, "State.Environment.Snow");
 
 // Environment 视觉参数
 UE_DEFINE_GAMEPLAY_TAG(TAG_ENV_UDS, "Environment.UDS"); // 定义父级标签 用于判断是否是UDS
 UE_DEFINE_GAMEPLAY_TAG(TAG_ENV_UDS_SunLightIntensity, "Environment.UDS.SunLightIntensity");
 UE_DEFINE_GAMEPLAY_TAG(TAG_ENV_UDS_MoonLightIntensity, "Environment.UDS.MoonLightIntensity");
-UE_DEFINE_GAMEPLAY_TAG(TAG_ENV_UDS_RayleighScatteringColorDay, "Environment.UDS.RayleighScatteringColor(Day)");
+UE_DEFINE_GAMEPLAY_TAG(TAG_ENV_UDS_RayleighScatteringColor_Day, "Environment.UDS.RayleighScatteringColor(Day)");
 UE_DEFINE_GAMEPLAY_TAG(TAG_ENV_UDS_SkyLightIntensity, "Environment.UDS.SkyLightIntensity");
 UE_DEFINE_GAMEPLAY_TAG(TAG_ENV_UDS_CloudColor, "Environment.UDS.CloudColor");
 UE_DEFINE_GAMEPLAY_TAG(TAG_ENV_UDS_BaseFogDensity, "Environment.UDS.BaseFogDensity");
 UE_DEFINE_GAMEPLAY_TAG(TAG_ENV_UDS_VolumetricFogExtinction, "Environment.UDS.VolumetricFogExtinction");
+UE_DEFINE_GAMEPLAY_TAG(TAG_ENV_UDS_GroundFogExtinction_Manual, "Environment.UDS.GroundFogExtinction(Manual)");
+UE_DEFINE_GAMEPLAY_TAG(TAG_ENV_UDW, "Environment.UDW"); // 定义父级标签 用于判断是否是UDW
+UE_DEFINE_GAMEPLAY_TAG(TAG_ENV_UDW_Rain, "Environment.UDW.Rain");
+UE_DEFINE_GAMEPLAY_TAG(TAG_ENV_UDW_CloudCoverage, "Environment.UDW.CloudCoverage");
 
 // UI
 UE_DEFINE_GAMEPLAY_TAG(TAG_UI_LAYER_GAME, "UI.Layer.Game");

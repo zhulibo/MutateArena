@@ -6,6 +6,8 @@
 #include "MutateArena/MutateArena.h"
 #include "MutationMode.generated.h"
 
+class AItemSpawnPoint;
+
 namespace MatchState
 {
 	extern MUTATEARENA_API const FName PostRound;
@@ -63,12 +65,13 @@ public:
 protected:
 	virtual void OnMatchStateSet() override;
 	virtual void HandleMatchHasStarted() override;
+	virtual void HandleRoundHasEnded();
 	
 	UPROPERTY(EditAnywhere)
 	TArray<TSubclassOf<class APickup>> PickupClasses;
 	FTimerHandle SpawnPickupTimerHandle;
 	UPROPERTY()
-	TArray<APlayerStart*> PickupStartPoints;
+	TArray<AItemSpawnPoint*> SpawnPoints_Pickup;
 	UFUNCTION()
 	void SpawnPickups();
 	
@@ -76,7 +79,7 @@ protected:
 	TArray<TSubclassOf<class AHerbRage>> HerbRageClasses;
 	FTimerHandle SpawnHerbRageTimerHandle;
 	UPROPERTY()
-	TArray<APlayerStart*> HerbRageStartPoints;
+	TArray<AItemSpawnPoint*> SpawnPoints_HerbRage;
 	UFUNCTION()
 	void SpawnHerbRages();
 	
@@ -84,11 +87,11 @@ protected:
 	TArray<TSubclassOf<class AHerbRepelReceived>> HerbRepelReceivedClasses;
 	FTimerHandle SpawnHerbRepelReceivedTimerHandle;
 	UPROPERTY()
-	TArray<APlayerStart*> HerbRepelReceivedStartPoints;
+	TArray<AItemSpawnPoint*> SpawnPoints_HerbRepelReceived;
 	UFUNCTION()
 	void SpawnHerbRepelReceived();
 
-	void RoundStartMutate();
+	void RandomMutate();
 
 public:
 	virtual void HumanReceiveDamage(AHumanCharacter* DamagedCharacter, ABaseController* DamagedController,
@@ -108,18 +111,5 @@ protected:
 	UFUNCTION()
 	void SpawnMutantCharacter(AController* Controller, ESpawnMutantReason SpawnMutantReason,
 	FVector Location = FVector::ZeroVector, FRotator ActorRotation = FRotator::ZeroRotator, FRotator ViewRotation = FRotator::ZeroRotator);
-
-	FTimerHandle ChangeEnvTimerHandle;
-	UFUNCTION()
-	void ChangeEnv();
-	FTimerHandle ChangeEnvTimerHandle2;
-	UFUNCTION()
-	void ChangeEnv2();
-	FTimerHandle ChangeEnvTimerHandle3;
-	UFUNCTION()
-	void ChangeEnv3();
-	FTimerHandle ChangeEnvTimerHandle4;
-	UFUNCTION()
-	void ChangeEnv4();
 	
 };

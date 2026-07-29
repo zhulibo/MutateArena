@@ -15,6 +15,8 @@ enum class EDamageCauserType : uint8
 	MutantDamage,
 	// 流血
 	Bleed,
+	// 酸雨
+	AcidRain,
 	// 跌落
 	Fall,
 };

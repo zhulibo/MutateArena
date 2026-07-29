@@ -12,5 +12,6 @@ class MUTATEARENA_API UEEC_AcidRainDamage : public UGameplayEffectExecutionCalcu
 public:
 	UEEC_AcidRainDamage();
 
-	virtual void Execute_Implementation(const FGameplayEffectCustomExecutionParameters& ExecutionParams, FGameplayEffectCustomExecutionOutput& OutExecutionOutput) const override;
+	virtual void Execute_Implementation(const FGameplayEffectCustomExecutionParameters& ExecutionParams,
+	                                    FGameplayEffectCustomExecutionOutput& OutExecutionOutput) const override;
 };

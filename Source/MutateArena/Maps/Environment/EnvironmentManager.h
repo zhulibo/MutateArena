@@ -19,98 +19,112 @@ class UMaterialParameterCollection;
 USTRUCT(BlueprintType)
 struct FActiveEnvironment
 {
-    GENERATED_BODY()
+	GENERATED_BODY()
 
-    UPROPERTY()
-    UEnvironmentAsset* EnvAsset;
+	UPROPERTY()
+	UEnvironmentAsset* EnvAsset;
 
-    FActiveEnvironment() : EnvAsset(nullptr)
-    {
-    }
+	FActiveEnvironment() : EnvAsset(nullptr)
+	{
+	}
 
-    FActiveEnvironment(UEnvironmentAsset* InAsset) : EnvAsset(InAsset)
-    {
-    }
+	FActiveEnvironment(UEnvironmentAsset* InAsset) : EnvAsset(InAsset)
+	{
+	}
 };
 
 UCLASS(Blueprintable)
 class MUTATEARENA_API AEnvironmentManager : public AInfo
 {
-    GENERATED_BODY()
+	GENERATED_BODY()
 
 public:
-    AEnvironmentManager();
+	AEnvironmentManager();
 
-    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-    UFUNCTION()
-    bool ActivateEnvironment(FGameplayTag EnvironmentTag);
-    UFUNCTION()
-    void DeactivateEnvironment(FGameplayTag EnvironmentTag);
+	UFUNCTION()
+	bool ActivateEnvironment(FGameplayTag EnvironmentTag);
+	UFUNCTION()
+	void DeactivateEnvironment(FGameplayTag EnvironmentTag);
+	UFUNCTION()
+	bool IsEnvironmentActive(FGameplayTag EnvironmentTag);
 
-    // 玩家重生或中途加入时调用，自动补齐当前所有生效的环境效果
-    UFUNCTION()
-    void ApplyAllActiveEnvironmentsToCharacter(ABaseCharacter* TargetCharacter);
-
-    // 回合重启时清理
-    virtual void Reset() override;
+	// 玩家重生或中途加入时调用，自动补齐当前所有生效的环境效果
+	UFUNCTION()
+	void ApplyAllActiveEnvironmentsToCharacter(ABaseCharacter* TargetCharacter);
+	// 清理指定角色身上的所有环境GE
+	void ClearEnvironmentEffectsForASC(UAbilitySystemComponent* ASC);
+	
+	// 回合重启时清理
+	virtual void Reset() override;
 
 protected:
-    virtual void BeginPlay() override;
+	virtual void BeginPlay() override;
 
-    UPROPERTY(ReplicatedUsing = OnRep_ActiveEnvironments)
-    TArray<FActiveEnvironment> ActiveEnvironments;
+public:
+	UPROPERTY(ReplicatedUsing = OnRep_ActiveEnvironments)
+	TArray<FActiveEnvironment> ActiveEnvironments;
 
-    UFUNCTION()
-    void OnRep_ActiveEnvironments();
+protected:
+	UFUNCTION()
+	void OnRep_ActiveEnvironments();
 
 private:
-    // 记录每个环境赋予的所有 GE Handle
-    TMap<FGameplayTag, TMap<TWeakObjectPtr<UAbilitySystemComponent>, TArray<FActiveGameplayEffectHandle>>> ActiveEnvEffectsMap;
+	// 记录每个环境赋予的所有 GE Handle
+	TMap<FGameplayTag, TMap<TWeakObjectPtr<UAbilitySystemComponent>, TArray<FActiveGameplayEffectHandle>>> ActiveEnvEffectsMap;
 
-    void RemoveEnvironmentEffects(FGameplayTag EnvironmentTag);
-    void ApplyEnvironmentInstanceToCharacter(const FActiveEnvironment& EnvInstance, ABaseCharacter* TargetCharacter);
+	void RemoveEnvironmentEffects(FGameplayTag EnvironmentTag);
+	void ApplyEnvironmentInstanceToCharacter(const FActiveEnvironment& EnvInstance, ABaseCharacter* TargetCharacter);
 
 protected:
-    // 视觉过渡与时间轴
-    UPROPERTY(VisibleAnywhere)
-    UTimelineComponent* TransitionTimeline;
-    UPROPERTY(EditAnywhere)
-    UCurveFloat* TransitionCurve;
-    UFUNCTION()
-    void OnTimelineTick(float Value);
+	// 视觉过渡与时间轴
+	UPROPERTY(VisibleAnywhere)
+	UTimelineComponent* TransitionTimeline;
+	UPROPERTY(EditAnywhere)
+	UCurveFloat* TransitionCurve;
+	UFUNCTION()
+	void OnTimelineTick(float Value);
 
-    UPROPERTY(EditAnywhere)
-    UMaterialParameterCollection* MPC_Env;
+	UPROPERTY(EditAnywhere)
+	UMaterialParameterCollection* MPC_Env;
 
-    // UDS 引用（在蓝图中用于转换和修改）
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    AActor* UltraDynamicSky;
-    
-    // 初始状态（用于当所有环境移除时恢复值）
-    TMap<FGameplayTag, float> InitialScalarParams;
-    TMap<FGameplayTag, FLinearColor> InitialColorParams;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	AActor* UltraDynamicSky;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	AActor* UltraDynamicWeather;
 
-    // 插值状态
-    TMap<FGameplayTag, float> StartScalarParams;
-    TMap<FGameplayTag, float> TargetScalarParams;
-    TMap<FGameplayTag, float> CurrentScalarParams;
-    TMap<FGameplayTag, FLinearColor> StartColorParams;
-    TMap<FGameplayTag, FLinearColor> TargetColorParams;
-    TMap<FGameplayTag, FLinearColor> CurrentColorParams;
+	// 初始状态（用于当所有环境移除时恢复值）
+	TMap<FGameplayTag, float> InitialScalarParams;
+	TMap<FGameplayTag, FLinearColor> InitialColorParams;
 
-    void RecalculateVisualTargets();
-    
-    // 抛给蓝图：设置 UDS 标量参数
-    UFUNCTION(BlueprintImplementableEvent)
-    void ReceiveUpdateUDSScalarParam(FGameplayTag ParamTag, float Value);
-    // 抛给蓝图：设置 UDS 颜色参数
-    UFUNCTION(BlueprintImplementableEvent)
-    void ReceiveUpdateUDSColorParam(FGameplayTag ParamTag, FLinearColor Value);
-    // 抛给蓝图：读取 UDS 标量初始值
-    UFUNCTION(BlueprintImplementableEvent)
-    float ReceiveReadUDSScalarParam(FGameplayTag ParamTag);
-    // 抛给蓝图：读取 UDS 颜色初始值
-    UFUNCTION(BlueprintImplementableEvent)
-    FLinearColor ReceiveReadUDSColorParam(FGameplayTag ParamTag);
+	// 插值状态
+	TMap<FGameplayTag, float> StartScalarParams;
+	TMap<FGameplayTag, float> TargetScalarParams;
+	TMap<FGameplayTag, float> CurrentScalarParams;
+	TMap<FGameplayTag, FLinearColor> StartColorParams;
+	TMap<FGameplayTag, FLinearColor> TargetColorParams;
+	TMap<FGameplayTag, FLinearColor> CurrentColorParams;
+
+	void RecalculateVisualTargets();
+
+	// 更新蓝图UDS参数
+	UFUNCTION(BlueprintImplementableEvent)
+	void ReceiveUpdateUDSScalarParam(FGameplayTag ParamTag, float Value);
+	UFUNCTION(BlueprintImplementableEvent)
+	void ReceiveUpdateUDSColorParam(FGameplayTag ParamTag, FLinearColor Value);
+	UFUNCTION(BlueprintImplementableEvent)
+	float ReceiveReadUDSScalarParam(FGameplayTag ParamTag);
+	UFUNCTION(BlueprintImplementableEvent)
+	FLinearColor ReceiveReadUDSColorParam(FGameplayTag ParamTag);
+
+	// 更新蓝图UDW参数
+	UFUNCTION(BlueprintImplementableEvent)
+	void ReceiveUpdateUDWScalarParam(FGameplayTag ParamTag, float Value);
+	UFUNCTION(BlueprintImplementableEvent)
+	void ReceiveUpdateUDWColorParam(FGameplayTag ParamTag, FLinearColor Value);
+	UFUNCTION(BlueprintImplementableEvent)
+	float ReceiveReadUDWScalarParam(FGameplayTag ParamTag);
+	UFUNCTION(BlueprintImplementableEvent)
+	FLinearColor ReceiveReadUDWColorParam(FGameplayTag ParamTag);
 };

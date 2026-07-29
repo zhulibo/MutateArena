@@ -78,10 +78,8 @@ public:
 	void MutationDead(bool bNeedSpawn, ESpawnMutantReason SpawnMutantReason = ESpawnMutantReason::Fall);
 	void MeleeDead();
 	void TeamDeadMatchDead();
-protected:
-	void HandleDead();
+	virtual void OnDead() override;
 
-public:
 	UPROPERTY(ReplicatedUsing = OnRep_bIsImmune)
 	bool bIsImmune = false;
 	UFUNCTION()

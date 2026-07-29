@@ -13,6 +13,8 @@
 #include "Components/AudioComponent.h"
 #include "Components/SphereComponent.h"
 #include "MutateArena/Equipments/Data/DamageTypeEquipment.h"
+#include "MutateArena/GameStates/BaseGameState.h"
+#include "MutateArena/Maps/Environment/EnvironmentManager.h"
 #include "MutateArena/System/GameplayTags.h"
 
 AFireBottle::AFireBottle()
@@ -102,7 +104,7 @@ void AFireBottle::ServerDetectActors()
 	TArray<AActor*> OverlappingActors;
 	FireSphere->GetOverlappingActors(OverlappingActors, AActor::StaticClass());
 
-	// 只要范围内有烟雾，直接灭火并销毁，彻底跳过伤害判定
+	// 烟雾灭火
 	for (AActor* OverlapActor : OverlappingActors)
 	{
 		if (OverlapActor && OverlapActor->ActorHasTag(TAG_SMOKE_ACTOR))
@@ -113,10 +115,40 @@ void AFireBottle::ServerDetectActors()
 			return;
 		}
 	}
+	
+	// 酸雨灭火
+	if (ABaseGameState* GameState = GetWorld()->GetGameState<ABaseGameState>())
+	{
+		if (GameState->EnvironmentManager && GameState->EnvironmentManager->IsEnvironmentActive(TAG_STATE_ENV_ACIDRAIN))
+		{
+			FVector StartLoc = GetActorLocation();
+			FVector EndLoc = StartLoc + FVector(0.0f, 0.0f, 10000.0f);
 
+			FHitResult HitResult;
+			FCollisionQueryParams QueryParams;
+			QueryParams.AddIgnoredActor(this);
+
+			// 使用世界静态通道判断上方是否有遮挡物 (屋顶等)
+			bool bIsIndoors = GetWorld()->LineTraceSingleByObjectType(
+				HitResult,
+				StartLoc,
+				EndLoc,
+				FCollisionObjectQueryParams(ECC_WorldStatic), 
+				QueryParams
+			);
+
+			if (!bIsIndoors)
+			{
+				MulticastExtinguishEffects();
+				SetLifeSpan(0.5f);
+				return;
+			}
+		}
+	}
+	
+	// 赋予火焰伤害
 	AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(GetOwner());
 	ABaseController* BaseController = HumanCharacter ? Cast<ABaseController>(HumanCharacter->GetController()) : nullptr;
-
 	for (AActor* OverlapActor : OverlappingActors)
 	{
 		if (OverlapActor == nullptr) continue;

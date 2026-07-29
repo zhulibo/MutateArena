@@ -23,7 +23,10 @@
 #include "GameFramework/PlayerStart.h"
 #include "MutateArena/Equipments/Herbs/HerbRage.h"
 #include "MutateArena/Equipments/Herbs/HerbRepelReceived.h"
+#include "MutateArena/Equipments/Pickups/ItemSpawnPoint.h"
+#include "MutateArena/Maps/Environment/EnvironmentAsset.h"
 #include "MutateArena/Maps/Environment/EnvironmentManager.h"
+#include "MutateArena/System/AssetSubsystem.h"
 #include "MutateArena/System/EOSSubsystem.h"
 #include "MutateArena/System/GameplayTags.h"
 
@@ -173,9 +176,13 @@ void AMutationMode::EndRound()
 
 	// 清除生成补给箱定时器
 	GetWorldTimerManager().ClearTimer(SpawnPickupTimerHandle);
+	GetWorldTimerManager().ClearTimer(SpawnHerbRageTimerHandle);
+	GetWorldTimerManager().ClearTimer(SpawnHerbRepelReceivedTimerHandle);
 
 	RoundEndTime = GetWorld()->GetTimeSeconds();
 	SetMatchState(MatchState::PostRound);
+
+	HandleRoundHasEnded();
 }
 
 // 开启下一回合
@@ -208,6 +215,8 @@ void AMutationMode::EndMatch()
 
 	// 清除生成补给箱定时器
 	GetWorldTimerManager().ClearTimer(SpawnPickupTimerHandle);
+	GetWorldTimerManager().ClearTimer(SpawnHerbRageTimerHandle);
+	GetWorldTimerManager().ClearTimer(SpawnHerbRepelReceivedTimerHandle);
 
 	MatchEndTime = GetWorld()->GetTimeSeconds();
 
@@ -278,7 +287,53 @@ void AMutationMode::HandleMatchHasStarted()
 
 	// 倒计时结束，选择人类突变
 	FTimerHandle TimerHandle;
-	GetWorldTimerManager().SetTimer(TimerHandle, this, &ThisClass::RoundStartMutate, MutateTime);
+	GetWorldTimerManager().SetTimer(TimerHandle, this, &ThisClass::RandomMutate, MutateTime);
+
+	// 对局开始时有1/10概率启用一个随机环境
+	if (MutationGameState == nullptr) MutationGameState = GetGameState<AMutationGameState>();
+	if (MutationGameState)
+	{
+		if (AEnvironmentManager* EnvManager = MutationGameState->EnvironmentManager)
+		{
+			if (FMath::RandRange(1, 10) == 1)
+			{
+				if (UAssetSubsystem* AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>())
+				{
+					TArray<FGameplayTag> AvailableEnvTags;
+					AssetSubsystem->CachedEnvironmentAssets.GetKeys(AvailableEnvTags);
+
+					if (AvailableEnvTags.Num() > 0)
+					{
+						int32 RandomIndex = FMath::RandRange(0, AvailableEnvTags.Num() - 1);
+						EnvManager->ActivateEnvironment(AvailableEnvTags[RandomIndex]);
+					}
+				}
+			}
+		}
+	}
+}
+
+// 对局结束
+void AMutationMode::HandleRoundHasEnded()
+{
+	if (AMutationGameState* MutateGameState = GetGameState<AMutationGameState>())
+	{
+		if (AEnvironmentManager* EnvManager = MutateGameState->EnvironmentManager)
+		{
+			int32 ActiveEnvCount = EnvManager->ActiveEnvironments.Num();
+
+			// 如果至少有一个环境是生效状态，则 1/3 概率结束其中一个
+			if (ActiveEnvCount > 0 && FMath::RandRange(1, 3) == 1)
+			{
+				int32 RandomIndex = FMath::RandRange(0, ActiveEnvCount - 1);
+
+				if (UEnvironmentAsset* TargetAsset = EnvManager->ActiveEnvironments[RandomIndex].EnvAsset)
+				{
+					EnvManager->DeactivateEnvironment(TargetAsset->EnvironmentTag);
+				}
+			}
+		}
+	}
 }
 
 // 中途加入
@@ -304,7 +359,7 @@ void AMutationMode::OnPostLogin(AController* Controller)
 }
 
 // 开局随机选择人类突变
-void AMutationMode::RoundStartMutate()
+void AMutationMode::RandomMutate()
 {
 	if (MutationGameState == nullptr) MutationGameState = GetGameState<AMutationGameState>();
 	if (MutationGameState == nullptr) return;
@@ -313,7 +368,11 @@ void AMutationMode::RoundStartMutate()
 	BaseGameState->GetPlayerStates(ETeam::Team1, PlayerStates);
 
 	int32 MutateNum;
-	if (PlayerStates.Num() <= 6)
+	if (PlayerStates.Num() <= 1)
+	{
+		MutateNum = 0;
+	}
+	else if (PlayerStates.Num() >= 2 && PlayerStates.Num() <= 6)
 	{
 		MutateNum = 1;
 	}
@@ -372,67 +431,63 @@ void AMutationMode::RoundStartMutate()
 	// 定时生成草药
 	GetWorldTimerManager().SetTimer(SpawnHerbRageTimerHandle, this, &ThisClass::SpawnHerbRages, FMath::FRandRange(10.f, 20.f));
 	GetWorldTimerManager().SetTimer(SpawnHerbRepelReceivedTimerHandle, this, &ThisClass::SpawnHerbRepelReceived, 100.f);
-	// 改变环境
-	GetWorldTimerManager().SetTimer(ChangeEnvTimerHandle, this, &ThisClass::ChangeEnv, 10.f);
-	GetWorldTimerManager().SetTimer(ChangeEnvTimerHandle2, this, &ThisClass::ChangeEnv2, 20.f);
-	GetWorldTimerManager().SetTimer(ChangeEnvTimerHandle3, this, &ThisClass::ChangeEnv3, 30.f);
-	GetWorldTimerManager().SetTimer(ChangeEnvTimerHandle4, this, &ThisClass::ChangeEnv4, 40.f);
 }
 
-// 人类受到伤害
 void AMutationMode::HumanReceiveDamage(AHumanCharacter* DamagedCharacter, ABaseController* DamagedController,
                                        float Damage, const UDamageType* DamageType, AController* AttackerController, AActor* DamageCauser)
 {
-	if (DamagedCharacter == nullptr || DamagedController == nullptr || AttackerController == nullptr || DamageCauser == nullptr) return;
+    if (DamagedCharacter == nullptr || DamagedController == nullptr) return;
 
-	AMutationPlayerState* DamagedState = Cast<AMutationPlayerState>(DamagedController->PlayerState);
-	AMutationPlayerState* AttackerState = Cast<AMutationPlayerState>(AttackerController->PlayerState);
+    AMutationPlayerState* DamagedState = Cast<AMutationPlayerState>(DamagedController->PlayerState);
+    if (DamagedState == nullptr) return;
 
-	if (DamagedState == nullptr || AttackerState == nullptr) return;
+    // 只有存在攻击者时，才尝试获取 AttackerState
+    AMutationPlayerState* AttackerState = nullptr;
+    if (AttackerController)
+    {
+        AttackerState = Cast<AMutationPlayerState>(AttackerController->PlayerState);
+    }
 
-	// 设置受伤者血量
-	float TakenDamage = FMath::Clamp(Damage, 0.f, DamagedCharacter->GetHealth());
-	float Health = DamagedCharacter->GetHealth() - TakenDamage;
-	DamagedCharacter->SetHealth(Health);
+    // 设置受伤者血量
+    float TakenDamage = FMath::Clamp(Damage, 0.f, DamagedCharacter->GetHealth());
+    float Health = DamagedCharacter->GetHealth() - TakenDamage;
+    DamagedCharacter->SetHealth(Health);
 
-	if (AttackerState != DamagedState) // 受到跌落伤害时，AttackerController和DamageCauser传的是自己
-	{
-		// 增加攻击者怒气值
-		AttackerState->SetRage(AttackerState->Rage + Damage * 10);
-		// 增加攻击者伤害分数
-		AttackerState->AddDamage(TakenDamage);
-	}
+    // 处理攻击者得分和怒气 (如果存在攻击者，且不是自己伤害自己)
+    if (AttackerState && AttackerState != DamagedState) // 受到跌落伤害时，AttackerController和DamageCauser传的是自己
+    {
+       AttackerState->SetRage(AttackerState->Rage + Damage * 10);
+       AttackerState->AddDamage(TakenDamage);
+    }
 
-	// 人类死亡
-	if (DamagedCharacter->GetHealth() <= 0.f)
-	{
-		if (AttackerState != DamagedState)
-		{
-			// 增加攻击者连杀
-			AttackerState->AddKillStreak();
-		}
+    // 人类死亡判定
+    if (DamagedCharacter->GetHealth() <= 0.f)
+    {
+       if (AttackerState && AttackerState != DamagedState)
+       {
+          AttackerState->AddKillStreak();
+       }
 
-		// 击杀日志
-		AddKillLog(AttackerState, DamageCauser, DamageType, DamagedState);
+       // 击杀日志
+       AddKillLog(AttackerState, DamageCauser, DamageType, DamagedState);
 
-		// 人类因突变体伤害血量为0立刻突变
-		bool bMutateImmediately = false;
-		if (const UDamageTypeBase* DamageTypeBase = Cast<UDamageTypeBase>(DamageType))
-		{
-			if (DamageTypeBase->DamageType == EDamageCauserType::MutantDamage)
-			{
-				bMutateImmediately = true;
+       // 突变逻辑判定
+       bool bMutateImmediately = false;
+       if (const UDamageTypeBase* DamageTypeBase = Cast<UDamageTypeBase>(DamageType))
+       {
+          if (DamageTypeBase->DamageType == EDamageCauserType::MutantDamage)
+          {
+             bMutateImmediately = true;
+             Mutate(DamagedCharacter, DamagedController, ESpawnMutantReason::Damaged);
+          }
+       }
 
-				Mutate(DamagedCharacter, DamagedController, ESpawnMutantReason::Damaged);
-			}
-		}
-
-		// 摔死延迟重生
-		if (!bMutateImmediately)
-		{
-			DamagedCharacter->MutationDead(true, ESpawnMutantReason::Fall);
-		}
-	}
+       // 延迟重生 (酸雨致死、摔死等环境伤害通常走这里)
+       if (!bMutateImmediately)
+       {
+          DamagedCharacter->MutationDead(true, ESpawnMutantReason::Fall); // 你可以加一个枚举专门表示 Environment 致死
+       }
+    }
 }
 
 // 人类受到感染
@@ -502,65 +557,72 @@ void AMutationMode::SelectMutant(ACharacter* Character, AController* Controller)
 void AMutationMode::MutantReceiveDamage(AMutantCharacter* DamagedCharacter, ABaseController* DamagedController,
                                         float Damage, const UDamageType* DamageType, AController* AttackerController, AActor* DamageCauser)
 {
-	if (MutationGameState == nullptr) MutationGameState = GetGameState<AMutationGameState>();
-	if (MutationGameState == nullptr) return;
+    if (MutationGameState == nullptr) MutationGameState = GetGameState<AMutationGameState>();
+    if (MutationGameState == nullptr) return;
 
-	if (DamagedCharacter == nullptr || DamagedController == nullptr || AttackerController == nullptr || DamageCauser == nullptr) return;
+    if (DamagedCharacter == nullptr || DamagedController == nullptr) return;
 
-	AMutationPlayerState* DamagedState = Cast<AMutationPlayerState>(DamagedController->PlayerState);
-	AMutationPlayerState* AttackerState = Cast<AMutationPlayerState>(AttackerController->PlayerState);
+    AMutationPlayerState* DamagedState = Cast<AMutationPlayerState>(DamagedController->PlayerState);
+    if (DamagedState == nullptr) return;
 
-	if (DamagedState == nullptr || AttackerState == nullptr) return;
+    AMutationPlayerState* AttackerState = nullptr;
+    if (AttackerController)
+    {
+        AttackerState = Cast<AMutationPlayerState>(AttackerController->PlayerState);
+    }
 
-	// 击退受伤者
-	if (AProjectileBullet* ProjectileBullet = Cast<AProjectileBullet>(DamageCauser))
-	{
-		FVector ImpulseDirection = ProjectileBullet->GetActorForwardVector();
-		float ForceMagnitude = ProjectileBullet->GetImpulse(Damage) * DamagedState->GetRepelReceivedMul();
-		DamagedCharacter->ApplySuppressionForce(ImpulseDirection, ForceMagnitude);
-	}
+    // 击退受伤者
+    if (AProjectileBullet* ProjectileBullet = Cast<AProjectileBullet>(DamageCauser))
+    {
+       FVector ImpulseDirection = ProjectileBullet->GetActorForwardVector();
+       float ForceMagnitude = ProjectileBullet->GetImpulse(Damage) * DamagedState->GetRepelReceivedMul();
+       DamagedCharacter->ApplySuppressionForce(ImpulseDirection, ForceMagnitude);
+    }
 
-	// 设置受伤者血量
-	float TakenDamage = Damage * MutationGameState->DamageMul * DamagedState->GetDamageReceivedMul();
-	const UDamageTypeBase* DamageTypeBase = Cast<UDamageTypeBase>(DamageType);
-	if (DamageTypeBase && DamageTypeBase->DamageType == EDamageCauserType::Melee)
-	{
-		TakenDamage *= MutationGameState->MeleeDamageMul;
-	}
-	TakenDamage = FMath::Clamp(TakenDamage, 0.f, DamagedCharacter->GetHealth());
-	float Health = DamagedCharacter->GetHealth() - TakenDamage;
-	DamagedCharacter->SetHealth(Health);
+    // 设置受伤者血量
+    float TakenDamage = Damage * MutationGameState->DamageMul * DamagedState->GetDamageReceivedMul();
+    const UDamageTypeBase* DamageTypeBase = Cast<UDamageTypeBase>(DamageType);
+    if (DamageTypeBase && DamageTypeBase->DamageType == EDamageCauserType::Melee)
+    {
+       TakenDamage *= MutationGameState->MeleeDamageMul;
+    }
+    TakenDamage = FMath::Clamp(TakenDamage, 0.f, DamagedCharacter->GetHealth());
+    float Health = DamagedCharacter->GetHealth() - TakenDamage;
+    DamagedCharacter->SetHealth(Health);
 
-	if (AttackerState != DamagedState) // 受到跌落伤害时，AttackerController和DamageCauser传的是自己
-	{
-		// 增加怒气值
-		DamagedState->SetRage(DamagedState->Rage + TakenDamage);
-		// 增加攻击者伤害分数
-		AttackerState->AddDamage(TakenDamage);
-	}
+    // 增加受伤者的怒气值
+    DamagedState->SetRage(DamagedState->Rage + TakenDamage);
 
-	// 突变体死亡
-	if (DamagedCharacter->GetHealth() <= 0.f)
-	{
-		if (AttackerState != DamagedState)
-		{
-			// 增加攻击者连杀
-			AttackerState->AddKillStreak();
-		}
+    // 处理攻击者得分 (如果存在攻击者，且不是自己伤害自己)
+    if (AttackerState && AttackerState != DamagedState) // 受到跌落伤害时，AttackerController和DamageCauser传的是自己
+    {
+       // 增加攻击者伤害分数
+       AttackerState->AddDamage(TakenDamage);
+    }
 
-		// 击杀日志
-		AddKillLog(AttackerState, DamageCauser, DamageType, DamagedState);
+    // 突变体死亡
+    if (DamagedCharacter->GetHealth() <= 0.f)
+    {
+       if (AttackerState && AttackerState != DamagedState)
+       {
+          // 增加攻击者连杀
+          AttackerState->AddKillStreak();
+       }
 
-		// 处理突变体死亡流程
-		bool bKilledByMelee = false;
-		if (DamageTypeBase && DamageTypeBase->DamageType == EDamageCauserType::Melee)
-		{
-			bKilledByMelee = true;
-			DamagedState->bKilledByMelee = true;
-			MutationGameState->EndRoundIfAllBeKilledByMelee();
-		}
-		DamagedCharacter->MutantDead(bKilledByMelee);
-	}
+       // 击杀日志
+       AddKillLog(AttackerState, DamageCauser, DamageType, DamagedState);
+
+       // 处理突变体死亡流程
+       bool bKilledByMelee = false;
+       if (DamageTypeBase && DamageTypeBase->DamageType == EDamageCauserType::Melee)
+       {
+          bKilledByMelee = true;
+          DamagedState->bKilledByMelee = true;
+          MutationGameState->EndRoundIfAllBeKilledByMelee();
+       }
+       
+       DamagedCharacter->MutantDead(bKilledByMelee);
+    }
 }
 
 // 突变体重生
@@ -644,71 +706,23 @@ void AMutationMode::SpawnMutantCharacter(AController* Controller, ESpawnMutantRe
 	}
 }
 
-void AMutationMode::ChangeEnv()
-{
-	if (MutationGameState == nullptr) MutationGameState = GetGameState<AMutationGameState>();
-	if (MutationGameState)
-	{
-		if (AEnvironmentManager* EnvManager = MutationGameState->EnvironmentManager)
-		{
-			EnvManager->ActivateEnvironment(TAG_STATE_ENV_BLOODMOON);
-		}
-	}
-}
-
-void AMutationMode::ChangeEnv2()
-{
-	if (MutationGameState == nullptr) MutationGameState = GetGameState<AMutationGameState>();
-	if (MutationGameState)
-	{
-		if (AEnvironmentManager* EnvManager = MutationGameState->EnvironmentManager)
-		{
-			EnvManager->ActivateEnvironment(TAG_STATE_ENV_FOG);
-		}
-	}
-}
-
-void AMutationMode::ChangeEnv3()
-{
-	if (MutationGameState == nullptr) MutationGameState = GetGameState<AMutationGameState>();
-	if (MutationGameState)
-	{
-		if (AEnvironmentManager* EnvManager = MutationGameState->EnvironmentManager)
-		{
-			EnvManager->DeactivateEnvironment(TAG_STATE_ENV_BLOODMOON);
-		}
-	}
-}
-
-void AMutationMode::ChangeEnv4()
-{
-	if (MutationGameState == nullptr) MutationGameState = GetGameState<AMutationGameState>();
-	if (MutationGameState)
-	{
-		if (AEnvironmentManager* EnvManager = MutationGameState->EnvironmentManager)
-		{
-			EnvManager->DeactivateEnvironment(TAG_STATE_ENV_FOG);
-		}
-	}
-}
-
 // 生成补给箱
 void AMutationMode::SpawnPickups()
 {
 	// 寻找补给箱重生点
-	if (PickupStartPoints.IsEmpty())
+	if (SpawnPoints_Pickup.IsEmpty())
 	{
-		for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It)
+		for (TActorIterator<AItemSpawnPoint> It(GetWorld()); It; ++It)
 		{
-			if (It->PlayerStartTag == TEXT("Pickup"))
+			if (It->ItemType == ESpawnItemType::Pickup)
 			{
-				PickupStartPoints.Add(*It);
+				SpawnPoints_Pickup.Add(*It);
 			}
 		}
 	}
 
 	// 随机选3个重生点
-	auto SelectedStartPoints = PickupStartPoints;
+	auto SelectedStartPoints = SpawnPoints_Pickup;
 	while (SelectedStartPoints.Num() > 3)
 	{
 		int32 RandomIndex = FMath::RandRange(0, SelectedStartPoints.Num() - 1);
@@ -743,19 +757,19 @@ void AMutationMode::SpawnPickups()
 void AMutationMode::SpawnHerbRages()
 {
 	// 寻找重生点
-	if (HerbRageStartPoints.IsEmpty())
+	if (SpawnPoints_HerbRage.IsEmpty())
 	{
-		for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It)
+		for (TActorIterator<AItemSpawnPoint> It(GetWorld()); It; ++It)
 		{
-			if (It->PlayerStartTag == TEXT("HerbRage"))
+			if (It->ItemType == ESpawnItemType::HerbRage)
 			{
-				HerbRageStartPoints.Add(*It);
+				SpawnPoints_HerbRage.Add(*It);
 			}
 		}
 	}
 
 	// 随机选3个重生点
-	auto SelectedStartPoints = HerbRageStartPoints;
+	auto SelectedStartPoints = SpawnPoints_HerbRage;
 	while (SelectedStartPoints.Num() > 3)
 	{
 		int32 RandomIndex = FMath::RandRange(0, SelectedStartPoints.Num() - 1);
@@ -781,19 +795,19 @@ void AMutationMode::SpawnHerbRages()
 void AMutationMode::SpawnHerbRepelReceived()
 {
 	// 寻找重生点
-	if (HerbRepelReceivedStartPoints.IsEmpty())
+	if (SpawnPoints_HerbRepelReceived.IsEmpty())
 	{
-		for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It)
+		for (TActorIterator<AItemSpawnPoint> It(GetWorld()); It; ++It)
 		{
-			if (It->PlayerStartTag == TEXT("HerbRepelReceived"))
+			if (It->ItemType == ESpawnItemType::HerbRepelReceived)
 			{
-				HerbRepelReceivedStartPoints.Add(*It);
+				SpawnPoints_HerbRepelReceived.Add(*It);
 			}
 		}
 	}
 
 	// 随机选3个重生点
-	auto SelectedStartPoints = HerbRepelReceivedStartPoints;
+	auto SelectedStartPoints = SpawnPoints_HerbRepelReceived;
 	while (SelectedStartPoints.Num() > 3)
 	{
 		int32 RandomIndex = FMath::RandRange(0, SelectedStartPoints.Num() - 1);

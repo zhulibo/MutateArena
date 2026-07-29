@@ -97,6 +97,13 @@ public:
 	UPROPERTY(EditAnywhere, Category = "RadialMenu")
 	UInputAction* RadialMenuSelectAction;
 	
+	// Debug
+	UPROPERTY(EditAnywhere, Category = "Debug")
+	UInputMappingContext* DebugMappingContext;
+	
+	UPROPERTY(EditAnywhere, Category = "Debug")
+	UInputAction* DebugMenuAction;
+	
 	virtual FPrimaryAssetId GetPrimaryAssetId() const override
 	{
 		return FPrimaryAssetId(ASSET_INPUT, GetFName());

@@ -30,6 +30,7 @@ public:
 	UPROPERTY()
 	FGameplayAttributeData Damage;
 	ATTRIBUTE_ACCESSORS(UAttributeSetBase, Damage)
+	// TODO 所有伤害系统（UGameplayStatics::ApplyDamage）可能要转用GAS
 	
 	UPROPERTY(ReplicatedUsing = OnRep_MaxHealth)
 	FGameplayAttributeData MaxHealth;

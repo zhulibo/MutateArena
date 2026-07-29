@@ -227,6 +227,7 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 			Subsystem->RemoveMappingContext(AssetSubsystem->InputAsset->SpectatorMappingContext);
 
 			Subsystem->AddMappingContext(AssetSubsystem->InputAsset->BaseMappingContext, 100);
+			Subsystem->AddMappingContext(AssetSubsystem->InputAsset->DebugMappingContext, 9999);
 		}
 	}
 
@@ -715,6 +716,20 @@ void ABaseCharacter::OnRep_bIsDead()
 {
 }
 
+void ABaseCharacter::OnDead()
+{
+	if (HasAuthority())
+	{
+		if (ABaseGameState* GS = GetWorld()->GetGameState<ABaseGameState>())
+		{
+			if (GS->EnvironmentManager)
+			{
+				GS->EnvironmentManager->ClearEnvironmentEffectsForASC(ASC);
+			}
+		}
+	}
+}
+
 void ABaseCharacter::SetHealth(float TempHealth)
 {
 	if (AttributeSetBase)
@@ -823,29 +838,23 @@ float ABaseCharacter::CalcFallDamageRate()
 	// 将高度转换为米
 	float DiffHighMeter = FallHeightCm / 100.f; 
     
-	float DamageRate;
-	if (DiffHighMeter < 4.f) 
+	float DamageRate = 0.f;
+    
+	// 只有当高度大于等于 4.2 米时才计算伤害
+	if (DiffHighMeter >= 4.4f)
 	{
-		DamageRate = 0.f;
-	}
-	else if (DiffHighMeter >= 4.f && DiffHighMeter < 6.f)
-	{
-		DamageRate = 0.05f;
-	}
-	else if (DiffHighMeter >= 6.f && DiffHighMeter < 8.f)
-	{
-		DamageRate = 0.1f;
-	}
-	else
-	{
-		DamageRate = 0.15f;
+		FVector2D HeightRange(4.4f, 8.0f);
+		FVector2D DamageRange(0.05f, 0.15f);
+		
+		DamageRate = FMath::GetMappedRangeValueClamped(HeightRange, DamageRange, DiffHighMeter);
 	}
 
+	// 检测是否有高骨密度 Tag，降低跌落伤害
 	if (ASC && ASC->HasMatchingGameplayTag(TAG_STATE_DNA_HighBoneDensity))
 	{
-		DamageRate = DamageRate * 0.2f; 
+		DamageRate = DamageRate * 0.4f; 
 	}
-	
+    
 	return DamageRate;
 }
 

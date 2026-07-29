@@ -135,6 +135,7 @@ protected:
 	void MutantReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* AttackerController, AActor* DamageCauser);
 public:
 	virtual void OnRep_bIsDead() override;
+	virtual void OnDead() override;
 	UPROPERTY(Replicated)
 	bool bKilledByMelee = false;
 	void MutantDead(bool bTempKilledByMelee);

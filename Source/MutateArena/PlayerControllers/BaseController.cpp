@@ -4,6 +4,7 @@
 #include "CommonInputTypeEnum.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "TimerManager.h"
 #include "Engine/GameInstance.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/PlayerStates/TeamType.h"
@@ -54,6 +55,9 @@ void ABaseController::SetupInputComponent()
 			EIC->BindAction(AssetSubsystem->InputAsset->ScoreboardAction, ETriggerEvent::Completed, this, &ThisClass::ScoreboardButtonReleased);
 			
 			EIC->BindAction(AssetSubsystem->InputAsset->PauseMenuAction, ETriggerEvent::Triggered, this, &ThisClass::PauseMenuButtonPressed);
+#if !UE_BUILD_SHIPPING
+			EIC->BindAction(AssetSubsystem->InputAsset->DebugMenuAction, ETriggerEvent::Triggered, this, &ThisClass::DebugMenuButtonPressed);
+#endif
 
 			EIC->BindAction(AssetSubsystem->InputAsset->RadialMenuAction, ETriggerEvent::Triggered, this, &ThisClass::RadialMenuButtonPressed);
 			EIC->BindAction(AssetSubsystem->InputAsset->RadialMenuAction, ETriggerEvent::Completed, this, &ThisClass::RadialMenuButtonReleased);
@@ -112,6 +116,14 @@ void ABaseController::PauseMenuButtonPressed(const FInputActionValue& Value)
 	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
 	{
 		UISubsystem->ShowPauseMenu.Broadcast();
+	}
+}
+
+void ABaseController::DebugMenuButtonPressed(const FInputActionValue& Value)
+{
+	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetLocalPlayer()))
+	{
+		UISubsystem->ShowDebugMenu.Broadcast();
 	}
 }
 

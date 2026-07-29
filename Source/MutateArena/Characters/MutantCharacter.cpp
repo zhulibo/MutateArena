@@ -250,6 +250,7 @@ void AMutantCharacter::Destroyed()
 			ASC->ClearAllAbilities();
 		}
 
+		// TODO 是否正确
 		FGameplayEffectQuery Query; // 未指定tag则移除全部
 		ASC->RemoveActiveEffects(Query);
 	}
@@ -639,45 +640,52 @@ void AMutantCharacter::OnRep_bIsDead()
 
 	if (bIsDead)
 	{
-		EndRestoreAbility();
-
-		GetCharacterMovement()->DisableMovement();
-		GetCharacterMovement()->StopMovementImmediately();
-
-		if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
-		if (BaseController) DisableInput(BaseController);
-
-		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		GetMesh()->SetSimulatePhysics(true);
-		GetMesh()->SetEnableGravity(true);
-		GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-		
-		FTimerHandle TimerHandle;
-		FTimerDelegate TimerDelegate;
-		TimerDelegate.BindWeakLambda(this, [this]() {
-			
-			// 被刀死不会销毁角色，Character不销毁的话不触发客户端的ABaseController::OnUnPossess, 主动RemoveMappingContext
-			if (bIsDead && bKilledByMelee && IsLocallyControlled()) // bIsDead 判断，防止因延迟导致复活后才执行此操作，误删新角色的输入
-			{
-				RemoveMappingContext();
-			}
-			
-			if (MutationMode == nullptr) MutationMode = GetWorld()->GetAuthGameMode<AMutationMode>();
-			if (MutationMode && HasAuthority())
-			{
-				MutationMode->MutantRespawn(this, BaseController, bKilledByMelee);
-			}
-			
-		});
-		GetWorld()->GetTimerManager().SetTimer(TimerHandle, TimerDelegate, 3.f, false);
+		OnDead();
 	}
+}
+
+void AMutantCharacter::OnDead()
+{
+	Super::OnDead();
+	
+	EndRestoreAbility();
+
+	GetCharacterMovement()->DisableMovement();
+	GetCharacterMovement()->StopMovementImmediately();
+
+	if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
+	if (BaseController) DisableInput(BaseController);
+
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	GetMesh()->SetSimulatePhysics(true);
+	GetMesh()->SetEnableGravity(true);
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		
+	FTimerHandle TimerHandle;
+	FTimerDelegate TimerDelegate;
+	TimerDelegate.BindWeakLambda(this, [this]() {
+			
+		// 被刀死不会销毁角色，Character不销毁的话不触发客户端的ABaseController::OnUnPossess, 主动RemoveMappingContext
+		if (bIsDead && bKilledByMelee && IsLocallyControlled()) // bIsDead 判断，防止因延迟导致复活后才执行此操作，误删新角色的输入
+		{
+			RemoveMappingContext();
+		}
+			
+		if (MutationMode == nullptr) MutationMode = GetWorld()->GetAuthGameMode<AMutationMode>();
+		if (MutationMode && HasAuthority())
+		{
+			MutationMode->MutantRespawn(this, BaseController, bKilledByMelee);
+		}
+			
+	});
+	GetWorld()->GetTimerManager().SetTimer(TimerHandle, TimerDelegate, 3.f, false);
 }
 
 void AMutantCharacter::MutantDead(bool bTempKilledByMelee)
 {
 	bKilledByMelee = bTempKilledByMelee;
 	bIsDead = true;
-	OnRep_bIsDead();
+	OnDead();
 }
 
 void AMutantCharacter::RemoveMappingContext()

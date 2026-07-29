@@ -172,12 +172,16 @@ void ATeamDeadMatchMode::OnPostLogin(AController* Controller)
 void ATeamDeadMatchMode::HumanReceiveDamage(AHumanCharacter* DamagedCharacter, ABaseController* DamagedController,
 	float Damage, const UDamageType* DamageType, AController* AttackerController, AActor* DamageCauser)
 {
-	if (DamagedCharacter == nullptr || DamagedController == nullptr || AttackerController == nullptr || DamageCauser == nullptr) return;
+	if (DamagedCharacter == nullptr || DamagedController == nullptr) return;
 
 	ATeamDeadMatchPlayerState* DamagedState = Cast<ATeamDeadMatchPlayerState>(DamagedController->PlayerState);
-	ATeamDeadMatchPlayerState* AttackerState = Cast<ATeamDeadMatchPlayerState>(AttackerController->PlayerState);
+	if (DamagedState == nullptr) return;
 
-	if (DamagedState == nullptr || AttackerState == nullptr) return;
+	ATeamDeadMatchPlayerState* AttackerState = nullptr;
+	if (AttackerController)
+	{
+		AttackerState = Cast<ATeamDeadMatchPlayerState>(AttackerController->PlayerState);
+	}
 
 	// 设置受伤者血量
 	float TakenDamage = FMath::Clamp(Damage, 0.f, DamagedCharacter->GetHealth());
@@ -185,7 +189,7 @@ void ATeamDeadMatchMode::HumanReceiveDamage(AHumanCharacter* DamagedCharacter, A
 	DamagedCharacter->SetHealth(Health);
 
 	// 增加攻击者伤害分数
-	if (AttackerState != DamagedState) // 受到跌落伤害时，AttackerController和DamageCauser传的是自己
+	if (AttackerState && AttackerState != DamagedState) // 受到跌落伤害时，AttackerController和DamageCauser传的是自己
 	{
 		AttackerState->AddDamage(TakenDamage);
 	}
@@ -193,7 +197,7 @@ void ATeamDeadMatchMode::HumanReceiveDamage(AHumanCharacter* DamagedCharacter, A
 	// 角色死亡
 	if (DamagedCharacter->GetHealth() <= 0.f)
 	{
-		if (AttackerState != DamagedState)
+		if (AttackerState && AttackerState != DamagedState)
 		{
 			// 增加攻击者所在队伍的分数
 			if (TeamDeadMatchGameState == nullptr) TeamDeadMatchGameState = GetGameState<ATeamDeadMatchGameState>();
@@ -206,7 +210,7 @@ void ATeamDeadMatchMode::HumanReceiveDamage(AHumanCharacter* DamagedCharacter, A
 			AttackerState->AddKillStreak();
 		}
 
-		// 击杀日志
+		// 击杀日志 (之前的 AddKillLog 已经修复了传空指针的崩溃问题)
 		AddKillLog(AttackerState, DamageCauser, DamageType, DamagedState);
 
 		// 增加受伤者死亡次数

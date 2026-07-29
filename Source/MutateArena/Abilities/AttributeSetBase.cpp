@@ -3,6 +3,12 @@
 #include "Kismet/GameplayStatics.h"
 #include "MutateArena/Equipments/Data/DamageTypeBleed.h"
 #include "GameplayEffectExtension.h"
+#include "Engine/World.h"
+#include "MutateArena/Characters/HumanCharacter.h"
+#include "MutateArena/Equipments/Data/DamageTypeAcidRain.h"
+#include "MutateArena/GameModes/MutationMode.h"
+#include "MutateArena/Maps/Environment/EnvironmentManager.h"
+#include "MutateArena/PlayerControllers/BaseController.h"
 #include "Net/UnrealNetwork.h"
 
 UAttributeSetBase::UAttributeSetBase()
@@ -64,13 +70,13 @@ void UAttributeSetBase::ClampAttr(const FGameplayAttribute& Attribute, float& Ne
 void UAttributeSetBase::PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data)
 {
 	Super::PostGameplayEffectExecute(Data);
-
-	// 拦截对 Damage 的修改
+	
+	// 拦截Damage：酸雨 或 Cutter的流血GE
 	if (Data.EvaluatedData.Attribute == GetDamageAttribute())
 	{
 		// 1. 获取本次 GE 造成的伤害值
 		float LocalDamageDone = GetDamage();
-		
+       
 		// 2. 将 Damage 属性清零（非常重要，防止下一次 tick 累加）
 		SetDamage(0.f);
 
@@ -78,19 +84,36 @@ void UAttributeSetBase::PostGameplayEffectExecute(const FGameplayEffectModCallba
 		{
 			// 3. 获取受击者
 			AActor* TargetActor = GetOwningAbilitySystemComponent()->GetAvatarActor();
-			
-			// 4. 从 GE 的上下文中提取施法者（即 Cutter）
+          
+			// 4. 从 GE 的上下文中提取施法者
 			AActor* Instigator = Data.EffectSpec.GetContext().GetInstigator();
 			AController* InstigatorController = Instigator ? Instigator->GetInstigatorController() : nullptr;
 
-			// 5. 触发原生伤害系统
-			// 这将正确地路由到你的 AMutationMode::HumanReceiveDamage 或 MutantReceiveDamage
+			// 5. 动态判断 DamageType
+			TSubclassOf<UDamageType> DamageTypeClass = UDamageTypeBase::StaticClass(); // 默认伤害类型
+          
+			if (Instigator)
+			{
+				// 情况 A：施法者是环境管理器，说明这是酸雨伤害
+				if (Instigator->IsA<AEnvironmentManager>())
+				{
+					DamageTypeClass = UDamageTypeAcidRain::StaticClass();
+				}
+				// 情况 B：施法者是突变体 (Cutter)，说明这是流血攻击
+				else if (Instigator->IsA<AMutantCharacter>()) 
+				{
+					DamageTypeClass = UDamageTypeBleed::StaticClass();
+				}
+			}
+
+			// 6. 触发原生伤害系统
+			// 这将正确地路由到你的 AMutationMode::HumanReceiveDamage 并且携带正确的 DamageType
 			UGameplayStatics::ApplyDamage(
-				TargetActor,
-				LocalDamageDone,
-				InstigatorController,
-				Instigator,
-				UDamageTypeBleed::StaticClass()
+			   TargetActor,
+			   LocalDamageDone,
+			   InstigatorController,
+			   Instigator,
+			   DamageTypeClass
 			);
 		}
 	}

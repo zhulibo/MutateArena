@@ -37,9 +37,10 @@ enum class EDNA2 : uint8
 	SubconsciousAwareness,
 	HighBoneDensity,
 	AcceleratedClotting,
+	ToxicityImmunity,
+	// 未实现
 	AcceleratedMetabolism,
 	ThermalRegulation,
-	ToxicityImmunity,
 	PainModulation,
 	CoreMaintenance,
 	

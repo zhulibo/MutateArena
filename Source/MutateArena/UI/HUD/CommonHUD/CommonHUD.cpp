@@ -116,7 +116,7 @@ void UCommonHUD::HiddenKillStreak()
 
 void UCommonHUD::OnAddKillLog(ABasePlayerState* AttackerState, const FText& CauserName, ABasePlayerState* DamagedState)
 {
-	if (AttackerState == nullptr || DamagedState == nullptr || GetWorld()->bIsTearingDown) return;
+	if (GetWorld()->bIsTearingDown) return;
 
 	if (KillLogContainer && KillLogLineClass)
 	{

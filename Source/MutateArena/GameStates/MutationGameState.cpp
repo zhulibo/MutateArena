@@ -56,6 +56,7 @@ void AMutationGameState::HandleMatchHasStarted()
 	}
 }
 
+// 对局结束
 void AMutationGameState::HandleRoundHasEnded()
 {
 	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetWorld()->GetFirstLocalPlayerFromController()))

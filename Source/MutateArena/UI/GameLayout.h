@@ -4,6 +4,12 @@
 #include "LayoutBase.h"
 #include "GameLayout.generated.h"
 
+class UDebugMenu;
+class UPauseMenu;
+class UTeamDeadMatchContainer;
+class UMeleeContainer;
+class UMutationContainer;
+
 UENUM(BlueprintType)
 enum class EHUDState : uint8
 {
@@ -31,11 +37,11 @@ public:
 	UCommonActivatableWidgetStack* ModalStack;
 
 	UPROPERTY(EditAnywhere)
-	TSubclassOf<class UMutationContainer> MutationContainerClass;
+	TSubclassOf<UMutationContainer> MutationContainerClass;
 	UPROPERTY(EditAnywhere)
-	TSubclassOf<class UMeleeContainer> MeleeContainerClass;
+	TSubclassOf<UMeleeContainer> MeleeContainerClass;
 	UPROPERTY(EditAnywhere)
-	TSubclassOf<class UTeamDeadMatchContainer> TeamDeadMatchContainerClass;
+	TSubclassOf<UTeamDeadMatchContainer> TeamDeadMatchContainerClass;
 
 protected:
 	virtual void NativeOnInitialized() override;
@@ -43,7 +49,11 @@ protected:
 	virtual void NativeDestruct() override;
 	
 	UPROPERTY(EditAnywhere)
-	TSubclassOf<class UPauseMenu> PauseMenuClass;
+	TSubclassOf<UPauseMenu> PauseMenuClass;
 	void ShowPauseMenu();
+	
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<UDebugMenu> DebugMenuClass;
+	void ShowDebugMenu();
 
 };

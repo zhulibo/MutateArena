@@ -602,14 +602,14 @@ void AHumanCharacter::OnRep_bIsDead()
 	
 	if (bIsDead)
 	{
-		HandleDead();
+		OnDead();
 	}
 }
 
 void AHumanCharacter::MutationDead(bool bNeedSpawn, ESpawnMutantReason SpawnMutantReason)
 {
 	bIsDead = true;
-	OnRep_bIsDead(); // 服务端本地主动调用一次死亡表现
+	OnDead();
 
 	if (HasAuthority() && bNeedSpawn)
 	{
@@ -628,7 +628,7 @@ void AHumanCharacter::MutationDead(bool bNeedSpawn, ESpawnMutantReason SpawnMuta
 void AHumanCharacter::MeleeDead()
 {
 	bIsDead = true;
-	OnRep_bIsDead();
+	OnDead();
 
 	if (HasAuthority())
 	{
@@ -647,7 +647,7 @@ void AHumanCharacter::MeleeDead()
 void AHumanCharacter::TeamDeadMatchDead()
 {
 	bIsDead = true;
-	OnRep_bIsDead();
+	OnDead();
 
 	if (HasAuthority())
 	{
@@ -663,8 +663,10 @@ void AHumanCharacter::TeamDeadMatchDead()
 	}
 }
 
-void AHumanCharacter::HandleDead()
+void AHumanCharacter::OnDead()
 {
+	Super::OnDead();
+	
 	if (CombatComp)
 	{
 		// 直接在服务端丢弃主武器不走GA

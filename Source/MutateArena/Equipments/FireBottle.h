@@ -4,6 +4,8 @@
 #include "MutateArena/Equipments/Throwing.h"
 #include "FireBottle.generated.h"
 
+class UAudioComponent;
+
 UCLASS()
 class MUTATEARENA_API AFireBottle : public AThrowing
 {
@@ -14,7 +16,6 @@ public:
 
 	virtual void ThrowOut() override;
 
-protected:
 	virtual void BeginPlay() override;
 	virtual void Destroyed() override;
 
