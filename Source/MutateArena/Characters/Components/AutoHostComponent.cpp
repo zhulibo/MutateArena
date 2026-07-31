@@ -64,11 +64,14 @@ void UAutoHostComponent::CheckIdleStatus()
 	
 	const float CurrentTime = GetWorld()->GetTimeSeconds();
 	
-	float AFKHostingTime = 30.f;
+	float AFKHostingTime = 60.f;
+	
+#if WITH_EDITOR
 	if (GetWorld()->WorldType == EWorldType::PIE)
 	{
 		AFKHostingTime = GetDefault<UDevSetting>()->AFKHostingTime;
 	}
+#endif
 	
 	if (CurrentTime - BaseController->LastActiveTime > AFKHostingTime)
 	{

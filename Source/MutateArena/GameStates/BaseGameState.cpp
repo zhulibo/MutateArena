@@ -33,8 +33,6 @@ void ABaseGameState::BeginPlay()
 {
 	Super::BeginPlay();
 
-	GetWorld()->GetTimerManager().SetTimer(SetAllEquipmentsTimerHandle, this, &ThisClass::SetAllEquipments, 2.f, true);
-	
 	if (HasAuthority())
 	{
 		EnvironmentManager = Cast<AEnvironmentManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AEnvironmentManager::StaticClass()));
@@ -159,18 +157,19 @@ void ABaseGameState::MulticastSendMsg_Implementation(const EMsgType MsgType, con
 	}
 }
 
-void ABaseGameState::SetAllEquipments()
+void ABaseGameState::AddEquipment(AEquipment* InEquipment)
 {
-	if (GetWorld())
+	if (InEquipment)
 	{
-		AllEquipments.Empty();
+		AllEquipments.AddUnique(InEquipment);
+	}
+}
 
-		// double Time1 = FPlatformTime::Seconds();
-
-		UGameplayStatics::GetAllActorsWithTag(GetWorld(), TAG_EQUIPMENT, AllEquipments);
-
-		// double Time2 = FPlatformTime::Seconds();
-		// UE_LOG(LogTemp, Warning, TEXT("Time %f"), Time2 - Time1);
+void ABaseGameState::RemoveEquipment(AEquipment* InEquipment)
+{
+	if (InEquipment)
+	{
+		AllEquipments.RemoveSwap(InEquipment);
 	}
 }
 

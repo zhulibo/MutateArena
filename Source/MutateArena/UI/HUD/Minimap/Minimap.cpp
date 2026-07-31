@@ -168,7 +168,7 @@ void UMinimap::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 	// 小地图数学计算常量
 	constexpr float OrthoWidth = GameConstants::MinimapOrthoWidth;
 	constexpr float WorldHalfSize = OrthoWidth * 0.5f;
-	constexpr float UIMapHalfSize = 128.0f; // 256.f / 2.f 必须为UI尺寸的一半
+	constexpr float UIMapHalfSize = 110.f; // 220.f / 2.f 必须为UI尺寸的一半
 	constexpr float MapScale = UIMapHalfSize / WorldHalfSize;
 	constexpr float MaxDistanceSq = FMath::Square(WorldHalfSize * 1.415f); // 预计算最大剔除距离的平方
 

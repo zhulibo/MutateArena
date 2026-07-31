@@ -26,7 +26,6 @@ public:
 
 	void WatchGameState();
 
-public:
 	void EndRoundIfAllBeKilledByMelee();
 	
 	UPROPERTY(ReplicatedUsing = OnRep_DamageMul)

@@ -93,7 +93,8 @@ void ABaseMode::Logout(AController* Exiting)
 			}
 		}
 	}
-
+	
+#if WITH_EDITOR
 	if (GetWorld()->WorldType == EWorldType::PIE)
 	{
 		if (GetDefault<UDevSetting>()->bUseMutationSettings)
@@ -101,6 +102,8 @@ void ABaseMode::Logout(AController* Exiting)
 			if (GetDefault<UDevSetting>()->bKeepInMap) return;
 		}
 	}
+#endif
+	
 	// 所有客户端退出后，再让服务端退出。
 	if (MatchState == MatchState::LeavingMap && GetWorld()->GetNumPlayerControllers() == 2)
 	{
@@ -116,6 +119,7 @@ void ABaseMode::Logout(AController* Exiting)
 
 void ABaseMode::EndMatch()
 {
+#if WITH_EDITOR
 	if (GetWorld()->WorldType == EWorldType::PIE)
 	{
 		if (GetDefault<UDevSetting>()->bUseMutationSettings)
@@ -123,7 +127,8 @@ void ABaseMode::EndMatch()
 			if (GetDefault<UDevSetting>()->bKeepInMap) return;
 		}
 	}
-
+#endif
+	
 	Super::EndMatch();
 }
 

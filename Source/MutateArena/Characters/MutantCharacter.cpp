@@ -353,6 +353,7 @@ void AMutantCharacter::HeavyAttackButtonReleased(const FInputActionValue& Value)
 		ASC->HandleGameplayEvent(TAG_EVENT_MUTANT_ATTACK_RELEASED, &Payload);
 	}
 }
+
 void AMutantCharacter::RightHandAttackBegin()
 {
 	bIsRightHandAttacking = true;
@@ -814,7 +815,7 @@ void AMutantCharacter::AddRageOnSuck()
 {
 	if (AMutationPlayerState* MutationPlayerState = GetPlayerState<AMutationPlayerState>())
 	{
-		MutationPlayerState->SetRage(MutationPlayerState->Rage + 4000.f);
+		MutationPlayerState->AddRage(4000.f);
 	}
 }
 

@@ -32,18 +32,18 @@ public:
 	virtual void AddDamage(float TempDamage) override;
 protected:
 	virtual void OnRep_Damage(float OldValue) override;
-	float BaseDamage = 0.f; 
+	float UnnotifiedDamageCounter = 0.f;
 	void Show1000DamageUI(float TempDamage);
 	
 public:
 	UPROPERTY(ReplicatedUsing = OnRep_Rage)
 	float Rage = 0.f;
-	void SetRage(float TempRage);
+	void AddRage(float TempRage);
 	UPROPERTY()
 	float RageLevel2 = 8000.f;
 	UPROPERTY()
 	float RageLevel3 = 12000.f;
-	float BaseRage = 0.f;
+	float UnnotifiedRageCounter = 0.f;
 	void Show1000RageUI(float TempRage);
 	
 protected:

@@ -35,8 +35,9 @@ void AMutationPlayerState::Reset()
 {
 	Super::Reset();
 
-	SetRage(0.f);
-
+	Rage = 0.f;
+	UnnotifiedDamageCounter = 0.f;
+	UnnotifiedRageCounter = 0.f;
 	bKilledByMelee = false;
 }
 
@@ -68,14 +69,13 @@ void AMutationPlayerState::Show1000DamageUI(float TempDamage)
 {
 	if (Team != ETeam::Team1) return;
 	
-	BaseDamage += TempDamage;
-	
 	if (MutationController == nullptr) MutationController = Cast<AMutationController>(GetOwner());
 	if (MutationController && MutationController->IsLocalController())
 	{
-		if (BaseDamage >= 1000.f)
+		UnnotifiedDamageCounter += TempDamage;
+		if (UnnotifiedDamageCounter >= 1000.f)
 		{
-			BaseDamage -= 1000.f;
+			UnnotifiedDamageCounter -= 1000.f;
 
 			if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(MutationController->GetLocalPlayer()))
 			{
@@ -85,9 +85,9 @@ void AMutationPlayerState::Show1000DamageUI(float TempDamage)
 	}
 }
 
-void AMutationPlayerState::SetRage(float TempRage)
+void AMutationPlayerState::AddRage(float TempRage)
 {
-	Rage = TempRage;
+	Rage = Rage + TempRage;
 
 	if (AttributeSetBase)
 	{
@@ -110,7 +110,7 @@ void AMutationPlayerState::SetRage(float TempRage)
 			}
 		}
 	}
-	
+    
 	ShowRageUI();
 
 	Show1000RageUI(TempRage);
@@ -141,14 +141,13 @@ void AMutationPlayerState::Show1000RageUI(float TempRage)
 		return; // HACK 初始突变时赋予了满级怒气 直接返回
 	}
 	
-	BaseRage += TempRage;
-	
 	if (MutationController == nullptr) MutationController = Cast<AMutationController>(GetOwner());
 	if (MutationController && MutationController->IsLocalController())
 	{
-		if (BaseRage >= 1000.f)
+		UnnotifiedRageCounter += TempRage;
+		if (UnnotifiedRageCounter >= 1000.f)
 		{
-			BaseRage = fmodf(BaseRage, 1000.f);
+			UnnotifiedRageCounter = fmodf(UnnotifiedRageCounter, 1000.f);
 
 			if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(MutationController->GetLocalPlayer()))
 			{

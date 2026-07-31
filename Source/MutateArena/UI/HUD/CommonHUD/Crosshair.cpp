@@ -42,10 +42,12 @@ void UCrosshair::ChangeCrosshairSpread(float Spread)
 
 void UCrosshair::OnCrosshairHidden(bool bIsHidden)
 {
+#if WITH_EDITOR
 	if (GetWorld()->WorldType == EWorldType::PIE)
 	{
 		if (GetDefault<UDevSetting>()->bIsAdjustEquipmentSocketTransform) return;
 	}
-
+#endif
+	
 	SetVisibility(bIsHidden ? ESlateVisibility::Hidden : ESlateVisibility::Visible);
 }

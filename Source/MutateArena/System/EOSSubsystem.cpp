@@ -200,7 +200,7 @@ FString UEOSSubsystem::GetPlayerName()
 // 创建大厅
 void UEOSSubsystem::CreateLobby()
 {
-	if (AuthPtr == nullptr || AccountInfo == nullptr || !AuthPtr->IsLoggedIn(AccountInfo->AccountId) || LobbyPtr == nullptr)
+	if (AuthPtr == nullptr || AccountInfo == nullptr || !AuthPtr->IsLoggedIn(AccountInfo->AccountId) || UserInfo == nullptr || LobbyPtr == nullptr)
 	{
 		OnCreateLobbyComplete.Broadcast(false);
 		return;
@@ -304,7 +304,7 @@ void UEOSSubsystem::FindLobbies(FString LobbyName, FName GameMode, FName MapName
 // 加入大厅
 void UEOSSubsystem::JoinLobby(TSharedPtr<const FLobby> Lobby)
 {
-	if (LobbyPtr == nullptr || AccountInfo == nullptr || Lobby == nullptr) return;
+	if (LobbyPtr == nullptr || AccountInfo == nullptr || UserInfo == nullptr || Lobby == nullptr) return;
 
 	// 判断版本是否一致
 	FString LobbyVersion = FString();

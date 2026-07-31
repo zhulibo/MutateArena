@@ -2,6 +2,7 @@
 
 #include "AbilitySystemComponent.h"
 #include "Engine/World.h"
+#include "MutateArena/MutateArena.h"
 #include "MutateArena/Abilities/AttributeSetBase.h"
 #include "MutateArena/System/GameplayTags.h"
 
@@ -36,7 +37,7 @@ void UEEC_AcidRainDamage::Execute_Implementation(const FGameplayEffectCustomExec
 
 	// 1. 室外判定 (向上打射线检测遮挡)
 	FVector StartLoc = TargetActor->GetActorLocation();
-	FVector EndLoc = StartLoc + FVector(0.0f, 0.0f, 10000.0f);
+	FVector EndLoc = StartLoc + FVector(0.0f, 0.0f, GameConstants::MapMaxHeight);
 
 	FHitResult HitResult;
 	FCollisionQueryParams QueryParams;

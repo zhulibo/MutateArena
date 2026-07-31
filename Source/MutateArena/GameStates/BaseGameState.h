@@ -4,6 +4,7 @@
 #include "ModularGameState.h"
 #include "BaseGameState.generated.h"
 
+class AEquipment;
 class AEnvironmentManager;
 class ABasePlayerState;
 enum class ETeam : uint8;
@@ -45,15 +46,13 @@ public:
 
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastSendMsg(EMsgType MsgType, ETeam Team, const FString& PlayerName, const FString& Msg = FString());
-
-	UPROPERTY()
+	
+	void AddEquipment(AEquipment* InEquipment);
+	void RemoveEquipment(AEquipment* InEquipment);
+	UPROPERTY(Transient)
 	TArray<AActor*> AllEquipments;
+	// TArray<AEquipment*> AllEquipments;
 
-protected:
-	FTimerHandle SetAllEquipmentsTimerHandle;
-	void SetAllEquipments();
-
-public:
 	UPROPERTY(Replicated, Transient)
 	AEnvironmentManager* EnvironmentManager;
 };

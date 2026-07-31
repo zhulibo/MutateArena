@@ -376,11 +376,13 @@ void AHumanCharacter::AimButtonPressed(const FInputActionValue& Value)
 
 void AHumanCharacter::AimButtonReleased(const FInputActionValue& Value)
 {
+#if WITH_EDITOR
 	if (GetWorld()->WorldType == EWorldType::PIE)
 	{
 		if (GetDefault<UDevSetting>()->bIsAdjustEquipmentSocketTransform) return;
 	}
-
+#endif
+	
 	if (!CombatComp) return;
 	
 	if (CombatComp->GetCurWeapon()) // 目前限制只有主副武器可瞄准

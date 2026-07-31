@@ -22,6 +22,7 @@ void ATeamDeadMatchMode::BeginPlay()
 		}
 	}
 
+#if WITH_EDITOR
 	// 不包括Standalone
 	if (GetWorld()->WorldType == EWorldType::PIE)
 	{
@@ -30,7 +31,6 @@ void ATeamDeadMatchMode::BeginPlay()
 			WarmupTime = GetDefault<UDevSetting>()->WarmupTime;
 		}
 
-#if WITH_EDITOR
 		// 使用反射获取PIE设置中的玩家数量，避免Runtime模块强依赖UnrealEd导致打包失败
 		int32 PIEPlayerCount = 1;
 		if (UClass* PlaySettingsClass = FindObject<UClass>(nullptr, TEXT("/Script/UnrealEd.LevelEditorPlaySettings")))
@@ -48,9 +48,9 @@ void ATeamDeadMatchMode::BeginPlay()
 		{
 			WarmupTime *= PIEPlayerCount;
 		}
-#endif
-
 	}
+#endif
+	
 }
 
 void ATeamDeadMatchMode::Tick(float DeltaSeconds)

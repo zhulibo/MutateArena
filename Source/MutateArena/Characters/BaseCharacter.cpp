@@ -131,7 +131,7 @@ ABaseCharacter::ABaseCharacter(const FObjectInitializer& ObjectInitializer)
 	MinimapBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("MinimapBoom"));
 	MinimapBoom->SetupAttachment(GetCapsuleComponent()); // 挂载到胶囊体上，避免受角色动画影响
 	MinimapBoom->SetRelativeRotation(FRotator(-90.f, 0.f, 0.f)); // 绝对俯视视角
-	MinimapBoom->TargetArmLength = 2000.f; // 小地图相机高度（视你的地图大小调整）
+	MinimapBoom->TargetArmLength = GameConstants::MapMaxHeight; // 小地图相机高度 如果相机使用正交投影此值只影响z轴位置
 	MinimapBoom->bDoCollisionTest = false; // 必须关闭，防止碰到天花板相机拉近
 	MinimapBoom->bInheritPitch = false;
 	MinimapBoom->bInheritRoll = false;
@@ -139,7 +139,7 @@ ABaseCharacter::ABaseCharacter(const FObjectInitializer& ObjectInitializer)
 
 	MinimapCapture = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("MinimapCapture"));
 	MinimapCapture->SetupAttachment(MinimapBoom, USpringArmComponent::SocketName);
-	MinimapCapture->ProjectionType = ECameraProjectionMode::Orthographic; // 小地图必须用正交投影
+	MinimapCapture->ProjectionType = ECameraProjectionMode::Orthographic; // 小地图使用正交投影
 	MinimapCapture->OrthoWidth = GameConstants::MinimapOrthoWidth; // 捕获的范围宽度（视需求调整）
 	MinimapCapture->CaptureSource = ESceneCaptureSource::SCS_FinalColorLDR; // LDR 颜色直接给 UI 用最好
 	MinimapCapture->bCaptureEveryFrame = false;
@@ -338,12 +338,16 @@ void ABaseCharacter::OnLocallyControllerReady()
 		AutoHostComp->StartAFKCheck();
 	}
 	
-	// 多个客户端 PIE 时，共用一个 ReaderTarget，导致雷达背景重叠闪烁，直接禁用了（不影响 Standalone 和打包版）
+	// 多个客户端 PIE 时，RenderTarget渲染到了同一张图上，造成多张图来回切换闪烁（Standalone和打包版正常），开发阶段保持常闭
 	bool bShowMiniMap = true;
+	
+#if WITH_EDITOR
 	if (GetWorld()->WorldType == EWorldType::PIE)
 	{
 		bShowMiniMap = GetDefault<UDevSetting>()->bShowMiniMap;
 	}
+#endif
+	
 	if (bShowMiniMap)
 	{
 		if (MinimapCapture)
@@ -507,6 +511,7 @@ void ABaseCharacter::OnASCInit()
 						EDNA2 DNA1 = DNAAsset1->DNA;
 						EDNA2 DNA2 = DNAAsset2->DNA;
 						
+#if WITH_EDITOR
 						if (GetWorld()->WorldType == EWorldType::PIE)
 						{
 							if (GetDefault<UDevSetting>()->DNA1 != EDNA2::None && GetDefault<UDevSetting>()->DNA2 != EDNA2::None)
@@ -515,6 +520,7 @@ void ABaseCharacter::OnASCInit()
 								DNA2 = GetDefault<UDevSetting>()->DNA2;
 							}
 						}
+#endif
 						
 						BasePlayerState->ServerSetDNA(DNA1, DNA2);
 					}
@@ -769,7 +775,15 @@ void ABaseCharacter::OnHealthChanged(const FOnAttributeChangeData& Data)
 			BaseController->SetHUDHealth(Data.NewValue);
 		}
 		
-		ApplyHurtEffect(Data);
+		// HACK 对局结束由突变体变为人类时会触发ApplyHurtEffect，拦截
+		if (ActorHasTag(TAG_CHARACTER_HUMAN) && Data.NewValue == 500.f)
+		{
+			return;
+		}
+		if (Data.NewValue < Data.OldValue)
+		{
+			ApplyHurtEffect(Data);
+		}
 	}
 }
 

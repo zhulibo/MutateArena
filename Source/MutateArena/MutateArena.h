@@ -6,8 +6,11 @@
 
 namespace GameConstants
 {
-	// 小地图正交宽度（厘米/虚幻单位）
-	static constexpr float MinimapOrthoWidth = 3000.f;
+	// 小地图正交宽度
+	static constexpr float MinimapOrthoWidth = 4000.f;
+	
+	// 地图最高的物体高度
+	static constexpr float MapMaxHeight = 10000.f;
 }
 
 // 颜色

@@ -47,6 +47,7 @@ void AMutationMode::BeginPlay()
 		}
 	}
 
+#if WITH_EDITOR
 	if (GetWorld()->WorldType == EWorldType::PIE)
 	{
 		if (GetDefault<UDevSetting>()->bUseMutationSettings)
@@ -59,7 +60,6 @@ void AMutationMode::BeginPlay()
 			CooldownTime = GetDefault<UDevSetting>()->CooldownTime;
 		}
 
-#if WITH_EDITOR
 		// 使用反射获取PIE设置中的玩家数量，避免Runtime模块强依赖UnrealEd导致打包失败
 		int32 PIEPlayerCount = 1;
 		if (UClass* PlaySettingsClass = FindObject<UClass>(nullptr, TEXT("/Script/UnrealEd.LevelEditorPlaySettings")))
@@ -77,8 +77,8 @@ void AMutationMode::BeginPlay()
 		{
 			WarmupTime *= PIEPlayerCount;
 		}
-#endif
 	}
+#endif
 
 	MutationGameState = GetGameState<AMutationGameState>();
 }
@@ -188,13 +188,18 @@ void AMutationMode::EndRound()
 // 开启下一回合
 void AMutationMode::StartNextRound()
 {
+#if WITH_EDITOR
 	if (GetWorld()->WorldType == EWorldType::PIE)
 	{
 		if (GetDefault<UDevSetting>()->bUseMutationSettings)
 		{
-			if (GetDefault<UDevSetting>()->bKeepInMap) return;
+			if (GetDefault<UDevSetting>()->bKeepInMap && MutationGameState->Team1PlayerStates.Num() + MutationGameState->Team2PlayerStates.Num() == 1)
+			{
+				return;
+			}
 		}
 	}
+#endif
 
 	CurRound++;
 	RoundStartTime = GetWorld()->GetTimeSeconds();
@@ -249,9 +254,10 @@ void AMutationMode::HandleMatchHasStarted()
 		ResetLevel();
 
 		// 销毁所有装备
-		for (FActorIterator It(GetWorld()); It; ++It)
+		TArray<AActor*> EquipmentsToDestroy = MutationGameState->AllEquipments; // 复制一份数组进行遍历，避免因为 Destroy() 触发 RemoveEquipment 导致遍历崩溃或遗漏
+		for (AActor* Equipment : EquipmentsToDestroy)
 		{
-			if (AEquipment* Equipment = Cast<AEquipment>(*It))
+			if (IsValid(Equipment))
 			{
 				Equipment->Destroy();
 			}
@@ -393,15 +399,25 @@ void AMutationMode::RandomMutate()
 	{
 		int32 RandomIndex = FMath::RandRange(0, PlayerStates.Num() - 1);
 
+#if WITH_EDITOR
 		if (GetWorld()->WorldType == EWorldType::PIE)
 		{
-			RandomIndex = GetDefault<UDevSetting>()->MutateClientIndex;
-
-			if (RandomIndex > PlayerStates.Num() - 1)
+			if (MutateNum == 1)
 			{
-				RandomIndex = PlayerStates.Num() - 1;
+				int32 MutateClientIndex = GetDefault<UDevSetting>()->MutateClientIndex;
+				if (MutateClientIndex >= 0)
+				{
+					RandomIndex = MutateClientIndex;
+
+					// 设置的玩家索引超出玩家数量，则使用最后一个玩家
+					if (RandomIndex > PlayerStates.Num() - 1)
+					{
+						RandomIndex = PlayerStates.Num() - 1;
+					}
+				}
 			}
 		}
+#endif
 
 		if (ABasePlayerState* BasePlayerState = PlayerStates[RandomIndex])
 		{
@@ -419,7 +435,7 @@ void AMutationMode::RandomMutate()
 			// 初始突变体拥有满怒气
 			if (AMutationPlayerState* MutationPlayerState = Cast<AMutationPlayerState>(BasePlayerState))
 			{
-				MutationPlayerState->SetRage(MutationPlayerState->RageLevel3);
+				MutationPlayerState->AddRage(MutationPlayerState->RageLevel3);
 			}
 		}
 	}
@@ -436,58 +452,130 @@ void AMutationMode::RandomMutate()
 void AMutationMode::HumanReceiveDamage(AHumanCharacter* DamagedCharacter, ABaseController* DamagedController,
                                        float Damage, const UDamageType* DamageType, AController* AttackerController, AActor* DamageCauser)
 {
-    if (DamagedCharacter == nullptr || DamagedController == nullptr) return;
+	if (DamagedCharacter == nullptr || DamagedController == nullptr) return;
 
-    AMutationPlayerState* DamagedState = Cast<AMutationPlayerState>(DamagedController->PlayerState);
-    if (DamagedState == nullptr) return;
+	AMutationPlayerState* DamagedState = Cast<AMutationPlayerState>(DamagedController->PlayerState);
+	if (DamagedState == nullptr) return;
 
-    // 只有存在攻击者时，才尝试获取 AttackerState
-    AMutationPlayerState* AttackerState = nullptr;
-    if (AttackerController)
-    {
-        AttackerState = Cast<AMutationPlayerState>(AttackerController->PlayerState);
-    }
+	// 只有存在攻击者时，才尝试获取 AttackerState
+	AMutationPlayerState* AttackerState = nullptr;
+	if (AttackerController)
+	{
+		AttackerState = Cast<AMutationPlayerState>(AttackerController->PlayerState);
+	}
 
-    // 设置受伤者血量
-    float TakenDamage = FMath::Clamp(Damage, 0.f, DamagedCharacter->GetHealth());
-    float Health = DamagedCharacter->GetHealth() - TakenDamage;
-    DamagedCharacter->SetHealth(Health);
+	// 设置受伤者血量
+	float TakenDamage = FMath::Clamp(Damage, 0.f, DamagedCharacter->GetHealth());
+	float Health = DamagedCharacter->GetHealth() - TakenDamage;
+	DamagedCharacter->SetHealth(Health);
 
-    // 处理攻击者得分和怒气 (如果存在攻击者，且不是自己伤害自己)
-    if (AttackerState && AttackerState != DamagedState) // 受到跌落伤害时，AttackerController和DamageCauser传的是自己
-    {
-       AttackerState->SetRage(AttackerState->Rage + Damage * 10);
-       AttackerState->AddDamage(TakenDamage);
-    }
+	// 处理攻击者得分和怒气 (如果存在攻击者，且不是自己伤害自己)
+	if (AttackerState && AttackerState != DamagedState) // 受到跌落伤害时，AttackerController和DamageCauser传的是自己
+	{
+		AttackerState->AddRage(Damage * 10);
+		AttackerState->AddDamage(TakenDamage);
+	}
 
-    // 人类死亡判定
-    if (DamagedCharacter->GetHealth() <= 0.f)
-    {
-       if (AttackerState && AttackerState != DamagedState)
-       {
-          AttackerState->AddKillStreak();
-       }
+	// 人类死亡判定
+	if (DamagedCharacter->GetHealth() <= 0.f)
+	{
+		if (AttackerState && AttackerState != DamagedState)
+		{
+			AttackerState->AddKillStreak();
+		}
 
-       // 击杀日志
-       AddKillLog(AttackerState, DamageCauser, DamageType, DamagedState);
+		// 击杀日志
+		AddKillLog(AttackerState, DamageCauser, DamageType, DamagedState);
 
-       // 突变逻辑判定
-       bool bMutateImmediately = false;
-       if (const UDamageTypeBase* DamageTypeBase = Cast<UDamageTypeBase>(DamageType))
-       {
-          if (DamageTypeBase->DamageType == EDamageCauserType::MutantDamage)
-          {
-             bMutateImmediately = true;
-             Mutate(DamagedCharacter, DamagedController, ESpawnMutantReason::Damaged);
-          }
-       }
+		// 突变逻辑判定
+		bool bMutateImmediately = false;
+		if (const UDamageTypeBase* DamageTypeBase = Cast<UDamageTypeBase>(DamageType))
+		{
+			if (DamageTypeBase->DamageType == EDamageCauserType::MutantDamage)
+			{
+				bMutateImmediately = true;
+				Mutate(DamagedCharacter, DamagedController, ESpawnMutantReason::Damaged);
+			}
+		}
 
-       // 延迟重生 (酸雨致死、摔死等环境伤害通常走这里)
-       if (!bMutateImmediately)
-       {
-          DamagedCharacter->MutationDead(true, ESpawnMutantReason::Fall); // 你可以加一个枚举专门表示 Environment 致死
-       }
-    }
+		// 延迟重生 (酸雨致死、摔死等环境伤害通常走这里)
+		if (!bMutateImmediately)
+		{
+			DamagedCharacter->MutationDead(true, ESpawnMutantReason::Fall); // 你可以加一个枚举专门表示 Environment 致死
+		}
+	}
+}
+
+// 突变体受到伤害
+void AMutationMode::MutantReceiveDamage(AMutantCharacter* DamagedCharacter, ABaseController* DamagedController,
+                                        float Damage, const UDamageType* DamageType, AController* AttackerController, AActor* DamageCauser)
+{
+	if (MutationGameState == nullptr) MutationGameState = GetGameState<AMutationGameState>();
+	if (MutationGameState == nullptr) return;
+
+	if (DamagedCharacter == nullptr || DamagedController == nullptr) return;
+
+	AMutationPlayerState* DamagedState = Cast<AMutationPlayerState>(DamagedController->PlayerState);
+	if (DamagedState == nullptr) return;
+
+	AMutationPlayerState* AttackerState = nullptr;
+	if (AttackerController)
+	{
+		AttackerState = Cast<AMutationPlayerState>(AttackerController->PlayerState);
+	}
+
+	// 击退受伤者
+	if (AProjectileBullet* ProjectileBullet = Cast<AProjectileBullet>(DamageCauser))
+	{
+		FVector ImpulseDirection = ProjectileBullet->GetActorForwardVector();
+		float ForceMagnitude = ProjectileBullet->GetImpulse(Damage) * DamagedState->GetRepelReceivedMul();
+		DamagedCharacter->ApplySuppressionForce(ImpulseDirection, ForceMagnitude);
+	}
+
+	// 设置受伤者血量
+	float TakenDamage = Damage * MutationGameState->DamageMul * DamagedState->GetDamageReceivedMul();
+	const UDamageTypeBase* DamageTypeBase = Cast<UDamageTypeBase>(DamageType);
+	if (DamageTypeBase && DamageTypeBase->DamageType == EDamageCauserType::Melee)
+	{
+		TakenDamage *= MutationGameState->MeleeDamageMul;
+	}
+	TakenDamage = FMath::Clamp(TakenDamage, 0.f, DamagedCharacter->GetHealth());
+	float Health = DamagedCharacter->GetHealth() - TakenDamage;
+	DamagedCharacter->SetHealth(Health);
+
+	// 增加受伤者的怒气值
+	DamagedState->AddRage(TakenDamage);
+
+	// 处理攻击者得分 (如果存在攻击者，且不是自己伤害自己)
+	if (AttackerState && AttackerState != DamagedState) // 受到跌落伤害时，AttackerController和DamageCauser传的是自己
+	{
+		// 增加攻击者伤害分数
+		AttackerState->AddDamage(TakenDamage);
+	}
+
+	// 突变体死亡
+	if (DamagedCharacter->GetHealth() <= 0.f)
+	{
+		if (AttackerState && AttackerState != DamagedState)
+		{
+			// 增加攻击者连杀
+			AttackerState->AddKillStreak();
+		}
+
+		// 击杀日志
+		AddKillLog(AttackerState, DamageCauser, DamageType, DamagedState);
+
+		// 处理突变体死亡流程
+		bool bKilledByMelee = false;
+		if (DamageTypeBase && DamageTypeBase->DamageType == EDamageCauserType::Melee)
+		{
+			bKilledByMelee = true;
+			DamagedState->bKilledByMelee = true;
+			MutationGameState->EndRoundIfAllBeKilledByMelee();
+		}
+
+		DamagedCharacter->MutantDead(bKilledByMelee);
+	}
 }
 
 // 人类受到感染
@@ -506,7 +594,7 @@ void AMutationMode::GetInfect(AHumanCharacter* DamagedCharacter, ABaseController
 	// 增加攻击者连杀
 	AttackerState->AddKillStreak();
 	// 增加攻击者怒气值
-	AttackerState->SetRage(AttackerState->Rage + 2000.f);
+	AttackerState->AddRage(2000.f);
 
 	// 击杀日志
 	AddKillLog(AttackerState, AttackerCharacter, GetDefault<UDamageTypeMutantInfect>(), DamagedState);
@@ -551,78 +639,6 @@ void AMutationMode::SelectMutant(ACharacter* Character, AController* Controller)
 		// 生成新角色
 		SpawnMutantCharacter(Controller, ESpawnMutantReason::SelectMutant, Location, ActorRotation, ViewRotation);
 	}
-}
-
-// 突变体受到伤害
-void AMutationMode::MutantReceiveDamage(AMutantCharacter* DamagedCharacter, ABaseController* DamagedController,
-                                        float Damage, const UDamageType* DamageType, AController* AttackerController, AActor* DamageCauser)
-{
-    if (MutationGameState == nullptr) MutationGameState = GetGameState<AMutationGameState>();
-    if (MutationGameState == nullptr) return;
-
-    if (DamagedCharacter == nullptr || DamagedController == nullptr) return;
-
-    AMutationPlayerState* DamagedState = Cast<AMutationPlayerState>(DamagedController->PlayerState);
-    if (DamagedState == nullptr) return;
-
-    AMutationPlayerState* AttackerState = nullptr;
-    if (AttackerController)
-    {
-        AttackerState = Cast<AMutationPlayerState>(AttackerController->PlayerState);
-    }
-
-    // 击退受伤者
-    if (AProjectileBullet* ProjectileBullet = Cast<AProjectileBullet>(DamageCauser))
-    {
-       FVector ImpulseDirection = ProjectileBullet->GetActorForwardVector();
-       float ForceMagnitude = ProjectileBullet->GetImpulse(Damage) * DamagedState->GetRepelReceivedMul();
-       DamagedCharacter->ApplySuppressionForce(ImpulseDirection, ForceMagnitude);
-    }
-
-    // 设置受伤者血量
-    float TakenDamage = Damage * MutationGameState->DamageMul * DamagedState->GetDamageReceivedMul();
-    const UDamageTypeBase* DamageTypeBase = Cast<UDamageTypeBase>(DamageType);
-    if (DamageTypeBase && DamageTypeBase->DamageType == EDamageCauserType::Melee)
-    {
-       TakenDamage *= MutationGameState->MeleeDamageMul;
-    }
-    TakenDamage = FMath::Clamp(TakenDamage, 0.f, DamagedCharacter->GetHealth());
-    float Health = DamagedCharacter->GetHealth() - TakenDamage;
-    DamagedCharacter->SetHealth(Health);
-
-    // 增加受伤者的怒气值
-    DamagedState->SetRage(DamagedState->Rage + TakenDamage);
-
-    // 处理攻击者得分 (如果存在攻击者，且不是自己伤害自己)
-    if (AttackerState && AttackerState != DamagedState) // 受到跌落伤害时，AttackerController和DamageCauser传的是自己
-    {
-       // 增加攻击者伤害分数
-       AttackerState->AddDamage(TakenDamage);
-    }
-
-    // 突变体死亡
-    if (DamagedCharacter->GetHealth() <= 0.f)
-    {
-       if (AttackerState && AttackerState != DamagedState)
-       {
-          // 增加攻击者连杀
-          AttackerState->AddKillStreak();
-       }
-
-       // 击杀日志
-       AddKillLog(AttackerState, DamageCauser, DamageType, DamagedState);
-
-       // 处理突变体死亡流程
-       bool bKilledByMelee = false;
-       if (DamageTypeBase && DamageTypeBase->DamageType == EDamageCauserType::Melee)
-       {
-          bKilledByMelee = true;
-          DamagedState->bKilledByMelee = true;
-          MutationGameState->EndRoundIfAllBeKilledByMelee();
-       }
-       
-       DamagedCharacter->MutantDead(bKilledByMelee);
-    }
 }
 
 // 突变体重生

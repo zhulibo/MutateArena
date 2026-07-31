@@ -13,6 +13,7 @@
 #include "Camera/CameraComponent.h"
 #include "Components/SphereComponent.h"
 #include "Engine/GameInstance.h"
+#include "MutateArena/GameStates/BaseGameState.h"
 #include "Net/UnrealNetwork.h"
 #include "MutateArena/PlayerControllers/BaseController.h"
 #include "MutateArena/PlayerStates/TeamType.h"
@@ -68,7 +69,15 @@ void AEquipment::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifeti
 void AEquipment::BeginPlay()
 {
 	Super::BeginPlay();
-
+	
+	if (UWorld* World = GetWorld())
+	{
+		if (ABaseGameState* GameState = World->GetGameState<ABaseGameState>())
+		{
+			GameState->AddEquipment(this);
+		}
+	}
+	
 	FString EnumValue = StaticEnum<EEquipmentName>()->GetNameStringByValue(static_cast<int64>(EquipmentName));
 	FDataRegistryId DataRegistryId(DR_EQUIPMENT_MAIN, FName(EnumValue));
 	if (const FEquipmentMain* EquipmentMain = UDataRegistrySubsystem::Get()->GetCachedItem<FEquipmentMain>(DataRegistryId))
@@ -99,8 +108,21 @@ void AEquipment::BeginPlay()
 	}
 }
 
+void AEquipment::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	if (UWorld* World = GetWorld())
+	{
+		if (ABaseGameState* GameState = World->GetGameState<ABaseGameState>())
+		{
+			GameState->RemoveEquipment(this);
+		}
+	}
+	
+	Super::EndPlay(EndPlayReason);
+}
+
 void AEquipment::OnAreaSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+                                     UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (!HasAuthority()) return;
 

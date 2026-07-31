@@ -33,7 +33,7 @@ void AHerbRage::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor
 	{
 		if (AMutationPlayerState* MutationPlayerState = MutantCharacter->GetPlayerState<AMutationPlayerState>())
 		{
-			MutationPlayerState->SetRage(MutationPlayerState->Rage + MutationPlayerState->RageLevel3);
+			MutationPlayerState->AddRage(MutationPlayerState->RageLevel3);
 		}
 
 		Destroy();

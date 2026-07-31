@@ -7,7 +7,8 @@ for /F %%a in ('echo prompt $E ^| cmd') do set "ESC=%%a"
 
 REM Initialize paths
 set PROJECT_DIR=%~dp0
-set UAT_BAT="D:\Epic Games\UnrealEngine-5.8.0-release\Engine\Build\BatchFiles\RunUAT.bat"
+@REM set UAT_BAT="D:\Epic Games\UnrealEngine-5.8.0-release\Engine\Build\BatchFiles\RunUAT.bat"
+set UAT_BAT="D:\Epic Games\UE_5.8\Engine\Build\BatchFiles\RunUAT.bat"
 set PROJECT_FILE="%PROJECT_DIR%MutateArena.uproject"
 set OUTPUT_DIR="%PROJECT_DIR%Build"
 set GAME_INI="%PROJECT_DIR%Config\DefaultGame.ini"
