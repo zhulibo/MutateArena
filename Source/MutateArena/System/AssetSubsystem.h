@@ -24,7 +24,7 @@ public:
 	UPROPERTY()
 	class UCharacterAsset* CharacterAsset;
 	UPROPERTY()
-	class UEquipmentAsset* EquipmentAsset;
+	class UEquipmentCommonAsset* EquipmentAsset;
 
 protected:
 	// 编辑器中资源命名必须是 Prefix + 类名

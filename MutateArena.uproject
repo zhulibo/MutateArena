@@ -1,6 +1,6 @@
 {
 	"FileVersion": 3,
-	"EngineAssociation": "5.8",
+	"EngineAssociation": "{D93B5668-4EE3-8E68-804E-E5B24B4D404F}",
 	"Category": "",
 	"Description": "",
 	"Modules": [
@@ -98,6 +98,14 @@
 		},
 		{
 			"Name": "ProceduralVegetationEditor",
+			"Enabled": true
+		},
+		{
+			"Name": "MetaHumanCoreTech",
+			"Enabled": true
+		},
+		{
+			"Name": "MetaHumanCharacter",
 			"Enabled": true
 		}
 	]

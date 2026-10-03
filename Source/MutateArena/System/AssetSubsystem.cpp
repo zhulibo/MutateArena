@@ -33,7 +33,7 @@ void UAssetSubsystem::SyncLoadAsset()
 	CommonAssetId = FPrimaryAssetId(ASSET_COMMON, FName(Prefix + UCommonAsset::StaticClass()->GetFName().ToString()));
 	InputAssetId = FPrimaryAssetId(ASSET_INPUT, FName(Prefix + UInputAsset::StaticClass()->GetFName().ToString()));
 	CharacterAssetId = FPrimaryAssetId(ASSET_CHARACTER, FName(Prefix + UCharacterAsset::StaticClass()->GetFName().ToString()));
-	EquipmentAssetId = FPrimaryAssetId(ASSET_EQUIPMENT, FName(Prefix + UEquipmentAsset::StaticClass()->GetFName().ToString()));
+	EquipmentAssetId = FPrimaryAssetId(ASSET_EQUIPMENT, FName(Prefix + UEquipmentCommonAsset::StaticClass()->GetFName().ToString()));
 
 	double Time1 = FPlatformTime::Seconds();
 	
@@ -43,7 +43,7 @@ void UAssetSubsystem::SyncLoadAsset()
 	double Time2 = FPlatformTime::Seconds();
 	
 	CharacterAsset = UDataAssetManager::Get().GetAsset<UCharacterAsset>(CharacterAssetId);
-	EquipmentAsset = UDataAssetManager::Get().GetAsset<UEquipmentAsset>(EquipmentAssetId);
+	EquipmentAsset = UDataAssetManager::Get().GetAsset<UEquipmentCommonAsset>(EquipmentAssetId);
 
 	double Time3 = FPlatformTime::Seconds();
 	UE_LOG(LogTemp, Warning, TEXT("Sync load time1 %f, time2 %f"), Time2 - Time1, Time3 - Time2);

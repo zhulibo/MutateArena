@@ -42,7 +42,9 @@ namespace GameConstants
 #define ASSET_DNA FName(TEXT("DNA"))
 #define ASSET_COMMON FName(TEXT("Common"))
 #define ASSET_CHARACTER FName(TEXT("Character"))
+#define ASSET_EQUIPMENT_COMMON FName(TEXT("EquipmentCommon"))
 #define ASSET_EQUIPMENT FName(TEXT("Equipment"))
+#define ASSET_EQUIPMENT_SKIN FName(TEXT("EquipmentSkin"))
 #define ASSET_INPUT FName(TEXT("Input"))
 #define ASSET_ENVIRONMENT FName(TEXT("Environment"))
 
