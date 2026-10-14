@@ -36,7 +36,7 @@ void UServer::NativeOnInitialized()
 	MapComboBox->OnGenerateItemWidget.BindDynamic(this, &ThisClass::GenerateComboBoxWidget);
 	MapComboBox->OnGenerateContentWidget.BindDynamic(this, &ThisClass::GenerateComboBoxWidget);
 
-	ModeComboBox->AddOption(ALL);
+	ModeComboBox->AddOption(GameModes::All);
 	const UEnum* ModeEnum = StaticEnum<EGameMode2>();
 	for (int32 i = 0; i < static_cast<int32>(EGameMode2::None); ++i)
 	{
@@ -45,9 +45,9 @@ void UServer::NativeOnInitialized()
 	}
 	
 	ModeComboBox->OnSelectionChanged.AddUniqueDynamic(this, &ThisClass::OnModeComboBoxChanged);
-	ModeComboBox->SetSelectedOption(ALL);
+	ModeComboBox->SetSelectedOption(GameModes::All);
 	// NativeOnInitialized 中 ModeComboBox->SetSelectedOption 无法触发 OnModeComboBoxChanged 主动调一下
-	OnModeComboBoxChanged(ALL, ESelectInfo::Direct);
+	OnModeComboBoxChanged(GameModes::All, ESelectInfo::Direct);
 	
 	RefreshServerButton->OnClicked().AddUObject(this, &ThisClass::OnRefreshServerButtonClicked);
 	ResetServerButton->OnClicked().AddUObject(this, &ThisClass::OnResetServerButtonClicked);
@@ -128,16 +128,16 @@ void UServer::OnCreateLobbyComplete(bool bWasSuccessful)
 	}
 	else
 	{
-		NOTIFY(this, C_RED, LOCTEXT("CreateServerFailed", "Create server failed"));
+		NOTIFY(this, Colors::Red, LOCTEXT("CreateServerFailed", "Create server failed"));
 	}
 }
 
 void UServer::OnModeComboBoxChanged(FName SelectedItem, ESelectInfo::Type SelectionType)
 {
 	MapComboBox->ClearOptions();
-	MapComboBox->AddOption(ALL);
+	MapComboBox->AddOption(GameModes::All);
 
-	if (SelectedItem == MUTATION) 
+	if (SelectedItem == GameModes::Mutation) 
 	{
 		const UEnum* MapEnum = StaticEnum<EMutationMap>();
 		for (int32 i = 0; i < static_cast<int32>(EMutationMap::None); ++i)
@@ -145,7 +145,7 @@ void UServer::OnModeComboBoxChanged(FName SelectedItem, ESelectInfo::Type Select
 			MapComboBox->AddOption(FName(MapEnum->GetNameStringByIndex(i)));
 		}
 	}
-	else if (SelectedItem == MELEE)
+	else if (SelectedItem == GameModes::Melee)
 	{
 		const UEnum* MapEnum = StaticEnum<EMeleeMap>();
 		for (int32 i = 0; i < static_cast<int32>(EMeleeMap::None); ++i)
@@ -153,7 +153,7 @@ void UServer::OnModeComboBoxChanged(FName SelectedItem, ESelectInfo::Type Select
 			MapComboBox->AddOption(FName(MapEnum->GetNameStringByIndex(i)));
 		}
 	}
-	else if (SelectedItem == TEAM_DEAD_MATCH)
+	else if (SelectedItem == GameModes::TeamDeadMatch)
 	{
 		const UEnum* MapEnum = StaticEnum<ETeamDeadMatchMap>();
 		for (int32 i = 0; i < static_cast<int32>(ETeamDeadMatchMap::None); ++i)
@@ -162,7 +162,7 @@ void UServer::OnModeComboBoxChanged(FName SelectedItem, ESelectInfo::Type Select
 		}
 	}
 
-	MapComboBox->SetSelectedOption(ALL);
+	MapComboBox->SetSelectedOption(GameModes::All);
 }
 
 UWidget* UServer::GenerateComboBoxWidget(FName ItemName)
@@ -175,7 +175,7 @@ UWidget* UServer::GenerateComboBoxWidget(FName ItemName)
 	
 	FText DisplayText;
 
-	if (ItemName == ALL)
+	if (ItemName == GameModes::All)
 	{
 		DisplayText = LOCTEXT("All", "ALL");
 	}
@@ -236,7 +236,7 @@ void UServer::OnFindLobbiesComplete(bool bWasSuccessful, const TArray<TSharedRef
 
 		if (Lobbies.Num() == 0)
 		{
-			NOTIFY(this, C_WHITE, LOCTEXT("NoServerFound", "No server found"));
+			NOTIFY(this, Colors::White, LOCTEXT("NoServerFound", "No server found"));
 			return;
 		}
 		
@@ -253,9 +253,9 @@ void UServer::OnFindLobbiesComplete(bool bWasSuccessful, const TArray<TSharedRef
 				FString MapName = FString("-1");
 				if (Lobbies[i]->Attributes.Num() > 0)
 				{
-					ServerName = Lobbies[i]->Attributes.Find(LOBBY_SERVER_NAME)->GetString();
-					ModeName = Lobbies[i]->Attributes.Find(LOBBY_MODE_NAME)->GetString();
-					MapName = Lobbies[i]->Attributes.Find(LOBBY_MAP_NAME)->GetString();
+					ServerName = Lobbies[i]->Attributes.Find(LobbyAttrs::ServerName)->GetString();
+					ModeName = Lobbies[i]->Attributes.Find(LobbyAttrs::ModeName)->GetString();
+					MapName = Lobbies[i]->Attributes.Find(LobbyAttrs::MatchRound)->GetString();
 				}
 
 				ServerName = ULibraryCommon::ObfuscateServerName(ServerName, this);
@@ -271,13 +271,13 @@ void UServer::OnFindLobbiesComplete(bool bWasSuccessful, const TArray<TSharedRef
 				// 游戏进度
 				int64 Status = EOSSubsystem->GetLobbyStatus();
 				int64 MaxStatus = -1;
-				if (ModeName == MUTATION)
+				if (ModeName == GameModes::Mutation)
 				{
-					MaxStatus = Lobbies[i]->Attributes.Find(LOBBY_MATCH_ROUND)->GetInt64();
+					MaxStatus = Lobbies[i]->Attributes.Find(LobbyAttrs::MatchRound)->GetInt64();
 				}
-				else if (ModeName == TEAM_DEAD_MATCH || ModeName == MELEE)
+				else if (ModeName == GameModes::TeamDeadMatch || ModeName == GameModes::Melee)
 				{
-					MaxStatus = Lobbies[i]->Attributes.Find(LOBBY_MATCH_TIME)->GetInt64();
+					MaxStatus = Lobbies[i]->Attributes.Find(LobbyAttrs::MatchTime)->GetInt64();
 				}
 				ServerLineButton->Status->SetText(FText::FromString(FString::Printf(TEXT("%lld/%lld"), Status, MaxStatus)));
 				
@@ -285,23 +285,23 @@ void UServer::OnFindLobbiesComplete(bool bWasSuccessful, const TArray<TSharedRef
 				FColor StatusColor;
 				if (ProgressRate < 0.f)
 				{
-					StatusColor = C_GREY;
+					StatusColor = Colors::Grey;
 				}
 				else if (ProgressRate == 0.f)
 				{
-					StatusColor = C_WHITE;
+					StatusColor = Colors::White;
 				}
 				else if (ProgressRate < 0.5)
 				{
-					StatusColor = C_GREEN;
+					StatusColor = Colors::Green;
 				}
 				else if (ProgressRate < 0.8)
 				{
-					StatusColor = C_YELLOW;
+					StatusColor = Colors::Yellow;
 				}
 				else
 				{
-					StatusColor = C_RED;
+					StatusColor = Colors::Red;
 				}
 				ServerLineButton->Status->SetColorAndOpacity(StatusColor);
 
@@ -311,19 +311,19 @@ void UServer::OnFindLobbiesComplete(bool bWasSuccessful, const TArray<TSharedRef
 				FColor PingColor;
 				if (Ping < 0)
 				{
-					PingColor = C_GREY;
+					PingColor = Colors::Grey;
 				}
 				else if (Ping < 100)
 				{
-					PingColor = C_GREEN;
+					PingColor = Colors::Green;
 				}
 				else if (Ping < 200)
 				{
-					PingColor = C_YELLOW;
+					PingColor = Colors::Yellow;
 				}
 				else
 				{
-					PingColor = C_RED;
+					PingColor = Colors::Red;
 				}
 				ServerLineButton->Ping->SetColorAndOpacity(PingColor);
 			}
@@ -331,7 +331,7 @@ void UServer::OnFindLobbiesComplete(bool bWasSuccessful, const TArray<TSharedRef
 	}
 	else
 	{
-		NOTIFY(this, C_RED, LOCTEXT("FindServerFailed", "Find server failed"));
+		NOTIFY(this, Colors::Red, LOCTEXT("FindServerFailed", "Find server failed"));
 	}
 }
 
@@ -339,7 +339,7 @@ void UServer::OnFindLobbiesComplete(bool bWasSuccessful, const TArray<TSharedRef
 void UServer::OnResetServerButtonClicked()
 {
 	ServerNameEditableTextBox->SetText(FText());
-	ModeComboBox->SetSelectedOption(ALL);
+	ModeComboBox->SetSelectedOption(GameModes::All);
 }
 
 void UServer::OnPagePrevButtonClicked()
@@ -427,7 +427,7 @@ void UServer::OnJoinLobbyComplete(bool bWasSuccessful)
 	}
 	else
 	{
-		NOTIFY(this, C_RED, LOCTEXT("JoinServerFailed", "Join server failed"));
+		NOTIFY(this, Colors::Red, LOCTEXT("JoinServerFailed", "Join server failed"));
 	}
 }
 

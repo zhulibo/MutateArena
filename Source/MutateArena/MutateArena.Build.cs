@@ -38,6 +38,7 @@ public class MutateArena : ModuleRules
 				"GeometryCollectionEngine",
 				"FieldSystemEngine",
 				"ChaosSolverEngine",
+				"HairStrandsCore",
 			}
 		);
 

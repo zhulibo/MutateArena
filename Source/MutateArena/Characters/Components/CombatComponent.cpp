@@ -70,8 +70,6 @@ void UCombatComponent::TickComponent(float DeltaSeconds, ELevelTick TickType, FA
 
 	if (HumanChar && HumanChar->IsLocallyControlled())
 	{
-		CalcCameraToScopeRotator();
-
 		InterpFOV(DeltaSeconds);
 	}
 }
@@ -127,7 +125,7 @@ AEquipment* UCombatComponent::GetEquipmentByType(EEquipmentType EquipmentType)
 	}
 }
 
-bool UCombatComponent::HasEquippedEquipment(EEquipmentType EquipmentType)
+bool UCombatComponent::OwnEquipment(EEquipmentType EquipmentType)
 {
 	switch (EquipmentType)
 	{
@@ -146,22 +144,22 @@ bool UCombatComponent::HasEquippedEquipment(EEquipmentType EquipmentType)
 
 void UCombatComponent::OnRep_PrimaryEquipment()
 {
-	EquipEquipment(PrimaryEquipment, CurEquipmentType == EEquipmentType::Primary);
+	GiveEquipment(PrimaryEquipment, CurEquipmentType == EEquipmentType::Primary);
 }
 
 void UCombatComponent::OnRep_SecondaryEquipment()
 {
-	EquipEquipment(SecondaryEquipment, CurEquipmentType == EEquipmentType::Secondary);
+	GiveEquipment(SecondaryEquipment, CurEquipmentType == EEquipmentType::Secondary);
 }
 
 void UCombatComponent::OnRep_MeleeEquipment()
 {
-	EquipEquipment(MeleeEquipment, CurEquipmentType == EEquipmentType::Melee);
+	GiveEquipment(MeleeEquipment, CurEquipmentType == EEquipmentType::Melee);
 }
 
 void UCombatComponent::OnRep_ThrowingEquipment()
 {
-	EquipEquipment(ThrowingEquipment, CurEquipmentType == EEquipmentType::Throwing);
+	GiveEquipment(ThrowingEquipment, CurEquipmentType == EEquipmentType::Throwing);
 }
 
 void UCombatComponent::OnRep_CurEquipmentType(EEquipmentType OldEquipmentType)
@@ -178,7 +176,7 @@ void UCombatComponent::OnRep_CurEquipmentType(EEquipmentType OldEquipmentType)
 	}
 }
 
-void UCombatComponent::EquipEquipment(AEquipment* Equipment, bool bIsCurrent)
+void UCombatComponent::GiveEquipment(AEquipment* Equipment, bool bIsCurrent)
 {
 	if (Equipment == nullptr || HumanChar == nullptr) return;
 
@@ -190,15 +188,15 @@ void UCombatComponent::EquipEquipment(AEquipment* Equipment, bool bIsCurrent)
 
 	AssignEquipment(Equipment);
 	
-	Equipment->OnEquip(HumanChar);
+	Equipment->OnGiven(HumanChar);
 
 	if (bIsCurrent)
 	{
-		AttachToHand(Equipment, SOCKET_SUFFIX_R);
+		AttachToHand(Equipment, Sockets::SuffixR);
 	}
 	else
 	{
-		AttachToBody(Equipment);
+		HolsterEquipment(Equipment);
 	}
 
 	// 添加新装备的GA
@@ -234,9 +232,9 @@ void UCombatComponent::ClientPlayEquipSound_Implementation()
 	if (HumanChar)
 	{
 		if (AssetSubsystem == nullptr) AssetSubsystem = HumanChar->GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-		if (AssetSubsystem && AssetSubsystem->EquipmentAsset)
+		if (AssetSubsystem && AssetSubsystem->EquipmentCommonAsset)
 		{
-			UGameplayStatics::PlaySound2D(this, AssetSubsystem->EquipmentAsset->EquipSound);
+			UGameplayStatics::PlaySound2D(this, AssetSubsystem->EquipmentCommonAsset->EquipSound);
 		}
 	}
 }
@@ -255,13 +253,13 @@ void UCombatComponent::InstantSwap(EEquipmentType TargetType)
 		GetCurEquipment()->ClearAbilities(HumanChar->GetAbilitySystemComponent());
 	}
 	
-	AttachToBody(GetCurEquipment());
+	HolsterEquipment(GetCurEquipment());
 	
 	LastEquipmentType = CurEquipmentType;
 	CurEquipmentType = TargetType;
 	DesiredEquipmentType = TargetType;
 	
-	AttachToHand(TargetEquipment, SOCKET_SUFFIX_R);
+	AttachToHand(TargetEquipment, Sockets::SuffixR);
 	
 	// 添加新装备的GA
 	if (HumanChar->HasAuthority())
@@ -285,42 +283,40 @@ void UCombatComponent::InstantSwap(EEquipmentType TargetType)
 	HumanChar->UpdateMaxWalkSpeed();
 }
 
-void UCombatComponent::AttachToBody(AEquipment* Equipment)
+void UCombatComponent::HolsterEquipment(AEquipment* Equipment)
 {
-	if (Equipment == nullptr || HumanChar == nullptr || HumanChar->GetMesh() == nullptr) return;
+	if (Equipment == nullptr || HumanChar == nullptr) return;
 
-	FName BodySocketName;
-	switch (Equipment->EquipmentType)
+	if (Equipment->EquipmentMesh)
 	{
-	case EEquipmentType::Primary:
-		BodySocketName = SOCKET_SHOULDER_R;
-		break;
-	case EEquipmentType::Secondary:
-		BodySocketName = SOCKET_THIGH_R;
-		break;
-	case EEquipmentType::Melee:
-		BodySocketName = SOCKET_SHOULDER_L;
-		break;
-	case EEquipmentType::Throwing:
-		BodySocketName = SOCKET_THIGH_L;
-		break;
+		Equipment->EquipmentMesh->SetVisibility(false);
+	}
+	if (Equipment->EquipmentMesh1P)
+	{
+		Equipment->EquipmentMesh1P->SetVisibility(false);
 	}
 
-	if (const USkeletalMeshSocket* BodySocket = HumanChar->GetMesh()->GetSocketByName(BodySocketName))
-	{
-		BodySocket->AttachActor(Equipment, HumanChar->GetMesh());
-	}
+	Equipment->AttachToActor(HumanChar, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 }
 
 void UCombatComponent::AttachToHand(AEquipment* Equipment, FName SocketNameSuffix)
 {
-	if (HumanChar == nullptr || HumanChar->GetMesh() == nullptr || Equipment == nullptr) return;
+	if (HumanChar == nullptr || Equipment == nullptr) return;
 
-	FString EquipmentName = StaticEnum<EEquipmentName>()->GetNameStringByValue(static_cast<int64>(Equipment->EquipmentParentName)) + SocketNameSuffix.ToString();
-
-	if (const USkeletalMeshSocket* HandSocket = HumanChar->GetMesh()->GetSocketByName(*EquipmentName))
+	if (HumanChar->BodyMesh && Equipment->EquipmentMesh)
 	{
-		HandSocket->AttachActor(Equipment, HumanChar->GetMesh());
+		FString EquipmentSocketStr = StaticEnum<EEquipmentName>()->GetNameStringByValue(static_cast<int64>(Equipment->EquipmentParentName)) + SocketNameSuffix.ToString();
+		
+		Equipment->EquipmentMesh->SetVisibility(true);
+		Equipment->EquipmentMesh->SetOwnerNoSee(true);
+		Equipment->EquipmentMesh->AttachToComponent(HumanChar->BodyMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName(*EquipmentSocketStr));
+	}
+
+	if (HumanChar->Mesh1P && Equipment->EquipmentMesh1P)
+	{
+		Equipment->EquipmentMesh1P->SetVisibility(true);
+		Equipment->EquipmentMesh1P->SetOnlyOwnerSee(true);
+		Equipment->EquipmentMesh1P->AttachToComponent(HumanChar->Mesh1P, FAttachmentTransformRules::SnapToTargetNotIncludingScale, Sockets::WeaponRoot);
 	}
 }
 
@@ -335,79 +331,73 @@ bool UCombatComponent::IsAiming()
 
 void UCombatComponent::LocalSetAiming(bool bIsAiming)
 {
-	if (HumanAnimInst == nullptr) HumanAnimInst = Cast<UAnimInstHuman>(HumanChar->GetMesh()->GetAnimInstance());
-	if (HumanChar == nullptr || GetCurWeapon() == nullptr || HumanAnimInst == nullptr) return;
+	if (AnimInstHuman == nullptr) AnimInstHuman = Cast<UAnimInstHuman>(HumanChar->BodyMesh->GetAnimInstance());
+	if (HumanChar == nullptr || GetCurWeapon() == nullptr || AnimInstHuman == nullptr) return;
 
 	if (HumanChar->IsLocallyControlled()) // TODO 非本地瞄准动画暂时禁用了
 	{
 		// 角色瞄准动画
-		if (bIsAiming) // 瞄准
-		{
-			if (HumanAnimInst->Montage_IsPlaying(GetCurWeapon()->ADSMontage_C))
-			{
-				HumanAnimInst->Montage_SetPlayRate(GetCurWeapon()->ADSMontage_C, 1.f);
-
-				float TempFOVInterpTime = GetCurWeapon()->ADSMontage_C->GetPlayLength() - HumanAnimInst->Montage_GetPosition(GetCurWeapon()->ADSMontage_C);
-				StartInterpFOV(DefaultFOV * GetCurWeapon()->AimingFOVMul, TempFOVInterpTime);
-			}
-			else
-			{
-				HumanAnimInst->Montage_Play(GetCurWeapon()->ADSMontage_C);
-				
-				StartInterpFOV(DefaultFOV * GetCurWeapon()->AimingFOVMul, GetCurWeapon()->ADSMontage_C->GetPlayLength());
-			}
-		}
-		else // 取消瞄准
-		{
-			if (HumanAnimInst->Montage_IsPlaying(GetCurWeapon()->ADSMontage_C))
-			{
-				HumanAnimInst->Montage_SetPlayRate(GetCurWeapon()->ADSMontage_C, -1.f);
-
-				StartInterpFOV(DefaultFOV, HumanAnimInst->Montage_GetPosition(GetCurWeapon()->ADSMontage_C));
-			}
-			else
-			{
-				HumanAnimInst->Montage_Play(GetCurWeapon()->ADSMontage_C, -1.f);
-				HumanAnimInst->Montage_SetPosition(GetCurWeapon()->ADSMontage_C, GetCurWeapon()->ADSMontage_C->GetPlayLength());
-				
-				StartInterpFOV(DefaultFOV, GetCurWeapon()->ADSMontage_C->GetPlayLength());
-			}
-		}
+		// if (bIsAiming) // 瞄准
+		// {
+		// 	if (AnimInstHuman->Montage_IsPlaying(GetCurWeapon()->ADSMontage_C))
+		// 	{
+		// 		AnimInstHuman->Montage_SetPlayRate(GetCurWeapon()->ADSMontage_C, 1.f);
+		//
+		// 		float TempFOVInterpTime = GetCurWeapon()->ADSMontage_C->GetPlayLength() - AnimInstHuman->Montage_GetPosition(GetCurWeapon()->ADSMontage_C);
+		// 		StartInterpFOV(DefaultFOV * GetCurWeapon()->AimingFOVMul, TempFOVInterpTime);
+		// 	}
+		// 	else
+		// 	{
+		// 		AnimInstHuman->Montage_Play(GetCurWeapon()->ADSMontage_C);
+		// 		
+		// 		StartInterpFOV(DefaultFOV * GetCurWeapon()->AimingFOVMul, GetCurWeapon()->ADSMontage_C->GetPlayLength());
+		// 	}
+		// }
+		// else // 取消瞄准
+		// {
+		// 	if (AnimInstHuman->Montage_IsPlaying(GetCurWeapon()->ADSMontage_C))
+		// 	{
+		// 		AnimInstHuman->Montage_SetPlayRate(GetCurWeapon()->ADSMontage_C, -1.f);
+		//
+		// 		StartInterpFOV(DefaultFOV, AnimInstHuman->Montage_GetPosition(GetCurWeapon()->ADSMontage_C));
+		// 	}
+		// 	else
+		// 	{
+		// 		AnimInstHuman->Montage_Play(GetCurWeapon()->ADSMontage_C, -1.f);
+		// 		AnimInstHuman->Montage_SetPosition(GetCurWeapon()->ADSMontage_C, GetCurWeapon()->ADSMontage_C->GetPlayLength());
+		// 		
+		// 		StartInterpFOV(DefaultFOV, GetCurWeapon()->ADSMontage_C->GetPlayLength());
+		// 	}
+		// }
 
 		// 武器瞄准动画
-		if (UAnimInstEquipment* EquipmentAnimInst = GetCurEquipment()->GetEquipmentAnimInst())
-		{
-			if (bIsAiming) // 瞄准
-			{
-				if (EquipmentAnimInst->Montage_IsPlaying(GetCurWeapon()->ADSMontage_E))
-				{
-					EquipmentAnimInst->Montage_SetPlayRate(GetCurWeapon()->ADSMontage_E, 1.f);
-				}
-				else
-				{
-					EquipmentAnimInst->Montage_Play(GetCurWeapon()->ADSMontage_E);
-				}
-			}
-			else // 取消瞄准
-			{
-				if (EquipmentAnimInst->Montage_IsPlaying(GetCurWeapon()->ADSMontage_E))
-				{
-					EquipmentAnimInst->Montage_SetPlayRate(GetCurWeapon()->ADSMontage_E, -1.f);
-				}
-				else
-				{
-					EquipmentAnimInst->Montage_Play(GetCurWeapon()->ADSMontage_E, -1.f);
-					EquipmentAnimInst->Montage_SetPosition(GetCurWeapon()->ADSMontage_E, GetCurWeapon()->ADSMontage_E->GetPlayLength());
-				}
-			}
-		}
-	}
-	
-	if (HumanChar->IsLocallyControlled())
-	{
-		// 打开画中画
-		GetCurWeapon()->SetScopeActive(bIsAiming);
-
+		// if (UAnimInstEquipment* EquipmentAnimInst = GetCurEquipment()->GetEquipmentAnimInst())
+		// {
+		// 	if (bIsAiming) // 瞄准
+		// 	{
+		// 		if (EquipmentAnimInst->Montage_IsPlaying(GetCurWeapon()->ADSMontage_E))
+		// 		{
+		// 			EquipmentAnimInst->Montage_SetPlayRate(GetCurWeapon()->ADSMontage_E, 1.f);
+		// 		}
+		// 		else
+		// 		{
+		// 			EquipmentAnimInst->Montage_Play(GetCurWeapon()->ADSMontage_E);
+		// 		}
+		// 	}
+		// 	else // 取消瞄准
+		// 	{
+		// 		if (EquipmentAnimInst->Montage_IsPlaying(GetCurWeapon()->ADSMontage_E))
+		// 		{
+		// 			EquipmentAnimInst->Montage_SetPlayRate(GetCurWeapon()->ADSMontage_E, -1.f);
+		// 		}
+		// 		else
+		// 		{
+		// 			EquipmentAnimInst->Montage_Play(GetCurWeapon()->ADSMontage_E, -1.f);
+		// 			EquipmentAnimInst->Montage_SetPosition(GetCurWeapon()->ADSMontage_E, GetCurWeapon()->ADSMontage_E->GetPlayLength());
+		// 		}
+		// 	}
+		// }
+		
 		if (BaseController == nullptr) BaseController = Cast<ABaseController>(HumanChar->GetController());
 		if (BaseController)
 		{
@@ -415,16 +405,6 @@ void UCombatComponent::LocalSetAiming(bool bIsAiming)
 			{
 				UISubsystem->OnCrosshairHidden.Broadcast(bIsAiming);
 			}
-		}
-		
-		// 调整FOV
-		if (bIsAiming)
-		{
-			StartInterpFOV(DefaultFOV * GetCurWeapon()->AimingFOVMul, 0.2f);
-		}
-		else
-		{
-			StartInterpFOV(DefaultFOV, 0.2f);
 		}
 	}
 }
@@ -456,9 +436,9 @@ void UCombatComponent::InterpFOV(float DeltaSeconds)
 	HumanChar->Camera->FieldOfView = FMath::Lerp(StartFOV, TargetFOV, Alpha);
 
 	// HACK 计算瞄准进度，子弹偏移受瞄准进度影响，完全进入瞄准状态子弹偏移为0
-	if (GetCurWeapon() && HumanAnimInst && HumanAnimInst->Montage_IsPlaying(GetCurWeapon()->ADSMontage_C))
+	// if (GetCurWeapon() && AnimInstHuman && AnimInstHuman->Montage_IsPlaying(GetCurWeapon()->ADSMontage_C))
 	{
-		float DiffFOV = DefaultFOV - GetCurWeapon()->AimingFOVMul * DefaultFOV;
+		float DiffFOV = DefaultFOV - GetCurWeapon()->FragWeapon->AimingFOVMul * DefaultFOV;
 		if (DiffFOV != 0.f)
 		{
 			AimingProgress = FMath::Abs(DefaultFOV - HumanChar->Camera->FieldOfView) / DiffFOV;
@@ -476,56 +456,6 @@ void UCombatComponent::InterpFOV(float DeltaSeconds)
 		
 		bNeedInterpFOV = false; 
 	}
-}
-
-void UCombatComponent::CalcCameraToScopeRotator()
-{
-    const auto* CurWeapon = GetCurWeapon();
-    if (HumanChar == nullptr || CurWeapon == nullptr || !CurWeapon->bIsPIP) return;
-	
-	const UCameraComponent* CameraComponent = HumanChar->Camera;
-    const USkeletalMeshComponent* EquipmentMesh = CurWeapon->EquipmentMesh;
-    if (CameraComponent == nullptr || EquipmentMesh == nullptr) return;
-
-    // 获取空间位置
-    const FVector CameraLocation = CameraComponent->GetComponentLocation();
-    const FVector ScopeStartLocation = EquipmentMesh->GetSocketLocation(SOCKET_SCOPE_START);
-    const FVector ScopeEndLocation = EquipmentMesh->GetSocketLocation(SOCKET_SCOPE_END);
-    
-    // 计算方向并标准化
-    FVector WorldToScopeStartDir = ScopeStartLocation - CameraLocation;
-    FVector WorldToScopeEndDir = ScopeEndLocation - ScopeStartLocation;
-    
-    WorldToScopeStartDir.Normalize();
-    WorldToScopeEndDir.Normalize();
-
-    // 转换为摄像机本地坐标系 
-    const FTransform& CameraTransform = CameraComponent->GetComponentTransform();
-    const FVector LocalToScopeStartDir = CameraTransform.InverseTransformVectorNoScale(WorldToScopeStartDir);
-    const FVector LocalToScopeEndDir = CameraTransform.InverseTransformVectorNoScale(WorldToScopeEndDir);
-
-    // 计算旋转
-    const FQuat RotationQuat = FQuat::FindBetweenNormals(LocalToScopeStartDir, LocalToScopeEndDir);
-    const FRotator CameraToScopeRotator = RotationQuat.Rotator();
-
-    if (CachedScopeMPCI == nullptr)
-    {
-        if (AssetSubsystem == nullptr) 
-        {
-            AssetSubsystem = HumanChar->GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-        }
-        
-        if (AssetSubsystem && AssetSubsystem->EquipmentAsset && AssetSubsystem->EquipmentAsset->MPC_Scope)
-        {
-            CachedScopeMPCI = GetWorld()->GetParameterCollectionInstance(AssetSubsystem->EquipmentAsset->MPC_Scope);
-        }
-    }
-
-    if (CachedScopeMPCI)
-    {
-        const FVector RotatorAsVector(CameraToScopeRotator.Pitch, CameraToScopeRotator.Yaw, CameraToScopeRotator.Roll);
-        CachedScopeMPCI->SetVectorParameterValue(TEXT("CameraToScopeRotator"), RotatorAsVector);
-    }
 }
 
 // 检测准星对应游戏世界的物体
@@ -550,7 +480,7 @@ void UCombatComponent::TraceUnderCrosshair(FHitResult& TraceHitResult)
 		FCollisionQueryParams Params;
 		Params.AddIgnoredActor(HumanChar);
 		Params.AddIgnoredActor(GetCurEquipment());
-		GetWorld()->LineTraceSingleByChannel(TraceHitResult, Start, End, ECC_TRACE);
+		GetWorld()->LineTraceSingleByChannel(TraceHitResult, Start, End, ECC::Trace);
 		if (!TraceHitResult.bBlockingHit)
 		{
 			TraceHitResult.ImpactPoint = End;

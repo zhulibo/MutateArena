@@ -5,6 +5,7 @@
 #include "Projectile.generated.h"
 
 enum class EEquipmentName : uint8;
+class UFragWeapon;
 
 UCLASS()
 class MUTATEARENA_API AProjectile : public AActor
@@ -16,24 +17,26 @@ public:
 
 	UPROPERTY(VisibleAnywhere)
 	class UBoxComponent* CollisionBox;
+
 	UPROPERTY(VisibleAnywhere)
-	UStaticMeshComponent* ProjectileMesh;
+	class UStaticMeshComponent* ProjectileMesh;
+
 	UPROPERTY(VisibleAnywhere)
 	class UProjectileMovementComponent* ProjectileMovement;
 
 	UPROPERTY()
 	float InitialSpeed = 40000.f;
-	
+
 	UPROPERTY()
 	FVector SpawnLocation;
-	
+
 	UFUNCTION()
 	float GetDamage(float Distance);
+
 	UFUNCTION()
 	float GetImpulse(float DeclineDamage);
 
-	UPROPERTY()
-	FString OwnerName;
+	EEquipmentName EquipmentParentName;
 
 protected:
 	virtual void PostActorCreated() override;
@@ -42,25 +45,34 @@ protected:
 	// 在空中留下的轨迹
 	UPROPERTY(EditAnywhere)
 	class UNiagaraSystem* TrailEffect;
+
 	UPROPERTY()
 	class UNiagaraComponent* TrailEffectComponent;
+
 	void SpawnTrailEffect();
 
 	// 尾部效果
 	UPROPERTY(EditAnywhere)
-	UNiagaraSystem* TracerEffect;
+	class UNiagaraSystem* TracerEffect;
+
 	UPROPERTY()
-	UNiagaraComponent* TracerEffectComponent;
+	class UNiagaraComponent* TracerEffectComponent;
+
 	void SpawnTracerEffect();
 
 	// 击中效果
 	UPROPERTY(EditAnywhere)
-	UNiagaraSystem* ImpactEffect;
+	class UNiagaraSystem* ImpactEffect;
 
 	// 弹孔
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UMaterialInterface> ImpactDecal;
+
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UMaterialInterface> ImpactDecalExit;
 
+	const UFragWeapon* CachedWeaponFrag = nullptr;
+	bool bIsWeaponFragCached = false;
+
+	void EnsureWeaponFragCached();
 };

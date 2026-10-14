@@ -17,5 +17,5 @@ void ULibraryNotify::AddNotify(const UObject* Context, const FColor DisplayColor
 		}
 	}
 
-	GEngine->AddOnScreenDebugMessage(-1, 20.f, C_RED, TEXT("Show notify failed!"), false);
+	GEngine->AddOnScreenDebugMessage(-1, 20.f, Colors::Red, TEXT("Show notify failed!"), false);
 }

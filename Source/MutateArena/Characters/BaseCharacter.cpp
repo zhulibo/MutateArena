@@ -48,6 +48,7 @@
 #include "Perception/AIPerceptionStimuliSourceComponent.h"
 #include "Perception/AISenseConfig_Sight.h"
 #include "Perception/AISense_Sight.h"
+#include "GroomComponent.h"
 
 #define LOCTEXT_NAMESPACE "ABaseCharacter"
 
@@ -56,36 +57,28 @@ ABaseCharacter::ABaseCharacter(const FObjectInitializer& ObjectInitializer)
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	Tags.Add(TAG_CHARACTER_BASE);
+	Tags.Add(Tags::CharacterBase);
 
-	GetMesh()->SetGenerateOverlapEvents(true);
-	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
-	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
+	GetCapsuleComponent()->InitCapsuleSize(34.0f, 90.f);
+	GetCharacterMovement()->SetCrouchedHalfHeight(60.f);
+	BaseEyeHeight = 78.f;
+	CrouchedEyeHeight = 48.f;
+
+	Mesh1P = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Mesh1P"));
+	Mesh1P->SetupAttachment(GetCapsuleComponent());
+	Mesh1P->SetRelativeLocation(FVector(0.f, 0.f, BaseEyeHeight));
+	Mesh1P->SetOnlyOwnerSee(true);
+	Mesh1P->CastShadow = false;
+	Mesh1P->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+	Mesh1P->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::OnlyTickPoseWhenRendered;
+	
+	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
+	Camera->SetupAttachment(GetCapsuleComponent());
+	Camera->bUsePawnControlRotation = true;
+	Camera->SetRelativeLocation(FVector(0.f, 0.f, BaseEyeHeight));
 
 	MovementComp = Cast<UMAMovementComponent>(GetCharacterMovement());
-	
-	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
-	CameraBoom->SetupAttachment(GetMesh(), SOCKET_CAMERA);
-	CameraBoom->TargetArmLength = 0.f;
-	// CameraBoom->bEnableCameraLag = true;
-	// CameraBoom->CameraLagSpeed = 15.f;
-	// CameraBoom->bEnableCameraRotationLag = true;
-	// CameraBoom->CameraRotationLagSpeed = 15.f;
-
-	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
-	Camera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
-
-	SceneCapture = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("SceneCapture"));
-	SceneCapture->SetupAttachment(Camera);
-	SceneCapture->CaptureSource = ESceneCaptureSource::SCS_FinalColorHDR;
-	SceneCapture->bCaptureEveryFrame = false;
-	SceneCapture->bCaptureOnMovement = false;
-
-	OverheadWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("OverheadWidget"));
-	OverheadWidget->SetupAttachment(GetMesh(), SOCKET_CAMERA);
-	OverheadWidget->SetRelativeLocation(FVector(0.f, 0.f, 60.f));
-	OverheadWidget->SetDrawSize(FVector2D(120.f, 30.f));
-
 	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
 	GetCharacterMovement()->bCanWalkOffLedgesWhenCrouching = true;
 	GetCharacterMovement()->SetCrouchedHalfHeight(50.f);
@@ -99,14 +92,23 @@ ABaseCharacter::ABaseCharacter(const FObjectInitializer& ObjectInitializer)
 	GetCharacterMovement()->MaxStepHeight = 30.f;
 	// 最好使用平地检测，胶囊体底部的圆弧会影响下落状态
 	GetCharacterMovement()->bUseFlatBaseForFloorChecks = true;
-	
-	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
-	
+
+	SceneCapture = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("SceneCapture"));
+	SceneCapture->SetupAttachment(Camera);
+	SceneCapture->CaptureSource = ESceneCaptureSource::SCS_FinalColorHDR;
+	SceneCapture->bCaptureEveryFrame = false;
+	SceneCapture->bCaptureOnMovement = false;
+
+	OverheadWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("OverheadWidget"));
+	OverheadWidget->SetupAttachment(BodyMesh, Sockets::Camera);
+	OverheadWidget->SetRelativeLocation(FVector(0.f, 0.f, 60.f));
+	OverheadWidget->SetDrawSize(FVector2D(120.f, 30.f));
+
 	InteractorComp = CreateDefaultSubobject<UInteractorComponent>(TEXT("InteractorComponent"));
-	
+
 	StateTreeComp = CreateDefaultSubobject<UStateTreeComponent>(TEXT("StateTreeComponent"));
 	StateTreeComp->SetStartLogicAutomatically(false);
-	
+
 	AIPerceptionComp = CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("AIPerceptionComponent"));
 	AIPerceptionComp->SetAutoActivate(false);
 	SightConfig = CreateDefaultSubobject<UAISenseConfig_Sight>(TEXT("SightConfig"));
@@ -124,9 +126,9 @@ ABaseCharacter::ABaseCharacter(const FObjectInitializer& ObjectInitializer)
 	StimuliSourceComp = CreateDefaultSubobject<UAIPerceptionStimuliSourceComponent>(TEXT("StimuliSourceComponent"));
 	StimuliSourceComp->RegisterForSense(UAISense_Sight::StaticClass());
 	StimuliSourceComp->RegisterWithPerceptionSystem();
-	
+
 	AutoHostComp = CreateDefaultSubobject<UAutoHostComponent>(TEXT("AutoHostComponent"));
-	
+
 	// 小地图
 	MinimapBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("MinimapBoom"));
 	MinimapBoom->SetupAttachment(GetCapsuleComponent()); // 挂载到胶囊体上，避免受角色动画影响
@@ -135,7 +137,7 @@ ABaseCharacter::ABaseCharacter(const FObjectInitializer& ObjectInitializer)
 	MinimapBoom->bDoCollisionTest = false; // 必须关闭，防止碰到天花板相机拉近
 	MinimapBoom->bInheritPitch = false;
 	MinimapBoom->bInheritRoll = false;
-	MinimapBoom->bInheritYaw = true;       // 如果设为 true，小地图会随着玩家视角旋转；如果设为 false，小地图固定上北下南
+	MinimapBoom->bInheritYaw = true; // 如果设为 true，小地图会随着玩家视角旋转；如果设为 false，小地图固定上北下南
 
 	MinimapCapture = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("MinimapCapture"));
 	MinimapCapture->SetupAttachment(MinimapBoom, USpringArmComponent::SocketName);
@@ -151,22 +153,6 @@ ABaseCharacter::ABaseCharacter(const FObjectInitializer& ObjectInitializer)
 	MinimapCapture->ShowFlags.SetFog(false);
 	MinimapCapture->ShowFlags.SetParticles(false);
 	MinimapCapture->ShowFlags.SetSkeletalMeshes(false);
-}
-
-void ABaseCharacter::GetActorEyesViewPoint(FVector& OutLocation, FRotator& OutRotation) const
-{
-	if (USkeletalMeshComponent* MeshComp = GetMesh())
-	{
-		const FName HeadBoneName = FName("CameraSocket");
-		if (MeshComp->DoesSocketExist(HeadBoneName))
-		{
-			OutLocation = MeshComp->GetSocketLocation(HeadBoneName);
-			OutRotation = MeshComp->GetSocketRotation(HeadBoneName);
-			return;
-		}
-	}
-
-	Super::GetActorEyesViewPoint(OutLocation, OutRotation);
 }
 
 void ABaseCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -185,12 +171,75 @@ void ABaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
+	// MetaHuman 组件
+	TArray<USkeletalMeshComponent*> SkeletalMeshes;
+	GetComponents<USkeletalMeshComponent>(SkeletalMeshes);
+
+	for (USkeletalMeshComponent* SkelMesh : SkeletalMeshes)
+	{
+		if (SkelMesh->GetName().Equals(TEXT("Body")))
+		{
+			BodyMesh = SkelMesh;
+		}
+		else if (SkelMesh->GetName().Equals(TEXT("Face")))
+		{
+			FaceMesh = SkelMesh;
+		}
+	}
+	check(BodyMesh); check(FaceMesh);
+	
+	BodyMesh->SetOwnerNoSee(true);
+	BodyMesh->bCastHiddenShadow = true;
+	BodyMesh->SetGenerateOverlapEvents(true);
+	BodyMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
+	
+	FaceMesh->SetOwnerNoSee(true);
+	FaceMesh->bCastHiddenShadow = true;
+	BodyMesh->SetGenerateOverlapEvents(true);
+	FaceMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
+
+	TArray<UGroomComponent*> AllGrooms;
+	GetComponents<UGroomComponent>(AllGrooms);
+	for (UGroomComponent* Groom : AllGrooms)
+	{
+		Groom->SetOwnerNoSee(true);
+		Groom->bCastHiddenShadow = true;
+		Groom->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
+		
+		const FString GroomName = Groom->GetName();
+		if (GroomName.Equals(TEXT("Beard")))
+		{
+			BeardComp = Groom;
+		}
+		else if (GroomName.Equals(TEXT("Eyebrows")))
+		{
+			EyebrowsComp = Groom;
+		}
+		else if (GroomName.Equals(TEXT("Eyelashes")))
+		{
+			EyelashesComp = Groom;
+		}
+		else if (GroomName.Equals(TEXT("Fuzz")))
+		{
+			FuzzComp = Groom;
+		}
+		else if (GroomName.Equals(TEXT("Hair")))
+		{
+			HairComp = Groom;
+		}
+		else if (GroomName.Equals(TEXT("Mustache")))
+		{
+			MustacheComp = Groom;
+		}
+	}
+	check(BeardComp); check(EyebrowsComp); check(EyelashesComp); check(FuzzComp); check(HairComp); check(MustacheComp);
+	
 	if (GetCapsuleComponent())
 	{
 		GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnLadderBeginOverlap);
 		GetCapsuleComponent()->OnComponentEndOverlap.AddDynamic(this, &ThisClass::OnLadderEndOverlap);
 	}
-	
+
 	// 监听输入设备类型改变
 	if (UCommonInputSubsystem* CommonInputSubsystem = UCommonInputSubsystem::Get(GetWorld()->GetFirstLocalPlayerFromController()))
 	{
@@ -242,7 +291,7 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		EIC->BindAction(AssetSubsystem->InputAsset->CrouchAction, ETriggerEvent::Started, this, &ThisClass::CrouchButtonPressed);
 		EIC->BindAction(AssetSubsystem->InputAsset->CrouchAction, ETriggerEvent::Completed, this, &ThisClass::CrouchButtonReleased);
 		EIC->BindAction(AssetSubsystem->InputAsset->CrouchControllerAction, ETriggerEvent::Triggered, this, &ThisClass::CrouchControllerButtonPressed);
-		
+
 		EIC->BindAction(AssetSubsystem->InputAsset->InteractAction, ETriggerEvent::Started, InteractorComp, &UInteractorComponent::InteractStarted);
 		EIC->BindAction(AssetSubsystem->InputAsset->InteractAction, ETriggerEvent::Ongoing, InteractorComp, &UInteractorComponent::InteractOngoing);
 		EIC->BindAction(AssetSubsystem->InputAsset->InteractAction, ETriggerEvent::Triggered, InteractorComp, &UInteractorComponent::InteractTriggered);
@@ -258,11 +307,11 @@ void ABaseCharacter::Tick(float DeltaSeconds)
 	PollInit_PlayerStateTeam();
 	PollInit_ControllerAndPSAndTeam();
 	CalcAimPitch();
-	
+
 	if (IsLocallyControlled())
 	{
 		UpdateHurtEffect(DeltaSeconds);
-		
+
 #if WITH_EDITOR
 		if (GetDefault<UDevSetting>()->bShowSpeed)
 		{
@@ -271,11 +320,10 @@ void ABaseCharacter::Tick(float DeltaSeconds)
 				FVector CurrentVelocity = GetVelocity();
 				float Speed2D = CurrentVelocity.Size2D();
 				float Speed3D = CurrentVelocity.Size();
-				GEngine->AddOnScreenDebugMessage(999, 0.0f, FColor::Green,FString::Printf(TEXT("Player Speed -> 2D: %.2f | 3D: %.2f"), Speed2D, Speed3D));
+				GEngine->AddOnScreenDebugMessage(999, 0.0f, FColor::Green, FString::Printf(TEXT("Player Speed -> 2D: %.2f | 3D: %.2f"), Speed2D, Speed3D));
 			}
 		}
 #endif
-		
 	}
 }
 
@@ -292,10 +340,10 @@ void ABaseCharacter::PollInit_PlayerStateTeam()
 			switch (BasePlayerState->Team)
 			{
 			case ETeam::Team1:
-				GetMesh()->SetCollisionObjectType(ECC_MESH_TEAM1);
+				BodyMesh->SetCollisionObjectType(ECC::MeshTeam1);
 				break;
 			case ETeam::Team2:
-				GetMesh()->SetCollisionObjectType(ECC_MESH_TEAM2);
+				BodyMesh->SetCollisionObjectType(ECC::MeshTeam2);
 				break;
 			}
 		}
@@ -314,7 +362,7 @@ void ABaseCharacter::PollInit_ControllerAndPSAndTeam()
 				bIsLocallyControllerReady = true;
 				OnLocallyControllerReady();
 			}
-			
+
 			// InitHUD依赖Controller和Controller中的PlayerState和Controller中的PlayerState中的Team
 			ABasePlayerState* PS = Cast<ABasePlayerState>(BaseController->PlayerState);
 			if (PS && PS->Team != ETeam::NoTeam)
@@ -331,30 +379,30 @@ void ABaseCharacter::OnLocallyControllerReady()
 {
 	// 只有本地激活感知
 	AIPerceptionComp->Activate(true);
-	
+
 	// 检测挂机
 	if (AutoHostComp)
 	{
 		AutoHostComp->StartAFKCheck();
 	}
-	
+
 	// 多个客户端 PIE 时，RenderTarget渲染到了同一张图上，造成多张图来回切换闪烁（Standalone和打包版正常），开发阶段保持常闭
 	bool bShowMiniMap = true;
-	
+
 #if WITH_EDITOR
 	if (GetWorld()->WorldType == EWorldType::PIE)
 	{
 		bShowMiniMap = GetDefault<UDevSetting>()->bShowMiniMap;
 	}
 #endif
-	
+
 	if (bShowMiniMap)
 	{
 		if (MinimapCapture)
 		{
 			// TODO 每帧开启会导致骨骼网格体开启了Nanite的角色没有动画
 			// MinimapCapture->bCaptureEveryFrame = true;
-		
+
 			MinimapCapture->bAlwaysPersistRenderingState = true; // 保留通道信息
 			GetWorldTimerManager().SetTimer(MinimapUpdateTimer, this, &ABaseCharacter::UpdateMinimapCapture, 0.05f, true);
 		}
@@ -416,7 +464,7 @@ void ABaseCharacter::PossessedBy(AController* NewController)
 		{
 			ASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), ASC);
 		}
-		
+
 		// Apply all active environments to the character
 		if (BaseGameState == nullptr) BaseGameState = GetWorld()->GetGameState<ABaseGameState>();
 		if (BaseGameState && BaseGameState->EnvironmentManager)
@@ -442,7 +490,7 @@ void ABaseCharacter::Destroyed()
 		{
 			PlayerSubsystem->SetIsDead();
 		}
-		
+
 		GetWorldTimerManager().ClearTimer(MinimapUpdateTimer);
 	}
 
@@ -458,7 +506,7 @@ void ABaseCharacter::OnInputMethodChanged(ECommonInputType TempInputType)
 	{
 		BasePlayerState->InputType = TempInputType;
 	}
-	
+
 	ServerSetInputType(TempInputType);
 }
 
@@ -492,25 +540,27 @@ void ABaseCharacter::OnASCInit()
 		ASC->GetGameplayAttributeValueChangeDelegate(AttributeSetBase->GetMaxHealthAttribute()).AddUObject(this, &ThisClass::OnMaxHealthChanged);
 		ASC->GetGameplayAttributeValueChangeDelegate(AttributeSetBase->GetHealthAttribute()).AddUObject(this, &ThisClass::OnHealthChanged);
 		ASC->GetGameplayAttributeValueChangeDelegate(AttributeSetBase->GetJumpZVelocityAttribute()).AddUObject(this, &ThisClass::OnJumpZVelocityChanged);
-		
+
 		ASC->RegisterGameplayTagEvent(TAG_STATE_DNA_EnhancedVision, EGameplayTagEventType::NewOrRemoved).AddUObject(this, &ThisClass::OnEnhancedVisionTagChanged);
 	}
-	
+
 	if (IsLocallyControlled())
 	{
 		if (BasePlayerState == nullptr) BasePlayerState = GetPlayerState<ABasePlayerState>();
 		if (BasePlayerState)
 		{
 			if (StorageSubsystem == nullptr) StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
-			if (StorageSubsystem && StorageSubsystem->CacheLoadout)
+			if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+
+			if (StorageSubsystem && StorageSubsystem->CacheLoadout && AssetSubsystem)
 			{
-				if (UDNAAsset2* DNAAsset1 = StorageSubsystem->GetDNAAssetByType(StorageSubsystem->CacheLoadout->DNA1))
+				if (UDNAAsset2* DNAAsset1 = AssetSubsystem->GetDNAAssetByType(StorageSubsystem->CacheLoadout->DNA1))
 				{
-					if (UDNAAsset2* DNAAsset2 = StorageSubsystem->GetDNAAssetByType(StorageSubsystem->CacheLoadout->DNA2))
+					if (UDNAAsset2* DNAAsset2 = AssetSubsystem->GetDNAAssetByType(StorageSubsystem->CacheLoadout->DNA2))
 					{
 						EDNA2 DNA1 = DNAAsset1->DNA;
 						EDNA2 DNA2 = DNAAsset2->DNA;
-						
+
 #if WITH_EDITOR
 						if (GetWorld()->WorldType == EWorldType::PIE)
 						{
@@ -521,7 +571,7 @@ void ABaseCharacter::OnASCInit()
 							}
 						}
 #endif
-						
+
 						BasePlayerState->ServerSetDNA(DNA1, DNA2);
 					}
 				}
@@ -534,7 +584,7 @@ void ABaseCharacter::OnASCInit()
 void ABaseCharacter::OnEnhancedVisionTagChanged(FGameplayTag GameplayTag, int NewCount)
 {
 	if (!IsLocallyControlled()) return;
-	
+
 	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
 	if (AssetSubsystem && AssetSubsystem->CharacterAsset && AssetSubsystem->CharacterAsset->MPC_EnhancedVision)
 	{
@@ -603,20 +653,20 @@ void ABaseCharacter::Move(const FInputActionValue& Value)
 	{
 		// 【梯子移动】：将 Y 轴的输入（W和S键）转换为世界坐标的 Z 轴 (UpVector)
 		AddMovementInput(FVector::UpVector, AxisVector.Y);
-		
+
 		// 利用梯子自身的右方向，而不是玩家的右方向
 		if (CurrentLadder)
 		{
 			FVector PlayerRight = GetActorRightVector();
 			FVector LadderRight = CurrentLadder->GetActorRightVector();
-			
+
 			// 点乘判断：如果梯子的右方向和玩家视角的右边相反（夹角大于90度），就把向量反转
 			// 这保证了无论梯子怎么摆放，你按 D 键永远是往你屏幕的右边走
 			if (FVector::DotProduct(PlayerRight, LadderRight) < 0.0f)
 			{
 				LadderRight = -LadderRight;
 			}
-			
+
 			AddMovementInput(LadderRight, AxisVector.X);
 		}
 	}
@@ -653,7 +703,7 @@ void ABaseCharacter::JumpButtonPressed(const FInputActionValue& Value)
 	{
 		// 1. 客户端本地立刻执行脱离（保证手感零延迟）
 		ExitLadderAndJump();
-		
+
 		// 2. 如果当前是客户端，必须通知服务器也执行一次（防止拉扯/吸回）
 		if (!HasAuthority())
 		{
@@ -661,7 +711,7 @@ void ABaseCharacter::JumpButtonPressed(const FInputActionValue& Value)
 		}
 		return;
 	}
-	
+
 	if (MovementComp)
 	{
 		float CurrentTime = GetWorld()->GetTimeSeconds();
@@ -677,7 +727,7 @@ void ABaseCharacter::JumpButtonPressed(const FInputActionValue& Value)
 			MovementComp->JumpZVelocity = GetJumpZVelocity();
 		}
 	}
-	
+
 	if (bIsCrouched)
 	{
 		UnCrouch();
@@ -692,14 +742,14 @@ void ABaseCharacter::JumpButtonPressed(const FInputActionValue& Value)
 void ABaseCharacter::CrouchButtonPressed(const FInputActionValue& Value)
 {
 	// if (GetCharacterMovement()->IsFalling()) return;
-	
+
 	Crouch();
 }
 
 void ABaseCharacter::CrouchButtonReleased(const FInputActionValue& Value)
 {
 	// if (GetCharacterMovement()->IsFalling()) return;
-	
+
 	UnCrouch();
 }
 
@@ -742,7 +792,7 @@ void ABaseCharacter::SetHealth(float TempHealth)
 	{
 		AttributeSetBase->SetHealth(TempHealth);
 	}
-	
+
 	if (BasePlayerState == nullptr) BasePlayerState = GetPlayerState<ABasePlayerState>();
 	if (BasePlayerState)
 	{
@@ -766,7 +816,7 @@ void ABaseCharacter::OnHealthChanged(const FOnAttributeChangeData& Data)
 	{
 		OverheadWidgetClass->OnHealthChange(Data.OldValue, Data.NewValue);
 	}
-	
+
 	if (IsLocallyControlled())
 	{
 		if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
@@ -774,9 +824,9 @@ void ABaseCharacter::OnHealthChanged(const FOnAttributeChangeData& Data)
 		{
 			BaseController->SetHUDHealth(Data.NewValue);
 		}
-		
+
 		// HACK 对局结束由突变体变为人类时会触发ApplyHurtEffect，拦截
-		if (ActorHasTag(TAG_CHARACTER_HUMAN) && Data.NewValue == 500.f)
+		if (ActorHasTag(Tags::CharacterHuman) && Data.NewValue == 500.f)
 		{
 			return;
 		}
@@ -807,7 +857,7 @@ void ABaseCharacter::Landed(const FHitResult& Hit)
 	{
 		MovementComp->JumpZVelocity = GetJumpZVelocity();
 	}
-	
+
 	// 如果落地时间和最后一次按下跳跃键的时间差，在缓冲窗口期内
 	if (LastLandedTime - LastJumpPressedTime <= JumpBufferWindow)
 	{
@@ -817,9 +867,9 @@ void ABaseCharacter::Landed(const FHitResult& Hit)
 			MovementComp->JumpZVelocity = GetJumpZVelocity() * ComboJumpZMultiplier;
 		}
 		// 自动替玩家执行跳跃，实现完美的“落地秒跳”
-		Jump(); 
+		Jump();
 	}
-	
+
 	// 计算扣血倍率
 	float DamageRate = CalcFallDamageRate();
 	if (DamageRate > 0.f)
@@ -832,7 +882,7 @@ void ABaseCharacter::Landed(const FHitResult& Hit)
 			// 应用伤害
 			UGameplayStatics::ApplyDamage(this, GetMaxHealth() * DamageRate, Controller, this, UDamageTypeFall::StaticClass());
 		}
-	
+
 		if (IsLocallyControlled())
 		{
 			LocalPlayOuchSound(DamageRate);
@@ -844,31 +894,31 @@ void ABaseCharacter::Landed(const FHitResult& Hit)
 float ABaseCharacter::CalcFallDamageRate()
 {
 	// 获取落地瞬间的绝对速度与重力
-	float VelocityZ = FMath::Abs(GetCharacterMovement()->Velocity.Z); 
+	float VelocityZ = FMath::Abs(GetCharacterMovement()->Velocity.Z);
 	float Gravity = FMath::Abs(GetCharacterMovement()->GetGravityZ());
-    
+
 	// 根据物理公式 h = v^2 / 2g 计算等效掉落高度
 	float FallHeightCm = (VelocityZ * VelocityZ) / (2.f * Gravity);
 	// 将高度转换为米
-	float DiffHighMeter = FallHeightCm / 100.f; 
-    
+	float DiffHighMeter = FallHeightCm / 100.f;
+
 	float DamageRate = 0.f;
-    
+
 	// 只有当高度大于等于 4.2 米时才计算伤害
 	if (DiffHighMeter >= 4.4f)
 	{
 		FVector2D HeightRange(4.4f, 8.0f);
 		FVector2D DamageRange(0.05f, 0.15f);
-		
+
 		DamageRate = FMath::GetMappedRangeValueClamped(HeightRange, DamageRange, DiffHighMeter);
 	}
 
 	// 检测是否有高骨密度 Tag，降低跌落伤害
 	if (ASC && ASC->HasMatchingGameplayTag(TAG_STATE_DNA_HighBoneDensity))
 	{
-		DamageRate = DamageRate * 0.4f; 
+		DamageRate = DamageRate * 0.4f;
 	}
-    
+
 	return DamageRate;
 }
 
@@ -1042,12 +1092,12 @@ void ABaseCharacter::PlayFootLandSound()
 		GetFootstepAudioSettings(VolumeMultiplier, DynamicAttenuation);
 
 		UGameplayStatics::PlaySoundAtLocation(
-			this, 
-			Sound, 
-			HitResult.Location, 
-			VolumeMultiplier, 
-			1.0f, 
-			0.0f, 
+			this,
+			Sound,
+			HitResult.Location,
+			VolumeMultiplier,
+			1.0f,
+			0.0f,
 			DynamicAttenuation
 		);
 	}
@@ -1057,7 +1107,7 @@ void ABaseCharacter::GetFootstepAudioSettings(float& OutVolumeMultiplier, USound
 {
 	// 默认值
 	OutVolumeMultiplier = 1.0f;
-	OutAttenuation = nullptr; 
+	OutAttenuation = nullptr;
 
 	if (AssetSubsystem && AssetSubsystem->CharacterAsset)
 	{
@@ -1068,7 +1118,7 @@ void ABaseCharacter::GetFootstepAudioSettings(float& OutVolumeMultiplier, USound
 	{
 		if (ABaseCharacter* LocalCharacter = Cast<ABaseCharacter>(LocalPC->GetPawn()))
 		{
-			if (LocalCharacter->GetAbilitySystemComponent() && 
+			if (LocalCharacter->GetAbilitySystemComponent() &&
 				LocalCharacter->GetAbilitySystemComponent()->HasMatchingGameplayTag(TAG_STATE_DNA_EnhancedHearing))
 			{
 				if (this != LocalCharacter)
@@ -1081,7 +1131,7 @@ void ABaseCharacter::GetFootstepAudioSettings(float& OutVolumeMultiplier, USound
 						if (LocalCharacter->BasePlayerState->Team != this->BasePlayerState->Team)
 						{
 							OutVolumeMultiplier = 1.5f;
-							
+
 							if (AssetSubsystem && AssetSubsystem->CharacterAsset)
 							{
 								OutAttenuation = AssetSubsystem->CharacterAsset->Atten_Footstep_Enhanced;
@@ -1106,7 +1156,7 @@ void ABaseCharacter::SendRadio(int32 RadioIndex)
 	if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
 	if (BasePlayerState == nullptr) BasePlayerState = GetPlayerState<ABasePlayerState>();
 	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-	if (BaseController && BasePlayerState && AssetSubsystem&& AssetSubsystem->CommonAsset)
+	if (BaseController && BasePlayerState && AssetSubsystem && AssetSubsystem->CommonAsset)
 	{
 		BaseController->ServerSendMsg(
 			EMsgType::Radio,
@@ -1147,7 +1197,7 @@ void ABaseCharacter::SprayPaint(int32 RadioIndex)
 	{
 		// AudioComponent->SetFloatParameter(TEXT("Index"), 1);
 	}
-	
+
 	FVector Start = Camera->GetComponentLocation();
 	FVector End = Start + Camera->GetForwardVector() * 400.f;
 
@@ -1173,19 +1223,21 @@ void ABaseCharacter::SprayPaint(int32 RadioIndex)
 		FCollisionShape::MakeSphere(5.f),
 		QueryParams
 	);
-	
+
 	if (OutHit.bBlockingHit)
 	{
 		ServerSprayPaint(RadioIndex, OutHit.ImpactPoint, OutHit.ImpactNormal, OutHit.GetComponent(), OutHit.BoneName);
 	}
 }
 
-void ABaseCharacter::ServerSprayPaint_Implementation(int32 RadioIndex, FVector_NetQuantize ImpactPoint, FVector_NetQuantizeNormal ImpactNormal, UPrimitiveComponent* HitComp, FName BoneName)
+void ABaseCharacter::ServerSprayPaint_Implementation(int32 RadioIndex, FVector_NetQuantize ImpactPoint, FVector_NetQuantizeNormal ImpactNormal,
+                                                     UPrimitiveComponent* HitComp, FName BoneName)
 {
 	MulticastSprayPaint(RadioIndex, ImpactPoint, ImpactNormal, HitComp, BoneName);
 }
 
-void ABaseCharacter::MulticastSprayPaint_Implementation(int32 RadioIndex, FVector_NetQuantize ImpactPoint, FVector_NetQuantizeNormal ImpactNormal, UPrimitiveComponent* HitComp, FName BoneName)
+void ABaseCharacter::MulticastSprayPaint_Implementation(int32 RadioIndex, FVector_NetQuantize ImpactPoint, FVector_NetQuantizeNormal ImpactNormal,
+                                                        UPrimitiveComponent* HitComp, FName BoneName)
 {
 	if (AssetSubsystem == nullptr) AssetSubsystem = GetWorld()->GetGameInstance()->GetSubsystem<UAssetSubsystem>();
 	if (AssetSubsystem && AssetSubsystem->CommonAsset)
@@ -1197,12 +1249,12 @@ void ABaseCharacter::MulticastSprayPaint_Implementation(int32 RadioIndex, FVecto
 			{
 				SprayPaintDecal->DestroyComponent();
 			}
-			
+
 			// 根据法线计算旋转
 			FRotator DecalRotation = FRotationMatrix::MakeFromX(ImpactNormal).Rotator();
 			DecalRotation.Roll += 90.f;
 			DecalRotation.Yaw += 180.f;
-			
+
 			// 所有客户端（包括发起者）在相同位置生成贴花
 			SprayPaintDecal = UGameplayStatics::SpawnDecalAttached(
 				SprayPaints[RadioIndex].Material.LoadSynchronous(),
@@ -1234,7 +1286,7 @@ void ABaseCharacter::ApplyHurtEffect(const FOnAttributeChangeData& Data)
 
 	// 计算受到的伤害
 	float Damage = Data.OldValue - Data.NewValue;
-    
+
 	if (Damage > 0.f)
 	{
 		// 核心修改：如果当前没有血迹（从无到有），则随机生成 UV 偏移量
@@ -1250,7 +1302,7 @@ void ABaseCharacter::ApplyHurtEffect(const FOnAttributeChangeData& Data)
 		// 根据伤害比例增加血迹强度
 		float DamageRatio = Damage / GetMaxHealth();
 		float AddedBlood = FMath::Clamp(DamageRatio * 4.f, 0.3f, 1.0f);
-       
+
 		CurrentBloodIntensity = FMath::Clamp(CurrentBloodIntensity + AddedBlood, 0.0f, 1.0f);
 
 		BloodRecoveryDelayTimer = 3.0f;
@@ -1301,7 +1353,7 @@ void ABaseCharacter::UpdateHurtEffect(float DeltaSeconds)
 void ABaseCharacter::ApplyFlashbangEffect(float InRadius, float InMaxFlashTime, float InMaxCapTime, float InFlashTime, float InDistance, float InAngle)
 {
 	if (!Camera) return;
-	
+
 	if (!MID_Flashbang)
 	{
 		UAssetSubsystem* Subsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
@@ -1310,9 +1362,9 @@ void ABaseCharacter::ApplyFlashbangEffect(float InRadius, float InMaxFlashTime, 
 			MID_Flashbang = UMaterialInstanceDynamic::Create(Subsystem->CharacterAsset->MI_Flashbang, this);
 		}
 	}
-	
+
 	if (!MID_Flashbang) return;
-	
+
 	// 更新材质参数
 	MID_Flashbang->SetScalarParameterValue(FName("Radius"), InRadius);
 	MID_Flashbang->SetScalarParameterValue(FName("MaxFlashTime"), InMaxFlashTime);
@@ -1320,7 +1372,7 @@ void ABaseCharacter::ApplyFlashbangEffect(float InRadius, float InMaxFlashTime, 
 	MID_Flashbang->SetScalarParameterValue(FName("FlashTime"), InFlashTime);
 	MID_Flashbang->SetScalarParameterValue(FName("Distance"), InDistance);
 	MID_Flashbang->SetScalarParameterValue(FName("Angle"), InAngle);
-	
+
 	// 权重设为 1.0f，激活后处理渲染
 	Camera->AddOrUpdateBlendable(MID_Flashbang, 1.f);
 
@@ -1333,13 +1385,13 @@ void ABaseCharacter::ApplyFlashbangEffect(float InRadius, float InMaxFlashTime, 
 	if (ProposedEndTime > FlashbangEndTime)
 	{
 		FlashbangEndTime = ProposedEndTime;
-		
+
 		// 重新设定定时器，剩余等待时间 = 绝对结束时间 - 当前时间
 		GetWorldTimerManager().SetTimer(
-			TimerHandle_FlashbangEnd, 
-			this, 
-			&ABaseCharacter::ClearFlashbangEffect, 
-			FlashbangEndTime - CurrentTime, 
+			TimerHandle_FlashbangEnd,
+			this,
+			&ABaseCharacter::ClearFlashbangEffect,
+			FlashbangEndTime - CurrentTime,
 			false
 		);
 	}
@@ -1352,17 +1404,18 @@ void ABaseCharacter::ClearFlashbangEffect()
 		Camera->AddOrUpdateBlendable(MID_Flashbang, 0.f);
 	}
 
-	FlashbangEndTime = 0.f; 
+	FlashbangEndTime = 0.f;
 }
 
-void ABaseCharacter::OnLadderBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void ABaseCharacter::OnLadderBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
+                                          bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (OtherActor && OtherActor->ActorHasTag(TAG_LADDER))
+	if (OtherActor && OtherActor->ActorHasTag(Tags::Ladder))
 	{
 		// 如果在冷却期内（刚跳下梯子），拒绝吸附
 		if (GetWorld()->GetTimeSeconds() < LadderGrabCooldown)
 		{
-			return; 
+			return;
 		}
 
 		// 防止顶部退后时被吸附的逻辑
@@ -1374,16 +1427,16 @@ void ABaseCharacter::OnLadderBeginOverlap(UPrimitiveComponent* OverlappedCompone
 		{
 			// 【45度掉落修复 1】：记录当前梯子
 			CurrentLadder = OtherActor;
-			
+
 			GetCharacterMovement()->SetMovementMode(MOVE_Custom, CMOVE_Ladder);
-			GetCharacterMovement()->Velocity = FVector::ZeroVector; 
+			GetCharacterMovement()->Velocity = FVector::ZeroVector;
 		}
 	}
 }
 
 void ABaseCharacter::OnLadderEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	if (OtherActor && OtherActor->ActorHasTag(TAG_LADDER))
+	if (OtherActor && OtherActor->ActorHasTag(Tags::Ladder))
 	{
 		if (OtherActor == CurrentLadder)
 		{
@@ -1416,7 +1469,7 @@ void ABaseCharacter::ExitLadderAndJump()
 		FVector JumpVelocity = FVector::UpVector * GetJumpZVelocity() + GetActorForwardVector() * -400.f;
 		MovementComp->Velocity = JumpVelocity;
 	}
-	
+
 	// 设置 0.3 秒的梯子吸附冷却期，这样你的身体在被弹开的瞬间，即使还在 TriggerBox 里，也不会再次触发重叠吸附。
 	LadderGrabCooldown = GetWorld()->GetTimeSeconds() + 0.3f;
 }

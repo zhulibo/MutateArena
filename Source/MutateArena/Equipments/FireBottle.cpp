@@ -107,7 +107,7 @@ void AFireBottle::ServerDetectActors()
 	// 烟雾灭火
 	for (AActor* OverlapActor : OverlappingActors)
 	{
-		if (OverlapActor && OverlapActor->ActorHasTag(TAG_SMOKE_ACTOR))
+		if (OverlapActor && OverlapActor->ActorHasTag(Tags::SmokeActor))
 		{
 			MulticastExtinguishEffects();
 			
@@ -153,7 +153,7 @@ void AFireBottle::ServerDetectActors()
 	{
 		if (OverlapActor == nullptr) continue;
 
-		if (OverlapActor->ActorHasTag(TAG_CHARACTER_MUTANT))
+		if (OverlapActor->ActorHasTag(Tags::CharacterMutant))
 		{
 			if (ABaseCharacter* BaseCharacter = Cast<ABaseCharacter>(OverlapActor))
 			{
@@ -166,7 +166,7 @@ void AFireBottle::ServerDetectActors()
 				);
 			}
 		}
-		else if (OverlapActor->ActorHasTag(TAG_CHARACTER_HUMAN))
+		else if (OverlapActor->ActorHasTag(Tags::CharacterHuman))
 		{
 			if (ABaseCharacter* BaseCharacter = Cast<ABaseCharacter>(OverlapActor))
 			{

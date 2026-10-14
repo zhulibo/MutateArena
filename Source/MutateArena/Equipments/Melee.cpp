@@ -34,16 +34,21 @@ void AMelee::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimePr
 void AMelee::BeginPlay()
 {
 	Super::BeginPlay();
-
-	FString EnumValue = StaticEnum<EEquipmentName>()->GetNameStringByValue(static_cast<int64>(EquipmentParentName));
-	FDataRegistryId DataRegistryId(DR_MELEE_DATA, FName(EnumValue));
-	if (const FMeleeData* MeleeData = UDataRegistrySubsystem::Get()->GetCachedItem<FMeleeData>(DataRegistryId))
+	
+	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+	if (AssetSubsystem)
 	{
-		LightAttackDamage = MeleeData->LightAttackDamage;
-		HeavyAttackDamage = MeleeData->HeavyAttackDamage;
-		WalkSpeedMul = MeleeData->WalkSpeedMul;
-		TraceSockets = MeleeData->TraceSockets;
-		TraceRadius = MeleeData->TraceRadius;
+		if (UEquipmentAsset* MeleeAsset = AssetSubsystem->GetEquipmentAssetByName(EquipmentParentName))
+		{
+			if (const UFragMelee* MeleeFrag = MeleeAsset->FindFragmentByClass<UFragMelee>())
+			{
+				LightAttackDamage = MeleeFrag->LightAttackDamage;
+				HeavyAttackDamage = MeleeFrag->HeavyAttackDamage;
+				WalkSpeedMul = MeleeFrag->WalkSpeedMul;
+				TraceSockets = MeleeFrag->TraceSockets;
+				TraceRadius = MeleeFrag->TraceRadius;
+			}
+		}
 	}
 
 	SetMeleeTraceObjectTypes();
@@ -112,9 +117,9 @@ void AMelee::Tick(float DeltaTime)
 	}
 }
 
-void AMelee::OnEquip(class AHumanCharacter* HumanChar)
+void AMelee::OnGiven(class AHumanCharacter* HumanChar)
 {
-	Super::OnEquip(HumanChar);
+	Super::OnGiven(HumanChar);
 
 	SetMeleeTraceObjectTypes();
 }
@@ -128,14 +133,14 @@ void AMelee::SetMeleeTraceObjectTypes()
 		switch (OwnerTeam)
 		{
 		case ETeam::Team1:
-			MeleeObjectQueryParams.AddObjectTypesToQuery(ECC_MESH_TEAM2);
+			MeleeObjectQueryParams.AddObjectTypesToQuery(ECC::MeshTeam2);
 			break;
 		case ETeam::Team2:
-			MeleeObjectQueryParams.AddObjectTypesToQuery(ECC_MESH_TEAM1);
+			MeleeObjectQueryParams.AddObjectTypesToQuery(ECC::MeshTeam1);
 			break;
 		}
 
-		MeleeObjectQueryParams.AddObjectTypesToQuery(ECC_MESH_HREB);
+		MeleeObjectQueryParams.AddObjectTypesToQuery(ECC::MeshHerb);
 		MeleeObjectQueryParams.AddObjectTypesToQuery(ECC_WorldStatic);
 		MeleeObjectQueryParams.AddObjectTypesToQuery(ECC_WorldDynamic);
 	}
@@ -182,11 +187,11 @@ void AMelee::ProcessMeleeHit(const FHitResult& HitResult, const FVector& TraceDi
 
 		float Damage = bIsLightAttack ? LightAttackDamage : HeavyAttackDamage;
 
-		if (OtherActor->ActorHasTag(TAG_CHARACTER_BASE))
+		if (OtherActor->ActorHasTag(Tags::CharacterBase))
 		{
 			DropBlood(EquipmentMesh, OtherActor, OtherComp, Damage, HitResult);
 		}
-		else if (OtherActor->ActorHasTag(TAG_HERB))
+		else if (OtherActor->ActorHasTag(Tags::Herb))
 		{
 			if (AHerb* Herb = Cast<AHerb>(OtherActor))
 			{
@@ -213,10 +218,10 @@ void AMelee::ProcessMeleeHit(const FHitResult& HitResult, const FVector& TraceDi
 void AMelee::SpawnHitWallEffects(const FHitResult& HitResult, const FVector& TraceDirection)
 {
 	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-	if (AssetSubsystem && AssetSubsystem->EquipmentAsset)
+	if (AssetSubsystem && AssetSubsystem->EquipmentCommonAsset)
 	{
 		// 1. 生成墙壁刀痕贴花
-		if (AssetSubsystem->EquipmentAsset->WallMarkDecal)
+		if (AssetSubsystem->EquipmentCommonAsset->WallMarkDecal)
 		{
 			// 贴花的投影方向 (向墙壁内部投影，取法线的反方向)
 			FVector ProjectionDirection = -HitResult.ImpactNormal;
@@ -229,7 +234,7 @@ void AMelee::SpawnHitWallEffects(const FHitResult& HitResult, const FVector& Tra
 			FRotator DecalRotation = FRotationMatrix::MakeFromXY(ProjectionDirection, SurfaceTangent).Rotator();
 
 			UGameplayStatics::SpawnDecalAttached(
-				AssetSubsystem->EquipmentAsset->WallMarkDecal,
+				AssetSubsystem->EquipmentCommonAsset->WallMarkDecal,
 				FVector(10.f, 20.f, 20.f), // 贴花尺寸，可根据需要调整大小
 				HitResult.GetComponent(),
 				NAME_None,
@@ -245,16 +250,16 @@ void AMelee::SpawnHitWallEffects(const FHitResult& HitResult, const FVector& Tra
 		switch (UGameplayStatics::GetSurfaceType(HitResult))
 		{
 		case EPhysicalSurface::SurfaceType1:
-			HitSound = AssetSubsystem->EquipmentAsset->HitWall_Concrete;
+			HitSound = AssetSubsystem->EquipmentCommonAsset->HitWall_Concrete;
 			break;
 		case EPhysicalSurface::SurfaceType2:
-			HitSound = AssetSubsystem->EquipmentAsset->HitWall_Dirt;
+			HitSound = AssetSubsystem->EquipmentCommonAsset->HitWall_Dirt;
 			break;
 		case EPhysicalSurface::SurfaceType3:
-			HitSound = AssetSubsystem->EquipmentAsset->HitWall_Metal;
+			HitSound = AssetSubsystem->EquipmentCommonAsset->HitWall_Metal;
 			break;
 		case EPhysicalSurface::SurfaceType4:
-			HitSound = AssetSubsystem->EquipmentAsset->HitWall_Wood;
+			HitSound = AssetSubsystem->EquipmentCommonAsset->HitWall_Wood;
 			break;
 		}
 

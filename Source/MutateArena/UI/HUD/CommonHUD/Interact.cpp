@@ -9,7 +9,7 @@ void UInteract::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
 
-	ProgressBar->SetFillColorAndOpacity(C_GREEN);
+	ProgressBar->SetFillColorAndOpacity(Colors::Green);
 
 	if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(GetOwningLocalPlayer()))
 	{

@@ -251,7 +251,7 @@ void UTabControl::SetDefault()
 		}
 		else
 		{
-			NOTIFY(this, C_RED, LOCTEXT("ResetKeyBindingsFailed", "Reset Key Bindings Failed"));
+			NOTIFY(this, Colors::Red, LOCTEXT("ResetKeyBindingsFailed", "Reset Key Bindings Failed"));
 			
 			UE_LOG(LogTemp, Warning, TEXT("ResetKeyBindingsFailed: %s"), *FailureReason.ToString());
 		}
@@ -291,10 +291,10 @@ void UTabControl::CreateKeyBindingWidgets()
 
 void UTabControl::SetWidgetSectionColor()
 {
-	FColor White = C_WHITE;
-	FColor Red = C_RED;
-	FColor Green = C_GREEN;
-	FColor Gray = C_BLACK;
+	FColor White = Colors::White;
+	FColor Red = Colors::Red;
+	FColor Green = Colors::Green;
+	FColor Gray = Colors::Black;
 
 	White.A = 30;
 	Red.A = 40;

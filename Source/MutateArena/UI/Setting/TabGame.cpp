@@ -34,14 +34,14 @@ void UTabGame::NativeOnInitialized()
 	ObfuscateTextChatComboBox->OnGenerateItemWidget.BindDynamic(this, &ThisClass::GenerateComboBoxWidget);
 	ObfuscateTextChatComboBox->OnGenerateContentWidget.BindDynamic(this, &ThisClass::GenerateComboBoxWidget);
 
-	LanguageComboBox->AddOption(EN);
-	LanguageComboBox->AddOption(ZH);
-	HideSkinsComboBox->AddOption(ON);
-	HideSkinsComboBox->AddOption(OFF);
-	ObfuscateNameComboBox->AddOption(ON);
-	ObfuscateNameComboBox->AddOption(OFF);
-	ObfuscateTextChatComboBox->AddOption(ON);
-	ObfuscateTextChatComboBox->AddOption(OFF);
+	LanguageComboBox->AddOption(Settings::EN);
+	LanguageComboBox->AddOption(Settings::ZH);
+	HideSkinsComboBox->AddOption(Settings::On);
+	HideSkinsComboBox->AddOption(Settings::Off);
+	ObfuscateNameComboBox->AddOption(Settings::On);
+	ObfuscateNameComboBox->AddOption(Settings::Off);
+	ObfuscateTextChatComboBox->AddOption(Settings::On);
+	ObfuscateTextChatComboBox->AddOption(Settings::Off);
 	
 	SetUISavedValue();
 	
@@ -113,15 +113,15 @@ void UTabGame::SetUISavedValue()
 		
 		FName Language = StorageSubsystem->CacheSetting->Language;
 		// TODO 存在漏洞 可能是 zh-Hant/zh-Hans 不等于 zh 最终下拉框显示了en
-		if (Language != EN || Language != ZH)
+		if (Language != Settings::EN || Language != Settings::ZH)
 		{
-			Language = EN;
+			Language = Settings::EN;
 		}
 		LanguageComboBox->SetSelectedOption(Language);
 		
-		HideSkinsComboBox->SetSelectedOption(StorageSubsystem->CacheSetting->bHideSkins ? ON : OFF);
-		ObfuscateNameComboBox->SetSelectedOption(StorageSubsystem->CacheSetting->bObfuscateName ? ON : OFF);
-		ObfuscateTextChatComboBox->SetSelectedOption(StorageSubsystem->CacheSetting->bObfuscateTextChat ? ON : OFF);
+		HideSkinsComboBox->SetSelectedOption(StorageSubsystem->CacheSetting->bHideSkins ? Settings::On : Settings::Off);
+		ObfuscateNameComboBox->SetSelectedOption(StorageSubsystem->CacheSetting->bObfuscateName ? Settings::On : Settings::Off);
+		ObfuscateTextChatComboBox->SetSelectedOption(StorageSubsystem->CacheSetting->bObfuscateTextChat ? Settings::On : Settings::Off);
 	}
 }
 
@@ -142,7 +142,7 @@ void UTabGame::OnHideSkinsChanged(FName SelectedItem, ESelectInfo::Type Selectio
 	if (StorageSubsystem == nullptr) StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
 	if (StorageSubsystem && StorageSubsystem->CacheSetting)
 	{
-		StorageSubsystem->CacheSetting->bHideSkins = SelectedItem == ON;
+		StorageSubsystem->CacheSetting->bHideSkins = SelectedItem == Settings::On;
 		StorageSubsystem->SaveSetting();
 	}
 }
@@ -152,7 +152,7 @@ void UTabGame::OnObfuscateNameChanged(FName SelectedItem, ESelectInfo::Type Sele
 	if (StorageSubsystem == nullptr) StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
 	if (StorageSubsystem && StorageSubsystem->CacheSetting)
 	{
-		StorageSubsystem->CacheSetting->bObfuscateName = SelectedItem == ON;
+		StorageSubsystem->CacheSetting->bObfuscateName = SelectedItem == Settings::On;
 		StorageSubsystem->SaveSetting();
 	}
 }
@@ -162,7 +162,7 @@ void UTabGame::OnObfuscateTextChatChanged(FName SelectedItem, ESelectInfo::Type 
 	if (StorageSubsystem == nullptr) StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
 	if (StorageSubsystem && StorageSubsystem->CacheSetting)
 	{
-		StorageSubsystem->CacheSetting->bObfuscateTextChat = SelectedItem == ON;
+		StorageSubsystem->CacheSetting->bObfuscateTextChat = SelectedItem == Settings::On;
 		StorageSubsystem->SaveSetting();
 	}
 }
@@ -176,14 +176,14 @@ void UTabGame::SetDefault()
 		{
 			FName Language = DefaultConfig->Language;
 			// TODO 存在漏洞 可能是 zh-Hant/zh-Hans 不等于 zh 最终下拉框显示了en
-			if (Language != EN || Language != ZH)
+			if (Language != Settings::EN || Language != Settings::ZH)
 			{
-				Language = EN;
+				Language = Settings::EN;
 			}
 			LanguageComboBox->SetSelectedOption(Language);
-			HideSkinsComboBox->SetSelectedOption(DefaultConfig->bHideSkins ? ON : OFF);
-			ObfuscateNameComboBox->SetSelectedOption(DefaultConfig->bObfuscateName ? ON : OFF);
-			ObfuscateTextChatComboBox->SetSelectedOption(DefaultConfig->bObfuscateTextChat ? ON : OFF);
+			HideSkinsComboBox->SetSelectedOption(DefaultConfig->bHideSkins ? Settings::On : Settings::Off);
+			ObfuscateNameComboBox->SetSelectedOption(DefaultConfig->bObfuscateName ? Settings::On : Settings::Off);
+			ObfuscateTextChatComboBox->SetSelectedOption(DefaultConfig->bObfuscateTextChat ? Settings::On : Settings::Off);
 
 			StorageSubsystem->CacheSetting->Language = DefaultConfig->Language;
 			StorageSubsystem->CacheSetting->bHideSkins = DefaultConfig->bHideSkins;

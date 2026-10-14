@@ -27,7 +27,7 @@ protected:
 	UPROPERTY()
 	class ABaseController* BaseController;
 	UPROPERTY()
-	class UAnimInstHuman* HumanAnimInst;
+	class UAnimInstHuman* AnimInstHuman;
 	UPROPERTY()
 	class UAssetSubsystem* AssetSubsystem;
 
@@ -53,7 +53,7 @@ public:
 	class AMelee* GetCurMelee();
 	AEquipment* GetEquipmentByType(EEquipmentType EquipmentType);
 protected:
-	bool HasEquippedEquipment(EEquipmentType EquipmentType);
+	bool OwnEquipment(EEquipmentType EquipmentType);
 public:
 	UPROPERTY(ReplicatedUsing = OnRep_PrimaryEquipment)
 	class AWeapon* PrimaryEquipment;
@@ -79,9 +79,9 @@ protected:
 	UFUNCTION()
 	void OnRep_CurEquipmentType(EEquipmentType OldEquipmentType);
 
-	// 装备
+	// 给予
 public:
-	void EquipEquipment(AEquipment* NewEquipment, bool bIsCurrent = false);
+	void GiveEquipment(AEquipment* NewEquipment, bool bIsCurrent = false);
 protected:
 	void AssignEquipment(AEquipment* Equipment);
 public:
@@ -93,19 +93,14 @@ public:
 	EEquipmentType DesiredEquipmentType = EEquipmentType::None;
 	void InstantSwap(EEquipmentType TargetType);
 
-	void AttachToBody(AEquipment* Equipment);
+	void HolsterEquipment(AEquipment* Equipment);
 	void AttachToHand(AEquipment* Equipment, FName SocketNameSuffix);
 
 	// 瞄准
 	bool IsAiming();
 	void LocalSetAiming(bool TempBIsAiming);
-protected:
-	UPROPERTY(Transient)
-	UMaterialParameterCollectionInstance* CachedScopeMPCI = nullptr;
-	void CalcCameraToScopeRotator();
 
 	// 射击
-public:
 	void TraceUnderCrosshair(FHitResult& TraceHitResult);
 	int32 CurShotCount = 1;
 

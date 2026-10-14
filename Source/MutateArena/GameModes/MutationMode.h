@@ -22,7 +22,7 @@ class MUTATEARENA_API AMutationMode : public ABaseMode
 
 public:
 	UPROPERTY(EditAnywhere)
-	int32 TotalRound = DEFAULT_MATCH_ROUND;
+	int32 TotalRound = GameModes::DefaultMatchRound;
 	UPROPERTY(EditAnywhere)
 	float WarmupTime = 15.f;
 	UPROPERTY(EditAnywhere)

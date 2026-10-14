@@ -40,6 +40,6 @@ public:
 
 	virtual FPrimaryAssetId GetPrimaryAssetId() const override
 	{
-		return FPrimaryAssetId(ASSET_ENVIRONMENT, GetFName());
+		return FPrimaryAssetId(DataAsset::Environment, GetFName());
 	}
 };

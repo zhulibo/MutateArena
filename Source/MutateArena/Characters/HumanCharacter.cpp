@@ -42,6 +42,7 @@
 #include "MutateArena/System/GameplayTags.h"
 #include "Net/UnrealNetwork.h"
 #include "MutateArena/Abilities/GameplayAbilityBase.h"
+#include "MutateArena/Equipments/Data/EquipmentAsset.h"
 #include "MutateArena/PlayerStates/BasePlayerState.h"
 
 #define LOCTEXT_NAMESPACE "AHumanCharacter"
@@ -51,9 +52,9 @@ AHumanCharacter::AHumanCharacter(const FObjectInitializer& ObjectInitializer)
 {
 	PrimaryActorTick.bCanEverTick = true;
 	
-	Tags.Add(TAG_CHARACTER_HUMAN);
+	Tags.Add(Tags::CharacterHuman);
 	
-	BloodColor = C_RED;
+	BloodColor = Colors::Red;
 
 	CombatComp = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
 	RecoilComp = CreateDefaultSubobject<URecoilComponent>(TEXT("RecoilComponent"));
@@ -226,99 +227,108 @@ void AHumanCharacter::ApplyLoadout()
 
 void AHumanCharacter::ServerSpawnEquipments_Implementation(EEquipmentName Primary, EEquipmentName Secondary, EEquipmentName Melee, EEquipmentName Throwing)
 {
-	if (CombatComp == nullptr) return;
+	UE_LOG(LogTemp, Warning, TEXT("1"));
+    if (CombatComp == nullptr) return;
 
-	// 包括Standalone
+    // 包括Standalone
 #if WITH_EDITOR
-	if (GetDefault<UDevSetting>()->bIsUseCustomEquipment)
-	{
-		Primary = GetDefault<UDevSetting>()->PrimaryEquipment;
-		Secondary = GetDefault<UDevSetting>()->SecondaryEquipment;
-		Melee = GetDefault<UDevSetting>()->MeleeEquipment;
-		Throwing = GetDefault<UDevSetting>()->ThrowingEquipment;
-	}
+    if (GetDefault<UDevSetting>()->bIsUseCustomEquipment)
+    {
+       Primary = GetDefault<UDevSetting>()->PrimaryEquipment;
+       Secondary = GetDefault<UDevSetting>()->SecondaryEquipment;
+       Melee = GetDefault<UDevSetting>()->MeleeEquipment;
+       Throwing = GetDefault<UDevSetting>()->ThrowingEquipment;
+    }
 #endif
 
-	FString PrimaryName = StaticEnum<EEquipmentName>()->GetNameStringByValue(static_cast<int64>(Primary));
-	FString SecondaryName = StaticEnum<EEquipmentName>()->GetNameStringByValue(static_cast<int64>(Secondary));
-	FString MeleeName = StaticEnum<EEquipmentName>()->GetNameStringByValue(static_cast<int64>(Melee));
-	FString ThrowingName = StaticEnum<EEquipmentName>()->GetNameStringByValue(static_cast<int64>(Throwing));
+    bool bSpawnPrimary = true;
+    bool bSpawnSecondary = true;
+    bool bSpawnThrowing = true;
 
-	// 近战模式只生成近战装备
-	if (AMeleeGameState* MeleeGameState = GetWorld()->GetGameState<AMeleeGameState>())
+    // 近战模式只生成近战装备
+    if (AMeleeGameState* MeleeGameState = GetWorld()->GetGameState<AMeleeGameState>())
+    {
+       bSpawnPrimary = false;
+       bSpawnSecondary = false;
+       bSpawnThrowing = false;
+    }
+    
+    TSubclassOf<AEquipment> PrimaryClass = nullptr;
+    TSubclassOf<AEquipment> SecondaryClass = nullptr;
+    TSubclassOf<AEquipment> MeleeClass = nullptr;
+    TSubclassOf<AEquipment> ThrowingClass = nullptr;
+    
+	if (!AssetSubsystem) AssetSubsystem = GetWorld()->GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+	if (AssetSubsystem)
 	{
-		PrimaryName = FString();
-		SecondaryName = FString();
-		ThrowingName = FString();
-	}
-	
-	TSubclassOf<AEquipment> PrimaryClass = nullptr;
-	TSubclassOf<AEquipment> SecondaryClass = nullptr;
-	TSubclassOf<AEquipment> MeleeClass = nullptr;
-	TSubclassOf<AEquipment> ThrowingClass = nullptr;
-	
-	if (!PrimaryName.IsEmpty()) {
-		FDataRegistryId DataRegistryId(DR_EQUIPMENT_MAIN, FName(PrimaryName));
-		if (const FEquipmentMain* EquipmentMain = UDataRegistrySubsystem::Get()->GetCachedItem<FEquipmentMain>(DataRegistryId))
+		if (bSpawnPrimary)
 		{
-			PrimaryClass = UDataAssetManager::Get().GetSubclass(EquipmentMain->EquipmentClass);
+			if (UEquipmentAsset* Asset = AssetSubsystem->GetEquipmentAssetByName(Primary))
+			{
+				PrimaryClass = UDataAssetManager::Get().GetSubclass(Asset->EquipmentClass);
+			}
+		}
+
+		if (bSpawnSecondary)
+		{
+			if (UEquipmentAsset* Asset = AssetSubsystem->GetEquipmentAssetByName(Secondary))
+			{
+				SecondaryClass = UDataAssetManager::Get().GetSubclass(Asset->EquipmentClass);
+			}
+		}
+
+		// 近战武器不受近战模式限制，始终尝试生成
+		if (UEquipmentAsset* Asset = AssetSubsystem->GetEquipmentAssetByName(Melee))
+		{
+			MeleeClass = UDataAssetManager::Get().GetSubclass(Asset->EquipmentClass);
+		}
+
+		if (bSpawnThrowing)
+		{
+			if (UEquipmentAsset* Asset = AssetSubsystem->GetEquipmentAssetByName(Throwing))
+			{
+				ThrowingClass = UDataAssetManager::Get().GetSubclass(Asset->EquipmentClass);
+			}
 		}
 	}
-	if (!SecondaryName.IsEmpty()) {
-		FDataRegistryId DataRegistryId(DR_EQUIPMENT_MAIN, FName(SecondaryName));
-		if (const FEquipmentMain* EquipmentMain = UDataRegistrySubsystem::Get()->GetCachedItem<FEquipmentMain>(DataRegistryId))
-		{
-			SecondaryClass = UDataAssetManager::Get().GetSubclass(EquipmentMain->EquipmentClass);
-		}
-	}
-	if (!MeleeName.IsEmpty()) {
-		FDataRegistryId DataRegistryId(DR_EQUIPMENT_MAIN, FName(MeleeName));
-		if (const FEquipmentMain* EquipmentMain = UDataRegistrySubsystem::Get()->GetCachedItem<FEquipmentMain>(DataRegistryId))
-		{
-			MeleeClass = UDataAssetManager::Get().GetSubclass(EquipmentMain->EquipmentClass);
-		}
-	}
-	if (!ThrowingName.IsEmpty()) {
-		FDataRegistryId DataRegistryId(DR_EQUIPMENT_MAIN, FName(ThrowingName));
-		if (const FEquipmentMain* EquipmentMain = UDataRegistrySubsystem::Get()->GetCachedItem<FEquipmentMain>(DataRegistryId))
-		{
-			ThrowingClass = UDataAssetManager::Get().GetSubclass(EquipmentMain->EquipmentClass);
-		}
-	}
-	
-	// 先装备副武器，以便被置为LastEquipmentType
-	if (SecondaryClass && SecondaryClass->IsChildOf<AWeapon>())
-	{
-		AWeapon* SpawnedActor = GetWorld()->SpawnActor<AWeapon>(SecondaryClass);
-		CombatComp->SecondaryEquipment = SpawnedActor;
-		CombatComp->EquipEquipment(SpawnedActor);
-	}
-	if (PrimaryClass && PrimaryClass->IsChildOf<AWeapon>())
-	{
-		AWeapon* SpawnedActor = GetWorld()->SpawnActor<AWeapon>(PrimaryClass);
-		CombatComp->PrimaryEquipment = SpawnedActor;
-		CombatComp->EquipEquipment(SpawnedActor);
-		
-		CombatComp->InstantSwap(EEquipmentType::Primary);
-	}
-	if (MeleeClass && MeleeClass->IsChildOf<AMelee>())
-	{
-		AMelee* SpawnedActor = GetWorld()->SpawnActor<AMelee>(MeleeClass);
-		CombatComp->MeleeEquipment = SpawnedActor;
-		CombatComp->EquipEquipment(SpawnedActor);
-		
-		// 近战模式默认切到近战武器
-		if (AMeleeGameState* MeleeGameState = GetWorld()->GetGameState<AMeleeGameState>())
-		{
-			CombatComp->InstantSwap(EEquipmentType::Melee);
-		}
-	}
-	if (ThrowingClass && ThrowingClass->IsChildOf<AThrowing>())
-	{
-		AThrowing* SpawnedActor = GetWorld()->SpawnActor<AThrowing>(ThrowingClass);
-		CombatComp->ThrowingEquipment = SpawnedActor;
-		CombatComp->EquipEquipment(SpawnedActor);
-	}
+    
+    // 先装备副武器，以便被置为LastEquipmentType
+    if (SecondaryClass && SecondaryClass->IsChildOf<AWeapon>())
+    {
+       AWeapon* SpawnedActor = GetWorld()->SpawnActor<AWeapon>(SecondaryClass);
+       CombatComp->SecondaryEquipment = SpawnedActor;
+       CombatComp->GiveEquipment(SpawnedActor);
+    }
+	UE_LOG(LogTemp, Warning, TEXT("2"));
+    if (PrimaryClass && PrimaryClass->IsChildOf<AWeapon>())
+    {
+       UE_LOG(LogTemp, Warning, TEXT("3"));
+       AWeapon* SpawnedActor = GetWorld()->SpawnActor<AWeapon>(PrimaryClass);
+       CombatComp->PrimaryEquipment = SpawnedActor;
+       CombatComp->GiveEquipment(SpawnedActor);
+       
+       CombatComp->InstantSwap(EEquipmentType::Primary);
+    }
+    
+    if (MeleeClass && MeleeClass->IsChildOf<AMelee>())
+    {
+       AMelee* SpawnedActor = GetWorld()->SpawnActor<AMelee>(MeleeClass);
+       CombatComp->MeleeEquipment = SpawnedActor;
+       CombatComp->GiveEquipment(SpawnedActor);
+       
+       // 近战模式默认切到近战武器
+       if (AMeleeGameState* MeleeGameState = GetWorld()->GetGameState<AMeleeGameState>())
+       {
+          CombatComp->InstantSwap(EEquipmentType::Melee);
+       }
+    }
+    
+    if (ThrowingClass && ThrowingClass->IsChildOf<AThrowing>())
+    {
+       AThrowing* SpawnedActor = GetWorld()->SpawnActor<AThrowing>(ThrowingClass);
+       CombatComp->ThrowingEquipment = SpawnedActor;
+       CombatComp->GiveEquipment(SpawnedActor);
+    }
 }
 
 // 获取装备的名字
@@ -534,10 +544,10 @@ void AHumanCharacter::ClientSwapEquipmentWhenPickupFailed_Implementation(EEquipm
 void AHumanCharacter::EquipOverlappingEquipment_Server(AEquipment* Equipment)
 {
 	if (bIsDead || Equipment == nullptr || Equipment->GetOwner() || CombatComp == nullptr) return;
-	if (CombatComp->HasEquippedEquipment(Equipment->EquipmentType)) return;
+	if (CombatComp->OwnEquipment(Equipment->EquipmentType)) return;
 	if (CombatComp->MeleeEquipment) // HACK 排除玩家刚重生还没有装备好武器（近战武器装备后无法丢弃）
 	{
-		CombatComp->EquipEquipment(Equipment);
+		CombatComp->GiveEquipment(Equipment);
 		
 		CombatComp->ClientPlayEquipSound();
 	}
@@ -578,7 +588,7 @@ void AHumanCharacter::TrySwitchLoadout()
 	}
 	else
 	{
-		NOTIFY(this, C_WHITE, LOCTEXT("LoadoutApplyTip", "Loadout will apply in the next respawn"));
+		NOTIFY(this, Colors::White, LOCTEXT("LoadoutApplyTip", "Loadout will apply in the next respawn"));
 	}
 }
 
@@ -691,9 +701,9 @@ void AHumanCharacter::OnDead()
 	if (BaseController) DisableInput(BaseController);
 
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	GetMesh()->SetSimulatePhysics(true);
-	GetMesh()->SetEnableGravity(true);
-	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	BodyMesh->SetSimulatePhysics(true);
+	BodyMesh->SetEnableGravity(true);
+	BodyMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 }
 
 void AHumanCharacter::BecomeImmune()

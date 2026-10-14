@@ -12,6 +12,7 @@
 #include "Engine/GameInstance.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/Assets/Data/CommonAsset.h"
+#include "MutateArena/Equipments/Data/EquipmentAsset.h"
 #include "MutateArena/System/AssetSubsystem.h"
 
 UGC_Weapon_Fire::UGC_Weapon_Fire()
@@ -29,41 +30,41 @@ bool UGC_Weapon_Fire::OnExecute_Implementation(AActor* MyTarget, const FGameplay
     }
 
     // 播放角色动画
-    if (UAnimInstHuman* HumanAnimInst = Cast<UAnimInstHuman>(HumanChar->GetMesh()->GetAnimInstance()))
+    if (UAnimInstHuman* HumanAnimInst = Cast<UAnimInstHuman>(HumanChar->BodyMesh->GetAnimInstance()))
     {
-        if (HumanAnimInst->Montage_IsPlaying(CurWeapon->ADSMontage_C))
+        // if (HumanAnimInst->Montage_IsPlaying(CurWeapon->ADSMontage_C))
+        // {
+        // }
+        // else
         {
-        }
-        else
-        {
-            UAnimMontage* CharMontage = CombatComp->IsAiming() ? CurWeapon->FireADSMontage_C : CurWeapon->FireMontage_C;
-            if (!HumanChar->IsLocallyControlled())
-            {
-                CharMontage = CurWeapon->FireMontage_C; // TODO 非本地瞄准动画暂时禁用了
-            }
-            HumanAnimInst->Montage_Play(CharMontage); 
+            // UAnimMontage* CharMontage = CombatComp->IsAiming() ? CurWeapon->FireADSMontage_C : CurWeapon->FireMontage_C;
+            // if (!HumanChar->IsLocallyControlled())
+            // {
+            //     CharMontage = CurWeapon->FireMontage_C; // TODO 非本地瞄准动画暂时禁用了
+            // }
+            // HumanAnimInst->Montage_Play(CharMontage); 
         }
     }
 
 	// 播放武器动画
     if (UAnimInstEquipment* EquipmentAnimInst = CurWeapon->GetEquipmentAnimInst())
     {
-        UAnimMontage* WeapMontage = CombatComp->IsAiming() ? CurWeapon->FireADSMontage_E : CurWeapon->FireMontage_E;
-        if (!HumanChar->IsLocallyControlled())
-        {
-            WeapMontage = CurWeapon->FireMontage_E; // TODO 非本地瞄准动画暂时禁用了
-        }
-        EquipmentAnimInst->Montage_Play(WeapMontage);
+        // UAnimMontage* WeapMontage = CombatComp->IsAiming() ? CurWeapon->FireADSMontage_E : CurWeapon->FireMontage_E;
+        // if (!HumanChar->IsLocallyControlled())
+        // {
+        //     WeapMontage = CurWeapon->FireMontage_E; // TODO 非本地瞄准动画暂时禁用了
+        // }
+        // EquipmentAnimInst->Montage_Play(WeapMontage);
     }
 
     if (USceneComponent* WeaponMesh = CurWeapon->EquipmentMesh)
     {
-        if (CurWeapon->MuzzleFlashEffect)
+        if (CurWeapon->FragWeapon->MuzzleFlashEffect)
         {
             UNiagaraFunctionLibrary::SpawnSystemAttached(
-                CurWeapon->MuzzleFlashEffect,
+                CurWeapon->FragWeapon->MuzzleFlashEffect,
                 WeaponMesh,
-                SOCKET_MUZZLE,
+                Sockets::Muzzle,
                 FVector::ZeroVector,
                 FRotator::ZeroRotator,
                 EAttachLocation::SnapToTarget,
@@ -71,17 +72,17 @@ bool UGC_Weapon_Fire::OnExecute_Implementation(AActor* MyTarget, const FGameplay
             );
         }
 
-        UGameplayStatics::SpawnSoundAttached(CurWeapon->FireSound, WeaponMesh, SOCKET_MUZZLE);
-        UGameplayStatics::SpawnSoundAttached(CurWeapon->MechSound, WeaponMesh, SOCKET_MUZZLE);
+        UGameplayStatics::SpawnSoundAttached(CurWeapon->FragWeapon->FireSound, WeaponMesh, Sockets::Muzzle);
+        UGameplayStatics::SpawnSoundAttached(CurWeapon->FragWeapon->MechSound, WeaponMesh, Sockets::Muzzle);
     }
 
     if (HumanChar->IsLocallyControlled())
     {
         float Volume = 0.6f;
-        float LastTime = CurWeapon->bIsAutomatic ? 1.2f : 0.5f;
+        float LastTime = CurWeapon->FragWeapon->bIsAutomatic ? 1.2f : 0.5f;
 
         // 判断是否到达低弹量阈值
-        if (CurWeapon->Ammo <= (CurWeapon->FireRate / 60.f) * LastTime)
+        if (CurWeapon->Ammo <= (CurWeapon->FragWeapon->FireRate / 60.f) * LastTime)
         {
             Volume = 2.f;
         }

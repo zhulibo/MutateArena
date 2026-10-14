@@ -12,7 +12,7 @@ bool UGC_Weapon_Reload::OnExecute_Implementation(AActor* MyTarget, const FGamepl
 	
 	if (UAnimInstEquipment* EquipmentAnimInst = CurWeapon->GetEquipmentAnimInst())
 	{
-		EquipmentAnimInst->Montage_Play(CurWeapon->ReloadMontage_E);
+		EquipmentAnimInst->Montage_Play(CurWeapon->FragWeapon->ReloadMontage_E);
 	}
 	
 	return Super::OnExecute_Implementation(MyTarget, Parameters);

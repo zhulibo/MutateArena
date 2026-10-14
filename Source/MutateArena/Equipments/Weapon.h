@@ -2,8 +2,10 @@
 
 #include "CoreMinimal.h"
 #include "Equipment.h"
+#include "Data/EquipmentAsset.h"
 #include "Weapon.generated.h"
 
+class UFragWeapon;
 class USceneCaptureComponent2D;
 
 UCLASS()
@@ -17,90 +19,22 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void BeginPlay() override;
 	
-	UPROPERTY(VisibleAnywhere)
-	USceneCaptureComponent2D* ScopeCapture;
+	UPROPERTY(Transient)
+	TObjectPtr<const UFragWeapon> FragWeapon = nullptr;
 
-	UPROPERTY(EditAnywhere)
-	TSubclassOf<class AShell> ShellClass;
-	
-	UPROPERTY(EditAnywhere)
-	class UNiagaraSystem* MuzzleFlashEffect;
-	
-	UPROPERTY(EditAnywhere)
-	class UMetaSoundSource* FireSound;
-	UPROPERTY(EditAnywhere)
-	UMetaSoundSource* MechSound;
-	
-	UPROPERTY(EditAnywhere)
-	UAnimMontage* FireMontage_C;
-	UPROPERTY(EditAnywhere)
-	UAnimMontage* FireMontage_E;
-	UPROPERTY(EditAnywhere)
-	UAnimMontage* FireADSMontage_C;
-	UPROPERTY(EditAnywhere)
-	UAnimMontage* FireADSMontage_E;
-
-	UPROPERTY(EditAnywhere)
-	UAnimMontage* ReloadMontage_C;
-	UPROPERTY(EditAnywhere)
-	UAnimMontage* ReloadMontage_E;
-
-	UPROPERTY(EditAnywhere)
-	UAnimMontage* ADSMontage_C;
-	UPROPERTY(EditAnywhere)
-	UAnimMontage* ADSMontage_E;
-
-	UPROPERTY()
-	float AimingFOVMul = 0.9f; // 缩放倍数
-	UPROPERTY()
-	bool bIsPIP = false;
-	UPROPERTY()
-	float ScopeFOV = 90.f;
 	UPROPERTY(ReplicatedUsing = OnRep_CarriedAmmo)
 	int32 CarriedAmmo; // 当前携弹量
-	UPROPERTY()
-	int32 MaxCarriedAmmo; // 最大携弹量
 	UPROPERTY(ReplicatedUsing = OnRep_Ammo)
 	int32 Ammo; // 当前弹匣子弹数量
+
+	UPROPERTY()
+	int32 MaxCarriedAmmo; // 最大携弹量
 	UPROPERTY()
 	int32 MagCapacity; // 弹匣容量
-	UPROPERTY()
-	float FireRate;
-	UPROPERTY()
-	bool bIsAutomatic;
-	UPROPERTY()
-	int32 PelletNum;
-	UPROPERTY()
-	float PenetrationPower = 0.;
+
 	FORCEINLINE bool IsEmpty() const { return Ammo <= 0; }
 	FORCEINLINE bool IsFull() const { return Ammo == MagCapacity; }
-	FORCEINLINE float GetFireDelay() const { return 60 / FireRate; }
-	
-	UPROPERTY()
-	class UCurveVector* RecoilCurve;
-	UPROPERTY()
-	UCurveFloat* RecoilCurveRandVert;
-	UPROPERTY()
-	UCurveFloat* RecoilCurveRandHor;
-	// 应用后坐力需要的时间
-	UPROPERTY()
-	float RecoilIncTime;
-	// 恢复后坐力需要的时间
-	UPROPERTY()
-	float RecoilMaxDecTime;
-	UPROPERTY()
-	float RecoilMinDecTime;
-	// 恢复后坐力需要的时间 达到最大时所需要的垂直后坐力
-	UPROPERTY()
-	float RecoilVertRef_DecTime;
-	// 准星达到最大时所需要的垂直后坐力
-	UPROPERTY()
-	float RecoilVertRef_Crosshair;
-	// 准星
-	UPROPERTY()
-	float CrosshairBaseSpread;
-	
-	void SetScopeActive(bool bIsActive);
+	FORCEINLINE float GetFireDelay() const { return 60 / FragWeapon->FireRate; }
 
 protected:
 	void InitData();

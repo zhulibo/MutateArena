@@ -22,7 +22,7 @@ void UAnimInstEquipment::NativeUpdateAnimation(float DeltaSeconds)
 
 	if (HumanCharacter->IsLocallyControlled()) // TODO 非本地瞄准动画暂时禁用了
 	{
-		if (!Montage_IsPlaying(HumanCharacter->CombatComp->GetCurWeapon()->ADSMontage_E))
+		// if (!Montage_IsPlaying(HumanCharacter->CombatComp->GetCurWeapon()->ADSMontage_E))
 		{
 			bIsAiming = HumanCharacter->CombatComp->IsAiming();
 		}

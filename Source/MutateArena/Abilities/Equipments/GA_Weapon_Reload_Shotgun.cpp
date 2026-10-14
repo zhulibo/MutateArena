@@ -5,6 +5,7 @@
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "MutateArena/Equipments/Weapon.h"
+#include "MutateArena/Equipments/Data/EquipmentAsset.h"
 #include "MutateArena/System/GameplayTags.h"
 
 UGA_Weapon_Reload_Shotgun::UGA_Weapon_Reload_Shotgun()
@@ -29,7 +30,7 @@ void UGA_Weapon_Reload_Shotgun::ActivateAbility(const FGameplayAbilitySpecHandle
 		return;
 	}
 
-	if (CurWeapon->ReloadMontage_C)
+	if (CurWeapon->FragWeapon->ReloadMontage_C)
 	{
 		// 监听换弹通知
 		UAbilityTask_WaitGameplayEvent* WaitEventTask = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(
@@ -39,7 +40,7 @@ void UGA_Weapon_Reload_Shotgun::ActivateAbility(const FGameplayAbilitySpecHandle
 		
 		// 播放角色换弹动画
 		UAbilityTask_PlayMontageAndWait* MontageTask = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(
-			this, NAME_None, CurWeapon->ReloadMontage_C, 1.f, NAME_None, false);
+			this, NAME_None, CurWeapon->FragWeapon->ReloadMontage_C, 1.f, NAME_None, false);
 		MontageTask->OnCompleted.AddDynamic(this, &ThisClass::OnMontageFinished);
 		MontageTask->OnInterrupted.AddDynamic(this, &ThisClass::OnMontageFinished);
 		MontageTask->OnCancelled.AddDynamic(this, &ThisClass::OnMontageFinished);
@@ -81,7 +82,7 @@ void UGA_Weapon_Reload_Shotgun::OnShellInsertEventReceived(FGameplayEventData Pa
 
 	if (CurWeapon->IsFull() || CurWeapon->CarriedAmmo <= 0)
 	{
-		MontageJumpToSection(SECTION_RELOAD_END);
+		MontageJumpToSection(MontageSections::ReloadEnd);
 		
 		// 让枪械蒙太奇跳到最后
 		FGameplayCueParameters CueParams;

@@ -18,7 +18,7 @@ bool UGC_Equipment_SwapOut_Reverse::OnExecute_Implementation(AActor* MyTarget, c
 	if (HumanChar && CurEquipment)
 	{
 		// 倒放角色动画
-		if (USkeletalMeshComponent* Mesh = HumanChar->GetMesh())
+		if (USkeletalMeshComponent* Mesh = HumanChar->BodyMesh)
 		{
 			if (UAnimInstance* HumanAnimInst = Mesh->GetAnimInstance())
 			{

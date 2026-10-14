@@ -13,6 +13,6 @@ void UAN_AttachToLeftHand::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenc
 	AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(MeshComp->GetOwner());
 	if (HumanCharacter && HumanCharacter->CombatComp)
 	{
-		HumanCharacter->CombatComp->AttachToHand(HumanCharacter->CombatComp->GetCurEquipment(), SOCKET_SUFFIX_L);
+		HumanCharacter->CombatComp->AttachToHand(HumanCharacter->CombatComp->GetCurEquipment(), Sockets::SuffixL);
 	}
 }

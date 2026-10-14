@@ -1,22 +1,15 @@
 #include "Weapon.h"
 
-#include "AudioModulationStatics.h"
-#include "DataRegistryId.h"
-#include "DataRegistrySubsystem.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "MutateArena/PlayerControllers/BaseController.h"
-#include "MutateArena/Utils/LibraryCommon.h"
-#include "Components/SceneCaptureComponent2D.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/SphereComponent.h"
 #include "Data/EquipmentAsset.h"
 #include "Engine/GameInstance.h"
 #include "Shells/Shell.h"
 #include "Engine/SkeletalMeshSocket.h"
-#include "Kismet/GameplayStatics.h"
 #include "MutateArena/System/AssetSubsystem.h"
-#include "MutateArena/Assets/Data/CommonAsset.h"
 #include "MutateArena/System/ObjectPoolSubsystem.h"
 #include "MutateArena/System/UISubsystem.h"
 #include "Net/UnrealNetwork.h"
@@ -31,103 +24,79 @@ AWeapon::AWeapon()
 void AWeapon::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	InitData();
 
-	if (bIsPIP)
+	InitData();
+	
+	// 提前同步预生成 20 个弹壳入池，且将该类弹壳的同屏硬上限锁死在 50 个
+	if (FragWeapon && FragWeapon->ShellClass)
 	{
-		if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-		if (AssetSubsystem && AssetSubsystem->EquipmentAsset)
+		if (UObjectPoolSubsystem* PoolSubsystem = GetWorld()->GetSubsystem<UObjectPoolSubsystem>())
 		{
-			ScopeCapture = NewObject<USceneCaptureComponent2D>(this, TEXT("ScopeCapture"));
-			ScopeCapture->RegisterComponent();
-			ScopeCapture->AttachToComponent(EquipmentMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, SOCKET_SCOPE_START);
-			ScopeCapture->CaptureSource = ESceneCaptureSource::SCS_FinalColorHDR;
-			ScopeCapture->FOVAngle = ScopeFOV;
-			ScopeCapture->TextureTarget = AssetSubsystem->EquipmentAsset->RT_Scope;
-			ScopeCapture->Deactivate();
+			PoolSubsystem->PrewarmPool(FragWeapon->ShellClass, 20, 50);
 		}
 	}
 }
 
-// 初始化数据
 void AWeapon::InitData()
 {
-	FString EnumValue = StaticEnum<EEquipmentName>()->GetNameStringByValue(static_cast<int64>(EquipmentParentName));
+	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+	if (!AssetSubsystem) return;
 
+	// 1. 自动解析出基底资产和皮肤资产（无需外部关心当前是不是皮肤）
+	const UEquipmentAsset* BaseAsset = nullptr;
+	const UEquipmentSkinAsset* SkinAsset = nullptr;
+	AssetSubsystem->ResolveEquipmentAssets(EquipmentName, BaseAsset, SkinAsset);
+
+	BaseEquipmentAsset = BaseAsset;
+	SkinEquipmentAsset = SkinAsset;
+
+	if (!BaseEquipmentAsset) return;
+
+	// 2. 读取原版武器的基础数据
+	FragWeapon = BaseEquipmentAsset->FindFragmentByClass<UFragWeapon>();
+	check(FragWeapon);
+	
+	MagCapacity = FragWeapon->MagCapacity;
+	MaxCarriedAmmo = FragWeapon->MaxCarriedAmmo;
+
+	// 3. 如果是皮肤/变体，且配置了 Modifier，则覆盖对应属性
+	if (SkinEquipmentAsset && SkinEquipmentAsset->WeaponModifier)
 	{
-		FDataRegistryId DataRegistryId(DR_WEAPON_DATA, FName(EnumValue));
-		if (const FWeaponData* WeaponData = UDataRegistrySubsystem::Get()->GetCachedItem<FWeaponData>(DataRegistryId))
+		const UFragWeaponModifier* Modifier = SkinEquipmentAsset->WeaponModifier;
+		if (Modifier->bOverrideMagCapacity)
 		{
-			AimingFOVMul = WeaponData->AimingFOVMul;
-			AimingWalkSpeedMul = WeaponData->AimingWalkSpeedMul;
-			bIsPIP = WeaponData->bIsPIP;
-			ScopeFOV = WeaponData->ScopeFOV;
-			CarriedAmmo = WeaponData->MaxCarriedAmmo;
-			MaxCarriedAmmo = WeaponData->MaxCarriedAmmo;
-			Ammo = WeaponData->MagCapacity;
-			MagCapacity = WeaponData->MagCapacity;
-			FireRate = WeaponData->FireRate;
-			bIsAutomatic = WeaponData->bIsAutomatic;
-			WalkSpeedMul = WeaponData->WalkSpeedMul;
-			PelletNum = WeaponData->PelletNum;
-			PenetrationPower = WeaponData->PenetrationPower;
-			
-			// 补给箱中的装备 TODO
-			if (EquipmentName == EEquipmentName::AK47_Cyclone)
-			{
-				MaxCarriedAmmo = 180;
-				CarriedAmmo = 180;
-				MagCapacity = 60;
-				Ammo = 60;
-			}
+			MagCapacity = Modifier->MagCapacity;
+		}
+		if (Modifier->bOverrideMaxCarriedAmmo)
+		{
+			MaxCarriedAmmo = Modifier->MaxCarriedAmmo;
 		}
 	}
 
-	{
-		FDataRegistryId DataRegistryId(DR_EQUIPMENT_RECOIL, FName(EnumValue));
-		if (const FWeaponRecoil* WeaponRecoil = UDataRegistrySubsystem::Get()->GetCachedItem<FWeaponRecoil>(DataRegistryId))
-		{
-			RecoilCurve = WeaponRecoil->RecoilCurve;
-			RecoilCurveRandVert = WeaponRecoil->RecoilCurveRandVert;
-			RecoilCurveRandHor = WeaponRecoil->RecoilCurveRandHor;
-			RecoilIncTime = WeaponRecoil->RecoilIncTime;
-			RecoilMaxDecTime = WeaponRecoil->RecoilMaxDecTime;
-			RecoilMinDecTime = WeaponRecoil->RecoilMinDecTime;
-			RecoilVertRef_DecTime = WeaponRecoil->RecoilVertRef_DecTime;
-			RecoilVertRef_Crosshair = WeaponRecoil->RecoilVertRef_Crosshair;
-			CrosshairBaseSpread = WeaponRecoil->CrosshairBaseSpread;
-		}
-	}
-}
-
-void AWeapon::SetScopeActive(bool bIsActive)
-{
-	if (ScopeCapture)
-	{
-		ScopeCapture->SetActive(bIsActive);
-	}
+	// 4. 初始化当前弹药状态
+	Ammo = MagCapacity;
+	CarriedAmmo = MaxCarriedAmmo;
 }
 
 void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	
+
 	DOREPLIFETIME(ThisClass, Ammo);
 	DOREPLIFETIME(ThisClass, CarriedAmmo);
 }
 
 void AWeapon::Fire(const FVector& HitTarget, float RecoilVert, float RecoilHor, float SpreadPitch, float SpreadYaw)
 {
-	if (ShellClass)
+	if (FragWeapon->ShellClass)
 	{
-		if (const USkeletalMeshSocket* ShellEjectSocket = EquipmentMesh->GetSocketByName(SOCKET_SHELL_EJECT))
+		if (const USkeletalMeshSocket* ShellEjectSocket = EquipmentMesh->GetSocketByName(Sockets::ShellEject))
 		{
 			FTransform SocketTransform = ShellEjectSocket->GetSocketTransform(EquipmentMesh);
 
 			if (UObjectPoolSubsystem* PoolSubsystem = GetWorld()->GetSubsystem<UObjectPoolSubsystem>())
 			{
-				AActor* SpawnedActor = PoolSubsystem->AcquireObject(ShellClass, SocketTransform);
+				AActor* SpawnedActor = PoolSubsystem->AcquireObject(FragWeapon->ShellClass, SocketTransform);
 
 				if (AShell* Shell = Cast<AShell>(SpawnedActor))
 				{

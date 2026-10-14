@@ -4,30 +4,30 @@
 #include "Components/WrapBoxSlot.h"
 #include "Engine/GameInstance.h"
 #include "MutateArena/Characters/Data/DNAAsset2.h"
-#include "MutateArena/System/Storage/StorageSubsystem.h"
+#include "MutateArena/System/AssetSubsystem.h"
 
 void UDNASelectScreen::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
 
-	UStorageSubsystem* StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
-	if (!StorageSubsystem) return;
-	
-	for (uint8 i = 0; i < static_cast<uint8>(EDNA2::None); ++i)
+	if (UAssetSubsystem* AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>())
 	{
-		EDNA2 CurrentType = static_cast<EDNA2>(i);
-        
-		if (UDNAAsset2* DNAData = StorageSubsystem->GetDNAAssetByType(CurrentType))
+		for (uint8 i = 0; i < static_cast<uint8>(EDNA2::None); ++i)
 		{
-			if (UDNASelectButton* NewButton = CreateWidget<UDNASelectButton>(this, DNASelectButtonClass))
+			EDNA2 CurrentType = static_cast<EDNA2>(i);
+        
+			if (UDNAAsset2* DNAData = AssetSubsystem->GetDNAAssetByType(CurrentType))
 			{
-				NewButton->Setup(DNAData);
-				NewButton->OnClicked().Clear();
-				NewButton->OnClicked().AddUObject(this, &ThisClass::OnDNAButtonClicked, DNAData);
-                
-				if (UWrapBoxSlot* NewSlot = Cast<UWrapBoxSlot>(DNAContainer->AddChild(NewButton)))
+				if (UDNASelectButton* NewButton = CreateWidget<UDNASelectButton>(this, DNASelectButtonClass))
 				{
-					NewSlot->SetPadding(FMargin(20, 20, 0, 0));
+					NewButton->Setup(DNAData);
+					NewButton->OnClicked().Clear();
+					NewButton->OnClicked().AddUObject(this, &ThisClass::OnDNAButtonClicked, DNAData);
+                
+					if (UWrapBoxSlot* NewSlot = Cast<UWrapBoxSlot>(DNAContainer->AddChild(NewButton)))
+					{
+						NewSlot->SetPadding(FMargin(20, 20, 0, 0));
+					}
 				}
 			}
 		}

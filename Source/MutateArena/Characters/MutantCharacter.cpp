@@ -40,9 +40,9 @@ AMutantCharacter::AMutantCharacter(const FObjectInitializer& ObjectInitializer)
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	BloodColor = C_GREEN;
+	BloodColor = Colors::Green;
 
-	Tags.Add(TAG_CHARACTER_MUTANT);
+	Tags.Add(Tags::CharacterMutant);
 }
 
 void AMutantCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -63,17 +63,19 @@ void AMutantCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	FString EnumValue = StaticEnum<EMutantCharacterName>()->GetNameStringByValue(static_cast<int64>(MutantCharacterName));
-	FDataRegistryId DataRegistryId(DR_MUTANT_CHARACTER_MAIN, FName(EnumValue));
-	if (const FMutantCharacterMain* MutantCharacterMain = UDataRegistrySubsystem::Get()->GetCachedItem<FMutantCharacterMain>(DataRegistryId))
+	if (!AssetSubsystem) AssetSubsystem = GetWorld()->GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+	if (AssetSubsystem)
 	{
-		LightAttackDamage = MutantCharacterMain->LightAttackDamage;
-		HeavyAttackDamage = MutantCharacterMain->HeavyAttackDamage;
-		
-		TraceSockets_R = MutantCharacterMain->TraceSockets_R;
-		TraceRadius_R = MutantCharacterMain->TraceRadius_R;
-		TraceSockets_L = MutantCharacterMain->TraceSockets_L;
-		TraceRadius_L = MutantCharacterMain->TraceRadius_L;
+		if (UCharacterMutantAsset* MutantAsset = AssetSubsystem->GetCharacterMutantAssetByName(MutantCharacterName))
+		{
+			LightAttackDamage = MutantAsset->LightAttackDamage;
+			HeavyAttackDamage = MutantAsset->HeavyAttackDamage;
+             
+			TraceSockets_R = MutantAsset->TraceSockets_R;
+			TraceRadius_R = MutantAsset->TraceRadius_R;
+			TraceSockets_L = MutantAsset->TraceSockets_L;
+			TraceRadius_L = MutantAsset->TraceRadius_L;
+		}
 	}
 
 	if (HasAuthority())
@@ -82,7 +84,7 @@ void AMutantCharacter::BeginPlay()
 	}
 
 	UGameplayStatics::SpawnSoundAttached(MutantBornSound, GetMesh());
-	
+    
 	SetMutantTraceObjectTypes();
 }
 
@@ -400,7 +402,7 @@ void AMutantCharacter::SetMutantTraceObjectTypes()
 {
 	MutantObjectQueryParams = FCollisionObjectQueryParams();
 	
-	MutantObjectQueryParams.AddObjectTypesToQuery(ECC_MESH_TEAM1);
+	MutantObjectQueryParams.AddObjectTypesToQuery(ECC::MeshTeam1);
 	MutantObjectQueryParams.AddObjectTypesToQuery(ECC_WorldStatic);
 	MutantObjectQueryParams.AddObjectTypesToQuery(ECC_WorldDynamic);
 }
@@ -472,7 +474,7 @@ void AMutantCharacter::ProcessMutantHit(const FHitResult& HitResult, const FVect
 
 	float Damage = bIsLightAttack ? LightAttackDamage : HeavyAttackDamage;
 
-	if (OtherActor->ActorHasTag(TAG_CHARACTER_HUMAN))
+	if (OtherActor->ActorHasTag(Tags::CharacterHuman))
 	{
 		DropBlood(GetMesh(), OtherActor, OtherComp, Damage, HitResult);
 	}

@@ -127,6 +127,7 @@ float ABasePlayerState::GetJumpZVelocity()
 {
 	return AttributeSetBase ? AttributeSetBase->GetJumpZVelocity() : 0.f;
 }
+
 float ABasePlayerState::GetBodyResistance()
 {
 	return AttributeSetBase ? AttributeSetBase->GetBodyResistance() : 0.f;
@@ -145,7 +146,7 @@ void ABasePlayerState::OnRep_Team()
 	{
 		BaseCharacter->bIsPlayerStateTeamReady = false;
 	}
-	
+
 	if (APlayerController* LocalPC = GetWorld()->GetFirstPlayerController())
 	{
 		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(LocalPC->GetLocalPlayer()))
@@ -153,14 +154,14 @@ void ABasePlayerState::OnRep_Team()
 			UISubsystem->OnOverheadWidgetNeedUpdate.Broadcast();
 		}
 	}
-	
+
 	ABaseController* BaseController = Cast<ABaseController>(GetOwner());
 	if (BaseController && BaseController->IsLocalController())
 	{
 		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
 		{
 			BaseController->InitHUD();
-			
+
 			UISubsystem->OnLocalTeamChange.Broadcast(Team);
 		}
 	}
@@ -184,9 +185,9 @@ void ABasePlayerState::SetMutantCharacterName(EMutantCharacterName Name)
 void ABasePlayerState::AddDamage(float TempDamage)
 {
 	Damage += TempDamage;
-	
+
 	ShowDamageUI(TempDamage);
-	
+
 	ForceNetUpdate();
 }
 
@@ -237,18 +238,18 @@ void ABasePlayerState::OnRep_Infect()
 void ABasePlayerState::AddKillStreak()
 {
 	KillStreak++;
-	
+
 	OnRep_KillStreak();
-	
+
 	ForceNetUpdate(); // 快速播放音效
-	
+
 	GetWorldTimerManager().SetTimer(ResetKillStreakTimerHandle, this, &ThisClass::ResetKillStreak, 7.f);
 }
 
 void ABasePlayerState::OnRep_KillStreak()
 {
 	OnKillStreakChange();
-	
+
 	if (KillStreak > 0)
 	{
 		ABaseController* BaseController = Cast<ABaseController>(GetOwner());
@@ -286,7 +287,7 @@ void ABasePlayerState::ServerSetDNA_Implementation(EDNA2 TempDNA1, EDNA2 TempDNA
 {
 	DNA1 = TempDNA1;
 	DNA2 = TempDNA2;
-	
+
 	ApplyDNAGameplayEffect(TempDNA1);
 	ApplyDNAGameplayEffect(TempDNA2);
 }
@@ -294,18 +295,18 @@ void ABasePlayerState::ServerSetDNA_Implementation(EDNA2 TempDNA1, EDNA2 TempDNA
 void ABasePlayerState::ApplyDNAGameplayEffect(EDNA2 DNA)
 {
 	if (!AbilitySystemComponent) return;
-	
-	UStorageSubsystem* StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
-	if (!StorageSubsystem || !StorageSubsystem->CacheLoadout) return;
-	
-	UDNAAsset2* DNAAsset = StorageSubsystem->GetDNAAssetByType(DNA);
-	if (!DNAAsset) return;
 
-	FGameplayEffectContextHandle Context = AbilitySystemComponent->MakeEffectContext();
-	Context.AddInstigator(this, this);
-	FGameplayEffectSpecHandle SpecHandle = AbilitySystemComponent->MakeOutgoingSpec(DNAAsset->GEClass, 1.f, Context);
-	if (SpecHandle.IsValid())
+	if (UAssetSubsystem* AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>())
 	{
-		AbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
+		if (UDNAAsset2* DNAAsset = AssetSubsystem->GetDNAAssetByType(DNA))
+		{
+			FGameplayEffectContextHandle Context = AbilitySystemComponent->MakeEffectContext();
+			Context.AddInstigator(this, this);
+			FGameplayEffectSpecHandle SpecHandle = AbilitySystemComponent->MakeOutgoingSpec(DNAAsset->GEClass, 1.f, Context);
+			if (SpecHandle.IsValid())
+			{
+				AbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
+			}
+		}
 	}
 }

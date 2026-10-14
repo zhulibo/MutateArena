@@ -55,7 +55,7 @@ void UAnimInstHuman::NativeUpdateAnimation(float DeltaSeconds)
 	{
 		if (AWeapon* CurWeapon = CombatComp->GetCurWeapon())
 		{
-			if (!Montage_IsPlaying(CurWeapon->ADSMontage_C)) // 完全进入瞄准状态
+			// if (!Montage_IsPlaying(CurWeapon->ADSMontage_C)) // 完全进入瞄准状态
 			{
 				bIsAiming = CombatComp->IsAiming();
 			}

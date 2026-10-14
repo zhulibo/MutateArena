@@ -106,7 +106,7 @@ public:
 	
 	virtual FPrimaryAssetId GetPrimaryAssetId() const override
 	{
-		return FPrimaryAssetId(ASSET_INPUT, GetFName());
+		return FPrimaryAssetId(DataAsset::Input, GetFName());
 	}
 
 };

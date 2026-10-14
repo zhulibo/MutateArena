@@ -2,12 +2,11 @@
 
 #include "CoreMinimal.h"
 #include "CommonActivatableWidget.h"
-#include "DataRegistryId.h"
 #include "MutateArena/System/EOSSubsystem.h"
 #include "Shop.generated.h"
 
-struct FEquipmentMain;
-struct FHumanCharacterMain;
+class UCharacterHumanAsset;
+class UEquipmentSkinAsset;
 
 UCLASS()
 class MUTATEARENA_API UShop : public UCommonActivatableWidget
@@ -22,9 +21,6 @@ protected:
 	UPROPERTY()
 	UEOSSubsystem* EOSSubsystem;
 
-	TMap<FDataRegistryId, const uint8*> HumanCharacterMains;
-	TMap<FDataRegistryId, const uint8*> EquipmentMains;
-
 	UPROPERTY(meta = (BindWidget))
 	class UWrapBox* ItemButtonContainer;
 
@@ -32,13 +28,13 @@ protected:
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UItemButton> EquipmentButtonClass;
-	void AddEquipmentButton(const FOffer& Offer, const FEquipmentMain& EquipmentMain);
+	void AddEquipmentButton(const FOffer& Offer, const UEquipmentSkinAsset* EquipmentAsset);
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<UItemButton> CharacterButtonClass;
-	void AddCharacterButton(const FOffer& Offer, const FHumanCharacterMain& HumanCharacterMain);
+	void AddCharacterButton(const FOffer& Offer, const UCharacterHumanAsset* CharacterAsset);
 
 	void OnItemButtonClicked(UItemButton* ItemButton);
-	void OnCheckoutComplete(bool bWasSuccessful, TOptional<FString> String);
 
+	void OnCheckoutComplete(bool bWasSuccessful, TOptional<FString> String);
 };

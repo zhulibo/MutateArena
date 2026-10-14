@@ -2,16 +2,16 @@
 
 #include "CoreMinimal.h"
 #include "CommonActivatableWidget.h"
-#include "DataRegistryId.h"
 #include "MutateArena/System/EOSSubsystem.h"
 #include "Storage.generated.h"
 
 #define STORAGE_TYPE_ALL FString(TEXT("All"))
 #define STORAGE_TYPE_CHARACTER FString(TEXT("Character"))
 
+class UEquipmentSkinAsset;
 class UDNAAsset2;
-struct FEquipmentMain;
-struct FHumanCharacterMain;
+class UCharacterHumanAsset;
+class UEquipmentAsset;
 enum class EHumanCharacterName : uint8;
 enum class EEquipmentName : uint8;
 enum class EEquipmentType : uint8;
@@ -32,53 +32,64 @@ protected:
 	void OnQueryEntitlementsComplete(bool bWasSuccessful);
 	void OnEnumerateUserFilesComplete(bool bWasSuccessful);
 	void OnReadUserFileComplete(bool bWasSuccessful, const FUserFileContentsRef& FileContents, const FString& Filename);
-	void InitPlayerConfig(class USaveGameLoadout* SaveGameLoadout);
-	bool HasEquipment(EEquipmentName EquipmentName, EEquipmentType EquipmentType);
+	void ApplyLoadoutData(class USaveGameLoadout* SaveGameLoadout);
+
+	bool HasEquipment(EEquipmentName EquipmentName);
 	bool HasHumanCharacter(EHumanCharacterName HumanCharacterName);
 
 	UPROPERTY()
 	class UStorageSubsystem* StorageSubsystem;
 
-	TMap<FDataRegistryId, const uint8*> HumanCharacterMains;
-	TMap<FDataRegistryId, const uint8*> EquipmentMains;
+	UPROPERTY()
+	class UAssetSubsystem* AssetSubsystem;
 
 	UPROPERTY(meta = (BindWidget))
 	class UCommonHierarchicalScrollBox* StorageTypeButtonContainer;
+
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UCommonButton> StorageTypeButtonClass;
-	void AddStorageTypeButton();
+
+	void CreateStorageTypeTabs();
 	int32 TypeIndex = 0;
-	void OnStorageTypeButtonClicked(UCommonButton* CommonButton);
-	
+	void OnStorageTypeButtonClicked(class UCommonButton* CommonButton);
+
 	void AddEquipments(FString EquipmentType);
 	void AddHumanCharacters();
+
 	UPROPERTY(meta = (BindWidget))
 	class UWrapBox* StorageButtonContainer;
+
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UStorageButton> EquipmentButtonClass;
-	void AddEquipmentButton(FEquipmentMain EquipmentMain);
+	void AddEquipmentButton(UEquipmentAsset* EquipmentAsset);
+	void AddEquipmentSkinButton(UEquipmentSkinAsset* SkinAsset, UEquipmentAsset* ParentAsset);
+	
 	UPROPERTY(EditAnywhere)
-	TSubclassOf<UStorageButton> CharacterButtonClass;
-	void AddCharacterButton(FHumanCharacterMain HumanCharacterMain);
+	TSubclassOf<class UStorageButton> CharacterButtonClass;
+	void AddCharacterButton(UCharacterHumanAsset* CharacterAsset);
 
-	void OnEquipmentButtonClicked(class UStorageButton* CommonButton);
+	void OnEquipmentButtonClicked(class UStorageButton* EquipmentButton);
+
 	UPROPERTY(meta = (BindWidget))
 	class UCommonActivatableWidgetSwitcher* LoadoutSwitcher;
+
 	void SaveEquipmentsToLoadouts();
 
-	void OnCharacterButtonClicked(UStorageButton* CommonButton);
+	void OnCharacterButtonClicked(class UStorageButton* CharacterButton);
+
 	UPROPERTY(meta = (BindWidget))
 	class UHuman* Human;
 
 	UPROPERTY(meta = (BindWidget))
 	class UDNAButton* DNAButton1;
 	UPROPERTY(meta = (BindWidget))
-	UDNAButton* DNAButton2;
+	class UDNAButton* DNAButton2;
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UDNASelectScreen> DNASelectScreenClass;
+
 	void OnDNAButton1Clicked();
 	void OnDNAButton2Clicked();
-	void OpenDNASelectScreen(UDNAButton* TargetButton);
-	void OnDNASelected(UDNAAsset2* SelectedDNA, UDNAButton* TargetButton);
-	
+	void OpenDNASelectScreen(class UDNAButton* TargetButton);
+
+	void OnDNASelected(class UDNAAsset2* SelectedDNA, class UDNAButton* TargetButton);
 };

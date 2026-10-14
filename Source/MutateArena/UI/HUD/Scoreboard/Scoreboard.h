@@ -21,7 +21,7 @@ protected:
 	UPROPERTY()
 	class UEOSSubsystem* EOSSubsystem;
 	UPROPERTY()
-	UStorageSubsystem* StorageSubsystem;
+	class UAssetSubsystem* AssetSubsystem;
 	
 	void ShowScoreboard(bool bIsShow);
 

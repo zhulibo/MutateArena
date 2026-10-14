@@ -154,11 +154,11 @@ void AEnvironmentManager::ApplyEnvironmentInstanceToCharacter(const FActiveEnvir
 	const TArray<TSubclassOf<UGameplayEffect>>* EffectsToApply = nullptr;
 
 	// 使用 Actor 的 FName 标签判定阵营
-	if (TargetCharacter->ActorHasTag(TAG_CHARACTER_HUMAN))
+	if (TargetCharacter->ActorHasTag(Tags::CharacterHuman))
 	{
 		EffectsToApply = &EnvInstance.EnvAsset->HumanEffects;
 	}
-	else if (TargetCharacter->ActorHasTag(TAG_CHARACTER_MUTANT))
+	else if (TargetCharacter->ActorHasTag(Tags::CharacterMutant))
 	{
 		EffectsToApply = &EnvInstance.EnvAsset->MutantEffects;
 	}

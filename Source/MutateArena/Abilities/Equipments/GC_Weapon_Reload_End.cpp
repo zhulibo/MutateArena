@@ -12,12 +12,12 @@ bool UGC_Weapon_Reload_End::OnExecute_Implementation(AActor* MyTarget, const FGa
 {
 	AWeapon* CurWeapon = Cast<AWeapon>(const_cast<UObject*>(Parameters.SourceObject.Get()));
 	
-	if (CurWeapon && CurWeapon->ReloadMontage_E)
+	if (CurWeapon && CurWeapon->FragWeapon->ReloadMontage_E)
 	{
 		if (UAnimInstEquipment* EquipmentAnimInst = CurWeapon->GetEquipmentAnimInst())
 		{
 			// 让武器自身的动画实例跳转到对应的 Section
-			EquipmentAnimInst->Montage_JumpToSection(SECTION_RELOAD_END, CurWeapon->ReloadMontage_E);
+			EquipmentAnimInst->Montage_JumpToSection(MontageSections::ReloadEnd, CurWeapon->FragWeapon->ReloadMontage_E);
 		}
 	}
 	

@@ -69,7 +69,7 @@ void UGA_Equipment_Swap::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 		bool bIsPlayingSwapOut = false;
 
 		// 检查角色当前是否正在播放切出动画
-		if (UAnimInstance* HumanAnim = HumanChar->GetMesh()->GetAnimInstance())
+		if (UAnimInstance* HumanAnim = HumanChar->BodyMesh->GetAnimInstance())
 		{
 			if (HumanAnim->Montage_IsPlaying(TargetEquipment->SwapOutMontage_C))
 			{

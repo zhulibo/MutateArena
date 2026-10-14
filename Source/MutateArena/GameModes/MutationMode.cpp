@@ -21,6 +21,7 @@
 #include "MutateArena/System/DevSetting.h"
 #include "MutateArena/Utils/LibraryCommon.h"
 #include "GameFramework/PlayerStart.h"
+#include "MutateArena/Characters/Data/CharacterAsset.h"
 #include "MutateArena/Equipments/Herbs/HerbRage.h"
 #include "MutateArena/Equipments/Herbs/HerbRepelReceived.h"
 #include "MutateArena/Equipments/Pickups/ItemSpawnPoint.h"
@@ -663,23 +664,21 @@ void AMutationMode::SpawnMutantCharacter(AController* Controller, ESpawnMutantRe
                                          FVector Location, FRotator ActorRotation, FRotator ViewRotation)
 {
 	if (Controller == nullptr) return;
-
-	// 获取角色名字
-	FString CharacterName;
-	if (ABasePlayerState* BasePlayerState = Cast<ABasePlayerState>(Controller->PlayerState))
-	{
-		CharacterName = StaticEnum<EMutantCharacterName>()->GetNameStringByValue(static_cast<int64>(BasePlayerState->MutantCharacterName));
-	}
+	
+	ABasePlayerState* BasePlayerState = Cast<ABasePlayerState>(Controller->PlayerState);
+	if (!BasePlayerState) return;
 
 	// 获取角色类
 	TSubclassOf<AMutantCharacter> CharacterClass;
-	FDataRegistryId DataRegistryId(DR_MUTANT_CHARACTER_MAIN, FName(CharacterName));
-	if (const FMutantCharacterMain* MutantCharacterMain = UDataRegistrySubsystem::Get()->GetCachedItem<FMutantCharacterMain>(DataRegistryId))
+	if (UAssetSubsystem* AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>())
 	{
-		CharacterClass = UDataAssetManager::Get().GetSubclass(MutantCharacterMain->MutantCharacterClass);
+		if (UCharacterMutantAsset* CharacterMutantAsset = AssetSubsystem->GetCharacterMutantAssetByName(BasePlayerState->MutantCharacterName))
+		{
+			CharacterClass = CharacterMutantAsset->CharacterClass.LoadSynchronous();
+		}
 	}
 	if (CharacterClass == nullptr) return;
-
+	
 	// 如果是突变体重生，或摔死的，使用出生点的位置和旋转
 	if (SpawnMutantReason == ESpawnMutantReason::Respawn || SpawnMutantReason == ESpawnMutantReason::Fall)
 	{

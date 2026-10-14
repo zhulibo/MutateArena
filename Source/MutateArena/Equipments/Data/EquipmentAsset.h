@@ -44,12 +44,7 @@ public:
     TObjectPtr<UMetaSoundSource> ImpactSound_Metal;
     UPROPERTY(EditAnywhere, Category = "ImpactSound")
     TObjectPtr<UMetaSoundSource> ImpactSound_Wood;
-
-    UPROPERTY(EditAnywhere, Category = "Scope")
-    TObjectPtr<UTextureRenderTarget2D> RT_Scope;
-    UPROPERTY(EditAnywhere, Category = "Scope")
-    TObjectPtr<UMaterialParameterCollection> MPC_Scope;
-
+    
     UPROPERTY(EditAnywhere, Category = "HitWall")
     TObjectPtr<UMaterialInterface> WallMarkDecal;
     UPROPERTY(EditAnywhere, Category = "HitWall")
@@ -63,7 +58,7 @@ public:
     
     virtual FPrimaryAssetId GetPrimaryAssetId() const override
     {
-       return FPrimaryAssetId(ASSET_EQUIPMENT_COMMON, GetFName());
+       return FPrimaryAssetId(DataAsset::EquipmentCommon, GetFName());
     }
 };
 
@@ -75,7 +70,7 @@ class MUTATEARENA_API UEquipmentFragment : public UObject
 };
 
 UCLASS(BlueprintType)
-class MUTATEARENA_API UEquipmentFragment_Weapon : public UEquipmentFragment
+class MUTATEARENA_API UFragWeapon : public UEquipmentFragment
 {
     GENERATED_BODY()
 
@@ -105,8 +100,6 @@ public:
     UPROPERTY(EditAnywhere)
     float AimingWalkSpeedMul = 1.f;
     UPROPERTY(EditAnywhere)
-    bool bIsPIP = false;
-    UPROPERTY(EditAnywhere)
     float ScopeFOV = 90.f;
 
     UPROPERTY(EditAnywhere)
@@ -130,23 +123,26 @@ public:
     float CrosshairBaseSpread = 0.f;
 
     UPROPERTY(EditAnywhere)
-    TSoftClassPtr<AShell> ShellClass;
+    TSubclassOf<class AProjectileBullet> ProjectileClass;
     UPROPERTY(EditAnywhere)
-    TSoftObjectPtr<UNiagaraSystem> MuzzleFlashEffect;
+    TSubclassOf<AShell> ShellClass;
     
     UPROPERTY(EditAnywhere)
-    TSoftObjectPtr<UMetaSoundSource> FireSound;
-    UPROPERTY(EditAnywhere)
-    TSoftObjectPtr<UMetaSoundSource> MechSound;
+    TObjectPtr<UNiagaraSystem> MuzzleFlashEffect;
     
     UPROPERTY(EditAnywhere)
-    TSoftObjectPtr<UAnimMontage> ReloadMontage_C;
+    TObjectPtr<UMetaSoundSource> FireSound;
     UPROPERTY(EditAnywhere)
-    TSoftObjectPtr<UAnimMontage> ReloadMontage_E;
+    TObjectPtr<UMetaSoundSource> MechSound;
+    
+    UPROPERTY(EditAnywhere)
+    TObjectPtr<UAnimMontage> ReloadMontage_C;
+    UPROPERTY(EditAnywhere)
+    TObjectPtr<UAnimMontage> ReloadMontage_E;
 };
 
 UCLASS(BlueprintType)
-class MUTATEARENA_API UEquipmentFragment_Melee : public UEquipmentFragment
+class MUTATEARENA_API UFragMelee : public UEquipmentFragment
 {
     GENERATED_BODY()
 
@@ -175,7 +171,7 @@ public:
 };
 
 UCLASS(BlueprintType)
-class MUTATEARENA_API UEquipmentFragment_Throwing : public UEquipmentFragment
+class MUTATEARENA_API UFragThrowing : public UEquipmentFragment
 {
     GENERATED_BODY()
 
@@ -197,9 +193,9 @@ class MUTATEARENA_API UEquipmentAsset : public UPrimaryDataAsset
 public:
     UPROPERTY(EditAnywhere)
     FText ShowName;
-
+    
     UPROPERTY(EditAnywhere)
-    EEquipmentName EquipmentParentName = EEquipmentName::None;
+    TSoftObjectPtr<UTexture2D> ShowImg;
 
     UPROPERTY(EditAnywhere)
     EEquipmentName EquipmentName = EEquipmentName::None;
@@ -211,22 +207,13 @@ public:
     EEquipmentType EquipmentType = EEquipmentType::None;
 
     UPROPERTY(EditAnywhere)
-    bool bIsSupply = false;
-
-    UPROPERTY(EditAnywhere)
     TArray<TObjectPtr<UEquipmentFragment>> Fragments;
 
     UPROPERTY(EditAnywhere)
     TSoftClassPtr<AEquipment> EquipmentClass;
-    
-    UPROPERTY(EditAnywhere)
-    TSoftObjectPtr<UTexture2D> ShowImg;
 
     UPROPERTY(EditAnywhere)
     TSoftObjectPtr<USkeletalMesh> DefaultSkeletalMesh;
-    
-    UPROPERTY(EditAnywhere)
-    FTransform AttachTransform = FTransform::Identity;
     
     UPROPERTY(EditAnywhere)
     TArray<TSoftClassPtr<UGameplayAbility>> GrantedAbilities;
@@ -238,12 +225,6 @@ public:
     TSoftObjectPtr<UAnimMontage> SwapInMontage_C;
     UPROPERTY(EditAnywhere)
     TSoftObjectPtr<UAnimMontage> SwapInMontage_E;
-
-    UPROPERTY(EditAnywhere)
-    FString OfferId;
-
-    UPROPERTY(EditAnywhere)
-    FString AudienceItemId;
     
 private:
     UPROPERTY(Transient)
@@ -284,8 +265,25 @@ public:
 
     virtual FPrimaryAssetId GetPrimaryAssetId() const override
     {
-        return FPrimaryAssetId(ASSET_EQUIPMENT, GetFName());
+        return FPrimaryAssetId(DataAsset::Equipment, GetFName());
     }
+};
+
+UCLASS(BlueprintType)
+class MUTATEARENA_API UFragWeaponModifier : public UEquipmentFragment
+{
+    GENERATED_BODY()
+
+public:
+    UPROPERTY(EditAnywhere, meta = (InlineEditConditionToggle))
+    bool bOverrideMagCapacity = false;
+    UPROPERTY(EditAnywhere, meta = (EditCondition = "bOverrideMagCapacity"))
+    int32 MagCapacity = 0;
+
+    UPROPERTY(EditAnywhere, meta = (InlineEditConditionToggle))
+    bool bOverrideMaxCarriedAmmo = false;
+    UPROPERTY(EditAnywhere, meta = (EditCondition = "bOverrideMaxCarriedAmmo"))
+    int32 MaxCarriedAmmo = 0;
 };
 
 UCLASS(BlueprintType, Const)
@@ -295,7 +293,16 @@ class MUTATEARENA_API UEquipmentSkinAsset : public UPrimaryDataAsset
 
 public:
     UPROPERTY(EditAnywhere)
-    TSoftObjectPtr<UEquipmentAsset> ParentEquipmentData;
+    EEquipmentName EquipmentParentName = EEquipmentName::None;
+
+    UPROPERTY(EditAnywhere)
+    EEquipmentName EquipmentName = EEquipmentName::None;
+
+    UPROPERTY(EditAnywhere)
+    bool bIsSupply = false;
+
+    UPROPERTY(EditAnywhere)
+    TObjectPtr<UFragWeaponModifier> WeaponModifier;
 
     UPROPERTY(EditAnywhere)
     FText SkinName;
@@ -312,24 +319,22 @@ public:
     UPROPERTY(EditAnywhere)
     TSoftClassPtr<class AEquipment> OverrideEquipmentClass;
 
+    /**
+     * Must be the same as the OfferId in dev portal,
+     * Used to determine the button type in the UShop::OnQueryOffersComplete.
+     */
     UPROPERTY(EditAnywhere)
     FString OfferId;
 
+    /**
+     * Must be same as the audience item ID in dev portal,
+     * Used to determine whether player's account owns the product.
+     */
     UPROPERTY(EditAnywhere)
     FString AudienceItemId;
 
-    const UEquipmentAsset* GetParentData() const
-    {
-        const UEquipmentAsset* BaseData = ParentEquipmentData.Get();
-        if (!BaseData)
-        {
-            BaseData = ParentEquipmentData.LoadSynchronous();
-        }
-        return BaseData;
-    }
-
     virtual FPrimaryAssetId GetPrimaryAssetId() const override
     {
-        return FPrimaryAssetId(ASSET_EQUIPMENT_SKIN, GetFName());
+        return FPrimaryAssetId(DataAsset::EquipmentSkin, GetFName());
     }
 };

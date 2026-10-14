@@ -76,13 +76,13 @@ void UCrosshairComponent::SetHUDCrosshair(float DeltaSeconds)
 	// 射击
 	if (URecoilComponent* RecoilComponent = HumanCharacter->RecoilComp)
 	{
-		ShootFactor = FMath::Clamp(RecoilComponent->RecoilVertTotal / Weapon->RecoilVertRef_Crosshair, 0.f, 1.f);
+		ShootFactor = FMath::Clamp(RecoilComponent->RecoilVertTotal / Weapon->FragWeapon->RecoilVertRef_Crosshair, 0.f, 1.f);
 	}
 
 	float TotalFactor = 3.f + VelocityFactor * 1.f + JumpFactor * 2.f + ShootFactor * 3.f;
 	
 	// 计算原始的像素级扩散值
-	float PixelSpread = Weapon->CrosshairBaseSpread * TotalFactor;
+	float PixelSpread = Weapon->FragWeapon->CrosshairBaseSpread * TotalFactor;
 
 	// 转换为 UV 空间的扩散值 UV 0（中心） 到 0.5（边缘）
 	float UVSpread = PixelSpread * 0.01f;

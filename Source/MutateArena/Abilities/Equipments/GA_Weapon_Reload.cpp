@@ -5,6 +5,7 @@
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "MutateArena/Characters/Components/CombatComponent.h"
 #include "MutateArena/Equipments/Weapon.h"
+#include "MutateArena/Equipments/Data/EquipmentAsset.h"
 #include "MutateArena/System/GameplayTags.h"
 
 UGA_Weapon_Reload::UGA_Weapon_Reload()
@@ -59,7 +60,7 @@ void UGA_Weapon_Reload::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 		return;
 	}
 	
-	if (CurWeapon->ReloadMontage_C)
+	if (CurWeapon->FragWeapon->ReloadMontage_C)
 	{
 		// 监听换弹完成通知 希望尽早开火 可能换单动画未完成
 		UAbilityTask_WaitGameplayEvent* WaitEventTask = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(
@@ -69,7 +70,7 @@ void UGA_Weapon_Reload::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 		
 		// 播放角色换弹动画 bStopWhenAbilityEnds = false 保证 OnReloadEventReceived 结束技能时动画依然播放到末尾
 		UAbilityTask_PlayMontageAndWait* MontageTask = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(
-			this, NAME_None, CurWeapon->ReloadMontage_C, 1.f, NAME_None, false);
+			this, NAME_None, CurWeapon->FragWeapon->ReloadMontage_C, 1.f, NAME_None, false);
 		MontageTask->OnCompleted.AddDynamic(this, &ThisClass::OnMontageFinished);
 		MontageTask->OnInterrupted.AddDynamic(this, &ThisClass::OnMontageFinished);
 		MontageTask->OnCancelled.AddDynamic(this, &ThisClass::OnMontageFinished);

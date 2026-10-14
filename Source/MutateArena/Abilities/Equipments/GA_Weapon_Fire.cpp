@@ -127,7 +127,7 @@ void UGA_Weapon_Fire::OnFireIntervalFinished()
 		return;
 	}
 	
-    if (CurWeapon->bIsAutomatic) 
+    if (CurWeapon->FragWeapon->bIsAutomatic) 
     {
 		CombatComp->CurShotCount++;
     	

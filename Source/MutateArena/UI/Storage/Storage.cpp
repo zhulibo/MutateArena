@@ -1,10 +1,10 @@
 #include "Storage.h"
+
 #include "LoadoutContent.h"
 #include "CommonActivatableWidgetSwitcher.h"
 #include "CommonHierarchicalScrollBox.h"
 #include "CommonLazyImage.h"
 #include "CommonTextBlock.h"
-#include "DataRegistrySubsystem.h"
 #include "Human.h"
 #include "DNAButton.h"
 #include "DNASelectScreen.h"
@@ -17,6 +17,7 @@
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/System/Storage/DefaultConfig.h"
 #include "MutateArena/System/Storage/StorageSubsystem.h"
+#include "MutateArena/System/AssetSubsystem.h"
 #include "MutateArena/UI/Common/CommonButton.h"
 #include "MutateArena/Utils/LibraryCommon.h"
 #include "MutateArena/Utils/LibraryNotify.h"
@@ -29,12 +30,12 @@
 #include "Internationalization/StringTable.h"
 #include "MutateArena/Assets/Data/CommonAsset.h"
 #include "MutateArena/Characters/Data/DNAAsset2.h"
-#include "MutateArena/System/AssetSubsystem.h"
-#include "MutateArena/System/DataAssetManager.h"
 #include "MutateArena/System/UISubsystem.h"
 #include "MutateArena/System/GameplayTags.h"
 #include "Serialization/ObjectAndNameAsStringProxyArchive.h"
 #include "Widgets/CommonActivatableWidgetContainer.h"
+#include "MutateArena/Equipments/Data/EquipmentAsset.h"
+#include "MutateArena/Characters/Data/CharacterAsset.h"
 
 #define LOCTEXT_NAMESPACE "UStorage"
 
@@ -42,30 +43,16 @@ void UStorage::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
 
-	// 获取角色和装备数据
-	if (UDataRegistry* DataRegistry = UDataRegistrySubsystem::Get()->GetRegistryForType(DR_HUMAN_CHARACTER_MAIN))
-	{
-		const UScriptStruct* OutStruct;
-		DataRegistry->GetAllCachedItems(HumanCharacterMains, OutStruct);
-	}
-	if (UDataRegistry* DataRegistry = UDataRegistrySubsystem::Get()->GetRegistryForType(DR_EQUIPMENT_MAIN))
-	{
-		const UScriptStruct* OutStruct;
-		DataRegistry->GetAllCachedItems(EquipmentMains, OutStruct);
-	}
-
-	// 添加顶部库存分类Tab按钮
-	AddStorageTypeButton();
-
+	AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
 	EOSSubsystem = GetGameInstance()->GetSubsystem<UEOSSubsystem>();
+
 	if (EOSSubsystem)
 	{
 		EOSSubsystem->OnQueryEntitlementsComplete.AddUObject(this, &ThisClass::OnQueryEntitlementsComplete);
-
 		EOSSubsystem->OnEnumerateUserFilesComplete.AddUObject(this, &ThisClass::OnEnumerateUserFilesComplete);
 		EOSSubsystem->OnReadUserFileComplete.AddUObject(this, &ThisClass::OnReadUserFileComplete);
 	}
-	
+
 	if (DNAButton1)
 	{
 		DNAButton1->OnClicked().AddUObject(this, &ThisClass::OnDNAButton1Clicked);
@@ -74,12 +61,15 @@ void UStorage::NativeOnInitialized()
 	{
 		DNAButton2->OnClicked().AddUObject(this, &ThisClass::OnDNAButton2Clicked);
 	}
+	
+	// 添加顶部库存分类Tab按钮
+	CreateStorageTypeTabs();
 }
 
 void UStorage::NativeOnActivated()
 {
 	Super::NativeOnActivated();
-	
+
 	if (EOSSubsystem)
 	{
 		EOSSubsystem->QueryEntitlements();
@@ -94,7 +84,7 @@ UWidget* UStorage::NativeGetDesiredFocusTarget() const
 // 获取远程已购商品完成
 void UStorage::OnQueryEntitlementsComplete(bool bWasSuccessful)
 {
-	if(bWasSuccessful)
+	if (bWasSuccessful)
 	{
 		if (EOSSubsystem)
 		{
@@ -113,7 +103,7 @@ void UStorage::OnQueryEntitlementsComplete(bool bWasSuccessful)
 	}
 	else
 	{
-		NOTIFY(this, C_RED, LOCTEXT("QueryEntitlementsFailed", "Get purchased items failed"));
+		NOTIFY(this, Colors::Red, LOCTEXT("QueryEntitlementsFailed", "Get purchased items failed"));
 	}
 }
 
@@ -123,7 +113,7 @@ void UStorage::OnEnumerateUserFilesComplete(bool bWasSuccessful)
 	if (!bWasSuccessful) return;
 
 	if (StorageSubsystem == nullptr) StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
-	
+
 	if (EOSSubsystem && StorageSubsystem)
 	{
 		if (EOSSubsystem->GetEnumeratedUserFiles().Contains(StorageSubsystem->SlotLoadout)) // 云包含该存档文件
@@ -132,7 +122,7 @@ void UStorage::OnEnumerateUserFilesComplete(bool bWasSuccessful)
 		}
 		else // 云不包含该存档文件
 		{
-			InitPlayerConfig(StorageSubsystem->CacheLoadout); // 使用本地存档
+			ApplyLoadoutData(StorageSubsystem->CacheLoadout); // 使用本地存档
 		}
 	}
 }
@@ -141,7 +131,7 @@ void UStorage::OnEnumerateUserFilesComplete(bool bWasSuccessful)
 void UStorage::OnReadUserFileComplete(bool bWasSuccessful, const FUserFileContentsRef& FileContents, const FString& Filename)
 {
 	if (Filename != StorageSubsystem->SlotLoadout) return;
-	
+
 	if (StorageSubsystem == nullptr) StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
 	if (StorageSubsystem == nullptr) return;
 
@@ -154,158 +144,125 @@ void UStorage::OnReadUserFileComplete(bool bWasSuccessful, const FUserFileConten
 		Ar.ArNoDelta = true;
 		SaveGameLoadout->Serialize(Ar);
 
-		InitPlayerConfig(SaveGameLoadout);
+		ApplyLoadoutData(SaveGameLoadout);
 	}
 	else
 	{
-		InitPlayerConfig(StorageSubsystem->CacheLoadout);
+		ApplyLoadoutData(StorageSubsystem->CacheLoadout);
 	}
 }
 
-// 初始化玩家配置
-void UStorage::InitPlayerConfig(USaveGameLoadout* SaveGameLoadout)
+// 初始化背包 UI
+void UStorage::ApplyLoadoutData(USaveGameLoadout* SaveGameLoadout)
 {
-	if (SaveGameLoadout == nullptr) return;
+	if (SaveGameLoadout == nullptr || AssetSubsystem == nullptr) return;
 	const UDefaultConfig* DefaultConfig = GetDefault<UDefaultConfig>();
 	if (DefaultConfig == nullptr) return;
 
-	// 判断是否拥有装备，没有则把存档恢复默认
+	// 判断是否拥有装备且槽位类型匹配，否则把存档恢复默认
+	auto IsLoadoutSlotValid = [&](EEquipmentName EquipName, EEquipmentType ExpectedType)
+	{
+		if (!HasEquipment(EquipName)) return false;
+
+		const UEquipmentAsset* BaseAsset = nullptr;
+		const UEquipmentSkinAsset* SkinAsset = nullptr;
+		AssetSubsystem->ResolveEquipmentAssets(EquipName, BaseAsset, SkinAsset);
+
+		return BaseAsset && BaseAsset->EquipmentType == ExpectedType;
+	};
+
 	for (int32 i = 0; i < SaveGameLoadout->Loadouts.Num(); ++i)
 	{
-		if (!HasEquipment(SaveGameLoadout->Loadouts[i].Primary, EEquipmentType::Primary))
+		if (!IsLoadoutSlotValid(SaveGameLoadout->Loadouts[i].Primary, EEquipmentType::Primary))
 		{
 			SaveGameLoadout->Loadouts[i].Primary = DefaultConfig->Primary;
 		}
-		if (!HasEquipment(SaveGameLoadout->Loadouts[i].Secondary, EEquipmentType::Secondary))
+		if (!IsLoadoutSlotValid(SaveGameLoadout->Loadouts[i].Secondary, EEquipmentType::Secondary))
 		{
 			SaveGameLoadout->Loadouts[i].Secondary = DefaultConfig->Secondary;
 		}
-		if (!HasEquipment(SaveGameLoadout->Loadouts[i].Melee, EEquipmentType::Melee))
+		if (!IsLoadoutSlotValid(SaveGameLoadout->Loadouts[i].Melee, EEquipmentType::Melee))
 		{
 			SaveGameLoadout->Loadouts[i].Melee = DefaultConfig->Melee;
 		}
-		if (!HasEquipment(SaveGameLoadout->Loadouts[i].Throwing, EEquipmentType::Throwing))
+		if (!IsLoadoutSlotValid(SaveGameLoadout->Loadouts[i].Throwing, EEquipmentType::Throwing))
 		{
 			SaveGameLoadout->Loadouts[i].Throwing = DefaultConfig->Throwing;
 		}
 	}
+
 	// 回显装备
 	for (int32 i = 0; i < LoadoutSwitcher->GetChildrenCount(); ++i)
 	{
 		if (ULoadoutContent* LoadoutContent = Cast<ULoadoutContent>(LoadoutSwitcher->GetChildAt(i)))
 		{
-			FText PrimaryShowName = FText();
-			FText SecondaryShowName = FText();
-			FText MeleeShowName = FText();
-			FText ThrowingShowName = FText();
-
-			for (const TPair<FDataRegistryId, const uint8*>& Pair : EquipmentMains)
+			auto AssignEquipmentUI = [&](EEquipmentName EquipName, ULoadoutItem* LoadoutItemTarget)
 			{
-				FEquipmentMain ItemValue = *reinterpret_cast<const FEquipmentMain*>(Pair.Value);
-				if (ItemValue.EquipmentName == SaveGameLoadout->Loadouts[i].Primary)
+				if (UEquipmentAsset* EquipAsset = AssetSubsystem->GetEquipmentAssetByName(EquipName))
 				{
-					PrimaryShowName = ItemValue.ShowName;
+					LoadoutItemTarget->ShowName->SetText(EquipAsset->ShowName);
+					LoadoutItemTarget->EquipmentName = EquipAsset->EquipmentName;
+					LoadoutItemTarget->ShowImg->SetBrushFromLazyTexture(EquipAsset->ShowImg);
 				}
-				else if (ItemValue.EquipmentName == SaveGameLoadout->Loadouts[i].Secondary)
+				else if (UEquipmentSkinAsset* SkinAsset = AssetSubsystem->GetEquipmentSkinAssetByName(EquipName))
 				{
-					SecondaryShowName = ItemValue.ShowName;
+					LoadoutItemTarget->ShowName->SetText(SkinAsset->SkinName);
+					LoadoutItemTarget->EquipmentName = SkinAsset->EquipmentName;
+					LoadoutItemTarget->ShowImg->SetBrushFromLazyTexture(SkinAsset->SkinIcon);
 				}
-				else if (ItemValue.EquipmentName == SaveGameLoadout->Loadouts[i].Melee)
-				{
-					MeleeShowName = ItemValue.ShowName;
-				}
-				else if (ItemValue.EquipmentName == SaveGameLoadout->Loadouts[i].Throwing)
-				{
-					ThrowingShowName = ItemValue.ShowName;
-				}
-			}
+			};
 
-			LoadoutContent->Primary->ShowName->SetText(PrimaryShowName);
-			LoadoutContent->Primary->EquipmentName = SaveGameLoadout->Loadouts[i].Primary;
-			
-			LoadoutContent->Secondary->ShowName->SetText(SecondaryShowName);
-			LoadoutContent->Secondary->EquipmentName = SaveGameLoadout->Loadouts[i].Secondary;
-
-			LoadoutContent->Melee->ShowName->SetText(MeleeShowName);
-			LoadoutContent->Melee->EquipmentName = SaveGameLoadout->Loadouts[i].Melee;
-
-			LoadoutContent->Throwing->ShowName->SetText(ThrowingShowName);
-			LoadoutContent->Throwing->EquipmentName = SaveGameLoadout->Loadouts[i].Throwing;
-			
-			// 显示图片
-			for (const TPair<FDataRegistryId, const uint8*>& Pair : EquipmentMains)
-			{
-				FEquipmentMain ItemValue = *reinterpret_cast<const FEquipmentMain*>(Pair.Value);
-				if (ItemValue.EquipmentName == SaveGameLoadout->Loadouts[i].Primary)
-				{
-					LoadoutContent->Primary->ShowImg->SetBrushFromLazyTexture(ItemValue.ShowImg);
-				}
-				else if (ItemValue.EquipmentName == SaveGameLoadout->Loadouts[i].Secondary)
-				{
-					LoadoutContent->Secondary->ShowImg->SetBrushFromLazyTexture(ItemValue.ShowImg);
-				}
-				else if (ItemValue.EquipmentName == SaveGameLoadout->Loadouts[i].Melee)
-				{
-					LoadoutContent->Melee->ShowImg->SetBrushFromLazyTexture(ItemValue.ShowImg);
-				}
-				else if (ItemValue.EquipmentName == SaveGameLoadout->Loadouts[i].Throwing)
-				{
-					LoadoutContent->Throwing->ShowImg->SetBrushFromLazyTexture(ItemValue.ShowImg);
-				}
-			}
+			AssignEquipmentUI(SaveGameLoadout->Loadouts[i].Primary, LoadoutContent->Primary);
+			AssignEquipmentUI(SaveGameLoadout->Loadouts[i].Secondary, LoadoutContent->Secondary);
+			AssignEquipmentUI(SaveGameLoadout->Loadouts[i].Melee, LoadoutContent->Melee);
+			AssignEquipmentUI(SaveGameLoadout->Loadouts[i].Throwing, LoadoutContent->Throwing);
 		}
 	}
 
 	// 判断是否拥有角色，没有则把存档恢复默认
-	if (DefaultConfig && !HasHumanCharacter(SaveGameLoadout->HumanCharacterName))
+	if (!HasHumanCharacter(SaveGameLoadout->HumanCharacterName))
 	{
 		SaveGameLoadout->HumanCharacterName = DefaultConfig->HumanCharacterName;
 	}
+
 	// 回显角色
-	for (const TPair<FDataRegistryId, const uint8*>& Pair : HumanCharacterMains)
+	if (UCharacterHumanAsset* CharacterAsset = AssetSubsystem->GetCharacterHumanAssetByName(SaveGameLoadout->HumanCharacterName))
 	{
-		FHumanCharacterMain ItemValue = *reinterpret_cast<const FHumanCharacterMain*>(Pair.Value);
-		if (ItemValue.HumanCharacterName == SaveGameLoadout->HumanCharacterName)
+		Human->ShowName->SetText(CharacterAsset->ShowName);
+		if (CharacterAsset->ShowImgFullBody)
 		{
-			Human->ShowName->SetText(ItemValue.ShowName);
-			
-			if (ItemValue.ShowImgFullBody) Human->ShowImgFullBody->SetBrushFromLazyTexture(ItemValue.ShowImgFullBody);
-			
-			break;
+			Human->ShowImgFullBody->SetBrushFromLazyTexture(CharacterAsset->ShowImgFullBody);
 		}
 	}
-	
-	if (UDNAAsset2* DNAAsset1 = StorageSubsystem->GetDNAAssetByType(SaveGameLoadout->DNA1))
+
+	// DNA
+	if (UDNAAsset2* DNAAsset1 = AssetSubsystem->GetDNAAssetByType(SaveGameLoadout->DNA1))
 	{
 		DNAButton1->UpdateDNAInfo(DNAAsset1);
 	}
-	if (UDNAAsset2* DNAAsset2 = StorageSubsystem->GetDNAAssetByType(SaveGameLoadout->DNA2))
+	if (UDNAAsset2* DNAAsset2 = AssetSubsystem->GetDNAAssetByType(SaveGameLoadout->DNA2))
 	{
 		DNAButton2->UpdateDNAInfo(DNAAsset2);
 	}
 }
 
 // 是否拥有装备
-bool UStorage::HasEquipment(EEquipmentName EquipmentName, EEquipmentType EquipmentType)
+bool UStorage::HasEquipment(EEquipmentName EquipmentName)
 {
-	for (const TPair<FDataRegistryId, const uint8*>& Pair : EquipmentMains)
+	if (!AssetSubsystem) return false;
+
+	// 1. 基础装备默认拥有
+	if (AssetSubsystem->GetEquipmentAssetByName(EquipmentName))
 	{
-		FEquipmentMain ItemValue = *reinterpret_cast<const FEquipmentMain*>(Pair.Value);
-		if (EquipmentType == ItemValue.EquipmentType && EquipmentName == ItemValue.EquipmentName)
+		return true;
+	}
+
+	// 2. 装备皮肤（排除补给箱武器，且需校验 EOS 权限）
+	if (UEquipmentSkinAsset* SkinAsset = AssetSubsystem->GetEquipmentSkinAssetByName(EquipmentName))
+	{
+		if (!SkinAsset->bIsSupply && EOSSubsystem && EOSSubsystem->OwnEntitlement(SkinAsset->AudienceItemId))
 		{
-			// 免费装备
-			if (ItemValue.AudienceItemId.IsEmpty())
-			{
-				return true;
-			}
-			else
-			{
-				// 付费装备判断是否已拥有
-				if (EOSSubsystem && EOSSubsystem->OwnEntitlement(ItemValue.AudienceItemId))
-				{
-					return true;
-				}
-			}
+			return true;
 		}
 	}
 
@@ -315,33 +272,22 @@ bool UStorage::HasEquipment(EEquipmentName EquipmentName, EEquipmentType Equipme
 // 是否拥有角色
 bool UStorage::HasHumanCharacter(EHumanCharacterName HumanCharacterName)
 {
-	for (const TPair<FDataRegistryId, const uint8*>& Pair : HumanCharacterMains)
+	if (AssetSubsystem)
 	{
-		FHumanCharacterMain ItemValue = *reinterpret_cast<const FHumanCharacterMain*>(Pair.Value);
-
-		if (HumanCharacterName == ItemValue.HumanCharacterName)
+		if (UCharacterHumanAsset* Asset = AssetSubsystem->GetCharacterHumanAssetByName(HumanCharacterName))
 		{
-			// 免费角色
-			if (ItemValue.AudienceItemId.IsEmpty())
+			// 免费角色或者拥有相应权限的付费角色
+			if (Asset->AudienceItemId.IsEmpty() || (EOSSubsystem && EOSSubsystem->OwnEntitlement(Asset->AudienceItemId)))
 			{
 				return true;
 			}
-			else
-			{
-				// 付费角色判断是否已拥有
-				if (EOSSubsystem && EOSSubsystem->OwnEntitlement(ItemValue.AudienceItemId))
-				{
-					return true;
-				}
-			}
 		}
 	}
-
 	return false;
 }
 
 // 添加顶部库存分类Tab按钮
-void UStorage::AddStorageTypeButton()
+void UStorage::CreateStorageTypeTabs()
 {
 	if (StorageTypeButtonContainer && StorageTypeButtonClass)
 	{
@@ -357,8 +303,7 @@ void UStorage::AddStorageTypeButton()
 				NewSlot->SetPadding(FMargin(0, 0, 20, 0));
 			}
 		}
-		
-		UAssetSubsystem* AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+
 		// 装备按钮
 		for (int32 i = 0; i < static_cast<int32>(EEquipmentType::None); ++i)
 		{
@@ -366,12 +311,13 @@ void UStorage::AddStorageTypeButton()
 			{
 				FString EnumValue = StaticEnum<EEquipmentType>()->GetNameStringByIndex(i);
 				FText TableText = FText::FromString(EnumValue);
+
 				if (AssetSubsystem && AssetSubsystem->CommonAsset && AssetSubsystem->CommonAsset->ST_Common)
 				{
 					TableText = FText::FromStringTable(AssetSubsystem->CommonAsset->ST_Common->GetStringTableId(), EnumValue);
 				}
 				EquipmentTypeButton->ButtonText->SetText(TableText);
-				
+
 				EquipmentTypeButton->Name = EnumValue;
 				EquipmentTypeButton->SetIsSelectable(true);
 				EquipmentTypeButton->OnClicked().AddUObject(this, &ThisClass::OnStorageTypeButtonClicked, EquipmentTypeButton);
@@ -438,20 +384,39 @@ void UStorage::OnStorageTypeButtonClicked(UCommonButton* CommonButton)
 // 添加拥有的装备按钮
 void UStorage::AddEquipments(FString EquipmentType)
 {
-	for (const TPair<FDataRegistryId, const uint8*>& Pair : EquipmentMains)
+	if (!AssetSubsystem || !EOSSubsystem) return;
+
+	// 添加皮肤装备
+	for (const TPair<EEquipmentName, UEquipmentSkinAsset*>& Pair : AssetSubsystem->CachedEquipmentSkinAssets)
 	{
-		FEquipmentMain ItemValue = *reinterpret_cast<const FEquipmentMain*>(Pair.Value);
-		FString EnumValue = StaticEnum<EEquipmentType>()->GetNameStringByValue(static_cast<int64>(ItemValue.EquipmentType));
+		UEquipmentSkinAsset* SkinValue = Pair.Value;
+		if (SkinValue == nullptr || SkinValue->bIsSupply) continue;
+
+		UEquipmentAsset* ParentAsset = AssetSubsystem->GetEquipmentAssetByName(SkinValue->EquipmentParentName);
+		if (ParentAsset == nullptr) continue;
+
+		FString EnumValue = StaticEnum<EEquipmentType>()->GetNameStringByValue(static_cast<int64>(ParentAsset->EquipmentType));
 
 		if (EquipmentType == STORAGE_TYPE_ALL || EnumValue == EquipmentType)
 		{
-			if (ItemValue.bIsSupply) continue;
-			
-			// 免费装备 || 付费装备且已拥有
-			if (ItemValue.AudienceItemId.IsEmpty() || EOSSubsystem && EOSSubsystem->OwnEntitlement(ItemValue.AudienceItemId))
+			if (EOSSubsystem->OwnEntitlement(SkinValue->AudienceItemId))
 			{
-				AddEquipmentButton(ItemValue);
+				AddEquipmentSkinButton(SkinValue, ParentAsset);
 			}
+		}
+	}
+
+	// 添加基础装备
+	for (const TPair<EEquipmentName, UEquipmentAsset*>& Pair : AssetSubsystem->CachedEquipmentAssets)
+	{
+		UEquipmentAsset* ItemValue = Pair.Value;
+		if (ItemValue == nullptr) continue;
+
+		FString EnumValue = StaticEnum<EEquipmentType>()->GetNameStringByValue(static_cast<int64>(ItemValue->EquipmentType));
+
+		if (EquipmentType == STORAGE_TYPE_ALL || EnumValue == EquipmentType)
+		{
+			AddEquipmentButton(ItemValue);
 		}
 	}
 }
@@ -459,11 +424,15 @@ void UStorage::AddEquipments(FString EquipmentType)
 // 添加拥有的角色按钮
 void UStorage::AddHumanCharacters()
 {
-	for (const TPair<FDataRegistryId, const uint8*>& Pair : HumanCharacterMains)
+	if (!AssetSubsystem) return;
+
+	for (const TPair<EHumanCharacterName, UCharacterHumanAsset*>& Pair : AssetSubsystem->CachedHumanCharacterAssets)
 	{
-		FHumanCharacterMain ItemValue = *reinterpret_cast<const FHumanCharacterMain*>(Pair.Value);
+		UCharacterHumanAsset* ItemValue = Pair.Value;
+		if (ItemValue == nullptr) continue;
+
 		// 免费角色 || 付费角色且已拥有
-		if (ItemValue.AudienceItemId.IsEmpty() || EOSSubsystem && EOSSubsystem->OwnEntitlement(ItemValue.AudienceItemId))
+		if (ItemValue->AudienceItemId.IsEmpty() || (EOSSubsystem && EOSSubsystem->OwnEntitlement(ItemValue->AudienceItemId)))
 		{
 			AddCharacterButton(ItemValue);
 		}
@@ -471,27 +440,42 @@ void UStorage::AddHumanCharacters()
 }
 
 // 添加装备
-void UStorage::AddEquipmentButton(FEquipmentMain EquipmentMain)
+void UStorage::AddEquipmentButton(UEquipmentAsset* EquipmentAsset)
 {
+	if (EquipmentAsset == nullptr) return;
+
 	if (UStorageButton* EquipmentButton = CreateWidget<UStorageButton>(this, EquipmentButtonClass))
 	{
-		FText ShowName = FText();
-		for (const TPair<FDataRegistryId, const uint8*>& Pair : EquipmentMains)
-		{
-			FEquipmentMain ItemValue = *reinterpret_cast<const FEquipmentMain*>(Pair.Value);
-			if (ItemValue.EquipmentName == EquipmentMain.EquipmentName)
-			{
-				ShowName = ItemValue.ShowName;
-				break;
-			}
-		}
-		EquipmentButton->ShowName->SetText(ShowName);
-		EquipmentButton->Name = ShowName;
-		EquipmentButton->ShowImg->SetBrushFromLazyTexture(EquipmentMain.ShowImg);
-		EquipmentButton->ShowImgPath = EquipmentMain.ShowImg;
-		EquipmentButton->EquipmentName = EquipmentMain.EquipmentName;
-		EquipmentButton->EquipmentType = EquipmentMain.EquipmentType;
+		EquipmentButton->ShowName->SetText(EquipmentAsset->ShowName);
+		EquipmentButton->Name = EquipmentAsset->ShowName;
+		EquipmentButton->ShowImg->SetBrushFromLazyTexture(EquipmentAsset->ShowImg);
+		EquipmentButton->ShowImgPath = EquipmentAsset->ShowImg;
+		EquipmentButton->EquipmentName = EquipmentAsset->EquipmentName;
+		EquipmentButton->EquipmentType = EquipmentAsset->EquipmentType;
 		EquipmentButton->OnClicked().AddUObject(this, &ThisClass::OnEquipmentButtonClicked, EquipmentButton);
+
+		if (UWrapBoxSlot* NewSlot = Cast<UWrapBoxSlot>(StorageButtonContainer->AddChild(EquipmentButton)))
+		{
+			NewSlot->SetPadding(FMargin(0, 0, 20, 20));
+		}
+	}
+}
+
+// 添加装备皮肤
+void UStorage::AddEquipmentSkinButton(UEquipmentSkinAsset* SkinAsset, UEquipmentAsset* ParentAsset)
+{
+	if (SkinAsset == nullptr || ParentAsset == nullptr) return;
+
+	if (UStorageButton* EquipmentButton = CreateWidget<UStorageButton>(this, EquipmentButtonClass))
+	{
+		EquipmentButton->ShowName->SetText(SkinAsset->SkinName);
+		EquipmentButton->Name = SkinAsset->SkinName;
+		EquipmentButton->ShowImg->SetBrushFromLazyTexture(SkinAsset->SkinIcon);
+		EquipmentButton->ShowImgPath = SkinAsset->SkinIcon;
+		EquipmentButton->EquipmentName = SkinAsset->EquipmentName;
+		EquipmentButton->EquipmentType = ParentAsset->EquipmentType;
+		EquipmentButton->OnClicked().AddUObject(this, &ThisClass::OnEquipmentButtonClicked, EquipmentButton);
+
 		if (UWrapBoxSlot* NewSlot = Cast<UWrapBoxSlot>(StorageButtonContainer->AddChild(EquipmentButton)))
 		{
 			NewSlot->SetPadding(FMargin(0, 0, 20, 20));
@@ -500,26 +484,19 @@ void UStorage::AddEquipmentButton(FEquipmentMain EquipmentMain)
 }
 
 // 添加角色
-void UStorage::AddCharacterButton(FHumanCharacterMain HumanCharacterMain)
+void UStorage::AddCharacterButton(UCharacterHumanAsset* CharacterAsset)
 {
+	if (CharacterAsset == nullptr) return;
+
 	if (UStorageButton* CharacterButton = CreateWidget<UStorageButton>(this, CharacterButtonClass))
 	{
-		FText ShowName = FText();
-		for (const TPair<FDataRegistryId, const uint8*>& Pair : HumanCharacterMains)
-		{
-			FHumanCharacterMain ItemValue = *reinterpret_cast<const FHumanCharacterMain*>(Pair.Value);
-			if (ItemValue.HumanCharacterName == HumanCharacterMain.HumanCharacterName)
-			{
-				ShowName = ItemValue.ShowName;
-				break;
-			}
-		}
-		CharacterButton->ShowName->SetText(ShowName);
-		CharacterButton->Name = ShowName;
-		CharacterButton->ShowImg->SetBrushFromLazyTexture(HumanCharacterMain.ShowImg);
-		CharacterButton->ShowImgFullBodyPath = HumanCharacterMain.ShowImgFullBody;
-		CharacterButton->HumanCharacterName = HumanCharacterMain.HumanCharacterName;
+		CharacterButton->ShowName->SetText(CharacterAsset->ShowName);
+		CharacterButton->Name = CharacterAsset->ShowName;
+		CharacterButton->ShowImg->SetBrushFromLazyTexture(CharacterAsset->ShowImg);
+		CharacterButton->ShowImgFullBodyPath = CharacterAsset->ShowImgFullBody;
+		CharacterButton->HumanCharacterName = CharacterAsset->CharacterName;
 		CharacterButton->OnClicked().AddUObject(this, &ThisClass::OnCharacterButtonClicked, CharacterButton);
+
 		if (UWrapBoxSlot* NewSlot = Cast<UWrapBoxSlot>(StorageButtonContainer->AddChild(CharacterButton)))
 		{
 			NewSlot->SetPadding(FMargin(0, 0, 20, 20));
@@ -593,7 +570,7 @@ void UStorage::OnCharacterButtonClicked(UStorageButton* CharacterButton)
 	if (CharacterButton == nullptr) return;
 
 	Human->ShowName->SetText(CharacterButton->Name);
-	
+
 	if (CharacterButton->ShowImgFullBodyPath) Human->ShowImgFullBody->SetBrushFromLazyTexture(CharacterButton->ShowImgFullBodyPath);
 
 	if (StorageSubsystem == nullptr) StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
@@ -625,7 +602,7 @@ void UStorage::OpenDNASelectScreen(UDNAButton* TargetButton)
 	{
 		Layer->AddWidget<UDNASelectScreen>(
 			DNASelectScreenClass,
-			[this, TargetButton](UDNASelectScreen& Dialog) 
+			[this, TargetButton](UDNASelectScreen& Dialog)
 			{
 				Dialog.Setup(FDNASelectComplete::CreateUObject(this, &ThisClass::OnDNASelected, TargetButton));
 			}
@@ -638,7 +615,7 @@ void UStorage::OnDNASelected(UDNAAsset2* SelectedDNA, UDNAButton* TargetButton)
 	if (SelectedDNA && TargetButton)
 	{
 		TargetButton->UpdateDNAInfo(SelectedDNA);
-		
+
 		if (StorageSubsystem == nullptr) StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
 		if (StorageSubsystem && StorageSubsystem->CacheLoadout)
 		{

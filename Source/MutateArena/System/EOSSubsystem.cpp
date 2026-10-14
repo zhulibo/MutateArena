@@ -209,22 +209,22 @@ void UEOSSubsystem::CreateLobby()
 	FCreateLobby::Params Params;
 	Params.LocalAccountId = AccountInfo->AccountId;
 	Params.LocalName = LocalLobbyName;
-	Params.SchemaId = LOBBY_SCHEMA_ID;
+	Params.SchemaId = LobbyAttrs::SchemaId;
 	Params.bPresenceEnabled = true;
 	Params.MaxMembers = 18;
 	Params.JoinPolicy = ELobbyJoinPolicy::PublicAdvertised;
-	Params.Attributes.Emplace(LOBBY_VERSION, ULibraryCommon::GetProjectVersion());
-	Params.Attributes.Emplace(LOBBY_SERVER_NAME, FString(TEXT("Default Name")));
-	Params.Attributes.Emplace(LOBBY_MODE_NAME, MUTATION.ToString());
-	Params.Attributes.Emplace(LOBBY_MAP_NAME, FString(TEXT("ConstructionSite")));
-	Params.Attributes.Emplace(LOBBY_MATCH_ROUND, static_cast<int64>(DEFAULT_MATCH_ROUND));
-	Params.Attributes.Emplace(LOBBY_MATCH_TIME, static_cast<int64>(DEFAULT_MATCH_TIME));
-	Params.Attributes.Emplace(LOBBY_STATUS, static_cast<int64>(0));
-	Params.UserAttributes.Emplace(LOBBY_MEMBER_NAME, UserInfo->DisplayName);
-	Params.UserAttributes.Emplace(LOBBY_MEMBER_TEAM, static_cast<int64>(1));
-	Params.UserAttributes.Emplace(LOBBY_MEMBER_READY, false);
-	Params.UserAttributes.Emplace(LOBBY_MEMBER_MSG, FString());
-	Params.UserAttributes.Emplace(LOBBY_MEMBER_TICK_NUM, static_cast<int64>(0));
+	Params.Attributes.Emplace(LobbyAttrs::Version, ULibraryCommon::GetProjectVersion());
+	Params.Attributes.Emplace(LobbyAttrs::ServerName, FString(TEXT("Default Name")));
+	Params.Attributes.Emplace(LobbyAttrs::ModeName, GameModes::Mutation.ToString());
+	Params.Attributes.Emplace(LobbyAttrs::MatchRound, FString(TEXT("ConstructionSite")));
+	Params.Attributes.Emplace(LobbyAttrs::MatchRound, static_cast<int64>(GameModes::DefaultMatchRound));
+	Params.Attributes.Emplace(LobbyAttrs::MatchTime, static_cast<int64>(GameModes::DefaultMatchTime));
+	Params.Attributes.Emplace(LobbyAttrs::Status, static_cast<int64>(0));
+	Params.UserAttributes.Emplace(LobbyAttrs::MemberName, UserInfo->DisplayName);
+	Params.UserAttributes.Emplace(LobbyAttrs::MemberTeam, static_cast<int64>(1));
+	Params.UserAttributes.Emplace(LobbyAttrs::MemberReady, false);
+	Params.UserAttributes.Emplace(LobbyAttrs::MemberMsg, FString());
+	Params.UserAttributes.Emplace(LobbyAttrs::MemberTickNum, static_cast<int64>(0));
 
 	LobbyPtr->CreateLobby(MoveTemp(Params))
 	.OnComplete([this](const TOnlineResult<FCreateLobby>& Result)
@@ -255,7 +255,7 @@ void UEOSSubsystem::FindLobbies(FString LobbyName, FName GameMode, FName MapName
 	Params.MaxResults = 100;
 
 	Params.Filters.Emplace(FFindLobbySearchFilter{
-		LOBBY_VERSION,
+		LobbyAttrs::Version,
 		ESchemaAttributeComparisonOp::Equals,
 		ULibraryCommon::GetProjectVersion()
 	});
@@ -263,23 +263,23 @@ void UEOSSubsystem::FindLobbies(FString LobbyName, FName GameMode, FName MapName
 	if (!LobbyName.IsEmpty())
 	{
 		Params.Filters.Emplace(FFindLobbySearchFilter{
-			LOBBY_SERVER_NAME,
+			LobbyAttrs::ServerName,
 			ESchemaAttributeComparisonOp::Near,
 			LobbyName
 		});
 	}
-	if (GameMode != ALL)
+	if (GameMode != GameModes::All)
 	{
 		Params.Filters.Emplace(FFindLobbySearchFilter{
-			LOBBY_MODE_NAME,
+			LobbyAttrs::ModeName,
 			ESchemaAttributeComparisonOp::Equals,
 			GameMode.ToString()
 		});
 	}
-	if (MapName != ALL)
+	if (MapName != GameModes::All)
 	{
 		Params.Filters.Emplace(FFindLobbySearchFilter{
-			LOBBY_MAP_NAME,
+			LobbyAttrs::MatchRound,
 			ESchemaAttributeComparisonOp::Equals,
 			MapName.ToString()
 		});
@@ -308,14 +308,14 @@ void UEOSSubsystem::JoinLobby(TSharedPtr<const FLobby> Lobby)
 
 	// 判断版本是否一致
 	FString LobbyVersion = FString();
-	if (const FSchemaVariant* Attr = Lobby->Attributes.Find(LOBBY_VERSION))
+	if (const FSchemaVariant* Attr = Lobby->Attributes.Find(LobbyAttrs::Version))
 	{
 		LobbyVersion = Attr->GetString();
 	}
 	FString YourVersion = ULibraryCommon::GetProjectVersion();
 	if (YourVersion != LobbyVersion)
 	{
-		NOTIFY(this, C_YELLOW, FText::Format(LOCTEXT("GameVersionInconsistent", "Game version inconsistent: LobbyVersion {0} YourVersion {1}"), FText::FromString(LobbyVersion), FText::FromString(YourVersion)));
+		NOTIFY(this, Colors::Yellow, FText::Format(LOCTEXT("GameVersionInconsistent", "Game version inconsistent: LobbyVersion {0} YourVersion {1}"), FText::FromString(LobbyVersion), FText::FromString(YourVersion)));
 		OnJoinLobbyComplete.Broadcast(false);
 		return;
 	}
@@ -325,11 +325,11 @@ void UEOSSubsystem::JoinLobby(TSharedPtr<const FLobby> Lobby)
 	Params.LocalName = LocalLobbyName;
 	Params.LobbyId = Lobby->LobbyId;
 	Params.bPresenceEnabled = true;
-	Params.UserAttributes.Emplace(LOBBY_MEMBER_TEAM, static_cast<int64>(FMath::RandRange(1, 2)));
-	Params.UserAttributes.Emplace(LOBBY_MEMBER_NAME, UserInfo->DisplayName);
-	Params.UserAttributes.Emplace(LOBBY_MEMBER_READY, false);
-	Params.UserAttributes.Emplace(LOBBY_MEMBER_MSG, FString());
-	Params.UserAttributes.Emplace(LOBBY_MEMBER_TICK_NUM, static_cast<int64>(0));
+	Params.UserAttributes.Emplace(LobbyAttrs::MemberTeam, static_cast<int64>(FMath::RandRange(1, 2)));
+	Params.UserAttributes.Emplace(LobbyAttrs::MemberName, UserInfo->DisplayName);
+	Params.UserAttributes.Emplace(LobbyAttrs::MemberReady, false);
+	Params.UserAttributes.Emplace(LobbyAttrs::MemberMsg, FString());
+	Params.UserAttributes.Emplace(LobbyAttrs::MemberTickNum, static_cast<int64>(0));
 
 	LobbyPtr->JoinLobby(MoveTemp(Params))
 	.OnComplete([this](const TOnlineResult<FJoinLobby>& Result)
@@ -351,7 +351,7 @@ void UEOSSubsystem::ChangeLobbyMemberTickNum()
 {
 	int64 TickNum = FMath::RandRange(0, 999);
 	ModifyLobbyMemberAttr(TMap<FSchemaAttributeId, FSchemaVariant>{
-		{ LOBBY_MEMBER_TICK_NUM, TickNum}
+		{ LobbyAttrs::MemberTickNum, TickNum}
 	});
 }
 
@@ -368,7 +368,7 @@ bool UEOSSubsystem::GetJoinedLobbies()
 		// 发现加入了多个大厅，离开多余大厅
 		if (Result.GetOkValue().Lobbies.Num() > 1)
 		{
-			NOTIFY(this, C_YELLOW, LOCTEXT("FoundMultipleLobbies", "Found joined multiple lobbies, exiting the extra lobby for you"));
+			NOTIFY(this, Colors::Yellow, LOCTEXT("FoundMultipleLobbies", "Found joined multiple lobbies, exiting the extra lobby for you"));
 
 			for (int i = 0; i < Result.GetOkValue().Lobbies.Num(); ++i)
 			{
@@ -383,11 +383,11 @@ bool UEOSSubsystem::GetJoinedLobbies()
 				{
 					if (Result.IsOk())
 					{
-						NOTIFY(this, C_GREEN, FText::Format(LOCTEXT("LeaveLobbySuccess", "Leave lobby of index {0} success"), FText::AsNumber(i)));
+						NOTIFY(this, Colors::Green, FText::Format(LOCTEXT("LeaveLobbySuccess", "Leave lobby of index {0} success"), FText::AsNumber(i)));
 					}
 					else
 					{
-						NOTIFY(this, C_YELLOW, FText::Format(LOCTEXT("LeaveLobbyFailed", "Leave lobby of index {0} failed"), FText::AsNumber(i)));
+						NOTIFY(this, Colors::Yellow, FText::Format(LOCTEXT("LeaveLobbyFailed", "Leave lobby of index {0} failed"), FText::AsNumber(i)));
 						
 						UE_LOG(LogTemp, Error, TEXT("LeaveLobby %d %s"), i, *Result.GetErrorValue().GetLogString());
 					}
@@ -616,7 +616,7 @@ FString UEOSSubsystem::GetLobbyServerName()
 {
 	if (CurLobby)
 	{
-		if (const FSchemaVariant* Attr = CurLobby->Attributes.Find(LOBBY_SERVER_NAME))
+		if (const FSchemaVariant* Attr = CurLobby->Attributes.Find(LobbyAttrs::ServerName))
 		{
 			return Attr->GetString();
 		}
@@ -629,7 +629,7 @@ FString UEOSSubsystem::GetLobbyModeName()
 {
 	if (CurLobby)
 	{
-		if (const FSchemaVariant* Attr = CurLobby->Attributes.Find(LOBBY_MODE_NAME))
+		if (const FSchemaVariant* Attr = CurLobby->Attributes.Find(LobbyAttrs::ModeName))
 		{
 			return Attr->GetString();
 		}
@@ -642,7 +642,7 @@ FString UEOSSubsystem::GetLobbyMapName()
 {
 	if (CurLobby)
 	{
-		if (const FSchemaVariant* Attr = CurLobby->Attributes.Find(LOBBY_MAP_NAME))
+		if (const FSchemaVariant* Attr = CurLobby->Attributes.Find(LobbyAttrs::MatchRound))
 		{
 			return Attr->GetString();
 		}
@@ -655,7 +655,7 @@ int64 UEOSSubsystem::GetLobbyMatchRound()
 {
 	if (CurLobby)
 	{
-		if (const FSchemaVariant* Attr = CurLobby->Attributes.Find(LOBBY_MATCH_ROUND))
+		if (const FSchemaVariant* Attr = CurLobby->Attributes.Find(LobbyAttrs::MatchRound))
 		{
 			return Attr->GetInt64();
 		}
@@ -668,7 +668,7 @@ int64 UEOSSubsystem::GetLobbyMatchTime()
 {
 	if (CurLobby)
 	{
-		if (const FSchemaVariant* Attr = CurLobby->Attributes.Find(LOBBY_MATCH_TIME))
+		if (const FSchemaVariant* Attr = CurLobby->Attributes.Find(LobbyAttrs::MatchTime))
 		{
 			return Attr->GetInt64();
 		}
@@ -681,7 +681,7 @@ int64 UEOSSubsystem::GetLobbyStatus()
 {
 	if (CurLobby)
 	{
-		if (const FSchemaVariant* Attr = CurLobby->Attributes.Find(LOBBY_STATUS))
+		if (const FSchemaVariant* Attr = CurLobby->Attributes.Find(LobbyAttrs::Status))
 		{
 			return Attr->GetInt64();
 		}
@@ -694,7 +694,7 @@ ETeam UEOSSubsystem::GetMemberTeam(TSharedPtr<const FLobbyMember> Member)
 {
 	if (Member)
 	{
-		if (const FSchemaVariant* Attr = Member->Attributes.Find(LOBBY_MEMBER_TEAM))
+		if (const FSchemaVariant* Attr = Member->Attributes.Find(LobbyAttrs::MemberTeam))
 		{
 			return Attr->GetInt64() == 1 ? ETeam::Team1 : ETeam::Team2;
 		}
@@ -707,7 +707,7 @@ bool UEOSSubsystem::GetMemberReady(TSharedPtr<const FLobbyMember> Member)
 {
 	if (Member)
 	{
-		if (const FSchemaVariant* Attr = Member->Attributes.Find(LOBBY_MEMBER_READY))
+		if (const FSchemaVariant* Attr = Member->Attributes.Find(LobbyAttrs::MemberReady))
 		{
 			return Attr->GetBoolean();
 		}
@@ -720,7 +720,7 @@ FString UEOSSubsystem::GetMemberName(TSharedPtr<const FLobbyMember> Member)
 {
 	if (Member)
 	{
-		if (const FSchemaVariant* Attr = Member->Attributes.Find(LOBBY_MEMBER_NAME))
+		if (const FSchemaVariant* Attr = Member->Attributes.Find(LobbyAttrs::MemberName))
 		{
 			return Attr->GetString();
 		}
@@ -751,7 +751,7 @@ TSharedPtr<const FLobbyMember> UEOSSubsystem::GetMemberByPlayerName(FString Play
 	{
 		for (const auto& Member : CurLobby->Members)
 		{
-			if (const FSchemaVariant* Attr = Member.Value->Attributes.Find(LOBBY_MEMBER_NAME))
+			if (const FSchemaVariant* Attr = Member.Value->Attributes.Find(LobbyAttrs::MemberName))
 			{
 				if (Attr->GetString() == PlayerName)
 				{
@@ -768,7 +768,7 @@ FString UEOSSubsystem::GetMemberMsg(TSharedPtr<const FLobbyMember> Member)
 {
 	if (Member)
 	{
-		if (const FSchemaVariant* Attr = Member->Attributes.Find(LOBBY_MEMBER_MSG))
+		if (const FSchemaVariant* Attr = Member->Attributes.Find(LobbyAttrs::MemberMsg))
 		{
 			return Attr->GetString();
 		}

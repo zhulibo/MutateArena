@@ -61,7 +61,7 @@ void UDebugMenu::OnEnvButtonClicked(FGameplayTag EnvironmentTag)
 {
 	if (GetOwningPlayer() == nullptr || !GetOwningPlayer()->HasAuthority())
 	{
-		NOTIFY(this, C_YELLOW, FText::FromString(TEXT("Only can change environment on host!")));
+		NOTIFY(this, Colors::Yellow, FText::FromString(TEXT("Only can change environment on host!")));
 		return;
 	}
 	

@@ -31,7 +31,7 @@ ATeleportPortal::ATeleportPortal()
 	TriggerBox->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	TriggerBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
 	TriggerBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldDynamic, ECollisionResponse::ECR_Overlap);
-	TriggerBox->SetCollisionResponseToChannel(ECC_PROJECTILE, ECollisionResponse::ECR_Block);
+	TriggerBox->SetCollisionResponseToChannel(ECC::Projectile, ECollisionResponse::ECR_Block);
 
 	ExitPoint = CreateDefaultSubobject<UArrowComponent>(TEXT("ExitPoint"));
 	ExitPoint->SetupAttachment(RootComponent);

@@ -32,7 +32,7 @@ public:
 	
 	virtual FPrimaryAssetId GetPrimaryAssetId() const override
 	{
-		return FPrimaryAssetId(ASSET_DNA, GetFName());
+		return FPrimaryAssetId(DataAsset::DNA, GetFName());
 	}
 	
 };

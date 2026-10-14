@@ -6,6 +6,7 @@
 #include "ModularCharacter.h"
 #include "BaseCharacter.generated.h"
 
+class UGroomComponent;
 class USceneCaptureComponent2D;
 enum class ECommonInputType : uint8;
 
@@ -17,12 +18,31 @@ class MUTATEARENA_API ABaseCharacter : public AModularCharacter, public IAbility
 public:
 	ABaseCharacter(const FObjectInitializer& ObjectInitializer);
 	
+	// MetaHuman
 	UPROPERTY()
-	class UMAMovementComponent* MovementComp;
-	UPROPERTY(VisibleAnywhere)
-	class USpringArmComponent* CameraBoom;
+	TObjectPtr<USkeletalMeshComponent> BodyMesh;
+	UPROPERTY()
+	TObjectPtr<USkeletalMeshComponent> FaceMesh;
+	UPROPERTY()
+	TObjectPtr<UGroomComponent> BeardComp;
+	UPROPERTY()
+	TObjectPtr<UGroomComponent> EyebrowsComp;
+	UPROPERTY()
+	TObjectPtr<UGroomComponent> EyelashesComp;
+	UPROPERTY()
+	TObjectPtr<UGroomComponent> FuzzComp;
+	UPROPERTY()
+	TObjectPtr<UGroomComponent> HairComp;
+	UPROPERTY()
+	TObjectPtr<UGroomComponent> MustacheComp;
+	
 	UPROPERTY(VisibleAnywhere)
 	class UCameraComponent* Camera;
+	UPROPERTY(VisibleAnywhere)
+	USkeletalMeshComponent* Mesh1P;
+	UPROPERTY()
+	class UMAMovementComponent* MovementComp;
+	
 	UPROPERTY(VisibleAnywhere)
 	USceneCaptureComponent2D* SceneCapture;
 	UPROPERTY(VisibleAnywhere)
@@ -47,8 +67,6 @@ public:
 	class USpringArmComponent* MinimapBoom;
 	UPROPERTY(VisibleAnywhere)
 	USceneCaptureComponent2D* MinimapCapture;
-	
-	virtual void GetActorEyesViewPoint(FVector& OutLocation, FRotator& OutRotation) const override;
 	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void PostInitializeComponents() override;

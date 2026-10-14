@@ -29,7 +29,7 @@ void UHighAlert::NativeConstruct()
 	}
 	if (AlertMID)
 	{
-		AlertMID->SetVectorParameterValue(FName("AlertColor"), C_YELLOW);
+		AlertMID->SetVectorParameterValue(FName("AlertColor"), Colors::Yellow);
 	}
 }
 

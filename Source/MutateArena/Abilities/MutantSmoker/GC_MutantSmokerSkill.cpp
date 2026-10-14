@@ -71,7 +71,7 @@ bool AGC_MutantSmokerSkill::WhileActive_Implementation(AActor* MyTarget, const F
                 SphereComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
                 SphereComponent->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
              }
-             SpawnedSmokeActor->Tags.Add(TAG_SMOKE_ACTOR);
+             SpawnedSmokeActor->Tags.Add(Tags::SmokeActor);
           }
        }
 		

@@ -58,7 +58,7 @@ void UMinimap::UpdateTeammateIcons()
 				CanvasSlot->SetSize(FVector2D(40.f, 40.f));
 				CanvasSlot->SetPosition(FVector2D(0.f, 0.f));
 			}
-			LocalPlayerIcon->UpdateIconAppearance(true, C_BLUE);
+			LocalPlayerIcon->UpdateIconAppearance(true, Colors::Blue);
 			LocalPlayerIcon->SetRenderTransformAngle(0.f);
 			LocalPlayerIcon->SetRenderOpacity(1.0f);
 		}
@@ -156,7 +156,7 @@ void UMinimap::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 		if (bIsLocalAlive)
 		{
 			LocalPlayerIcon->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
-			const FLinearColor LocalColor = bIsLocalImmune ? C_YELLOW : C_BLUE;
+			const FLinearColor LocalColor = bIsLocalImmune ? Colors::Yellow : Colors::Blue;
 			LocalPlayerIcon->UpdateIconAppearance(true, LocalColor);
 		}
 		else
@@ -215,7 +215,7 @@ void UMinimap::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 		Icon->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 
 		// 更新颜色与外观
-		const FLinearColor TargetColor = bIsTeammateImmune ? C_YELLOW : ((PS->Team == LocalPS->Team) ? C_BLUE : C_RED);
+		const FLinearColor TargetColor = bIsTeammateImmune ? Colors::Yellow : ((PS->Team == LocalPS->Team) ? Colors::Blue : Colors::Red);
 		Icon->UpdateIconAppearance(bSameFloor, TargetColor);
 
 		// 计算UI空间坐标与旋转映射

@@ -87,7 +87,7 @@ void UGA_Equipment_Drop::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 			if (AEquipment* NewEquipment = PickupEquipment->Equipment)
 			{
 				bool bIsCurrent = CombatComp->CurEquipmentType == NewEquipment->EquipmentType;
-				CombatComp->EquipEquipment(NewEquipment, bIsCurrent);
+				CombatComp->GiveEquipment(NewEquipment, bIsCurrent);
 				
 				if (!bIsCurrent)
 				{
@@ -121,7 +121,7 @@ void UGA_Equipment_Drop::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 			if (OverlappingEquipment)
 			{
 				// 抢到了！服务器直接装备。这会触发客户端的 OnRep，让客户端自动拿枪
-				CombatComp->EquipEquipment(OverlappingEquipment, true);
+				CombatComp->GiveEquipment(OverlappingEquipment, true);
 			}
 			else
 			{

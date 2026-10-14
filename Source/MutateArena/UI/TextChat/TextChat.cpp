@@ -82,12 +82,12 @@ void UTextChat::SendMsg()
 
 	if (Msg.Len() == 0)
 	{
-		NOTIFY(this, C_YELLOW, LOCTEXT("EmptyMsg", "Empty msg"));
+		NOTIFY(this, Colors::Yellow, LOCTEXT("EmptyMsg", "Empty msg"));
 		return;
 	}
 	if (Msg.Len() > 60)
 	{
-		NOTIFY(this, C_YELLOW, FText::Format(LOCTEXT("WordsLimit", "Words limit {0}/60"), FText::AsNumber(Msg.Len())));
+		NOTIFY(this, Colors::Yellow, FText::Format(LOCTEXT("WordsLimit", "Words limit {0}/60"), FText::AsNumber(Msg.Len())));
 		return;
 	}
 
@@ -119,7 +119,7 @@ void UTextChat::SendMsg()
 		LastMsg = Msg;
 
 		EOSSubsystem->ModifyLobbyMemberAttr(TMap<UE::Online::FSchemaAttributeId, UE::Online::FSchemaVariant>{
-			{ LOBBY_MEMBER_MSG, Msg}
+			{ LobbyAttrs::MemberMsg, Msg}
 		});
 
 		MsgEditableTextBox->SetText(FText());
@@ -148,19 +148,19 @@ void UTextChat::ShowMsg(const EMsgType MsgType, const ETeam Team, const FString&
 		{
 			if (LocalTeam == Team)
 			{
-				MsgLineButton->PlayerName->SetColorAndOpacity(C_BLUE);
-				MsgLineButton->MsgTime->SetColorAndOpacity(C_BLUE);
+				MsgLineButton->PlayerName->SetColorAndOpacity(Colors::Blue);
+				MsgLineButton->MsgTime->SetColorAndOpacity(Colors::Blue);
 			}
 			else
 			{
-				MsgLineButton->PlayerName->SetColorAndOpacity(C_RED);
-				MsgLineButton->MsgTime->SetColorAndOpacity(C_RED);
+				MsgLineButton->PlayerName->SetColorAndOpacity(Colors::Red);
+				MsgLineButton->MsgTime->SetColorAndOpacity(Colors::Red);
 			}
 		}
 		else
 		{
-			MsgLineButton->PlayerName->SetColorAndOpacity(C_WHITE);
-			MsgLineButton->MsgTime->SetColorAndOpacity(C_WHITE);
+			MsgLineButton->PlayerName->SetColorAndOpacity(Colors::White);
+			MsgLineButton->MsgTime->SetColorAndOpacity(Colors::White);
 		}
 	}
 
@@ -172,59 +172,59 @@ void UTextChat::ShowMsg(const EMsgType MsgType, const ETeam Team, const FString&
 	{
 	case EMsgType::Msg:
 		MsgLineButton->Msg->SetText(FText::FromString(ULibraryCommon::ObfuscateTextChat(Msg, this)));
-		MsgLineButton->Msg->SetColorAndOpacity(C_WHITE);
+		MsgLineButton->Msg->SetColorAndOpacity(Colors::White);
 		break;
 	case EMsgType::Radio:
 		MsgLineButton->Msg->SetText(FText::FromString(Msg));
-		MsgLineButton->Msg->SetColorAndOpacity(LocalTeam == Team ? C_BLUE :C_RED);
+		MsgLineButton->Msg->SetColorAndOpacity(LocalTeam == Team ? Colors::Blue :Colors::Red);
 		break;
 	case EMsgType::Join:
 		MsgLineButton->Msg->SetText(LOCTEXT("Joined", "Joined"));
-		MsgLineButton->Msg->SetColorAndOpacity(C_GREY);
+		MsgLineButton->Msg->SetColorAndOpacity(Colors::Grey);
 		break;
 	case EMsgType::Left:
 		MsgLineButton->Msg->SetText(LOCTEXT("Left", "Left"));
-		MsgLineButton->Msg->SetColorAndOpacity(C_GREY);
+		MsgLineButton->Msg->SetColorAndOpacity(Colors::Grey);
 		break;
 	case EMsgType::Kicked:
 		MsgLineButton->Msg->SetText(LOCTEXT("Kicked", "Kicked"));
-		MsgLineButton->Msg->SetColorAndOpacity(C_GREY);
+		MsgLineButton->Msg->SetColorAndOpacity(Colors::Grey);
 		break;
 	case EMsgType::Disconnected:
 		MsgLineButton->Msg->SetText(LOCTEXT("Disconnected", "Disconnected"));
-		MsgLineButton->Msg->SetColorAndOpacity(C_GREY);
+		MsgLineButton->Msg->SetColorAndOpacity(Colors::Grey);
 		break;
 	case EMsgType::Closed:
 		MsgLineButton->Msg->SetText(LOCTEXT("Closed", "Closed"));
-		MsgLineButton->Msg->SetColorAndOpacity(C_GREY);
+		MsgLineButton->Msg->SetColorAndOpacity(Colors::Grey);
 		break;
 	case EMsgType::Start:
 		MsgLineButton->Msg->SetText(LOCTEXT("GameStart", "Game starts"));
-		MsgLineButton->Msg->SetColorAndOpacity(C_YELLOW);
+		MsgLineButton->Msg->SetColorAndOpacity(Colors::Yellow);
 		break;
 	case EMsgType::HostChange:
 		MsgLineButton->Msg->SetText(LOCTEXT("BecomeHost", "Becomes the host"));
-		MsgLineButton->Msg->SetColorAndOpacity(C_YELLOW);
+		MsgLineButton->Msg->SetColorAndOpacity(Colors::Yellow);
 		break;
 	case EMsgType::ServerNameChange:
 		MsgLineButton->Msg->SetText(FText::Format(LOCTEXT("ServerNameChange", "Server name change to {0}"), FText::FromString(Msg)));
-		MsgLineButton->Msg->SetColorAndOpacity(C_YELLOW);
+		MsgLineButton->Msg->SetColorAndOpacity(Colors::Yellow);
 		break;
 	case EMsgType::ModeNameChange:
 		MsgLineButton->Msg->SetText(FText::Format(LOCTEXT("ModeChange", "Mode change to {0}"), FText::FromString(Msg)));
-		MsgLineButton->Msg->SetColorAndOpacity(C_YELLOW);
+		MsgLineButton->Msg->SetColorAndOpacity(Colors::Yellow);
 		break;
 	case EMsgType::MapNameChange:
 		MsgLineButton->Msg->SetText(FText::Format(LOCTEXT("MapChange", "Map change to {0}"), FText::FromString(Msg)));
-		MsgLineButton->Msg->SetColorAndOpacity(C_YELLOW);
+		MsgLineButton->Msg->SetColorAndOpacity(Colors::Yellow);
 		break;
 	case EMsgType::MatchRoundChange:
 		MsgLineButton->Msg->SetText(FText::Format(LOCTEXT("MatchRoundChange", "Match round change to {0}"), FText::FromString(Msg)));
-		MsgLineButton->Msg->SetColorAndOpacity(C_YELLOW);
+		MsgLineButton->Msg->SetColorAndOpacity(Colors::Yellow);
 		break;
 	case EMsgType::MatchTimeChange:
 		MsgLineButton->Msg->SetText(FText::Format(LOCTEXT("MatchTimeChange", "Match time change to {0}"), FText::FromString(Msg)));
-		MsgLineButton->Msg->SetColorAndOpacity(C_YELLOW);
+		MsgLineButton->Msg->SetColorAndOpacity(Colors::Yellow);
 		break;
 	}
 

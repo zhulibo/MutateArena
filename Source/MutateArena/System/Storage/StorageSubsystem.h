@@ -53,11 +53,4 @@ protected:
 	UPROPERTY()
 	class UAssetSubsystem* AssetSubsystem;
 	
-	// 用于缓存所有 DNA 资产的字典
-	UPROPERTY(Transient)
-	TMap<EDNA2, UDNAAsset2*> CachedDNAAssets;
-	void SyncBuildDNACache();
-public:
-	UDNAAsset2* GetDNAAssetByType(EDNA2 InDNA) const;
-	
 };

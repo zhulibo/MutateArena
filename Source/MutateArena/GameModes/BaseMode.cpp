@@ -19,6 +19,9 @@
 #include "MutateArena/Utils/LibraryCommon.h"
 #include "GameFramework/PlayerStart.h"
 #include "MutateArena/Characters/Components/CombatComponent.h"
+#include "MutateArena/Characters/Data/CharacterAsset.h"
+#include "MutateArena/Equipments/Data/EquipmentAsset.h"
+#include "MutateArena/System/AssetSubsystem.h"
 #include "MutateArena/System/DevSetting.h"
 #include "Online/SchemaTypes.h"
 
@@ -93,7 +96,7 @@ void ABaseMode::Logout(AController* Exiting)
 			}
 		}
 	}
-	
+
 #if WITH_EDITOR
 	if (GetWorld()->WorldType == EWorldType::PIE)
 	{
@@ -103,14 +106,14 @@ void ABaseMode::Logout(AController* Exiting)
 		}
 	}
 #endif
-	
+
 	// 所有客户端退出后，再让服务端退出。
 	if (MatchState == MatchState::LeavingMap && GetWorld()->GetNumPlayerControllers() == 2)
 	{
 		if (APlayerController* PlayerController = GetWorld()->GetFirstPlayerController())
 		{
 			UE_LOG(LogTemp, Warning, TEXT("HandleLeavingMap ------------------------------------------"));
-			PlayerController->ClientTravel(MAP_MENU, ETravelType::TRAVEL_Absolute);
+			PlayerController->ClientTravel(MapPaths::Menu, ETravelType::TRAVEL_Absolute);
 		}
 	}
 
@@ -128,7 +131,7 @@ void ABaseMode::EndMatch()
 		}
 	}
 #endif
-	
+
 	Super::EndMatch();
 }
 
@@ -145,7 +148,7 @@ void ABaseMode::HandleLeavingMap()
 		if (APlayerController* PlayerController = GetWorld()->GetFirstPlayerController())
 		{
 			UE_LOG(LogTemp, Warning, TEXT("HandleLeavingMap ------------------------------------------"));
-			PlayerController->ClientTravel(MAP_MENU, ETravelType::TRAVEL_Absolute);
+			PlayerController->ClientTravel(MapPaths::Menu, ETravelType::TRAVEL_Absolute);
 		}
 	});
 	GetWorldTimerManager().SetTimer(TimerHandle, TimerDelegate, 1.f, false);
@@ -156,20 +159,17 @@ void ABaseMode::SpawnHumanCharacter(AController* Controller)
 {
 	if (Controller == nullptr) return;
 
-	// 获取角色名字
-	FString CharacterName;
 	ABasePlayerState* BasePlayerState = Cast<ABasePlayerState>(Controller->PlayerState);
-	if (BasePlayerState)
-	{
-		CharacterName = StaticEnum<EHumanCharacterName>()->GetNameStringByValue(static_cast<int64>(BasePlayerState->HumanCharacterName));
-	}
+	if (!BasePlayerState) return;
 
 	// 获取角色类
 	TSubclassOf<AHumanCharacter> CharacterClass;
-	FDataRegistryId DataRegistryId(DR_HUMAN_CHARACTER_MAIN, FName(CharacterName));
-	if (const FHumanCharacterMain* HumanCharacterMain = UDataRegistrySubsystem::Get()->GetCachedItem<FHumanCharacterMain>(DataRegistryId))
+	if (UAssetSubsystem* AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>())
 	{
-		CharacterClass = UDataAssetManager::Get().GetSubclass(HumanCharacterMain->HumanCharacterClass);
+		if (UCharacterHumanAsset* CharacterHumanAsset = AssetSubsystem->GetCharacterHumanAssetByName(BasePlayerState->HumanCharacterName))
+		{
+			CharacterClass = CharacterHumanAsset->CharacterClass.LoadSynchronous();
+		}
 	}
 	if (CharacterClass == nullptr) return;
 
@@ -253,8 +253,14 @@ void ABaseMode::AssignTeam(AController* Controller, ETeam Team)
 void ABaseMode::AddKillLog(ABasePlayerState* AttackerState, AActor* DamageCauser, const UDamageType* DamageType, ABasePlayerState* DamagedState)
 {
 	FText CauserName = FText::FromString(TEXT("-1"));
-
 	bool bIsMelee = false;
+
+	// 提前获取 AssetSubsystem
+	UAssetSubsystem* AssetSubsystem = nullptr;
+	if (UGameInstance* GameInstance = GetWorld() ? GetWorld()->GetGameInstance() : nullptr)
+	{
+		AssetSubsystem = GameInstance->GetSubsystem<UAssetSubsystem>();
+	}
 
 	if (const UDamageTypeBase* DamageTypeBase = Cast<UDamageTypeBase>(DamageType))
 	{
@@ -265,11 +271,13 @@ void ABaseMode::AddKillLog(ABasePlayerState* AttackerState, AActor* DamageCauser
 			{
 				if (AEquipment* CauserEquipment = Cast<AEquipment>(DamageCauser->GetOwner()))
 				{
-					FString EnumValue = StaticEnum<EEquipmentName>()->GetNameStringByValue(static_cast<int64>(CauserEquipment->EquipmentName));
-					FDataRegistryId DataRegistryId(DR_EQUIPMENT_MAIN, FName(EnumValue));
-					if (const FEquipmentMain* EquipmentMain = UDataRegistrySubsystem::Get()->GetCachedItem<FEquipmentMain>(DataRegistryId))
+					// 使用 O(1) 的 AssetSubsystem 获取武器名称
+					if (AssetSubsystem)
 					{
-						CauserName = EquipmentMain->ShowName;
+						if (UEquipmentAsset* Asset = AssetSubsystem->GetEquipmentAssetByName(CauserEquipment->EquipmentName))
+						{
+							CauserName = Asset->ShowName;
+						}
 					}
 				}
 			}
@@ -277,13 +285,14 @@ void ABaseMode::AddKillLog(ABasePlayerState* AttackerState, AActor* DamageCauser
 		case EDamageCauserType::Melee:
 			if (AEquipment* CauserEquipment = Cast<AEquipment>(DamageCauser))
 			{
-				FString EnumValue = StaticEnum<EEquipmentName>()->GetNameStringByValue(static_cast<int64>(CauserEquipment->EquipmentName));
-				FDataRegistryId DataRegistryId(DR_EQUIPMENT_MAIN, FName(EnumValue));
-				if (const FEquipmentMain* EquipmentMain = UDataRegistrySubsystem::Get()->GetCachedItem<FEquipmentMain>(DataRegistryId))
+				// 使用 O(1) 的 AssetSubsystem 获取近战武器名称
+				if (AssetSubsystem)
 				{
-					CauserName = EquipmentMain->ShowName;
-
-					bIsMelee = true;
+					if (UEquipmentAsset* Asset = AssetSubsystem->GetEquipmentAssetByName(CauserEquipment->EquipmentName))
+					{
+						CauserName = Asset->ShowName;
+						bIsMelee = true;
+					}
 				}
 			}
 			break;
@@ -310,7 +319,7 @@ void ABaseMode::AddKillLog(ABasePlayerState* AttackerState, AActor* DamageCauser
 	{
 		BaseGameState->MulticastAddKillLog(AttackerState, CauserName, DamagedState);
 
-		if (bIsMelee && BaseGameState->ActorHasTag(TAG_GAME_STATE_MUTATION))
+		if (bIsMelee && BaseGameState->ActorHasTag(Tags::GameStateMutation))
 		{
 			FText AttackerName = AttackerState ? FText::FromString(ULibraryCommon::ObfuscateName(AttackerState->GetPlayerName(), this)) : FText::GetEmpty();
 			FText DamagedName = DamagedState ? FText::FromString(ULibraryCommon::ObfuscateName(DamagedState->GetPlayerName(), this)) : FText::GetEmpty();
@@ -326,7 +335,7 @@ void ABaseMode::ChangeLobbyStatus(int64 Status)
 	if (UEOSSubsystem* EOSSubsystem = GetGameInstance()->GetSubsystem<UEOSSubsystem>())
 	{
 		EOSSubsystem->ModifyLobbyAttr(TMap<UE::Online::FSchemaAttributeId, UE::Online::FSchemaVariant>{
-			{LOBBY_STATUS, Status},
+			{LobbyAttrs::Status, Status},
 		});
 	}
 }

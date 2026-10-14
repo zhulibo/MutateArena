@@ -12,6 +12,7 @@
 #include "MutateArena/PlayerControllers/BaseController.h"
 #include "MutateArena/PlayerStates/BasePlayerState.h"
 #include "MutateArena/PlayerStates/TeamType.h"
+#include "MutateArena/System/AssetSubsystem.h"
 #include "MutateArena/System/DataAssetManager.h"
 #include "MutateArena/System/EOSSubsystem.h"
 #include "MutateArena/System/UISubsystem.h"
@@ -94,7 +95,7 @@ void UScoreboard::RefreshScoreBoard()
 			LocalBasePlayerState = Cast<ABasePlayerState>(LocalBaseController->PlayerState);
 		}
 		
-		if (StorageSubsystem == nullptr) StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
+		if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
 		
 		int32 CurrentPlayerCount = PlayerStates.Num();
 		int32 ExistingWidgetCount = ScoreBoardContainer->GetChildrenCount();
@@ -126,10 +127,10 @@ void UScoreboard::RefreshScoreBoard()
 			// 2. 更新 Widget 数据
 			if (ScoreBoardLineButton)
 			{
-				FLinearColor TargetColor = C_WHITE;
+				FLinearColor TargetColor = Colors::White;
 				if (LocalBasePlayerState)
 				{
-					TargetColor = PlayerStates[i]->Team == LocalBasePlayerState->Team ? C_BLUE : C_RED;
+					TargetColor = PlayerStates[i]->Team == LocalBasePlayerState->Team ? Colors::Blue : Colors::Red;
 				}
 				
 				// 玩家名
@@ -138,13 +139,13 @@ void UScoreboard::RefreshScoreBoard()
 				ScoreBoardLineButton->Player->SetColorAndOpacity(TargetColor);
 				
 				// DNA
-				if (StorageSubsystem && StorageSubsystem->CacheLoadout)
+				if (AssetSubsystem)
 				{
-					if (UDNAAsset2* DNAAsset1 = StorageSubsystem->GetDNAAssetByType(PlayerStates[i]->DNA1))
+					if (UDNAAsset2* DNAAsset1 = AssetSubsystem->GetDNAAssetByType(PlayerStates[i]->DNA1))
 					{
 						ScoreBoardLineButton->DNA1->SetBrushFromLazyTexture(DNAAsset1->Icon);
 					}
-					if (UDNAAsset2* DNAAsset2 = StorageSubsystem->GetDNAAssetByType(PlayerStates[i]->DNA2))
+					if (UDNAAsset2* DNAAsset2 = AssetSubsystem->GetDNAAssetByType(PlayerStates[i]->DNA2))
 					{
 						ScoreBoardLineButton->DNA2->SetBrushFromLazyTexture(DNAAsset2->Icon);
 					}
@@ -153,11 +154,11 @@ void UScoreboard::RefreshScoreBoard()
 				ScoreBoardLineButton->Damage->SetText(FText::FromString(FString::FromInt(PlayerStates[i]->Damage)));
 				ScoreBoardLineButton->Damage->SetColorAndOpacity(TargetColor);
 
-				if (BaseGameState->ActorHasTag(TAG_GAME_STATE_MELEE) || BaseGameState->ActorHasTag(TAG_GAME_STATE_TDM))
+				if (BaseGameState->ActorHasTag(Tags::GameStateMelee) || BaseGameState->ActorHasTag(Tags::GameStateTDM))
 				{
 					ScoreBoardLineButton->Death->SetText(FText::FromString(FString::FromInt(PlayerStates[i]->Death)));
 				}
-				if (BaseGameState->ActorHasTag(TAG_GAME_STATE_MUTATION))
+				if (BaseGameState->ActorHasTag(Tags::GameStateMutation))
 				{
 					ScoreBoardLineButton->Survive->SetText(FText::FromString(FString::FromInt(PlayerStates[i]->Survive)));
 					ScoreBoardLineButton->Infect->SetText(FText::FromString(FString::FromInt(PlayerStates[i]->Infect)));

@@ -78,7 +78,7 @@ void UOverheadWidget::InitOverheadWidget()
 		{
 			bNeedUpdate = false;
 			
-			FColor TeamColor = BasePlayerState->Team == LocalBasePlayerState->Team ? C_BLUE : C_RED;
+			FColor TeamColor = BasePlayerState->Team == LocalBasePlayerState->Team ? Colors::Blue : Colors::Red;
 			
 			// 设置名字 (字符串混淆计算开销大，只在状态更新时执行)
 			FString ObfuscatedName = ULibraryCommon::ObfuscateName(BasePlayerState->GetPlayerName(), this);
@@ -92,7 +92,7 @@ void UOverheadWidget::InitOverheadWidget()
 				{
 					if (HumanCharacter->bIsImmune)
 					{
-						TeamColor = C_YELLOW;
+						TeamColor = Colors::Yellow;
 					}
 				}
 				HealthBarMID->SetVectorParameterValue(TEXT("TeamColor"), TeamColor);

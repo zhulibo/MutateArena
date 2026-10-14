@@ -77,7 +77,7 @@ void UKeyBindingLineButton::RebindKey(FName MappingName, FKey NewKey)
 	}
 	else
 	{
-		NOTIFY(this, C_RED, LOCTEXT("RebindFailed", "Rebind Failed"));
+		NOTIFY(this, Colors::Red, LOCTEXT("RebindFailed", "Rebind Failed"));
 		
 		UE_LOG(LogTemp, Warning, TEXT("RebindFailed: %s"), *FailureReason.ToString());
 	}

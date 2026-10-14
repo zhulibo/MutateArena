@@ -17,5 +17,4 @@ class MUTATEARENA_API IPoolable
 public:
 	virtual void OnSpawnedFromPool() = 0;
 	virtual void OnReturnedToPool() = 0;
-	
 };

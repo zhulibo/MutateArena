@@ -99,22 +99,22 @@ void AProjectileBullet::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, 
 	// 播放音效与材质判断
 	bool bIsWood = false;
 	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-	if (AssetSubsystem && AssetSubsystem->EquipmentAsset && Hit.PhysMaterial.IsValid())
+	if (AssetSubsystem && AssetSubsystem->EquipmentCommonAsset && Hit.PhysMaterial.IsValid())
 	{
 		UMetaSoundSource* ImpactSound = nullptr;
 		switch (Hit.PhysMaterial->SurfaceType)
 		{
 		case EPhysicalSurface::SurfaceType1:
-			ImpactSound = AssetSubsystem->EquipmentAsset->ImpactSound_Concrete;
+			ImpactSound = AssetSubsystem->EquipmentCommonAsset->ImpactSound_Concrete;
 			break;
 		case EPhysicalSurface::SurfaceType2:
-			ImpactSound = AssetSubsystem->EquipmentAsset->ImpactSound_Dirt;
+			ImpactSound = AssetSubsystem->EquipmentCommonAsset->ImpactSound_Dirt;
 			break;
 		case EPhysicalSurface::SurfaceType3:
-			ImpactSound = AssetSubsystem->EquipmentAsset->ImpactSound_Metal;
+			ImpactSound = AssetSubsystem->EquipmentCommonAsset->ImpactSound_Metal;
 			break;
 		case EPhysicalSurface::SurfaceType4:
-			ImpactSound = AssetSubsystem->EquipmentAsset->ImpactSound_Wood;
+			ImpactSound = AssetSubsystem->EquipmentCommonAsset->ImpactSound_Wood;
 			bIsWood = true;
 			break;
 		}
@@ -296,9 +296,9 @@ void AProjectileBullet::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent,
 
 		// 播放击中肉体音效
 		if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-		if (AssetSubsystem && AssetSubsystem->EquipmentAsset && AssetSubsystem->EquipmentAsset->ImpactSound_Body)
+		if (AssetSubsystem && AssetSubsystem->EquipmentCommonAsset && AssetSubsystem->EquipmentCommonAsset->ImpactSound_Body)
 		{
-			UGameplayStatics::PlaySoundAtLocation(this, AssetSubsystem->EquipmentAsset->ImpactSound_Body, GetActorLocation());
+			UGameplayStatics::PlaySoundAtLocation(this, AssetSubsystem->EquipmentCommonAsset->ImpactSound_Body, GetActorLocation());
 		}
 
 		// 穿透力结算与销毁

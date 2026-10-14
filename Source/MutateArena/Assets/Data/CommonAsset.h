@@ -96,7 +96,7 @@ public:
 	
 	virtual FPrimaryAssetId GetPrimaryAssetId() const override
 	{
-		return FPrimaryAssetId(ASSET_COMMON, GetFName());
+		return FPrimaryAssetId(DataAsset::Common, GetFName());
 	}
 	
 	// Localization

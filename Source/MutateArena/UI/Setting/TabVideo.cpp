@@ -38,9 +38,9 @@ void UTabVideo::NativeOnInitialized()
 	ScreenResolutionComboBox->OnGenerateContentWidget.BindDynamic(this, &ThisClass::GenerateComboBoxWidget_NoTranslation);
 
 	// 设置窗口模式下拉项
-	WindowModeComboBox->AddOption(FULLSCREEN);
-	WindowModeComboBox->AddOption(WIDOWED_FULLSCREEN);
-	WindowModeComboBox->AddOption(WIDOWED);
+	WindowModeComboBox->AddOption(Settings::Fullscreen);
+	WindowModeComboBox->AddOption(Settings::WindowedFullscreen);
+	WindowModeComboBox->AddOption(Settings::Windowed);
 
 	// 设置分辨率下拉项
 	// 添加默认分辨率
@@ -165,13 +165,13 @@ void UTabVideo::SetUISavedValue()
 			switch (GameUserSettings->GetFullscreenMode())
 			{
 			case EWindowMode::Fullscreen:
-				WindowModeComboBox->SetSelectedOption(FULLSCREEN);
+				WindowModeComboBox->SetSelectedOption(Settings::Fullscreen);
 				break;
 			case EWindowMode::WindowedFullscreen:
-				WindowModeComboBox->SetSelectedOption(WIDOWED_FULLSCREEN);
+				WindowModeComboBox->SetSelectedOption(Settings::WindowedFullscreen);
 				break;
 			case EWindowMode::Windowed:
-				WindowModeComboBox->SetSelectedOption(WIDOWED);
+				WindowModeComboBox->SetSelectedOption(Settings::Windowed);
 				break;
 			}
 
@@ -206,15 +206,15 @@ void UTabVideo::OnWindowModeChanged(FName SelectedItem, ESelectInfo::Type Select
 {
 	EWindowMode::Type WindowMode = EWindowMode::WindowedFullscreen;
 
-	if (SelectedItem == FULLSCREEN)
+	if (SelectedItem == Settings::Fullscreen)
 	{
 		WindowMode = EWindowMode::Fullscreen;
 	}
-	else if (SelectedItem == WIDOWED_FULLSCREEN)
+	else if (SelectedItem == Settings::WindowedFullscreen)
 	{
 		WindowMode = EWindowMode::WindowedFullscreen;
 	}
-	else if (SelectedItem == WIDOWED)
+	else if (SelectedItem == Settings::Windowed)
 	{
 		WindowMode = EWindowMode::Windowed;
 	}
@@ -276,13 +276,13 @@ void UTabVideo::SetDefault()
 			switch (DefaultConfig->WindowMode)
 			{
 			case EWindowMode::Fullscreen:
-				WindowModeComboBox->SetSelectedOption(FULLSCREEN);
+				WindowModeComboBox->SetSelectedOption(Settings::Fullscreen);
 				break;
 			case EWindowMode::WindowedFullscreen:
-				WindowModeComboBox->SetSelectedOption(WIDOWED_FULLSCREEN);
+				WindowModeComboBox->SetSelectedOption(Settings::WindowedFullscreen);
 				break;
 			case EWindowMode::Windowed:
-				WindowModeComboBox->SetSelectedOption(WIDOWED);
+				WindowModeComboBox->SetSelectedOption(Settings::Windowed);
 				break;
 			}
 

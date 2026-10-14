@@ -9,15 +9,11 @@
 #include "MutateArena/UI/Setting/TabAudio.h"
 #include "MutateArena/Assets/Data/CommonAsset.h"
 #include "Kismet/GameplayStatics.h"
-#include "MutateArena/Characters/Data/DNAAsset2.h"
-#include "MutateArena/System/DataAssetManager.h"
 #include "Serialization/ObjectAndNameAsStringProxyArchive.h"
 
 void UStorageSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
-
-	SyncBuildDNACache();
 	
 	EOSSubsystem = GetGameInstance()->GetSubsystem<UEOSSubsystem>();
 	if (EOSSubsystem)
@@ -224,41 +220,4 @@ void UStorageSubsystem::SetAudio(float Value, ESoundClassType SoundClassType)
 			true
 		);
 	}
-}
-
-void UStorageSubsystem::SyncBuildDNACache()
-{
-	CachedDNAAssets.Empty();
-
-	TArray<FPrimaryAssetId> DNAAssetIds;
-	UDataAssetManager::Get().GetPrimaryAssetIdList(FPrimaryAssetType(ASSET_DNA), DNAAssetIds);
-	
-	// 按资产名称的字母表顺序固定住顺序
-	DNAAssetIds.Sort([](const FPrimaryAssetId& A, const FPrimaryAssetId& B)
-	{
-		return A.PrimaryAssetName.LexicalLess(B.PrimaryAssetName);
-	});
-	
-	for (const FPrimaryAssetId& AssetId : DNAAssetIds)
-	{
-		if (UDNAAsset2* DNAAsset = UDataAssetManager::GetAsset<UDNAAsset2>(AssetId))
-		{
-			CachedDNAAssets.Add(DNAAsset->DNA, DNAAsset);
-		}
-	}
-}
-
-UDNAAsset2* UStorageSubsystem::GetDNAAssetByType(EDNA2 InDNA) const
-{
-	if (InDNA == EDNA2::None)
-	{
-		return nullptr;
-	}
-
-	if (UDNAAsset2* const* FoundAsset = CachedDNAAssets.Find(InDNA))
-	{
-		return *FoundAsset;
-	}
-    
-	return nullptr;
 }

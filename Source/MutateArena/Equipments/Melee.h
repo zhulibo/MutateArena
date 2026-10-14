@@ -45,7 +45,7 @@ protected:
 	float HeavyAttackDamage;
 
 public:
-	virtual void OnEquip(class AHumanCharacter* HumanChar) override;
+	virtual void OnGiven(class AHumanCharacter* HumanChar) override;
 
 protected:
 	// 设置扫掠检测的目标类型

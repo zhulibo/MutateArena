@@ -1,12 +1,11 @@
 #include "Projectile.h"
-
-#include "DataRegistrySubsystem.h"
 #include "Components/BoxComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Components/StaticMeshComponent.h"
 #include "Curves/CurveFloat.h"
 #include "MutateArena/MutateArena.h"
-#include "MutateArena/Equipments/Data/EquipmentType.h"
+#include "MutateArena/Equipments/Data/EquipmentAsset.h"
+#include "MutateArena/System/AssetSubsystem.h"
 
 AProjectile::AProjectile()
 {
@@ -14,7 +13,7 @@ AProjectile::AProjectile()
 
 	CollisionBox = CreateDefaultSubobject<UBoxComponent>(TEXT("CollisionBox"));
 	SetRootComponent(CollisionBox);
-	CollisionBox->SetCollisionObjectType(ECC_PROJECTILE);
+	CollisionBox->SetCollisionObjectType(ECC::Projectile);
 	CollisionBox->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	CollisionBox->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	CollisionBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldStatic, ECollisionResponse::ECR_Block);
@@ -38,7 +37,6 @@ void AProjectile::PostActorCreated()
 void AProjectile::BeginPlay()
 {
 	Super::BeginPlay();
-
 	SpawnLocation = GetActorLocation();
 }
 
@@ -46,15 +44,15 @@ void AProjectile::SpawnTrailEffect()
 {
 	// if (TrailEffect)
 	// {
-	// 	TrailEffectComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
-	// 		TrailEffect,
-	// 		GetRootComponent(),
-	// 		TEXT(""),
-	// 		FVector::ZeroVector,
-	// 		FRotator::ZeroRotator,
-	// 		EAttachLocation::KeepRelativeOffset,
-	// 		true
-	// 	);
+	//     TrailEffectComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
+	//        TrailEffect,
+	//        GetRootComponent(),
+	//        TEXT(""),
+	//        FVector::ZeroVector,
+	//        FRotator::ZeroRotator,
+	//        EAttachLocation::KeepRelativeOffset,
+	//        true
+	//     );
 	// }
 }
 
@@ -74,39 +72,49 @@ void AProjectile::SpawnTracerEffect()
 	}
 }
 
-float AProjectile::GetDamage(float Distance)
+void AProjectile::EnsureWeaponFragCached()
 {
-	float Damage = 0.f;
+	if (bIsWeaponFragCached) return;
 
-	FDataRegistryId DataRegistryId(DR_WEAPON_DATA, FName(OwnerName));
-	if (const FWeaponData* WeaponData = UDataRegistrySubsystem::Get()->GetCachedItem<FWeaponData>(DataRegistryId))
+	if (UGameInstance* GameInstance = GetWorld() ? GetWorld()->GetGameInstance() : nullptr)
 	{
-		if (UCurveFloat* DamageCurve = WeaponData->DamageCurve)
+		if (UAssetSubsystem* AssetSubsystem = GameInstance->GetSubsystem<UAssetSubsystem>())
 		{
-			Damage = DamageCurve->GetFloatValue(Distance / 100) / WeaponData->PelletNum;
+			if (UEquipmentAsset* WeaponAsset = AssetSubsystem->GetEquipmentAssetByName(EquipmentParentName))
+			{
+				CachedWeaponFrag = WeaponAsset->FindFragmentByClass<UFragWeapon>();
+			}
 		}
 	}
 
-	return Damage;
+	bIsWeaponFragCached = true;
+}
+
+float AProjectile::GetDamage(float Distance)
+{
+	EnsureWeaponFragCached();
+
+	if (CachedWeaponFrag && CachedWeaponFrag->DamageCurve && CachedWeaponFrag->PelletNum != 0)
+	{
+		return CachedWeaponFrag->DamageCurve->GetFloatValue(Distance / 100.f) / CachedWeaponFrag->PelletNum;
+	}
+
+	return 0.f;
 }
 
 // 子弹伤害会受到受穿透力影响，施加伤害时已计算在内，击退力受伤害影响，所以间接地也受到穿透力影响
 float AProjectile::GetImpulse(float DeclineDamage)
 {
-	float Impulse = 0.f;
+	EnsureWeaponFragCached();
 
-	FDataRegistryId DataRegistryId(DR_WEAPON_DATA, FName(OwnerName));
-	if (const FWeaponData* WeaponData = UDataRegistrySubsystem::Get()->GetCachedItem<FWeaponData>(DataRegistryId))
+	if (CachedWeaponFrag && CachedWeaponFrag->DamageCurve && CachedWeaponFrag->PelletNum != 0)
 	{
-		if (UCurveFloat* DamageCurve = WeaponData->DamageCurve)
+		float MaxDamage = CachedWeaponFrag->DamageCurve->GetFloatValue(1.f);
+		if (MaxDamage != 0.f)
 		{
-			float MaxDamage = DamageCurve->GetFloatValue(1.f);
-			if (MaxDamage != 0 && WeaponData->PelletNum != 0)
-			{
-				Impulse = WeaponData->Impulse * (DeclineDamage * WeaponData->PelletNum / MaxDamage) / WeaponData->PelletNum;
-			}
+			return CachedWeaponFrag->Impulse * (DeclineDamage * CachedWeaponFrag->PelletNum / MaxDamage) / CachedWeaponFrag->PelletNum;
 		}
 	}
 
-	return Impulse;
+	return 0.f;
 }

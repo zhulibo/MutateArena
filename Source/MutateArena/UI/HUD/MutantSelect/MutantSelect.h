@@ -2,7 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "CommonActivatableWidget.h"
-#include "DataRegistryId.h"
 #include "MutantSelect.generated.h"
 
 enum class EMutantCharacterName : uint8;
@@ -15,32 +14,34 @@ class MUTATEARENA_API UMutantSelect : public UCommonActivatableWidget
 protected:
 	virtual void NativeOnInitialized() override;
 	virtual void NativeDestruct() override;
-	
+
 	virtual UWidget* NativeGetDesiredFocusTarget() const override;
 
 	UPROPERTY()
 	class ABaseController* BaseController;
+
 	UPROPERTY()
 	class ABasePlayerState* BasePlayerState;
+
 	UPROPERTY()
 	class AMutationGameState* MutationGameState;
+
 	UPROPERTY()
 	class UStorageSubsystem* StorageSubsystem;
+
 	UPROPERTY()
 	class UAssetSubsystem* AssetSubsystem;
 
-	TMap<FDataRegistryId, const uint8*> MutantCharacterMains;
-
 	UPROPERTY(meta = (BindWidget))
 	class UWrapBox* MutantSelectButtonContainer;
-	
+
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UMutantSelectButton> MutantSelectButtonClass;
+
 	UFUNCTION()
 	void OnMutantSelectButtonClicked(EMutantCharacterName MutantCharacterName);
 
 	void OnRoundEnded();
 
 	void CloseMenu(bool bClosePauseMenu);
-
 };

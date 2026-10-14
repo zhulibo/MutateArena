@@ -10,7 +10,7 @@ void APickupEquipment::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	OverlapSphere->SetCollisionResponseToChannel(ECC_MESH_TEAM1, ECollisionResponse::ECR_Overlap);
+	OverlapSphere->SetCollisionResponseToChannel(ECC::MeshTeam1, ECollisionResponse::ECR_Overlap);
 
 	if (HasAuthority())
 	{

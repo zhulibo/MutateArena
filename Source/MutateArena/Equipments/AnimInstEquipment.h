@@ -4,8 +4,6 @@
 #include "Animation/AnimInstance.h"
 #include "AnimInstEquipment.generated.h"
 
-enum class EEquipmentName : uint8;
-
 UCLASS()
 class MUTATEARENA_API UAnimInstEquipment : public UAnimInstance
 {

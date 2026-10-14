@@ -5,12 +5,13 @@
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "MutateArena/Characters/Components/CombatComponent.h"
 #include "MutateArena/Equipments/Weapon.h"
+#include "MutateArena/Equipments/Data/EquipmentAsset.h"
 
 void APickupAmmo::BeginPlay()
 {
 	Super::BeginPlay();
 
-	OverlapSphere->SetCollisionResponseToChannel(ECC_MESH_TEAM1, ECollisionResponse::ECR_Overlap);
+	OverlapSphere->SetCollisionResponseToChannel(ECC::MeshTeam1, ECollisionResponse::ECR_Overlap);
 }
 
 void APickupAmmo::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -22,8 +23,8 @@ void APickupAmmo::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AAct
 	{
 		if (AWeapon* PrimaryEquipment = HumanCharacter->CombatComp->PrimaryEquipment)
 		{
-			PrimaryEquipment->SetAmmo(PrimaryEquipment->MagCapacity);
-			PrimaryEquipment->SetCarriedAmmo(PrimaryEquipment->MaxCarriedAmmo);
+			PrimaryEquipment->SetAmmo(PrimaryEquipment->FragWeapon->MagCapacity);
+			PrimaryEquipment->SetCarriedAmmo(PrimaryEquipment->FragWeapon->MaxCarriedAmmo);
 			
 			Destroy();
 		}

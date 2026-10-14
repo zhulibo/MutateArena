@@ -26,7 +26,7 @@ void UMAGameInstance::OnNetworkFailure(UWorld* World, UNetDriver* NetDriver, ENe
 		if (EOSSubsystem)
 		{
 			EOSSubsystem->ModifyLobbyMemberAttr(TMap<FSchemaAttributeId, FSchemaVariant>{
-				{ LOBBY_MEMBER_READY, false}
+				{ LobbyAttrs::MemberReady, false}
 			});
 		}
 	}

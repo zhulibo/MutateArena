@@ -141,18 +141,18 @@ void UMenu::OnReadTitleFileComplete(bool bWasSuccessful, const FTitleFileContent
 			MessageBox->SetVisibility(ESlateVisibility::HitTestInvisible);
 			Message->SetText(FText::FromString(Content));
 			
-			FColor Color = C_WHITE;
+			FColor Color = Colors::White;
 			if (Level == 1)
 			{
-				Color = C_WHITE;
+				Color = Colors::White;
 			}
 			else if (Level == 2)
 			{
-				Color = C_YELLOW;
+				Color = Colors::Yellow;
 			}
 			else if (Level == 3)
 			{
-				Color = C_RED;
+				Color = Colors::Red;
 			}
 			Message->SetColorAndOpacity(Color);
 		}

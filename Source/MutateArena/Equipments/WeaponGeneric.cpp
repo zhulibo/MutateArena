@@ -7,6 +7,7 @@
 #include "MutateArena/Utils/LibraryCommon.h"
 #include "Components/BoxComponent.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Data/EquipmentAsset.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -22,9 +23,9 @@ void AWeaponGeneric::Fire(const FVector& HitTarget, float RecoilVert, float Reco
 
 	AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(GetOwner());
 	if (OwnerTeam == ETeam::NoTeam) SetOwnerTeam();
-	const USkeletalMeshSocket* MuzzleSocket = EquipmentMesh->GetSocketByName(SOCKET_MUZZLE);
+	const USkeletalMeshSocket* MuzzleSocket = EquipmentMesh->GetSocketByName(Sockets::Muzzle);
 
-	if (HumanCharacter == nullptr || ProjectileClass == nullptr || OwnerTeam == ETeam::NoTeam || MuzzleSocket == nullptr) return;
+	if (!HumanCharacter || !FragWeapon->ProjectileClass || OwnerTeam == ETeam::NoTeam || !MuzzleSocket) return;
 	
 	// 子弹是从枪口发出，射向准星在世界场景的投射点，所以穿透后的弹着点会有视差，这是正常的
 	FTransform SocketTransform = MuzzleSocket->GetSocketTransform(EquipmentMesh);
@@ -42,7 +43,7 @@ void AWeaponGeneric::Fire(const FVector& HitTarget, float RecoilVert, float Reco
 	FTransform SpawnTransform(TargetRotation, SocketTransform.GetLocation());
 
 	AProjectileBullet* Projectile = GetWorld()->SpawnActorDeferred<AProjectileBullet>(
-		ProjectileClass,
+		FragWeapon->ProjectileClass,
 		SpawnTransform,
 		this,
 		HumanCharacter,
@@ -51,19 +52,18 @@ void AWeaponGeneric::Fire(const FVector& HitTarget, float RecoilVert, float Reco
 
 	if (Projectile)
 	{
-		// 设置 OwnerName
-		Projectile->OwnerName = StaticEnum<EEquipmentName>()->GetNameStringByValue(static_cast<int64>(EquipmentParentName));
+		Projectile->EquipmentParentName = EquipmentParentName;
 
-		Projectile->InitialPenetrationPower = PenetrationPower;
+		Projectile->InitialPenetrationPower = FragWeapon->PenetrationPower;
 
 		// 设置队伍碰撞通道
 		switch (OwnerTeam)
 		{
 		case ETeam::Team1:
-			Projectile->CollisionBox->SetCollisionResponseToChannel(ECC_MESH_TEAM2, ECollisionResponse::ECR_Overlap);
+			Projectile->CollisionBox->SetCollisionResponseToChannel(ECC::MeshTeam2, ECollisionResponse::ECR_Overlap);
 			break;
 		case ETeam::Team2:
-			Projectile->CollisionBox->SetCollisionResponseToChannel(ECC_MESH_TEAM1, ECollisionResponse::ECR_Overlap);
+			Projectile->CollisionBox->SetCollisionResponseToChannel(ECC::MeshTeam1, ECollisionResponse::ECR_Overlap);
 			break;
 		}
 

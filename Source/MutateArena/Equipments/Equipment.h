@@ -5,6 +5,8 @@
 #include "GameFramework/Actor.h"
 #include "Equipment.generated.h"
 
+class UEquipmentSkinAsset;
+class UEquipmentAsset;
 struct FGameplayAbilitySpecHandle;
 class UAbilitySystemComponent;
 class UGameplayAbility;
@@ -17,17 +19,26 @@ class MUTATEARENA_API AEquipment : public AActor
 
 public:
 	AEquipment();
-	
+
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-	
+
 	UPROPERTY(VisibleAnywhere)
 	class USphereComponent* CollisionSphere;
 	UPROPERTY(VisibleAnywhere)
 	USkeletalMeshComponent* EquipmentMesh;
 	UPROPERTY(VisibleAnywhere)
+	USkeletalMeshComponent* EquipmentMesh1P;
+	UPROPERTY(VisibleAnywhere)
 	USphereComponent* OverlapSphere;
+
+	UPROPERTY(EditAnywhere)
+	EEquipmentName EquipmentName = EEquipmentName::None;
+	UPROPERTY(Transient)
+	TObjectPtr<const UEquipmentAsset> BaseEquipmentAsset = nullptr;
+	UPROPERTY(Transient)
+	TObjectPtr<const UEquipmentSkinAsset> SkinEquipmentAsset = nullptr;
 	
 	UPROPERTY(EditAnywhere)
 	UAnimMontage* SwapInMontage_C;
@@ -40,8 +51,10 @@ public:
 	UAnimMontage* SwapOutMontage_E;
 
 	class UAnimInstEquipment* GetEquipmentAnimInst();
+	class UAnimInstEquipment1P* GetEquipmentAnimInst1P();
 
 	void SetHiddenMesh(bool TempbIsHidden);
+
 protected:
 	UPROPERTY(ReplicatedUsing = OnRep_IsHidden)
 	bool bIsHidden = false;
@@ -49,11 +62,15 @@ protected:
 	void OnRep_IsHidden();
 
 public:
-	virtual void OnStartSwapOut() {};
+	virtual void OnStartSwapOut()
+	{
+	};
 
 protected:
 	UPROPERTY()
-	UAnimInstEquipment* EquipmentAnimInst;
+	UAnimInstEquipment* AnimInstEquipment;
+	UPROPERTY()
+	UAnimInstEquipment1P* AnimInstEquipment1P;
 	UPROPERTY()
 	class UAssetSubsystem* AssetSubsystem;
 	UPROPERTY()
@@ -61,11 +78,9 @@ protected:
 
 	UFUNCTION()
 	virtual void OnAreaSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	                                 UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 public:
-	UPROPERTY(EditAnywhere)
-	EEquipmentName EquipmentName = EEquipmentName::None; // 蓝图和DataTable都需要设置，用于相互对应。
 	UPROPERTY()
 	EEquipmentName EquipmentParentName = EEquipmentName::None;
 	UPROPERTY()
@@ -82,18 +97,17 @@ public:
 	UPROPERTY()
 	float AimingWalkSpeedMul = 1.f;
 
-	virtual void OnEquip(class AHumanCharacter* HumanChar);
+	virtual void OnGiven(class AHumanCharacter* HumanChar);
 	void HandleDrop();
 	virtual void Drop();
-	
+
 protected:
 	UPROPERTY(replicated)
 	ETeam OwnerTeam;
 	void SetOwnerTeam();
 
-protected:
 	void SetAreaSphereCollision();
-	
+
 	FTimerHandle DestroyEquipmentTimerHandle;
 	void DestroyEquipment();
 
@@ -102,8 +116,8 @@ public:
 	TArray<TSubclassOf<UGameplayAbility>> Abilities;
 	void GiveAbilities(UAbilitySystemComponent* ASC);
 	void ClearAbilities(UAbilitySystemComponent* ASC);
+
 protected:
 	UPROPERTY()
 	TArray<FGameplayAbilitySpecHandle> GrantedAbilityHandles;
-	
 };

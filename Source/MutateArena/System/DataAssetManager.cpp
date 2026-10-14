@@ -1,5 +1,4 @@
 #include "DataAssetManager.h"
-
 #include "Engine/Engine.h"
 
 UDataAssetManager::UDataAssetManager()
@@ -13,13 +12,23 @@ void UDataAssetManager::StartInitialLoading()
 
 UDataAssetManager& UDataAssetManager::Get()
 {
-	if (UDataAssetManager* Singleton = Cast<UDataAssetManager>(GEngine->AssetManager))
+	static UDataAssetManager* Singleton = nullptr;
+	if (Singleton)
+	{
+		return *Singleton;
+	}
+
+	Singleton = Cast<UDataAssetManager>(GEngine->AssetManager);
+	if (Singleton)
 	{
 		return *Singleton;
 	}
 
 	UE_LOG(LogTemp, Error, TEXT("Invalid AssetManagerClassName in DefaultEngine.ini. It must be set to UDataAssetManager!"));
-	return *NewObject<UDataAssetManager>();
+
+	// 如果配置错误，兜底生成一个以防崩溃
+	Singleton = NewObject<UDataAssetManager>();
+	return *Singleton;
 }
 
 UObject* UDataAssetManager::SyncLoadAsset(const FSoftObjectPath& AssetPath)

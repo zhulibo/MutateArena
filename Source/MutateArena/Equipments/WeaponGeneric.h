@@ -14,8 +14,4 @@ public:
 
 	virtual void Fire(const FVector& HitTarget, float RecoilVert, float RecoilHor, float SpreadPitch, float SpreadYaw) override;
 
-protected:
-	UPROPERTY(EditAnywhere)
-	TSubclassOf<class AProjectileBullet> ProjectileClass;
-
 };

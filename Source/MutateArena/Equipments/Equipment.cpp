@@ -1,8 +1,8 @@
 #include "Equipment.h"
 
 #include "AbilitySystemComponent.h"
-#include "DataRegistrySubsystem.h"
 #include "AnimInstEquipment.h"
+#include "AnimInstEquipment1P.h"
 #include "GameplayAbilitySpec.h"
 #include "TimerManager.h"
 #include "MutateArena/Characters/HumanCharacter.h"
@@ -12,15 +12,15 @@
 #include "MutateArena/PlayerStates/BasePlayerState.h"
 #include "Camera/CameraComponent.h"
 #include "Components/SphereComponent.h"
+#include "Data/EquipmentAsset.h"
 #include "Engine/GameInstance.h"
 #include "MutateArena/GameStates/BaseGameState.h"
 #include "Net/UnrealNetwork.h"
-#include "MutateArena/PlayerControllers/BaseController.h"
 #include "MutateArena/PlayerStates/TeamType.h"
+#include "MutateArena/System/AssetSubsystem.h"
 #include "MutateArena/System/DataAssetManager.h"
 #include "MutateArena/System/Storage/SaveGameSetting.h"
 #include "MutateArena/System/Storage/StorageSubsystem.h"
-#include "MutateArena/Utils/LibraryCommon.h"
 
 AEquipment::AEquipment()
 {
@@ -32,8 +32,8 @@ AEquipment::AEquipment()
 	CollisionSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	CollisionSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
 	CollisionSphere->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore); // 忽略角色胶囊体
-	CollisionSphere->SetCollisionResponseToChannel(ECC_MESH_TEAM1, ECollisionResponse::ECR_Ignore);
-	CollisionSphere->SetCollisionResponseToChannel(ECC_MESH_TEAM2, ECollisionResponse::ECR_Ignore);
+	CollisionSphere->SetCollisionResponseToChannel(ECC::MeshTeam1, ECollisionResponse::ECR_Ignore);
+	CollisionSphere->SetCollisionResponseToChannel(ECC::MeshTeam2, ECollisionResponse::ECR_Ignore);
 	CollisionSphere->SetLinearDamping(1.f);
 	CollisionSphere->SetSphereRadius(20.f); // 离地面的距离
 
@@ -43,6 +43,15 @@ AEquipment::AEquipment()
 	EquipmentMesh->SetCollisionObjectType(ECollisionChannel::ECC_WorldDynamic);
 	EquipmentMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	EquipmentMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block); // 与血液碰撞
+	EquipmentMesh->SetOwnerNoSee(true);
+	EquipmentMesh->bCastHiddenShadow = true;
+
+	EquipmentMesh1P = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("EquipmentMesh1P"));
+	EquipmentMesh1P->SetupAttachment(RootComponent);
+	EquipmentMesh1P->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	EquipmentMesh1P->SetOnlyOwnerSee(true);
+	EquipmentMesh1P->CastShadow = false;
+	EquipmentMesh1P->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::OnlyTickPoseWhenRendered;
 
 	OverlapSphere = CreateDefaultSubobject<USphereComponent>(TEXT("OverlapSphere"));
 	OverlapSphere->SetupAttachment(RootComponent);
@@ -54,7 +63,7 @@ AEquipment::AEquipment()
 
 	OwnerTeam = ETeam::NoTeam;
 
-	Tags.Add(TAG_EQUIPMENT);
+	Tags.Add(Tags::Equipment);
 }
 
 void AEquipment::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -68,44 +77,61 @@ void AEquipment::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifeti
 
 void AEquipment::BeginPlay()
 {
-	Super::BeginPlay();
-	
-	if (UWorld* World = GetWorld())
-	{
-		if (ABaseGameState* GameState = World->GetGameState<ABaseGameState>())
-		{
-			GameState->AddEquipment(this);
-		}
-	}
-	
-	FString EnumValue = StaticEnum<EEquipmentName>()->GetNameStringByValue(static_cast<int64>(EquipmentName));
-	FDataRegistryId DataRegistryId(DR_EQUIPMENT_MAIN, FName(EnumValue));
-	if (const FEquipmentMain* EquipmentMain = UDataRegistrySubsystem::Get()->GetCachedItem<FEquipmentMain>(DataRegistryId))
-	{
-		EquipmentParentName = EquipmentMain->EquipmentParentName;
-		EquipmentCate = EquipmentMain->EquipmentCate;
-		EquipmentType = EquipmentMain->EquipmentType;
+    Super::BeginPlay();
+    
+    if (UWorld* World = GetWorld())
+    {
+       if (ABaseGameState* GameState = World->GetGameState<ABaseGameState>())
+       {
+          GameState->AddEquipment(this);
+       }
+    }
+    
+    UGameInstance* GameInstance = GetWorld() ? GetWorld()->GetGameInstance() : nullptr;
+    if (GameInstance == nullptr) return;
 
-		// 屏蔽皮肤
-		bool bIsMyOwnWeapon = false;
-		if (APawn* OwningPawn = Cast<APawn>(GetOwner()))
-		{
-			if (OwningPawn->IsLocallyControlled()) bIsMyOwnWeapon = true;
-		}
-		if (StorageSubsystem == nullptr) StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
-		if (StorageSubsystem == nullptr || StorageSubsystem->CacheSetting == nullptr) return;
-		if (StorageSubsystem->CacheSetting->bHideSkins && !bIsMyOwnWeapon && EquipmentName != EquipmentParentName)
-		{
-			FString EnumValue2 = StaticEnum<EEquipmentName>()->GetNameStringByValue(static_cast<int64>(EquipmentParentName));
-			FDataRegistryId DataRegistryId2(DR_EQUIPMENT_MAIN, FName(EnumValue2));
-			if (const FEquipmentMain* EquipmentMain2 = UDataRegistrySubsystem::Get()->GetCachedItem<FEquipmentMain>(DataRegistryId2))
-			{
-				USkeletalMesh* DefaultSkeletalMesh = UDataAssetManager::Get().GetAsset(EquipmentMain2->DefaultSkeletalMesh);
-				EquipmentMesh->SetSkeletalMesh(DefaultSkeletalMesh);
-				EquipmentMesh->EmptyOverrideMaterials();
-			}
-		}
-	}
+    if (!AssetSubsystem) AssetSubsystem = GameInstance->GetSubsystem<UAssetSubsystem>();
+    if (AssetSubsystem)
+    {
+       // 1. 默认当前武器就是基础武器
+       EquipmentParentName = EquipmentName;
+
+       // 2. 检查当前是否为皮肤。如果是，则更新 ParentName 为皮肤对应的基础武器
+       UEquipmentSkinAsset* SkinAsset = AssetSubsystem->GetEquipmentSkinAssetByName(EquipmentName);
+       if (SkinAsset)
+       {
+          EquipmentParentName = SkinAsset->EquipmentParentName;
+       }
+
+       // 3. 读取基础武器的数据 (无论是本体还是皮肤，Cate和Type都由基础武器决定)
+       if (UEquipmentAsset* BaseAsset = AssetSubsystem->GetEquipmentAssetByName(EquipmentParentName))
+       {
+          EquipmentCate = BaseAsset->EquipmentCate;
+          EquipmentType = BaseAsset->EquipmentType;
+
+          // 4. 屏蔽皮肤逻辑
+          bool bIsMyOwnWeapon = false;
+          if (APawn* OwningPawn = Cast<APawn>(GetOwner()))
+          {
+             if (OwningPawn->IsLocallyControlled()) bIsMyOwnWeapon = true;
+          }
+          
+          if (StorageSubsystem == nullptr) StorageSubsystem = GameInstance->GetSubsystem<UStorageSubsystem>();
+          if (StorageSubsystem && StorageSubsystem->CacheSetting)
+          {
+             // 如果开启了屏蔽皮肤功能，且这不是自己的武器，并且当前确实是皮肤(SkinAsset有效)
+             if (StorageSubsystem->CacheSetting->bHideSkins && !bIsMyOwnWeapon && SkinAsset)
+             {
+                // 使用基础武器的默认模型来覆盖皮肤模型
+                if (USkeletalMesh* DefaultSkeletalMesh = UDataAssetManager::Get().GetAsset(BaseAsset->DefaultSkeletalMesh))
+                {
+                   EquipmentMesh->SetSkeletalMesh(DefaultSkeletalMesh);
+                   EquipmentMesh->EmptyOverrideMaterials();
+                }
+             }
+          }
+       }
+    }
 }
 
 void AEquipment::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -134,8 +160,14 @@ void AEquipment::OnAreaSphereOverlap(UPrimitiveComponent* OverlappedComponent, A
 
 UAnimInstEquipment* AEquipment::GetEquipmentAnimInst()
 {
-	if (EquipmentAnimInst == nullptr) EquipmentAnimInst = Cast<UAnimInstEquipment>(EquipmentMesh->GetAnimInstance());
-	return EquipmentAnimInst;
+	if (AnimInstEquipment == nullptr) AnimInstEquipment = Cast<UAnimInstEquipment>(EquipmentMesh->GetAnimInstance());
+	return AnimInstEquipment;
+}
+
+UAnimInstEquipment1P* AEquipment::GetEquipmentAnimInst1P()
+{
+	if (AnimInstEquipment1P == nullptr) AnimInstEquipment1P = Cast<UAnimInstEquipment1P>(EquipmentMesh1P->GetAnimInstance());
+	return AnimInstEquipment1P;
 }
 
 void AEquipment::SetHiddenMesh(bool TempbIsHidden)
@@ -153,7 +185,7 @@ void AEquipment::OnRep_IsHidden()
 	}
 }
 
-void AEquipment::OnEquip(class AHumanCharacter* HumanChar)
+void AEquipment::OnGiven(class AHumanCharacter* HumanChar)
 {
 	EquipmentState = EEquipmentState::Equipped;
 
@@ -174,6 +206,16 @@ void AEquipment::OnEquip(class AHumanCharacter* HumanChar)
 	CollisionSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	OverlapSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	
+	if (EquipmentMesh)
+	{
+		EquipmentMesh->SetOwnerNoSee(true);
+		EquipmentMesh->SetVisibility(true);
+	}
+	if (EquipmentMesh1P)
+	{
+		EquipmentMesh1P->SetVisibility(true);
+	}
 }
 
 void AEquipment::Drop()
@@ -215,7 +257,17 @@ void AEquipment::HandleDrop()
 	CollisionSphere->SetSimulatePhysics(true);
 	CollisionSphere->SetEnableGravity(true);
 	CollisionSphere->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-
+	
+	if (EquipmentMesh1P)
+	{
+		EquipmentMesh1P->SetVisibility(false);
+	}
+	if (EquipmentMesh)
+	{
+		EquipmentMesh->SetOwnerNoSee(false);
+		EquipmentMesh->SetVisibility(true);
+	}
+	
 	// 丢弃武器时，给予一个向前的冲量
 	if (AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(GetOwner()))
 	{

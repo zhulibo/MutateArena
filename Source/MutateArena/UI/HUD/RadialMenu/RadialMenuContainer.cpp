@@ -76,9 +76,9 @@ void URadialMenuContainer::ShowRadialMenuInternal()
 	HumanCharacter = Cast<AHumanCharacter>(GetOwningPlayerPawn());
 	MutantCharacter = Cast<AMutantCharacter>(GetOwningPlayerPawn());
 
-	TitleEquipment->SetColorAndOpacity(C_YELLOW);
-	TitleRadio->SetColorAndOpacity(C_WHITE);
-	TitlePaint->SetColorAndOpacity(C_WHITE);
+	TitleEquipment->SetColorAndOpacity(Colors::Yellow);
+	TitleRadio->SetColorAndOpacity(Colors::White);
+	TitlePaint->SetColorAndOpacity(Colors::White);
 
 	RadialMenuEquipment->SetVisibility(ESlateVisibility::Visible);
 	RadialMenuRadio->SetVisibility(ESlateVisibility::Hidden);
@@ -88,14 +88,14 @@ void URadialMenuContainer::ShowRadialMenuInternal()
 
 	CurrentCategoryIndex = 0;
 
-	FLinearColor FactionColor = FLinearColor(C_YELLOW);
+	FLinearColor FactionColor = FLinearColor(Colors::Yellow);
 	// if (HumanCharacter)
 	// {
-	// 	FactionColor = FLinearColor(C_RED);
+	// 	FactionColor = FLinearColor(Colors::Red);
 	// }
 	// else if (MutantCharacter)
 	// {
-	// 	FactionColor = FLinearColor(C_GREEN);
+	// 	FactionColor = FLinearColor(Colors::Green);
 	// }
 
 	for (FMenuCategory& Category : MenuCategories)
@@ -119,7 +119,7 @@ void URadialMenuContainer::SwitchRadialMenu()
 
 	// 隐藏并重置当前菜单
 	MenuCategories[CurrentCategoryIndex].RadialMenu->SetVisibility(ESlateVisibility::Hidden);
-	MenuCategories[CurrentCategoryIndex].TitleText->SetColorAndOpacity(C_WHITE);
+	MenuCategories[CurrentCategoryIndex].TitleText->SetColorAndOpacity(Colors::White);
 	MenuCategories[CurrentCategoryIndex].RadialMenu->SetSelectedItem(-1);
 
 	// 索引循环步进
@@ -127,7 +127,7 @@ void URadialMenuContainer::SwitchRadialMenu()
 
 	// 显示并高亮新菜单
 	MenuCategories[CurrentCategoryIndex].RadialMenu->SetVisibility(ESlateVisibility::Visible);
-	MenuCategories[CurrentCategoryIndex].TitleText->SetColorAndOpacity(C_YELLOW);
+	MenuCategories[CurrentCategoryIndex].TitleText->SetColorAndOpacity(Colors::Yellow);
 
 	MenuCategories[CurrentCategoryIndex].RadialMenu->ResetPointerInput();
 }

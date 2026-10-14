@@ -49,10 +49,10 @@ void UMutationHuman::NativeConstruct()
 {
 	Super::NativeConstruct();
 	
-	// DamageLabel->SetColorAndOpacity(C_YELLOW);
-	// DamageMul->SetColorAndOpacity(C_YELLOW);
-	MeleeDamageLabel->SetColorAndOpacity(C_YELLOW);
-	MeleeDamageMul->SetColorAndOpacity(C_YELLOW);
+	// DamageLabel->SetColorAndOpacity(Colors::Yellow);
+	// DamageMul->SetColorAndOpacity(Colors::Yellow);
+	MeleeDamageLabel->SetColorAndOpacity(Colors::Yellow);
+	MeleeDamageMul->SetColorAndOpacity(Colors::Yellow);
 }
 
 void UMutationHuman::OnHumanHealthChange(float TempHealth)

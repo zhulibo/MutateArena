@@ -11,7 +11,7 @@ AMeleeGameState::AMeleeGameState()
 {
 	PrimaryActorTick.bCanEverTick = true;
 	
-	Tags.Add(TAG_GAME_STATE_MELEE);
+	Tags.Add(Tags::GameStateMelee);
 }
 
 void AMeleeGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

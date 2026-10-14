@@ -7,110 +7,128 @@
 namespace GameConstants
 {
 	// 小地图正交宽度
-	static constexpr float MinimapOrthoWidth = 4000.f;
-	
+	inline constexpr float MinimapOrthoWidth = 4000.f;
+
 	// 地图最高的物体高度
-	static constexpr float MapMaxHeight = 10000.f;
+	inline constexpr float MapMaxHeight = 10000.f;
 }
 
 // 颜色
-#define C_RED FColor(170, 0, 0, 255)
-#define C_GREEN FColor(0, 130, 0, 255)
-#define C_BLUE FColor(0, 100, 200, 255)
-#define C_YELLOW FColor(238, 119, 0, 255)
-#define C_WHITE FColor(255, 255, 255, 255)
-#define C_GREY FColor(120, 120, 120, 255)
-#define C_BLACK FColor(50, 50, 50, 255)
+namespace Colors
+{
+	inline constexpr FColor Red(170, 0, 0, 255);
+	inline constexpr FColor Green(0, 130, 0, 255);
+	inline constexpr FColor Blue(0, 100, 200, 255);
+	inline constexpr FColor Yellow(238, 119, 0, 255);
+	inline constexpr FColor White(255, 255, 255, 255);
+	inline constexpr FColor Grey(120, 120, 120, 255);
+	inline constexpr FColor Black(50, 50, 50, 255);
+}
 
 // Socket
-#define SOCKET_CAMERA FName(TEXT("CameraSocket"))
-#define SOCKET_MUZZLE FName(TEXT("Muzzle"))
-#define SOCKET_SHELL_EJECT FName(TEXT("ShellEject"))
-#define SOCKET_SCOPE_START FName(TEXT("ScopeStartSocket"))
-#define SOCKET_SCOPE_END FName(TEXT("ScopeEndSocket"))
-#define SOCKET_SUFFIX_R FName(TEXT("_R"))
-#define SOCKET_SUFFIX_L FName(TEXT("_L"))
-#define SOCKET_SHOULDER_R FName(TEXT("Shoulder_R"))
-#define SOCKET_SHOULDER_L FName(TEXT("Shoulder_L"))
-#define SOCKET_THIGH_R FName(TEXT("Thigh_R"))
-#define SOCKET_THIGH_L FName(TEXT("Thigh_L"))
+namespace Sockets
+{
+	inline const FName Camera(TEXT("Camera"));
+	inline const FName Muzzle(TEXT("Muzzle"));
+	inline const FName ShellEject(TEXT("ShellEject"));
+	inline const FName WeaponRoot(TEXT("WeaponRoot"));
+	inline const FName SuffixR(TEXT("_R"));
+	inline const FName SuffixL(TEXT("_L"));
+}
 
 // 蒙太奇片段
-#define SECTION_RELOAD_END FName(TEXT("ReloadEnd"))
+namespace MontageSections
+{
+	inline const FName ReloadEnd(TEXT("ReloadEnd"));
+}
 
 // DataAsset
-#define ASSET_DNA FName(TEXT("DNA"))
-#define ASSET_COMMON FName(TEXT("Common"))
-#define ASSET_CHARACTER FName(TEXT("Character"))
-#define ASSET_EQUIPMENT_COMMON FName(TEXT("EquipmentCommon"))
-#define ASSET_EQUIPMENT FName(TEXT("Equipment"))
-#define ASSET_EQUIPMENT_SKIN FName(TEXT("EquipmentSkin"))
-#define ASSET_INPUT FName(TEXT("Input"))
-#define ASSET_ENVIRONMENT FName(TEXT("Environment"))
+namespace DataAsset
+{
+	inline const FName DNA(TEXT("DNA"));
+	inline const FName Common(TEXT("Common"));
+	inline const FName Character(TEXT("Character"));
+	inline const FName CharacterHuman(TEXT("CharacterHuman"));
+	inline const FName CharacterMutant(TEXT("CharacterMutant"));
+	inline const FName EquipmentCommon(TEXT("EquipmentCommon"));
+	inline const FName Equipment(TEXT("Equipment"));
+	inline const FName EquipmentSkin(TEXT("EquipmentSkin"));
+	inline const FName Input(TEXT("Input"));
+	inline const FName Environment(TEXT("Environment"));
+}
 
 // tag
-#define TAG_CHARACTER_BASE FName(TEXT("BaseCharacter"))
-#define TAG_CHARACTER_HUMAN FName(TEXT("HumanCharacter"))
-#define TAG_CHARACTER_MUTANT FName(TEXT("MutantCharacter"))
-#define TAG_EQUIPMENT FName(TEXT("Equipment"))
-#define TAG_SMOKE_ACTOR FName(TEXT("SmokeActor"))
-#define TAG_HERB FName(TEXT("PickupHerb"))
-#define TAG_GAME_STATE_MUTATION FName(TEXT("GameStateMutation"))
-#define TAG_GAME_STATE_MELEE FName(TEXT("GameStateMelee"))
-#define TAG_GAME_STATE_TDM FName(TEXT("GameStateTDM"))
-#define TAG_LADDER FName(TEXT("Ladder"))
+namespace Tags
+{
+	inline const FName CharacterBase(TEXT("BaseCharacter"));
+	inline const FName CharacterHuman(TEXT("HumanCharacter"));
+	inline const FName CharacterMutant(TEXT("MutantCharacter"));
+	inline const FName Equipment(TEXT("Equipment"));
+	inline const FName SmokeActor(TEXT("SmokeActor"));
+	inline const FName Herb(TEXT("PickupHerb"));
+	inline const FName GameStateMutation(TEXT("GameStateMutation"));
+	inline const FName GameStateMelee(TEXT("GameStateMelee"));
+	inline const FName GameStateTDM(TEXT("GameStateTDM"));
+	inline const FName Ladder(TEXT("Ladder"));
+}
 
 // 地图路径
-#define MAP_LOGIN FString(TEXT("/Game/Maps/UI_Login"))
-#define MAP_MENU FString(TEXT("/Game/Maps/UI_Menu"))
+namespace MapPaths
+{
+	inline const FString Login = TEXT("/Game/Maps/UI_Login");
+	inline const FString Menu = TEXT("/Game/Maps/UI_Menu");
+}
 
 // 模式
-#define ALL FName(TEXT("All"))
-#define MUTATION FName(TEXT("Mutation"))
-#define TEAM_DEAD_MATCH FName(TEXT("TeamDeadMatch"))
-#define MELEE FName(TEXT("Melee"))
+namespace GameModes
+{
+	inline const FName All(TEXT("All"));
+	inline const FName Mutation(TEXT("Mutation"));
+	inline const FName TeamDeadMatch(TEXT("TeamDeadMatch"));
+	inline const FName Melee(TEXT("Melee"));
 
-#define DEFAULT_MATCH_ROUND 12
-#define DEFAULT_MATCH_TIME 10
+	inline constexpr int32 DefaultMatchRound = 12;
+	inline constexpr int32 DefaultMatchTime = 10;
+}
 
 // 设置
-#define ON FName(TEXT("on.")) // TODO on作为UComboBoxKey的key有bug
-#define OFF FName(TEXT("off."))
-#define FULLSCREEN FName(TEXT("Fullscreen"))
-#define WIDOWED_FULLSCREEN FName(TEXT("WindowedFullscreen"))
-#define WIDOWED FName(TEXT("Windowed"))
-#define EN FName(TEXT("en"))
-#define ZH FName(TEXT("zh"))
+namespace Settings
+{
+	inline const FName On(TEXT("on.")); // TODO on作为UComboBoxKey的key有bug
+	inline const FName Off(TEXT("off."));
+	inline const FName Fullscreen(TEXT("Fullscreen"));
+	inline const FName WindowedFullscreen(TEXT("WindowedFullscreen"));
+	inline const FName Windowed(TEXT("Windowed"));
+	inline const FName EN(TEXT("en"));
+	inline const FName ZH(TEXT("zh"));
+}
 
 // 碰撞通道
-#define ECC_MESH_TEAM1 ECollisionChannel::ECC_GameTraceChannel1
-#define ECC_MESH_TEAM2 ECollisionChannel::ECC_GameTraceChannel2
-#define ECC_MESH_HREB ECollisionChannel::ECC_GameTraceChannel3
-#define ECC_TRACE ECollisionChannel::ECC_GameTraceChannel4
-#define ECC_PROJECTILE ECollisionChannel::ECC_GameTraceChannel5
+namespace ECC
+{
+	inline constexpr ECollisionChannel MeshTeam1 = ECC_GameTraceChannel1;
+	inline constexpr ECollisionChannel MeshTeam2 = ECC_GameTraceChannel2;
+	inline constexpr ECollisionChannel MeshHerb = ECC_GameTraceChannel3;
+	inline constexpr ECollisionChannel Trace = ECC_GameTraceChannel4;
+	inline constexpr ECollisionChannel Projectile = ECC_GameTraceChannel5;
+}
 
 // EOS大厅属性
-#define LOBBY_SCHEMA_ID FName(TEXT("GameLobby"))
+namespace LobbyAttrs
+{
+	inline const FName SchemaId(TEXT("GameLobby"));
 
-#define LOBBY_VERSION FName(TEXT("Version"))
-#define LOBBY_SERVER_NAME FName(TEXT("ServerName"))
-#define LOBBY_MODE_NAME FName(TEXT("ModeName"))
-#define LOBBY_MAP_NAME FName(TEXT("MapName"))
-#define LOBBY_MATCH_ROUND FName(TEXT("MatchRound"))
-#define LOBBY_MATCH_TIME FName(TEXT("MatchTime"))
-#define LOBBY_STATUS FName(TEXT("Status"))
+	inline const FName Version(TEXT("Version"));
+	inline const FName ServerName(TEXT("ServerName"));
+	inline const FName ModeName(TEXT("ModeName"));
+	inline const FName MapName(TEXT("MapName"));
+	inline const FName MatchRound(TEXT("MatchRound"));
+	inline const FName MatchTime(TEXT("MatchTime"));
+	inline const FName Status(TEXT("Status"));
 
-#define LOBBY_MEMBER_NAME FName(TEXT("Name"))
-#define LOBBY_MEMBER_TEAM FName(TEXT("Team"))
-#define LOBBY_MEMBER_READY FName(TEXT("Ready"))
-#define LOBBY_MEMBER_MSG FName(TEXT("Msg"))
-#define LOBBY_MEMBER_TICK_NUM FName(TEXT("TickNum"))
-
-// 数据注册表
-#define DR_HUMAN_CHARACTER_MAIN FName(TEXT("DR_HumanCharacterMain"))
-#define DR_MUTANT_CHARACTER_MAIN FName(TEXT("DR_MutantCharacterMain"))
-#define DR_EQUIPMENT_MAIN FName(TEXT("DR_EquipmentMain"))
-#define DR_WEAPON_DATA FName(TEXT("DR_WeaponData"))
-#define DR_MELEE_DATA FName(TEXT("DR_MeleeData"))
-#define DR_EQUIPMENT_RECOIL FName(TEXT("DR_EquipmentRecoil"))
-
+	inline const FName MemberName(TEXT("Name"));
+	inline const FName MemberTeam(TEXT("Team"));
+	inline const FName MemberReady(TEXT("Ready"));
+	inline const FName MemberMsg(TEXT("Msg"));
+	inline const FName MemberTickNum(TEXT("TickNum"));
+}

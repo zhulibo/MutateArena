@@ -27,7 +27,7 @@ void URadialMenuItem::InitData(const FRadialMenuItemData& Data)
 
 void URadialMenuItem::SetSelectionState(bool bIsSelected)
 {
-	// FLinearColor TargetColor = bIsSelected ? C_WHITE : C_WHITE;
+	// FLinearColor TargetColor = bIsSelected ? Colors::White : Colors::White;
 	// ItemName->SetColorAndOpacity(FSlateColor(TargetColor));
 	// ItemImage->SetColorAndOpacity(TargetColor);
 }

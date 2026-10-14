@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Projectile.h"
+#include "MutateArena/Equipments/WeaponShotgun.h"
 #include "ProjectileBullet.generated.h"
 
 /**

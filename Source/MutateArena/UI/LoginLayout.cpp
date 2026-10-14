@@ -82,13 +82,13 @@ void ULoginLayout::OnLoginComplete(bool bWasSuccessful, FString ErrorMessage)
 		if (LoginController == nullptr) LoginController = Cast<ALoginController>(GetOwningPlayer());
 		if (LoginController)
 		{
-			LoginController->ClientTravel(MAP_MENU, ETravelType::TRAVEL_Absolute);
+			LoginController->ClientTravel(MapPaths::Menu, ETravelType::TRAVEL_Absolute);
 		}
 	}
 	else
 	{
-		// NOTIFY(this, C_RED, LOCTEXT("LoginFailed", "Login failed"));
-		NOTIFY(this, C_RED, FText::FromString(ErrorMessage));
+		// NOTIFY(this, Colors::Red, LOCTEXT("LoginFailed", "Login failed"));
+		NOTIFY(this, Colors::Red, FText::FromString(ErrorMessage));
 		
 		LoginButton->SetIsEnabled(true);
 		LoginStatus->SetText(LOCTEXT("LoginFailed", "Login failed"));

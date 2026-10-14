@@ -169,14 +169,14 @@ void UPauseMenu::Quit(EMsgResult MsgResult)
 				if (EOSSubsystem->IsLobbyHost())
 				{
 					EOSSubsystem->ModifyLobbyAttr(TMap<FSchemaAttributeId, FSchemaVariant>{
-						{LOBBY_STATUS, static_cast<int64>(0)},
+						{LobbyAttrs::Status, static_cast<int64>(0)},
 					});
 				}
 				// 非房主退出游戏时把自己置为未准备状态
 				else
 				{
 					EOSSubsystem->ModifyLobbyMemberAttr(TMap<FSchemaAttributeId, FSchemaVariant>{
-						{ LOBBY_MEMBER_READY, false}
+						{ LobbyAttrs::MemberReady, false}
 					});
 				}
 			}
@@ -188,7 +188,7 @@ void UPauseMenu::Quit(EMsgResult MsgResult)
 				HumanCharacter->CombatComp->ServerDestroyEquipments();
 			}
 
-			BaseController->ClientTravel(MAP_MENU, ETravelType::TRAVEL_Absolute);
+			BaseController->ClientTravel(MapPaths::Menu, ETravelType::TRAVEL_Absolute);
 		}
 	}
 }

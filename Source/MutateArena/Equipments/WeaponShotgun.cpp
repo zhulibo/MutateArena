@@ -7,6 +7,7 @@
 #include "Components/BoxComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Curves/CurveVector.h"
+#include "Data/EquipmentAsset.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/GameplayStatics.h"
@@ -23,61 +24,59 @@ void AWeaponShotgun::Fire(const FVector& HitTarget, float RecoilVert, float Reco
 
 	AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(GetOwner());
 	if (OwnerTeam == ETeam::NoTeam) SetOwnerTeam();
-	const USkeletalMeshSocket* MuzzleSocket = EquipmentMesh->GetSocketByName(SOCKET_MUZZLE);
+	const USkeletalMeshSocket* MuzzleSocket = EquipmentMesh->GetSocketByName(Sockets::Muzzle);
 
-	if (ProjectileClass && HumanCharacter && HumanCharacter->CombatComp && RecoilCurve && OwnerTeam != ETeam::NoTeam && MuzzleSocket)
+	if (!FragWeapon->ProjectileClass || !FragWeapon->RecoilCurve 
+		|| !HumanCharacter || !HumanCharacter->CombatComp || OwnerTeam == ETeam::NoTeam || !MuzzleSocket) return;
+
+	FTransform SocketTransform = MuzzleSocket->GetSocketTransform(EquipmentMesh);
+	FRotator TargetRotation = (HitTarget - SocketTransform.GetLocation()).Rotation();
+
+	// 添加后座
+	TargetRotation.Pitch += RecoilVert;
+	TargetRotation.Yaw += RecoilHor;
+
+	// 霰弹枪每次射击的弹丸循环
+	FVector RecoilKick = FragWeapon->RecoilCurve->GetVectorValue(HumanCharacter->CombatComp->CurShotCount);
+
+	for (int32 i = 0; i < FragWeapon->PelletNum; ++i)
 	{
-		FTransform SocketTransform = MuzzleSocket->GetSocketTransform(EquipmentMesh);
-		FRotator TargetRotation = (HitTarget - SocketTransform.GetLocation()).Rotation();
+		// 添加散布
+		FVector ToTargetWithSpread = UKismetMathLibrary::RandomUnitVectorInConeInDegrees(
+			TargetRotation.Vector(), RecoilKick.Z);
 
-		// 添加后座
-		TargetRotation.Pitch += RecoilVert;
-		TargetRotation.Yaw += RecoilHor;
+		// 构造当前这发弹丸的 Transform
+		FTransform SpawnTransform(ToTargetWithSpread.Rotation(), SocketTransform.GetLocation());
 
-		// 霰弹枪每次射击的弹丸循环
-		FVector RecoilKick = RecoilCurve->GetVectorValue(HumanCharacter->CombatComp->CurShotCount);
+		// 使用延迟生成
+		AProjectileBullet* Projectile = GetWorld()->SpawnActorDeferred<AProjectileBullet>(
+			FragWeapon->ProjectileClass,
+			SpawnTransform,
+			this,
+			HumanCharacter,
+			ESpawnActorCollisionHandlingMethod::AlwaysSpawn
+		);
 
-		for (int32 i = 0; i < PelletNum; ++i)
+		if (Projectile)
 		{
-			// 添加散布
-			FVector ToTargetWithSpread = UKismetMathLibrary::RandomUnitVectorInConeInDegrees(
-				TargetRotation.Vector(), RecoilKick.Z);
+			Projectile->EquipmentParentName = EquipmentParentName;
+			Projectile->InitialPenetrationPower = FragWeapon->PenetrationPower;
 
-			// 构造当前这发弹丸的 Transform
-			FTransform SpawnTransform(ToTargetWithSpread.Rotation(), SocketTransform.GetLocation());
-
-			// 使用延迟生成
-			AProjectileBullet* Projectile = GetWorld()->SpawnActorDeferred<AProjectileBullet>(
-				ProjectileClass,
-				SpawnTransform,
-				this,
-				HumanCharacter,
-				ESpawnActorCollisionHandlingMethod::AlwaysSpawn
-			);
-
-			if (Projectile)
+			// 设置队伍碰撞免伤通道
+			switch (OwnerTeam)
 			{
-				// 设置所属武器名称
-				Projectile->OwnerName = StaticEnum<EEquipmentName>()->GetNameStringByValue(static_cast<int64>(EquipmentParentName));
-
-				Projectile->InitialPenetrationPower = PenetrationPower;
-
-				// 设置队伍碰撞免伤通道
-				switch (OwnerTeam)
-				{
-				case ETeam::Team1:
-					Projectile->CollisionBox->SetCollisionResponseToChannel(
-						ECC_MESH_TEAM2, ECollisionResponse::ECR_Overlap);
-					break;
-				case ETeam::Team2:
-					Projectile->CollisionBox->SetCollisionResponseToChannel(
-						ECC_MESH_TEAM1, ECollisionResponse::ECR_Overlap);
-					break;
-				}
-
-				// 结束生成过程，立即触发这颗弹丸的 BeginPlay
-				UGameplayStatics::FinishSpawningActor(Projectile, SpawnTransform);
+			case ETeam::Team1:
+				Projectile->CollisionBox->SetCollisionResponseToChannel(
+					ECC::MeshTeam2, ECollisionResponse::ECR_Overlap);
+				break;
+			case ETeam::Team2:
+				Projectile->CollisionBox->SetCollisionResponseToChannel(
+					ECC::MeshTeam1, ECollisionResponse::ECR_Overlap);
+				break;
 			}
+
+			// 结束生成过程，立即触发这颗弹丸的 BeginPlay
+			UGameplayStatics::FinishSpawningActor(Projectile, SpawnTransform);
 		}
 	}
 }

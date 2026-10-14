@@ -133,11 +133,11 @@ void UCommonHUD::OnAddKillLog(ABasePlayerState* AttackerState, const FText& Caus
 				{
 					if (LocalPlayerState->Team == AttackerState->Team)
 					{
-						KillLogLine->AttackerPlayer->SetColorAndOpacity(C_BLUE);
+						KillLogLine->AttackerPlayer->SetColorAndOpacity(Colors::Blue);
 					}
 					else
 					{
-						KillLogLine->AttackerPlayer->SetColorAndOpacity(C_RED);
+						KillLogLine->AttackerPlayer->SetColorAndOpacity(Colors::Red);
 					}
 				}
 			}
@@ -153,11 +153,11 @@ void UCommonHUD::OnAddKillLog(ABasePlayerState* AttackerState, const FText& Caus
 				{
 					if (LocalPlayerState->Team == DamagedState->Team)
 					{
-						KillLogLine->DamagedPlayer->SetColorAndOpacity(C_BLUE);
+						KillLogLine->DamagedPlayer->SetColorAndOpacity(Colors::Blue);
 					}
 					else
 					{
-						KillLogLine->DamagedPlayer->SetColorAndOpacity(C_RED);
+						KillLogLine->DamagedPlayer->SetColorAndOpacity(Colors::Red);
 					}
 				}
 			}
@@ -247,7 +247,7 @@ void UCommonHUD::OnCauseDamage(float Num)
 
 		FText NumericText = FText::AsNumber(Num, &Opts);
 		DamageLogLine->Damage->SetText(FText::Format(FText::FromString(TEXT("+{0}")), NumericText)); 
-		DamageLogLine->Damage->SetColorAndOpacity(C_YELLOW);
+		DamageLogLine->Damage->SetColorAndOpacity(Colors::Yellow);
 		
 		DamageLogLine->PlayAnimation(DamageLogLine->AppearanceAnim);
 	}

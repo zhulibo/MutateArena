@@ -219,15 +219,15 @@ void ABaseController::AddGameLayout()
 
 		FocusGame();
 
-		if (GetWorld()->GetGameState()->ActorHasTag(TAG_GAME_STATE_MUTATION))
+		if (GetWorld()->GetGameState()->ActorHasTag(Tags::GameStateMutation))
 		{
 			GameLayout->GameStack->AddWidget(GameLayout->MutationContainerClass);
 		}
-		else if (GetWorld()->GetGameState()->ActorHasTag(TAG_GAME_STATE_MELEE))
+		else if (GetWorld()->GetGameState()->ActorHasTag(Tags::GameStateMelee))
 		{
 			GameLayout->GameStack->AddWidget(GameLayout->MeleeContainerClass);
 		}
-		else if (GetWorld()->GetGameState()->ActorHasTag(TAG_GAME_STATE_TDM))
+		else if (GetWorld()->GetGameState()->ActorHasTag(Tags::GameStateTDM))
 		{
 			GameLayout->GameStack->AddWidget(GameLayout->TeamDeadMatchContainerClass);
 		}
@@ -341,7 +341,7 @@ void ABaseController::HandleLeavingMap()
 	if (IsLocalController() && !HasAuthority())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("HandleLeavingMap ------------------------------------------"));
-		ClientTravel(MAP_MENU, ETravelType::TRAVEL_Absolute);
+		ClientTravel(MapPaths::Menu, ETravelType::TRAVEL_Absolute);
 	}
 }
 

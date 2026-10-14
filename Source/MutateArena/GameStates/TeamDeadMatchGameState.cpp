@@ -11,7 +11,7 @@ ATeamDeadMatchGameState::ATeamDeadMatchGameState()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	Tags.Add(TAG_GAME_STATE_TDM);
+	Tags.Add(Tags::GameStateTDM);
 }
 
 void ATeamDeadMatchGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

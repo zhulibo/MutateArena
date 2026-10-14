@@ -14,7 +14,7 @@ public:
 	UPROPERTY(EditAnywhere)
 	float WarmupTime = 10.f;
 	UPROPERTY(EditAnywhere)
-	float MatchTime = 60.f * DEFAULT_MATCH_TIME;
+	float MatchTime = 60.f * GameModes::DefaultMatchTime;
 	UPROPERTY(EditAnywhere)
 	float CooldownTime =10.f;
 

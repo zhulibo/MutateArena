@@ -23,9 +23,9 @@ AHerb::AHerb()
 	HerbMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("HerbMesh"));
 	HerbMesh->SetupAttachment(RootComponent);
 	HerbMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	HerbMesh->SetCollisionObjectType(ECC_MESH_HREB);
+	HerbMesh->SetCollisionObjectType(ECC::MeshHerb);
 	
-	Tags.Add(TAG_HERB);
+	Tags.Add(Tags::Herb);
 }
 
 void AHerb::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -62,7 +62,7 @@ void AHerb::OnRep_Level()
 		HerbMesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 
 		// 可被突变体食用
-		OverlapSphere->SetCollisionResponseToChannel(ECC_MESH_TEAM2, ECollisionResponse::ECR_Overlap);
+		OverlapSphere->SetCollisionResponseToChannel(ECC::MeshTeam2, ECollisionResponse::ECR_Overlap);
 	}
 }
 

@@ -19,7 +19,7 @@ ALadder::ALadder()
 	LadderMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("LadderMesh"));
 	LadderMesh->SetupAttachment(RootComponent);
 	
-	Tags.Add(TAG_LADDER); 
+	Tags.Add(Tags::Ladder); 
 }
 
 void ALadder::BeginPlay()

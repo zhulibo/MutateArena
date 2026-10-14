@@ -24,12 +24,12 @@ bool UGC_Weapon_DryFire::OnExecute_Implementation(AActor* MyTarget, const FGamep
 	}
 
 	UAssetSubsystem* AssetSubsystem = HumanCharacter->GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-	if (!AssetSubsystem || !AssetSubsystem->EquipmentAsset)
+	if (!AssetSubsystem || !AssetSubsystem->EquipmentCommonAsset)
 	{
 		return Super::OnExecute_Implementation(MyTarget, Parameters);
 	}
 
-	UGameplayStatics::PlaySoundAtLocation(CurWeapon, AssetSubsystem->EquipmentAsset->DryFireSound, CurWeapon->GetActorLocation());
+	UGameplayStatics::PlaySoundAtLocation(CurWeapon, AssetSubsystem->EquipmentCommonAsset->DryFireSound, CurWeapon->GetActorLocation());
 	
 	return Super::OnExecute_Implementation(MyTarget, Parameters);
 }

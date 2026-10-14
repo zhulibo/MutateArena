@@ -16,5 +16,5 @@ ASmokeBlocker::ASmokeBlocker()
 	// 阻挡视线 UOverheadWidget
 	SmokeBlockerSphere->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 	
-	Tags.Add(TAG_SMOKE_ACTOR);
+	Tags.Add(Tags::SmokeActor);
 }

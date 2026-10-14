@@ -73,7 +73,7 @@ void UPlayerSubsystem::OnLoginStatusChanged(const FAuthLoginStatusChanged& AuthL
 		{
 			if (APlayerController* PlayerController = LocalPlayer->GetPlayerController(GetWorld()))
 			{
-				PlayerController->ClientTravel(MAP_LOGIN, ETravelType::TRAVEL_Absolute);
+				PlayerController->ClientTravel(MapPaths::Login, ETravelType::TRAVEL_Absolute);
 			}
 		}
 	}
@@ -83,22 +83,22 @@ void UPlayerSubsystem::CheckIfNeedShowLoginNotify()
 {
 	if (bShowNotify_LoggedIn)
 	{
-		NOTIFY(this, C_GREEN, LOCTEXT("LoginStatusChanged_LoggedIn", "Login status changed: LoggedIn"));
+		NOTIFY(this, Colors::Green, LOCTEXT("LoginStatusChanged_LoggedIn", "Login status changed: LoggedIn"));
 		bShowNotify_LoggedIn = false;
 	}
 	if (bShowNotify_LoggedInReducedFunctionality)
 	{
-		NOTIFY(this, C_WHITE, LOCTEXT("LoginStatusChanged_LoggedInReducedFunctionality", "Login status changed: LoggedInReducedFunctionality"));
+		NOTIFY(this, Colors::White, LOCTEXT("LoginStatusChanged_LoggedInReducedFunctionality", "Login status changed: LoggedInReducedFunctionality"));
 		bShowNotify_LoggedInReducedFunctionality = false;
 	}
 	if (bShowNotify_NotLoggedIn)
 	{
-		NOTIFY(this, C_YELLOW, LOCTEXT("LoginStatusChanged_NotLoggedIn", "Login status changed: NotLoggedIn"));
+		NOTIFY(this, Colors::Yellow, LOCTEXT("LoginStatusChanged_NotLoggedIn", "Login status changed: NotLoggedIn"));
 		bShowNotify_NotLoggedIn = false;
 	}
 	if (bShowNotify_UsingLocalProfile)
 	{
-		NOTIFY(this, C_YELLOW, LOCTEXT("LoginStatusChanged_UsingLocalProfile", "Login status changed: UsingLocalProfile"));
+		NOTIFY(this, Colors::Yellow, LOCTEXT("LoginStatusChanged_UsingLocalProfile", "Login status changed: UsingLocalProfile"));
 		bShowNotify_UsingLocalProfile = false;
 	}
 }
@@ -109,7 +109,7 @@ void UPlayerSubsystem::OnUILobbyJoinRequested(const FUILobbyJoinRequested& UILob
 	{
 		if (EOSSubsystem->CurLobby)
 		{
-			NOTIFY(this, C_YELLOW, LOCTEXT("LeaveToAcceptInvitation", "You must leave current lobby to join new one"));
+			NOTIFY(this, Colors::Yellow, LOCTEXT("LeaveToAcceptInvitation", "You must leave current lobby to join new one"));
 
 			return;
 		}

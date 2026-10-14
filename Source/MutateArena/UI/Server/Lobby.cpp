@@ -142,7 +142,7 @@ void ULobby::SetUIAttr()
 	MatchRoundComboBox->ClearOptions();
 	MatchRoundComboBox->AddOption(FName(FString::FromInt(6)));
 	MatchRoundComboBox->AddOption(FName(FString::FromInt(9)));
-	MatchRoundComboBox->AddOption(FName(FString::FromInt(DEFAULT_MATCH_ROUND)));
+	MatchRoundComboBox->AddOption(FName(FString::FromInt(GameModes::DefaultMatchRound)));
 	MatchRoundComboBox->AddOption(FName(FString::FromInt(15)));
 	MatchRoundComboBox->AddOption(FName(FString::FromInt(18)));
 	UE_LOG(LogTemp, Warning, TEXT("MatchRound: %lld"), EOSSubsystem->GetLobbyMatchRound()); 
@@ -151,7 +151,7 @@ void ULobby::SetUIAttr()
 	MatchTimeComboBox->ClearOptions();
 	MatchTimeComboBox->AddOption(FName(FString::FromInt(6)));
 	MatchTimeComboBox->AddOption(FName(FString::FromInt(8)));
-	MatchTimeComboBox->AddOption(FName(FString::FromInt(DEFAULT_MATCH_TIME)));
+	MatchTimeComboBox->AddOption(FName(FString::FromInt(GameModes::DefaultMatchTime)));
 	MatchTimeComboBox->AddOption(FName(FString::FromInt(15)));
 	MatchTimeComboBox->AddOption(FName(FString::FromInt(25)));
 	UE_LOG(LogTemp, Warning, TEXT("GetLobbyMatchTime: %lld"), EOSSubsystem->GetLobbyMatchTime()); 
@@ -321,7 +321,7 @@ void ULobby::InitMapComboBox()
 {
 	MapComboBox->ClearOptions();
 
-	if (ModeComboBox->GetSelectedOption() == MUTATION)
+	if (ModeComboBox->GetSelectedOption() == GameModes::Mutation)
 	{
 		const UEnum* MapEnum = StaticEnum<EMutationMap>();
 		for (int32 i = 0; i < static_cast<int32>(EMutationMap::None); ++i)
@@ -338,7 +338,7 @@ void ULobby::InitMapComboBox()
 			ParentWidget->SetVisibility(ESlateVisibility::Collapsed);
 		}
 	}
-	else if (ModeComboBox->GetSelectedOption() == MELEE)
+	else if (ModeComboBox->GetSelectedOption() == GameModes::Melee)
 	{
 		const UEnum* MapEnum = StaticEnum<EMeleeMap>();
 		for (int32 i = 0; i < static_cast<int32>(EMeleeMap::None); ++i)
@@ -355,7 +355,7 @@ void ULobby::InitMapComboBox()
 			ParentWidget->SetVisibility(ESlateVisibility::Visible);
 		}
 	}
-	else if (ModeComboBox->GetSelectedOption() == TEAM_DEAD_MATCH)
+	else if (ModeComboBox->GetSelectedOption() == GameModes::TeamDeadMatch)
 	{
 		const UEnum* MapEnum = StaticEnum<ETeamDeadMatchMap>();
 		for (int32 i = 0; i < static_cast<int32>(ETeamDeadMatchMap::None); ++i)
@@ -398,7 +398,7 @@ void ULobby::OnServerNameCommitted(const FText& Text, ETextCommit::Type CommitMe
 	if (EOSSubsystem && EOSSubsystem->IsLobbyHost())
 	{
 		EOSSubsystem->ModifyLobbyAttr(TMap<FSchemaAttributeId, FSchemaVariant>{
-			{ LOBBY_SERVER_NAME, Text.ToString() },
+			{ LobbyAttrs::ServerName, Text.ToString() },
 		});
 	}
 }
@@ -415,15 +415,15 @@ void ULobby::OnModeComboBoxChanged(FName SelectedItem, ESelectInfo::Type Selecti
 		if (SelectionType != ESelectInfo::Direct)
 		{
 			FName FirstMapName;
-			if (SelectedItem == MUTATION)
+			if (SelectedItem == GameModes::Mutation)
 			{
 				FirstMapName = FName(StaticEnum<EMutationMap>()->GetNameStringByIndex(0));
 			}
-			else if (SelectedItem == MELEE)
+			else if (SelectedItem == GameModes::Melee)
 			{
 				FirstMapName = FName(StaticEnum<EMeleeMap>()->GetNameStringByIndex(0));
 			}
-			else if (SelectedItem == TEAM_DEAD_MATCH)
+			else if (SelectedItem == GameModes::TeamDeadMatch)
 			{
 				FirstMapName = FName(StaticEnum<ETeamDeadMatchMap>()->GetNameStringByIndex(0));
 			}
@@ -448,11 +448,11 @@ void ULobby::OnMapComboBoxChanged(FName SelectedItem, ESelectInfo::Type Selectio
 		TMap<FSchemaAttributeId, FSchemaVariant> UpdatedAttributes;
 		if (ModeComboBox->GetSelectedOption() != EOSSubsystem->GetLobbyModeName())
 		{
-			UpdatedAttributes.Add(LOBBY_MODE_NAME, ModeComboBox->GetSelectedOption().ToString());
+			UpdatedAttributes.Add(LobbyAttrs::ModeName, ModeComboBox->GetSelectedOption().ToString());
 		}
 		if (SelectedItem != EOSSubsystem->GetLobbyMapName())
 		{
-			UpdatedAttributes.Add(LOBBY_MAP_NAME, SelectedItem.ToString());
+			UpdatedAttributes.Add(LobbyAttrs::MatchRound, SelectedItem.ToString());
 		}
 		if (UpdatedAttributes.Num() > 0)
 		{
@@ -472,7 +472,7 @@ void ULobby::OnMatchRoundComboBoxChanged(FName SelectedItem, ESelectInfo::Type S
 	{
 		TMap<FSchemaAttributeId, FSchemaVariant> UpdatedAttributes;
 		int64 MatchRound = FCString::Atoi(*SelectedItem.ToString());
-		UpdatedAttributes.Add(LOBBY_MATCH_ROUND, MatchRound);
+		UpdatedAttributes.Add(LobbyAttrs::MatchRound, MatchRound);
 		EOSSubsystem->ModifyLobbyAttr(UpdatedAttributes);
 	}
 }
@@ -487,7 +487,7 @@ void ULobby::OnMatchTimeComboBoxChanged(FName SelectedItem, ESelectInfo::Type Se
 	{
 		TMap<FSchemaAttributeId, FSchemaVariant> UpdatedAttributes;
 		int64 MatchTime = FCString::Atoi(*SelectedItem.ToString());
-		UpdatedAttributes.Add(LOBBY_MATCH_TIME, MatchTime);
+		UpdatedAttributes.Add(LobbyAttrs::MatchTime, MatchTime);
 		EOSSubsystem->ModifyLobbyAttr(UpdatedAttributes);
 	}
 }
@@ -542,7 +542,7 @@ void ULobby::OnModifyLobbyAttrComplete(bool bWasSuccessful)
 	}
 	else
 	{
-		NOTIFY(this, C_RED, LOCTEXT("ModifyServerAttrFailed", "Modify server attributes failed"));
+		NOTIFY(this, Colors::Red, LOCTEXT("ModifyServerAttrFailed", "Modify server attributes failed"));
 	}
 }
 
@@ -559,7 +559,7 @@ void ULobby::OnLobbyAttrChanged(const FLobbyAttributesChanged& LobbyAttributesCh
 
 	for (auto& ChangedAttribute : LobbyAttributesChanged.ChangedAttributes)
 	{
-		if (ChangedAttribute.Key == LOBBY_SERVER_NAME)
+		if (ChangedAttribute.Key == LobbyAttrs::ServerName)
 		{
 			FString ServerName = ChangedAttribute.Value.Value.GetString();
 			ServerName = ULibraryCommon::ObfuscateServerName(ServerName, this);
@@ -568,14 +568,14 @@ void ULobby::OnLobbyAttrChanged(const FLobbyAttributesChanged& LobbyAttributesCh
 
 			TextChat->ShowMsg(EMsgType::ServerNameChange, PlayerTeam, PlayerName, ServerName);
 		}
-		else if (ChangedAttribute.Key == LOBBY_MODE_NAME)
+		else if (ChangedAttribute.Key == LobbyAttrs::ModeName)
 		{
 			FString ModeName = ChangedAttribute.Value.Value.GetString();
 			ModeComboBox->SetSelectedOption(FName(ModeName));
 
 			TextChat->ShowMsg(EMsgType::ModeNameChange, PlayerTeam, PlayerName, ModeName);
 		}
-		else if (ChangedAttribute.Key == LOBBY_MAP_NAME)
+		else if (ChangedAttribute.Key == LobbyAttrs::MatchRound)
 		{
 			// mode和map同时改变时，等待InitMapComboBox
 			FString MapName = ChangedAttribute.Value.Value.GetString();
@@ -585,7 +585,7 @@ void ULobby::OnLobbyAttrChanged(const FLobbyAttributesChanged& LobbyAttributesCh
 			
 			TextChat->ShowMsg(EMsgType::MapNameChange, PlayerTeam, PlayerName, MapName);
 		}
-		else if (ChangedAttribute.Key == LOBBY_MATCH_ROUND)
+		else if (ChangedAttribute.Key == LobbyAttrs::MatchRound)
 		{
 			FString MatchRound = FString::FromInt(ChangedAttribute.Value.Value.GetInt64());
 			GetWorld()->GetTimerManager().SetTimerForNextTick([this, MatchRound]() {
@@ -594,7 +594,7 @@ void ULobby::OnLobbyAttrChanged(const FLobbyAttributesChanged& LobbyAttributesCh
 
 			TextChat->ShowMsg(EMsgType::MatchRoundChange, PlayerTeam, PlayerName, MatchRound);
 		}
-		else if (ChangedAttribute.Key == LOBBY_MATCH_TIME)
+		else if (ChangedAttribute.Key == LobbyAttrs::MatchTime)
 		{
 			FString MatchTime = FString::FromInt(ChangedAttribute.Value.Value.GetInt64());
 			GetWorld()->GetTimerManager().SetTimerForNextTick([this, MatchTime]() {
@@ -603,7 +603,7 @@ void ULobby::OnLobbyAttrChanged(const FLobbyAttributesChanged& LobbyAttributesCh
 
 			TextChat->ShowMsg(EMsgType::MatchTimeChange, PlayerTeam, PlayerName, MatchTime);
 		}
-		else if (ChangedAttribute.Key == LOBBY_STATUS)
+		else if (ChangedAttribute.Key == LobbyAttrs::Status)
 		{
 			if (EOSSubsystem && EOSSubsystem->GetLobbyStatus() == 0)
 			{
@@ -639,7 +639,7 @@ void ULobby::OnSwitchTeamButtonClicked()
 		{
 			int64 Team = EOSSubsystem->GetMemberTeam(Member.Value) == ETeam::Team1 ? 2 : 1;
 			EOSSubsystem->ModifyLobbyMemberAttr(TMap<FSchemaAttributeId, FSchemaVariant>{
-				{ LOBBY_MEMBER_TEAM, Team }
+				{ LobbyAttrs::MemberTeam, Team }
 			});
 			break;
 		}
@@ -655,7 +655,7 @@ void ULobby::OnReadyButtonClicked()
 		if (EOSSubsystem->IsLocalMember(Member.Value))
 		{
 			EOSSubsystem->ModifyLobbyMemberAttr(TMap<FSchemaAttributeId, FSchemaVariant>{
-				{ LOBBY_MEMBER_READY, !EOSSubsystem->GetMemberReady(Member.Value)}
+				{ LobbyAttrs::MemberReady, !EOSSubsystem->GetMemberReady(Member.Value)}
 			});
 
 			ReadyButton->ButtonText->SetText(EOSSubsystem->GetMemberReady(Member.Value) ? LOCTEXT("Ready", "Ready") : LOCTEXT("CancelReady", "Cancel Ready"));
@@ -673,14 +673,14 @@ void ULobby::OnModifyLobbyMemberAttrComplete(bool bWasSuccessful)
 	else
 	{
 		// TODO 待 UEOSSubsystem::ChangeLobbyMemberTickNum 删除后取消注释
-		// NOTIFY(this, C_RED, LOCTEXT("ModifyPlayerAttrFailed", "Modify player attribute failed"));
+		// NOTIFY(this, Colors::Red, LOCTEXT("ModifyPlayerAttrFailed", "Modify player attribute failed"));
 	}
 }
 
 // 大厅成员属性改变事件
 void ULobby::OnLobbyMemberAttrChanged(const FLobbyMemberAttributesChanged& LobbyMemberAttributesChanged)
 {
-	if (auto ChangedAttribute = LobbyMemberAttributesChanged.ChangedAttributes.Find(LOBBY_MEMBER_MSG))
+	if (auto ChangedAttribute = LobbyMemberAttributesChanged.ChangedAttributes.Find(LobbyAttrs::MemberMsg))
 	{
 		if (FString Msg = ChangedAttribute->Value.GetString(); !Msg.IsEmpty())
 		{
@@ -696,7 +696,7 @@ void ULobby::OnLobbyMemberAttrChanged(const FLobbyMemberAttributesChanged& Lobby
 		}
 	}
 	
-	auto ChangedAttribute = LobbyMemberAttributesChanged.ChangedAttributes.Find(LOBBY_MEMBER_TICK_NUM);
+	auto ChangedAttribute = LobbyMemberAttributesChanged.ChangedAttributes.Find(LobbyAttrs::MemberTickNum);
 	if (ChangedAttribute && LobbyMemberAttributesChanged.ChangedAttributes.Num() == 1)
 	{
 		// TICK_NUM 不更新玩家列表
@@ -717,7 +717,7 @@ void ULobby::OnStartServerButtonClicked()
 	if (EOSSubsystem && EOSSubsystem->IsLobbyHost())
 	{
 		EOSSubsystem->ModifyLobbyAttr(TMap<FSchemaAttributeId, FSchemaVariant>{
-			{LOBBY_STATUS, static_cast<int64>(1)},
+			{LobbyAttrs::Status, static_cast<int64>(1)},
 		});
 	}
 	
@@ -737,11 +737,11 @@ bool ULobby::CanStartServer()
 
 	if (MapComboBox->GetSelectedOption().IsNone())
 	{
-		NOTIFY(this, C_YELLOW, LOCTEXT("NeedSelectMap", "Please select map"));
+		NOTIFY(this, Colors::Yellow, LOCTEXT("NeedSelectMap", "Please select map"));
 		return false;
 	}
 
-	if (ModeComboBox->GetSelectedOption() == MUTATION)
+	if (ModeComboBox->GetSelectedOption() == GameModes::Mutation)
 	{
 		int32 ReadyPlayerNum = 0;
 		for (auto& Member : EOSSubsystem->CurLobby->Members)
@@ -753,17 +753,17 @@ bool ULobby::CanStartServer()
 		}
 		if (ReadyPlayerNum == 0)
 		{
-			NOTIFY(this, C_YELLOW, LOCTEXT("RequirePlayerReady", "Require at least 1 player to be ready"));
+			NOTIFY(this, Colors::Yellow, LOCTEXT("RequirePlayerReady", "Require at least 1 player to be ready"));
 			return false;
 		}
 	}
-	else if (ModeComboBox->GetSelectedOption() == TEAM_DEAD_MATCH || ModeComboBox->GetSelectedOption() == MELEE)
+	else if (ModeComboBox->GetSelectedOption() == GameModes::TeamDeadMatch || ModeComboBox->GetSelectedOption() == GameModes::Melee)
 	{
 		ETeam HostTeam = EOSSubsystem->GetMemberTeam(EOSSubsystem->GetLobbyHost());
 		
 		if (HostTeam == ETeam::NoTeam)
 		{
-			NOTIFY(this, C_YELLOW, LOCTEXT("HostTeamNotFound", "Host's team was not found"));
+			NOTIFY(this, Colors::Yellow, LOCTEXT("HostTeamNotFound", "Host's team was not found"));
 			return false;
 		}
 
@@ -779,7 +779,7 @@ bool ULobby::CanStartServer()
 
 		if (!bAnotherTeamHasPlayerReady)
 		{
-			NOTIFY(this, C_YELLOW, FText::Format(LOCTEXT("RequirePlayerReadyInTeam", "Require at least 1 player to be ready in team {0}"), FText::AsNumber(HostTeam == ETeam::Team1 ? 1 : 2)));
+			NOTIFY(this, Colors::Yellow, FText::Format(LOCTEXT("RequirePlayerReadyInTeam", "Require at least 1 player to be ready in team {0}"), FText::AsNumber(HostTeam == ETeam::Team1 ? 1 : 2)));
 			return false;
 		}
 	}
@@ -847,7 +847,7 @@ void ULobby::OnLeaveLobbyComplete(bool bWasSuccessful)
 	}
 	else
 	{
-		NOTIFY(this, C_RED, LOCTEXT("LeaveServerFailed", "Leave server failed"));
+		NOTIFY(this, Colors::Red, LOCTEXT("LeaveServerFailed", "Leave server failed"));
 	}
 }
 
@@ -898,7 +898,7 @@ void ULobby::OnLobbyLeft(const FLobbyLeft& LobbyLeft)
 	
 	if (!bIsExitingLobby)
 	{
-		NOTIFY(this, C_WHITE, LOCTEXT("GotKicked", "Got kicked"));
+		NOTIFY(this, Colors::White, LOCTEXT("GotKicked", "Got kicked"));
 	}
 }
 
@@ -908,7 +908,7 @@ void ULobby::OnTravelFailure(UWorld* World, ETravelFailure::Type Arg, const FStr
 
 	FString Msg = StaticEnum<ETravelFailure::Type>()->GetNameStringByValue(static_cast<int64>(Arg));
 	
-	NOTIFY(this, C_RED, FText::Format(LOCTEXT("TravelFailure", "Travel failed: Type {0} Error {1}"), FText::FromString(Msg), FText::FromString(String)));
+	NOTIFY(this, Colors::Red, FText::Format(LOCTEXT("TravelFailure", "Travel failed: Type {0} Error {1}"), FText::FromString(Msg), FText::FromString(String)));
 }
 
 #undef LOCTEXT_NAMESPACE

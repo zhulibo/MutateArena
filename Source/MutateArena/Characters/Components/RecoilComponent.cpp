@@ -42,7 +42,7 @@ void URecoilComponent::IncRecoil()
 	if (HumanCharacter == nullptr || HumanCharacter->CombatComp == nullptr) return;
 
 	AWeapon* Weapon = HumanCharacter->CombatComp->GetCurWeapon();
-	if (Weapon == nullptr || Weapon->RecoilCurve == nullptr) return;
+	if (Weapon == nullptr || Weapon->FragWeapon->RecoilCurve == nullptr) return;
 
 	// 从总后坐力中减去上次开火未及时应用的后坐力（开火后后坐力并非瞬时增加，而是分多帧应用）
 	RecoilVertTotal -= RecoilVertCurFire - RecoilVertLastTick;
@@ -51,11 +51,11 @@ void URecoilComponent::IncRecoil()
 	int32 CurShotCount = HumanCharacter->CombatComp->CurShotCount;
 	int32 RandRecoilCurveCount = CurShotCount % 10 + 1; // 曲线横轴只做了1-10
 
-	FVector RecoilKick = Weapon->RecoilCurve->GetVectorValue(CurShotCount);
+	FVector RecoilKick = Weapon->FragWeapon->RecoilCurve->GetVectorValue(CurShotCount);
 	float RecoilRandVert = 0.f;
 	float RecoilRandHor = 0.f;
-	if (Weapon->RecoilCurveRandVert) RecoilRandVert = Weapon->RecoilCurveRandVert->GetFloatValue(RandRecoilCurveCount);
-	if (Weapon->RecoilCurveRandHor) RecoilRandHor = Weapon->RecoilCurveRandHor->GetFloatValue(RandRecoilCurveCount);
+	if (Weapon->FragWeapon->RecoilCurveRandVert) RecoilRandVert = Weapon->FragWeapon->RecoilCurveRandVert->GetFloatValue(RandRecoilCurveCount);
+	if (Weapon->FragWeapon->RecoilCurveRandHor) RecoilRandHor = Weapon->FragWeapon->RecoilCurveRandHor->GetFloatValue(RandRecoilCurveCount);
 	// 开火需要增加的目标垂直后坐力
 	RecoilVertCurFire = RecoilKick.Y + RecoilRandVert;
 	// 开火需要增加的目标水平后坐力
@@ -90,7 +90,7 @@ void URecoilComponent::PollApplyRecoil(float DeltaSeconds)
 	AWeapon* Weapon = HumanCharacter->CombatComp->GetCurWeapon();
 	if (Weapon == nullptr) return;
 
-	if (RecoilIncCostTime >= Weapon->RecoilIncTime) return;
+	if (RecoilIncCostTime >= Weapon->FragWeapon->RecoilIncTime) return;
 
 	// UE_LOG(LogTemp, Warning, TEXT("RecoilIncCostTime %f DeltaSeconds %f"), RecoilIncCostTime, DeltaSeconds);
 
@@ -98,13 +98,13 @@ void URecoilComponent::PollApplyRecoil(float DeltaSeconds)
 	RecoilIncCostTime += DeltaSeconds;
 
 	// 应用开火后坐力完毕
-	if (RecoilIncCostTime >= Weapon->RecoilIncTime)
+	if (RecoilIncCostTime >= Weapon->FragWeapon->RecoilIncTime)
 	{
 		// 约束耗时
-		RecoilIncCostTime = Weapon->RecoilIncTime;
+		RecoilIncCostTime = Weapon->FragWeapon->RecoilIncTime;
 
 		// 计算恢复后坐力所需时间
-		RecoilDecTime = FMath::Clamp(RecoilVertTotal / Weapon->RecoilVertRef_DecTime, Weapon->RecoilMinDecTime, Weapon->RecoilMaxDecTime);
+		RecoilDecTime = FMath::Clamp(RecoilVertTotal / Weapon->FragWeapon->RecoilVertRef_DecTime, Weapon->FragWeapon->RecoilMinDecTime, Weapon->FragWeapon->RecoilMaxDecTime);
 
 		// 备份需要恢复的总后坐力
 		RecoilVertRecoverTotal = RecoilVertTotal;
@@ -114,7 +114,7 @@ void URecoilComponent::PollApplyRecoil(float DeltaSeconds)
 	}
 
 	// 当前帧需要达到的后坐力
-	float Alpha = RecoilIncCostTime / Weapon->RecoilIncTime;
+	float Alpha = RecoilIncCostTime / Weapon->FragWeapon->RecoilIncTime;
 	float RecoilVertCurTick = FMath::InterpEaseOut(0.f, RecoilVertCurFire, Alpha, 2.f);
 	float RecoilHorCurTick = FMath::InterpEaseOut(0.f, RecoilHorCurFire, Alpha, 2.f);
 
@@ -212,9 +212,9 @@ FVector2D URecoilComponent::GetCurSpreadVector()
 	if (HumanCharacter && HumanCharacter->CombatComp)
 	{
 		AWeapon* Weapon = HumanCharacter->CombatComp->GetCurWeapon();
-		if (Weapon && Weapon->RecoilCurve)
+		if (Weapon && Weapon->FragWeapon->RecoilCurve)
 		{
-			FVector RecoilKick = Weapon->RecoilCurve->GetVectorValue(HumanCharacter->CombatComp->CurShotCount);
+			FVector RecoilKick = Weapon->FragWeapon->RecoilCurve->GetVectorValue(HumanCharacter->CombatComp->CurShotCount);
 			
 			return FMath::RandPointInCircle(RecoilKick.Z);
 		}
