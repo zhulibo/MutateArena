@@ -1,19 +1,24 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameplayTagContainer.h"
 #include "Subsystems/GameInstanceSubsystem.h"
-#include "MutateArena/Characters/Data/CharacterType.h"
-#include "MutateArena/Equipments/Data/EquipmentType.h"
+#include "GameplayTagContainer.h"
 #include "AssetSubsystem.generated.h"
 
-class UEnvironmentAsset;
+class UCommonAsset;
+class UInputAsset;
+class UCharacterCommonAsset;
 class UCharacterHumanAsset;
 class UCharacterMutantAsset;
+class UEquipmentCommonAsset;
 class UEquipmentAsset;
-class UEquipmentSkinAsset;
-enum class EDNA2 : uint8;
 class UDNAAsset2;
+class UEnvironmentAsset;
+
+enum class EHumanCharacterName : uint8;
+enum class EMutantCharacterName : uint8;
+enum class EEquipmentName : uint8;
+enum class EDNA2 : uint8;
 
 UCLASS()
 class MUTATEARENA_API UAssetSubsystem : public UGameInstanceSubsystem
@@ -22,61 +27,65 @@ class MUTATEARENA_API UAssetSubsystem : public UGameInstanceSubsystem
 
 public:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
-
-	void Test();
-
-	UPROPERTY()
-	TObjectPtr<class UCommonAsset> CommonAsset;
-
-	UPROPERTY()
-	TObjectPtr<class UInputAsset> InputAsset;
-
-	UPROPERTY()
-	TObjectPtr<class UCharacterAsset> CharacterAsset;
-
-	UPROPERTY()
-	TObjectPtr<class UEquipmentCommonAsset> EquipmentCommonAsset;
-
-protected:
-	// 编辑器中资源命名必须是 Prefix + 类名
-	FPrimaryAssetId CommonAssetId;
-	FPrimaryAssetId InputAssetId;
-	FPrimaryAssetId CharacterAssetId;
-	FPrimaryAssetId EquipmentCommonAssetId;
+	virtual void Deinitialize() override;
 
 	void SyncLoadAsset();
 
-public:
-	void BuildEnvironmentCacheAsync();
-	void BuildHumanCharacterCacheAsync();
-	void BuildMutantCharacterCacheAsync();
-	void BuildEquipmentCacheAsync();
-	void BuildEquipmentSkinCacheAsync();
-	void BuildDNACacheAsync();
+	UPROPERTY()
+	TObjectPtr<UCommonAsset> CommonAsset;
+	UPROPERTY()
+	TObjectPtr<UInputAsset> InputAsset;
+	UPROPERTY()
+	TObjectPtr<UCharacterCommonAsset> CharacterCommonAsset;
+	UPROPERTY()
+	TObjectPtr<UEquipmentCommonAsset> EquipmentCommonAsset;
+
+	void BuildEnvironmentCache();
+	void BuildHumanCharacterCache();
+	void BuildMutantCharacterCache();
+	void BuildEquipmentCache();
+	void BuildDNACache();
 
 	UEnvironmentAsset* GetEnvironmentAssetByTag(FGameplayTag InTag) const;
 	UCharacterHumanAsset* GetCharacterHumanAssetByName(EHumanCharacterName InName) const;
 	UCharacterMutantAsset* GetCharacterMutantAssetByName(EMutantCharacterName InName) const;
 	UEquipmentAsset* GetEquipmentAssetByName(EEquipmentName InName) const;
-	UEquipmentSkinAsset* GetEquipmentSkinAssetByName(EEquipmentName InName) const;
-	void ResolveEquipmentAssets(EEquipmentName InName, const UEquipmentAsset*& OutBaseAsset, const UEquipmentSkinAsset*& OutSkinAsset) const;
 	UDNAAsset2* GetDNAAssetByType(EDNA2 InDNA) const;
 
-	UPROPERTY(Transient)
+	// 同步加载唯一全局配置资产
+	template <typename AssetType>
+	AssetType* LoadSinglePrimaryAsset(const FName& PrimaryAssetTypeName);
+
+	// 批量同步加载并构建缓存 Map
+	template <typename AssetType, typename KeyType, typename KeyExtractorFunc>
+	void BuildPrimaryAssetCache(
+		const FName& PrimaryAssetTypeName,
+		TMap<KeyType, TObjectPtr<AssetType>>& OutCacheMap,
+		KeyExtractorFunc KeyExtractor,
+		const KeyType& InvalidKey
+	);
+
+	// 统一从缓存 Map 中查询资产
+	template <typename AssetType, typename KeyType>
+	FORCEINLINE AssetType* GetCachedAsset(
+		const TMap<KeyType, TObjectPtr<AssetType>>& CacheMap,
+		const KeyType& Key,
+		const KeyType& InvalidKey,
+		const TCHAR* CallerName
+	) const;
+
+	UPROPERTY()
 	TMap<FGameplayTag, TObjectPtr<UEnvironmentAsset>> CachedEnvironmentAssets;
 
-	UPROPERTY(Transient)
-	TMap<EHumanCharacterName, TObjectPtr<UCharacterHumanAsset>> CachedHumanCharacterAssets;
+	UPROPERTY()
+	TMap<EHumanCharacterName, TObjectPtr<UCharacterHumanAsset>> CachedCharacterHumanAssets;
 
-	UPROPERTY(Transient)
-	TMap<EMutantCharacterName, TObjectPtr<UCharacterMutantAsset>> CachedMutantCharacterAssets;
+	UPROPERTY()
+	TMap<EMutantCharacterName, TObjectPtr<UCharacterMutantAsset>> CachedCharacterMutantAssets;
 
-	UPROPERTY(Transient)
+	UPROPERTY()
 	TMap<EEquipmentName, TObjectPtr<UEquipmentAsset>> CachedEquipmentAssets;
 
-	UPROPERTY(Transient)
-	TMap<EEquipmentName, TObjectPtr<UEquipmentSkinAsset>> CachedEquipmentSkinAssets;
-
-	UPROPERTY(Transient)
+	UPROPERTY()
 	TMap<EDNA2, TObjectPtr<UDNAAsset2>> CachedDNAAssets;
 };

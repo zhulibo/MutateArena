@@ -5,30 +5,19 @@ UDataAssetManager::UDataAssetManager()
 {
 }
 
-void UDataAssetManager::StartInitialLoading()
-{
-	Super::StartInitialLoading();
-}
-
 UDataAssetManager& UDataAssetManager::Get()
 {
-	static UDataAssetManager* Singleton = nullptr;
-	if (Singleton)
+	check(GEngine);
+
+	if (UDataAssetManager* Singleton = Cast<UDataAssetManager>(GEngine->AssetManager))
 	{
 		return *Singleton;
 	}
 
-	Singleton = Cast<UDataAssetManager>(GEngine->AssetManager);
-	if (Singleton)
-	{
-		return *Singleton;
-	}
+	UE_LOG(LogTemp, Fatal, TEXT("Invalid AssetManagerClassName in DefaultEngine.ini. It must be set to UDataAssetManager!"));
 
-	UE_LOG(LogTemp, Error, TEXT("Invalid AssetManagerClassName in DefaultEngine.ini. It must be set to UDataAssetManager!"));
-
-	// 如果配置错误，兜底生成一个以防崩溃
-	Singleton = NewObject<UDataAssetManager>();
-	return *Singleton;
+	// 如果配置错误，兜底生成一个以防编译告警（Fatal 已终止程序）
+	return *NewObject<UDataAssetManager>();
 }
 
 UObject* UDataAssetManager::SyncLoadAsset(const FSoftObjectPath& AssetPath)

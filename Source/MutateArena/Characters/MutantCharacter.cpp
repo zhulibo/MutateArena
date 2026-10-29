@@ -1,6 +1,5 @@
 #include "MutantCharacter.h"
 
-#include "DataRegistrySubsystem.h"
 #include "DrawDebugHelpers.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
@@ -26,7 +25,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Data/InputAsset.h"
-#include "Data/CharacterAsset.h"
+#include "Data/CharacterCommonAsset.h"
 #include "Engine/GameInstance.h"
 #include "Kismet/GameplayStatics.h"
 #include "MutateArena/System/UISubsystem.h"
@@ -146,9 +145,9 @@ void AMutantCharacter::PossessedBy(AController* NewController)
 	if (ASC)
 	{
 		if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-		if (AssetSubsystem && AssetSubsystem->CharacterAsset)
+		if (AssetSubsystem && AssetSubsystem->CharacterCommonAsset)
 		{
-			for (TSubclassOf<UGameplayAbility> AbilityClass : AssetSubsystem->CharacterAsset->MutantDefaultAbilities)
+			for (TSubclassOf<UGameplayAbility> AbilityClass : AssetSubsystem->CharacterCommonAsset->MutantDefaultAbilities)
 			{
 				FGameplayAbilitySpec AbilitySpec(AbilityClass, 1, INDEX_NONE, this);
 				ASC->GiveAbility(AbilitySpec);
@@ -502,10 +501,10 @@ void AMutantCharacter::ProcessMutantHit(const FHitResult& HitResult, const FVect
 void AMutantCharacter::SpawnHitWallEffects(const FHitResult& HitResult, const FVector& TraceDirection)
 {
 	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-	if (AssetSubsystem && AssetSubsystem->CharacterAsset)
+	if (AssetSubsystem && AssetSubsystem->CharacterCommonAsset)
 	{
 		// 生成墙壁刀痕贴花
-		if (AssetSubsystem->CharacterAsset->WallMarkDecal)
+		if (AssetSubsystem->CharacterCommonAsset->WallMarkDecal)
 		{
 			FVector ProjectionDirection = -HitResult.ImpactNormal;
 			FVector SurfaceTangent = FVector::VectorPlaneProject(TraceDirection, HitResult.ImpactNormal).GetSafeNormal();
@@ -513,7 +512,7 @@ void AMutantCharacter::SpawnHitWallEffects(const FHitResult& HitResult, const FV
 			FRotator DecalRotation = FRotationMatrix::MakeFromXY(ProjectionDirection, SurfaceTangent).Rotator();
 
 			UGameplayStatics::SpawnDecalAttached(
-				AssetSubsystem->CharacterAsset->WallMarkDecal,
+				AssetSubsystem->CharacterCommonAsset->WallMarkDecal,
 				FVector(10.f, 20.f, 20.f), 
 				HitResult.GetComponent(),
 				NAME_None,
@@ -529,16 +528,16 @@ void AMutantCharacter::SpawnHitWallEffects(const FHitResult& HitResult, const FV
 		switch (UGameplayStatics::GetSurfaceType(HitResult))
 		{
 		case EPhysicalSurface::SurfaceType1:
-			HitSound = AssetSubsystem->CharacterAsset->HitWall_Concrete;
+			HitSound = AssetSubsystem->CharacterCommonAsset->HitWall_Concrete;
 			break;
 		case EPhysicalSurface::SurfaceType2:
-			HitSound = AssetSubsystem->CharacterAsset->HitWall_Dirt;
+			HitSound = AssetSubsystem->CharacterCommonAsset->HitWall_Dirt;
 			break;
 		case EPhysicalSurface::SurfaceType3:
-			HitSound = AssetSubsystem->CharacterAsset->HitWall_Metal;
+			HitSound = AssetSubsystem->CharacterCommonAsset->HitWall_Metal;
 			break;
 		case EPhysicalSurface::SurfaceType4:
-			HitSound = AssetSubsystem->CharacterAsset->HitWall_Wood;
+			HitSound = AssetSubsystem->CharacterCommonAsset->HitWall_Wood;
 			break;
 		}
 
@@ -837,9 +836,9 @@ void AMutantCharacter::OnRep_bSuckedDry()
 void AMutantCharacter::SetDeadMaterial()
 {
 	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-	if (AssetSubsystem && AssetSubsystem->CharacterAsset)
+	if (AssetSubsystem && AssetSubsystem->CharacterCommonAsset)
 	{
-		GetMesh()->SetOverlayMaterial(AssetSubsystem->CharacterAsset->MI_Overlay_Dead);
+		GetMesh()->SetOverlayMaterial(AssetSubsystem->CharacterCommonAsset->MI_Overlay_Dead);
 	}
 }
 

@@ -18,13 +18,13 @@ public:
 	UDefaultConfig();
 
 	UPROPERTY()
-	EEquipmentName Primary = EEquipmentName::AK47;
+	EEquipmentName Slot1EquipmentName = EEquipmentName::AK47;
 	UPROPERTY()
-	EEquipmentName Secondary = EEquipmentName::DesertEagle;
+	EEquipmentName Slot2EquipmentName = EEquipmentName::DesertEagle;
 	UPROPERTY()
-	EEquipmentName Melee = EEquipmentName::Kukri;
+	EEquipmentName Slot3EquipmentName = EEquipmentName::Kukri;
 	UPROPERTY()
-	EEquipmentName Throwing = EEquipmentName::Grenade;
+	EEquipmentName Slot4EquipmentName = EEquipmentName::Grenade;
 	UPROPERTY()
 	TArray<FLoadout> Loadouts;
 	int32 LoadoutIndex = 0;
@@ -40,8 +40,6 @@ public:
 
 	UPROPERTY()
 	FName Language;
-	UPROPERTY()
-	bool bHideSkins = false;
 	UPROPERTY()
 	bool bObfuscateName = false;
 	UPROPERTY()

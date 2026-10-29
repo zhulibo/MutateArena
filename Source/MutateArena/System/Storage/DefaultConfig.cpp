@@ -7,10 +7,10 @@ UDefaultConfig::UDefaultConfig()
 {
 	// 设置默认背包
 	FLoadout Loadout;
-	Loadout.Primary = Primary;
-	Loadout.Secondary = Secondary;
-	Loadout.Melee = Melee;
-	Loadout.Throwing = Throwing;
+	Loadout.Slot1EquipmentName = Slot1EquipmentName;
+	Loadout.Slot2EquipmentName = Slot2EquipmentName;
+	Loadout.Slot3EquipmentName = Slot3EquipmentName;
+	Loadout.Slot4EquipmentName = Slot4EquipmentName;
 
 	for (int32 i = 0; i < 4; ++i)
 	{

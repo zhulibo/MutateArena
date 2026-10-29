@@ -24,9 +24,16 @@ AWeapon::AWeapon()
 void AWeapon::BeginPlay()
 {
 	Super::BeginPlay();
-
-	InitData();
 	
+	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+	check(AssetSubsystem);
+
+	FragWeapon = EquipmentAsset->FindFragmentByClass<UFragWeapon>();
+	check(FragWeapon);
+
+	Ammo = FragWeapon->MagCapacity;
+	CarriedAmmo = FragWeapon->MaxCarriedAmmo;
+
 	// 提前同步预生成 20 个弹壳入池，且将该类弹壳的同屏硬上限锁死在 50 个
 	if (FragWeapon && FragWeapon->ShellClass)
 	{
@@ -35,47 +42,6 @@ void AWeapon::BeginPlay()
 			PoolSubsystem->PrewarmPool(FragWeapon->ShellClass, 20, 50);
 		}
 	}
-}
-
-void AWeapon::InitData()
-{
-	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-	if (!AssetSubsystem) return;
-
-	// 1. 自动解析出基底资产和皮肤资产（无需外部关心当前是不是皮肤）
-	const UEquipmentAsset* BaseAsset = nullptr;
-	const UEquipmentSkinAsset* SkinAsset = nullptr;
-	AssetSubsystem->ResolveEquipmentAssets(EquipmentName, BaseAsset, SkinAsset);
-
-	BaseEquipmentAsset = BaseAsset;
-	SkinEquipmentAsset = SkinAsset;
-
-	if (!BaseEquipmentAsset) return;
-
-	// 2. 读取原版武器的基础数据
-	FragWeapon = BaseEquipmentAsset->FindFragmentByClass<UFragWeapon>();
-	check(FragWeapon);
-	
-	MagCapacity = FragWeapon->MagCapacity;
-	MaxCarriedAmmo = FragWeapon->MaxCarriedAmmo;
-
-	// 3. 如果是皮肤/变体，且配置了 Modifier，则覆盖对应属性
-	if (SkinEquipmentAsset && SkinEquipmentAsset->WeaponModifier)
-	{
-		const UFragWeaponModifier* Modifier = SkinEquipmentAsset->WeaponModifier;
-		if (Modifier->bOverrideMagCapacity)
-		{
-			MagCapacity = Modifier->MagCapacity;
-		}
-		if (Modifier->bOverrideMaxCarriedAmmo)
-		{
-			MaxCarriedAmmo = Modifier->MaxCarriedAmmo;
-		}
-	}
-
-	// 4. 初始化当前弹药状态
-	Ammo = MagCapacity;
-	CarriedAmmo = MaxCarriedAmmo;
 }
 
 void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -123,7 +89,7 @@ void AWeapon::MulticastFire_Implementation(FVector HitTarget, float RecoilVert, 
 
 void AWeapon::SpendRound()
 {
-	Ammo = FMath::Clamp(Ammo - 1, 0, MagCapacity);
+	Ammo = FMath::Clamp(Ammo - 1, 0, FragWeapon->MagCapacity);
 
 	AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(GetOwner());
 	if (HumanCharacter && HumanCharacter->IsLocallyControlled())

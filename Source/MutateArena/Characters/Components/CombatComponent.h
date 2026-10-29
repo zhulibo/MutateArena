@@ -5,7 +5,7 @@
 #include "MutateArena/Equipments/Data/EquipmentType.h"
 #include "CombatComponent.generated.h"
 
-enum class EEquipmentType : uint8;
+enum class EEquipmentSlot : uint8;
 
 UCLASS()
 class MUTATEARENA_API UCombatComponent : public UActorComponent
@@ -47,54 +47,49 @@ public:
 
 	class AEquipment* GetCurEquipment();
 	AEquipment* GetLastEquipment();
-	// 如果正在使用主、副武器，返回正在使用的武器，否则返空。
+	// 如果正在使用主副武器，返回主副武器，否则返空。
 	class AWeapon* GetCurWeapon();
-	// 如果正在使用近战武器，返回正在使用的近战武器，否则返空。
+	// 如果正在使用近战武器，返回近战武器，否则返空。
 	class AMelee* GetCurMelee();
-	AEquipment* GetEquipmentByType(EEquipmentType EquipmentType);
+	AEquipment* GetEquipmentByType(EEquipmentSlot EquipmentSlot);
 protected:
-	bool OwnEquipment(EEquipmentType EquipmentType);
+	bool OwnEquipment(EEquipmentSlot EquipmentSlot);
 public:
-	UPROPERTY(ReplicatedUsing = OnRep_PrimaryEquipment)
-	class AWeapon* PrimaryEquipment;
-	UPROPERTY(ReplicatedUsing = OnRep_SecondaryEquipment)
-	AWeapon* SecondaryEquipment;
-	UPROPERTY(ReplicatedUsing = OnRep_MeleeEquipment)
-	class AMelee* MeleeEquipment;
-	UPROPERTY(ReplicatedUsing = OnRep_ThrowingEquipment)
-	class AThrowing* ThrowingEquipment;
-	UPROPERTY(ReplicatedUsing = OnRep_CurEquipmentType)
-	EEquipmentType CurEquipmentType;
+	UPROPERTY(ReplicatedUsing = OnRep_Slot1Equipment)
+	class AWeapon* Slot1Equipment;
+	UPROPERTY(ReplicatedUsing = OnRep_Slot2Equipment)
+	AWeapon* Slot2Equipment;
+	UPROPERTY(ReplicatedUsing = OnRep_Slot3Equipment)
+	class AMelee* Slot3Equipment;
+	UPROPERTY(ReplicatedUsing = OnRep_Slot4Equipment)
+	class AThrowing* Slot4Equipment;
+	UPROPERTY(ReplicatedUsing = OnRep_CurEquipmentSlot)
+	EEquipmentSlot CurEquipmentSlot;
 	UPROPERTY(Replicated)
-	EEquipmentType LastEquipmentType;
+	EEquipmentSlot LastEquipmentSlot;
 protected:
 	UFUNCTION()
-	void OnRep_PrimaryEquipment();
+	void OnRep_Slot1Equipment();
 	UFUNCTION()
-	void OnRep_SecondaryEquipment();
+	void OnRep_Slot2Equipment();
 	UFUNCTION()
-	void OnRep_MeleeEquipment();
+	void OnRep_Slot3Equipment();
 	UFUNCTION()
-	void OnRep_ThrowingEquipment();
+	void OnRep_Slot4Equipment();
 	UFUNCTION()
-	void OnRep_CurEquipmentType(EEquipmentType OldEquipmentType);
+	void OnRep_CurEquipmentSlot(EEquipmentSlot OldEquipmentSlot);
 
 	// 给予
 public:
-	void GiveEquipment(AEquipment* NewEquipment, bool bIsCurrent = false);
-protected:
-	void AssignEquipment(AEquipment* Equipment);
-public:
+	void GiveEquipment(AEquipment* NewEquipment);
+	void HolsterEquipment(AEquipment* Equipment);
+	void AttachToHand(AEquipment* Equipment, FName SocketNameSuffix);
+	void RefreshCurEquipmentState();
 	UFUNCTION(Client, Unreliable)
 	void ClientPlayEquipSound();
 
 	// 切换
-	UPROPERTY()
-	EEquipmentType DesiredEquipmentType = EEquipmentType::None;
-	void InstantSwap(EEquipmentType TargetType);
-
-	void HolsterEquipment(AEquipment* Equipment);
-	void AttachToHand(AEquipment* Equipment, FName SocketNameSuffix);
+	void InstantSwap(EEquipmentSlot TargetType);
 
 	// 瞄准
 	bool IsAiming();
@@ -106,10 +101,7 @@ public:
 
 	// 销毁
 	UFUNCTION(Server, Reliable)
-	void ServerDestroyEquipments();
-protected:
-	UFUNCTION()
-	void LocalDestroyEquipments(bool bIsDestroyPrimary = true);
+	void ServerDestroyEquipments(bool bIsDestroySlot1 = true);
 
 	// 近战
 public:

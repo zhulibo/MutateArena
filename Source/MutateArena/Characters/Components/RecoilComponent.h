@@ -4,7 +4,7 @@
 #include "Components/ActorComponent.h"
 #include "RecoilComponent.generated.h"
 
-enum class EEquipmentType : uint8;
+enum class EEquipmentSlot : uint8;
 
 /**
  * 开火后在一段时间内应用掉增加的后坐力，应用完毕后，再在一段时间内恢复增加的总后坐力，

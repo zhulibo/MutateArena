@@ -14,6 +14,4 @@ public:
 
 	virtual bool OnExecute_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters) const override;
 
-protected:
-
 };

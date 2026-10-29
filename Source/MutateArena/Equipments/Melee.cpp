@@ -1,11 +1,9 @@
 #include "Melee.h"
-#include "DataRegistrySubsystem.h"
 #include "DrawDebugHelpers.h"
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/Characters/HumanCharacter.h"
-#include "MutateArena/Characters/Components/CombatComponent.h"
 #include "MutateArena/PlayerStates/TeamType.h"
 #include "MutateArena/Utils/LibraryCommon.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -36,20 +34,10 @@ void AMelee::BeginPlay()
 	Super::BeginPlay();
 	
 	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-	if (AssetSubsystem)
-	{
-		if (UEquipmentAsset* MeleeAsset = AssetSubsystem->GetEquipmentAssetByName(EquipmentParentName))
-		{
-			if (const UFragMelee* MeleeFrag = MeleeAsset->FindFragmentByClass<UFragMelee>())
-			{
-				LightAttackDamage = MeleeFrag->LightAttackDamage;
-				HeavyAttackDamage = MeleeFrag->HeavyAttackDamage;
-				WalkSpeedMul = MeleeFrag->WalkSpeedMul;
-				TraceSockets = MeleeFrag->TraceSockets;
-				TraceRadius = MeleeFrag->TraceRadius;
-			}
-		}
-	}
+	check(AssetSubsystem);
+
+	FragMelee = EquipmentAsset->FindFragmentByClass<UFragMelee>();
+	check(FragMelee);
 
 	SetMeleeTraceObjectTypes();
 }
@@ -61,7 +49,7 @@ void AMelee::Tick(float DeltaTime)
 	if (bIsAttacking && EquipmentMesh)
 	{
 		// 对每个插槽进行上一帧位置到当前帧位置的球体扫掠检测
-		for (const FName& SocketName : TraceSockets)
+		for (const FName& SocketName : FragMelee->TraceSockets)
 		{
 			FVector CurrentLocation = EquipmentMesh->GetSocketLocation(SocketName);
 
@@ -81,7 +69,7 @@ void AMelee::Tick(float DeltaTime)
 				QueryParams.bReturnPhysicalMaterial = true;
 
 				// 创建球体检测形状
-				FCollisionShape SphereShape = FCollisionShape::MakeSphere(TraceRadius);
+				FCollisionShape SphereShape = FCollisionShape::MakeSphere(FragMelee->TraceRadius);
 
 				// 使用 SweepSingleByObjectType 进行球体连线扫掠
 				bool bHit = GetWorld()->SweepSingleByObjectType(
@@ -167,7 +155,7 @@ void AMelee::SetAttackCollisionEnabled(bool bIsEnabled)
 		// 攻击开始时记录第一帧位置，防止从原点(0,0,0)发出射线
 		if (EquipmentMesh)
 		{
-			for (const FName& SocketName : TraceSockets)
+			for (const FName& SocketName : FragMelee->TraceSockets)
 			{
 				PreviousSocketLocations.Add(SocketName, EquipmentMesh->GetSocketLocation(SocketName));
 			}
@@ -185,7 +173,7 @@ void AMelee::ProcessMeleeHit(const FHitResult& HitResult, const FVector& TraceDi
 	{
 		HitEnemies.Add(OtherActor);
 
-		float Damage = bIsLightAttack ? LightAttackDamage : HeavyAttackDamage;
+		float Damage = bIsLightAttack ? FragMelee->LightAttackDamage : FragMelee->HeavyAttackDamage;
 
 		if (OtherActor->ActorHasTag(Tags::CharacterBase))
 		{

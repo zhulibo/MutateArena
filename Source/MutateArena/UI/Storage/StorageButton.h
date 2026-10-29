@@ -6,7 +6,7 @@
 
 enum class EHumanCharacterName : uint8;
 enum class EEquipmentName : uint8;
-enum class EEquipmentType : uint8;
+enum class EEquipmentSlot : uint8;
 
 UCLASS()
 class MUTATEARENA_API UStorageButton : public UCommonButtonBase
@@ -34,6 +34,6 @@ public:
 	UPROPERTY()
 	EEquipmentName EquipmentName;
 	UPROPERTY()
-	EEquipmentType EquipmentType;
+	EEquipmentSlot EquipmentSlot;
 
 };

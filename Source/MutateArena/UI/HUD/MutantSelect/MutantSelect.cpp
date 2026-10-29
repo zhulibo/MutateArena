@@ -6,7 +6,7 @@
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/Characters/Data/CharacterType.h"
 #include "MutateArena/Characters/MutantCharacter.h"
-#include "MutateArena/Characters/Data/CharacterAsset.h"
+#include "MutateArena/Characters/Data/CharacterCommonAsset.h"
 #include "MutateArena/GameStates/MutationGameState.h"
 #include "MutateArena/PlayerControllers/BaseController.h"
 #include "MutateArena/System/AssetSubsystem.h"
@@ -41,7 +41,7 @@ void UMutantSelect::NativeOnInitialized()
     AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
     if (AssetSubsystem)
     {
-       for (const TPair<EMutantCharacterName, UCharacterMutantAsset*>& Pair : AssetSubsystem->CachedMutantCharacterAssets)
+       for (const TPair<EMutantCharacterName, UCharacterMutantAsset*>& Pair : AssetSubsystem->CachedCharacterMutantAssets)
        {
           UCharacterMutantAsset* Asset = Pair.Value;
           if (Asset == nullptr) continue;

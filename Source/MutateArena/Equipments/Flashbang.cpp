@@ -12,7 +12,7 @@
 #include "NiagaraFunctionLibrary.h"
 #include "TimerManager.h"
 #include "MutateArena/Characters/Components/OverheadWidget.h"
-#include "MutateArena/Characters/Data/CharacterAsset.h"
+#include "MutateArena/Characters/Data/CharacterCommonAsset.h"
 #include "MutateArena/GameStates/BaseGameState.h"
 #include "MutateArena/PlayerStates/BasePlayerState.h"
 #include "MutateArena/System/AssetSubsystem.h"

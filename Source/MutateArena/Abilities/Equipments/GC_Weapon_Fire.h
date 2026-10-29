@@ -12,7 +12,6 @@ class MUTATEARENA_API UGC_Weapon_Fire : public UGameplayCueNotify_Static
 public:
 	UGC_Weapon_Fire();
 
-protected:
 	virtual bool OnExecute_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters) const override;
 	
 };

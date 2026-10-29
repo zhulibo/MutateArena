@@ -1,12 +1,9 @@
 ﻿#pragma once
 
-#include "Engine/DataTable.h"
 #include "EquipmentType.generated.h"
 
-#define TRACE_LENGTH 100000.f
-
 UENUM(BlueprintType)
-enum class EEquipmentName : uint8 // 装备名字
+enum class EEquipmentName : uint8
 {
 	// 主
 	AK47,
@@ -52,25 +49,29 @@ enum class EEquipmentName : uint8 // 装备名字
 };
 
 UENUM(BlueprintType)
-enum class EEquipmentCate : uint8 // 装备种类（武器自身属性）
+enum class EEquipmentType : uint8
 {
-	Generic,
+	SMG,
+	Rifle,
+	LMG,
 	Shotgun,
+	Sniper,
+	Pistol,
 	Melee,
-	Throwing,
+	Throwable,
 
 	None
 };
 
 UENUM(BlueprintType)
-enum class EEquipmentType : uint8 // 装备类型（装备的位置）
+enum class EEquipmentSlot : uint8
 {
-	Primary,
-	Secondary,
-	Melee,
-	Throwing,
-	// Tool,
-	// Medicine,
+	Slot1,
+	Slot2,
+	Slot3,
+	Slot4,
+	// Slot5,
+	// Slot6,
 
 	None
 };
@@ -83,150 +84,3 @@ enum class EEquipmentState : uint8
 	Thrown
 };
 
-USTRUCT(BlueprintType)
-struct FEquipmentMain : public FTableRowBase
-{
-	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere)
-	FText ShowName;
-
-	UPROPERTY(EditAnywhere)
-	EEquipmentName EquipmentParentName = EEquipmentName::None;
-
-	UPROPERTY(EditAnywhere)
-	EEquipmentName EquipmentName = EEquipmentName::None;
-
-	UPROPERTY(EditAnywhere)
-	EEquipmentCate EquipmentCate = EEquipmentCate::None;
-
-	UPROPERTY(EditAnywhere)
-	EEquipmentType EquipmentType = EEquipmentType::None;
-	
-	UPROPERTY(EditAnywhere)
-	bool bIsSupply = false;
-
-	UPROPERTY(EditAnywhere)
-	TSoftClassPtr<class AEquipment> EquipmentClass;
-	
-	UPROPERTY(EditAnywhere)
-	TSoftObjectPtr<UTexture2D> ShowImg;
-
-	UPROPERTY(EditAnywhere)
-	TSoftObjectPtr<USkeletalMesh> DefaultSkeletalMesh;
-
-	/**
-	 * Must be the same as the OfferId in dev portal,
-	 * Used to determine the button type in the UShop::OnQueryOffersComplete.
-	 */
-	UPROPERTY(EditAnywhere)
-	FString OfferId;
-
-	/**
-	 * Must be same as the audience item ID in dev portal,
-	 * Used to determine whether player's account owns the product.
-	 */
-	UPROPERTY(EditAnywhere)
-	FString AudienceItemId;
-
-};
-
-USTRUCT(BlueprintType)
-struct FWeaponData : public FTableRowBase
-{
-	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere)
-	EEquipmentName EquipmentName = EEquipmentName::None;
-
-	UPROPERTY(EditAnywhere)
-	int32 MagCapacity = 0;
-	UPROPERTY(EditAnywhere)
-	int32 MaxCarriedAmmo = 0;
-
-	UPROPERTY(EditAnywhere)
-	float FireRate = 0.f;
-	UPROPERTY(EditAnywhere)
-	bool bIsAutomatic = true;
-
-	UPROPERTY(EditAnywhere)
-	TObjectPtr<UCurveFloat> DamageCurve;
-	UPROPERTY(EditAnywhere)
-	float Impulse = 0.f;
-	
-	UPROPERTY(EditAnywhere)
-	int32 PelletNum = 1;
-	
-	UPROPERTY(EditAnywhere)
-	float PenetrationPower = 0.f;
-
-	UPROPERTY(EditAnywhere)
-	float AimingFOVMul = 0.9f;
-	UPROPERTY(EditAnywhere)
-	float WalkSpeedMul = 1.f;
-	UPROPERTY(EditAnywhere)
-	float AimingWalkSpeedMul = 1.f;
-	UPROPERTY(EditAnywhere)
-	bool bIsPIP = false;
-	UPROPERTY(EditAnywhere)
-	float ScopeFOV = 90.f;
-
-};
-
-USTRUCT(BlueprintType)
-struct FMeleeData : public FTableRowBase
-{
-	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere)
-	EEquipmentName EquipmentName = EEquipmentName::None;
-
-	UPROPERTY(EditAnywhere)
-	float LightAttackDamage = 0.f;
-	UPROPERTY(EditAnywhere)
-	float HeavyAttackDamage = 0.f;
-
-	UPROPERTY(EditAnywhere)
-	float WalkSpeedMul = 1.f;
-	
-	UPROPERTY(EditAnywhere)
-	TArray<FName> TraceSockets;
-	
-	UPROPERTY(EditAnywhere)
-	float TraceRadius = 10.f;
-	
-};
-
-USTRUCT(BlueprintType)
-struct FWeaponRecoil : public FTableRowBase
-{
-	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere)
-	EEquipmentName EquipmentName = EEquipmentName::None;
-
-	// Y 垂直后坐力 X 水平后坐力 Z 散布
-	UPROPERTY(EditAnywhere)
-	TObjectPtr<class UCurveVector> RecoilCurve;
-	// 随机
-	UPROPERTY(EditAnywhere)
-	TObjectPtr<UCurveFloat> RecoilCurveRandVert;
-	UPROPERTY(EditAnywhere)
-	TObjectPtr<UCurveFloat> RecoilCurveRandHor;
-
-	UPROPERTY(EditAnywhere)
-	float RecoilIncTime = 0.f;
-
-	UPROPERTY(EditAnywhere)
-	float RecoilMaxDecTime = 0.f;
-	UPROPERTY(EditAnywhere)
-	float RecoilMinDecTime = 0.f;
-	UPROPERTY(EditAnywhere)
-	float RecoilVertRef_DecTime = 0.f;
-	UPROPERTY(EditAnywhere)
-	float RecoilVertRef_Crosshair = 0.f;
-	
-	UPROPERTY(EditAnywhere)
-	float CrosshairBaseSpread = 0.f;
-
-};

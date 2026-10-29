@@ -6,6 +6,8 @@
 
 namespace GameConstants
 {
+	inline constexpr float TraceLength = 100000.f;
+
 	// 小地图正交宽度
 	inline constexpr float MinimapOrthoWidth = 4000.f;
 
@@ -47,12 +49,11 @@ namespace DataAsset
 {
 	inline const FName DNA(TEXT("DNA"));
 	inline const FName Common(TEXT("Common"));
-	inline const FName Character(TEXT("Character"));
+	inline const FName CharacterCommon(TEXT("CharacterCommon"));
 	inline const FName CharacterHuman(TEXT("CharacterHuman"));
 	inline const FName CharacterMutant(TEXT("CharacterMutant"));
 	inline const FName EquipmentCommon(TEXT("EquipmentCommon"));
 	inline const FName Equipment(TEXT("Equipment"));
-	inline const FName EquipmentSkin(TEXT("EquipmentSkin"));
 	inline const FName Input(TEXT("Input"));
 	inline const FName Environment(TEXT("Environment"));
 }

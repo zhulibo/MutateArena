@@ -3,6 +3,7 @@
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "MutateArena/Characters/Components/CombatComponent.h"
 #include "MutateArena/Equipments/Equipment.h"
+#include "MutateArena/Equipments/Data/EquipmentAsset.h"
 #include "MutateArena/Equipments/Pickups/PickupEquipment.h"
 #include "MutateArena/System/GameplayTags.h"
 
@@ -45,8 +46,8 @@ void UGA_Equipment_Drop::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 		return;
 	}
 
-	EEquipmentType TargetEquipmentType = static_cast<EEquipmentType>(TriggerEventData->EventMagnitude);
-	AEquipment* TargetEquipment = CombatComp->GetEquipmentByType(TargetEquipmentType);
+	EEquipmentSlot TargetEquipmentSlot = static_cast<EEquipmentSlot>(TriggerEventData->EventMagnitude);
+	AEquipment* TargetEquipment = CombatComp->GetEquipmentByType(TargetEquipmentSlot);
 	
 	if (TargetEquipment)
 	{
@@ -63,13 +64,13 @@ void UGA_Equipment_Drop::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 
 		TargetEquipment->Drop();
 
-		switch (TargetEquipmentType)
+		switch (TargetEquipmentSlot)
 		{
-		case EEquipmentType::Primary:
-			CombatComp->PrimaryEquipment = nullptr;
+		case EEquipmentSlot::Slot1:
+			CombatComp->Slot1Equipment = nullptr;
 			break;
-		case EEquipmentType::Secondary:
-			CombatComp->SecondaryEquipment = nullptr;
+		case EEquipmentSlot::Slot2:
+			CombatComp->Slot2Equipment = nullptr;
 			break;
 		default:
 			break;
@@ -86,8 +87,8 @@ void UGA_Equipment_Drop::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 		{
 			if (AEquipment* NewEquipment = PickupEquipment->Equipment)
 			{
-				bool bIsCurrent = CombatComp->CurEquipmentType == NewEquipment->EquipmentType;
-				CombatComp->GiveEquipment(NewEquipment, bIsCurrent);
+				bool bIsCurrent = CombatComp->CurEquipmentSlot == NewEquipment->EquipmentAsset->GetEquipmentSlot();
+				CombatComp->GiveEquipment(NewEquipment);
 				
 				if (!bIsCurrent)
 				{
@@ -108,7 +109,7 @@ void UGA_Equipment_Drop::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 		{
 			if (AEquipment* Equipment = Cast<AEquipment>(Actor))
 			{
-				if (Equipment->EquipmentType == TargetEquipmentType && Equipment != TargetEquipment) 
+				if (Equipment->EquipmentAsset->GetEquipmentSlot() == TargetEquipmentSlot && Equipment != TargetEquipment) 
 				{
 					OverlappingEquipment = Equipment;
 					break;
@@ -121,14 +122,14 @@ void UGA_Equipment_Drop::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 			if (OverlappingEquipment)
 			{
 				// 抢到了！服务器直接装备。这会触发客户端的 OnRep，让客户端自动拿枪
-				CombatComp->GiveEquipment(OverlappingEquipment, true);
+				CombatComp->GiveEquipment(OverlappingEquipment);
 			}
 			else
 			{
 				// 没抢到（或者根本没有）。通知客户端进行切枪。
 				if (!HumanChar->IsLocallyControlled())
 				{
-					HumanChar->ClientSwapEquipmentWhenPickupFailed(CombatComp->GetLastEquipment() ? CombatComp->LastEquipmentType : EEquipmentType::Melee);
+					HumanChar->ClientSwapEquipmentWhenPickupFailed(CombatComp->GetLastEquipment() ? CombatComp->LastEquipmentSlot : EEquipmentSlot::Slot3);
 				}
 			}
 		}
@@ -139,7 +140,7 @@ void UGA_Equipment_Drop::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 			if (!OverlappingEquipment)
 			{
 				// 本地发现脚下没东西：不干等，立刻发送切枪事件（无网络延迟手感）
-				HumanChar->SendSwapEquipmentEvent(CombatComp->GetLastEquipment() ? CombatComp->LastEquipmentType : EEquipmentType::Melee);
+				HumanChar->SendSwapEquipmentEvent(CombatComp->GetLastEquipment() ? CombatComp->LastEquipmentSlot : EEquipmentSlot::Slot3);
 			}
 			// 如果本地发现脚下有东西，就什么也不做，静静等待服务器的 OnRep 同步（抢到了）或 RPC 通知（没抢到）
 		}

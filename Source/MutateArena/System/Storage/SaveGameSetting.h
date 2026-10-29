@@ -26,8 +26,6 @@ public:
 	UPROPERTY()
 	FName Language;
 	UPROPERTY()
-	bool bHideSkins;
-	UPROPERTY()
 	bool bObfuscateName;
 	UPROPERTY()
 	bool bObfuscateTextChat;

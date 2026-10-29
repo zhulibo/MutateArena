@@ -12,12 +12,12 @@ struct FLoadout
 	GENERATED_BODY()
 
 	UPROPERTY()
-	EEquipmentName Primary = EEquipmentName::None;
+	EEquipmentName Slot1EquipmentName = EEquipmentName::None;
 	UPROPERTY()
-	EEquipmentName Secondary = EEquipmentName::None;
+	EEquipmentName Slot2EquipmentName = EEquipmentName::None;
 	UPROPERTY()
-	EEquipmentName Melee = EEquipmentName::None;
+	EEquipmentName Slot3EquipmentName = EEquipmentName::None;
 	UPROPERTY()
-	EEquipmentName Throwing = EEquipmentName::None;
+	EEquipmentName Slot4EquipmentName = EEquipmentName::None;
 
 };

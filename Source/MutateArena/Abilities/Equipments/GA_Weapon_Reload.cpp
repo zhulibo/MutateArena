@@ -101,7 +101,7 @@ void UGA_Weapon_Reload::OnReloadEventReceived(FGameplayEventData Payload)
 	}
 
 	int32 Ammo = GetCurWeapon()->Ammo;
-	int32 MagCapacity = GetCurWeapon()->MagCapacity;
+	int32 MagCapacity = GetCurWeapon()->FragWeapon->MagCapacity;
 	int32 CarriedAmmo = GetCurWeapon()->CarriedAmmo;
 	int32 NeedAmmoNum = MagCapacity - Ammo;
 

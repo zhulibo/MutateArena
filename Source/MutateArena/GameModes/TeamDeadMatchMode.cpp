@@ -44,10 +44,7 @@ void ATeamDeadMatchMode::BeginPlay()
 			}
 		}
 
-		if (PIEPlayerCount > 0)
-		{
-			WarmupTime *= PIEPlayerCount;
-		}
+		WarmupTime += PIEPlayerCount * 0.5f;
 	}
 #endif
 	

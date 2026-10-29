@@ -2,10 +2,11 @@
 
 #include "MetaSoundSource.h"
 #include "Components/SphereComponent.h"
+#include "Data/EquipmentAsset.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
-#include "MutateArena/MutateArena.h"
 #include "MutateArena/Characters/HumanCharacter.h"
+#include "MutateArena/System/AssetSubsystem.h"
 
 AThrowing::AThrowing()
 {
@@ -23,6 +24,12 @@ AThrowing::AThrowing()
 void AThrowing::BeginPlay()
 {
 	Super::BeginPlay();
+	
+	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+	check(AssetSubsystem);
+
+	FragThrowing = EquipmentAsset->FindFragmentByClass<UFragThrowing>();
+	check(FragThrowing);
 	
 	if (ProjectileMovement)
 	{
@@ -68,12 +75,12 @@ void AThrowing::OnRep_EquipmentState(EEquipmentState OldState)
 
 void AThrowing::OnProjectileBounce(const FHitResult& ImpactResult, const FVector& ImpactVelocity)
 {
-	if (!HitSound || bHasBounced) return;
+	if (!FragThrowing->HitSound || bHasBounced) return;
 
 	bHasBounced = true;
 
 	UGameplayStatics::SpawnSoundAttached(
-		HitSound, 
+		FragThrowing->HitSound, 
 		GetRootComponent(), 
 		NAME_None, 
 		FVector::ZeroVector, 

@@ -7,7 +7,7 @@
 #include "HumanCharacter.generated.h"
 
 enum class EEquipmentName : uint8;
-enum class EEquipmentType : uint8;
+enum class EEquipmentSlot : uint8;
 
 UCLASS()
 class MUTATEARENA_API AHumanCharacter : public ABaseCharacter, public IInteractable
@@ -48,13 +48,13 @@ public:
 	void ReloadButtonPressed(const FInputActionValue& Value);
 protected:
 	void DropButtonPressed(const FInputActionValue& Value);
-	void SwapLastEquipmentButtonPressed(const FInputActionValue& Value);
-	void SwapBetweenPrimarySecondaryEquipmentButtonPressed(const FInputActionValue& Value);
+	void SwapLastSlotEquipmentButtonPressed(const FInputActionValue& Value);
+	void SwapBetweenSlot1Slot2EquipmentButtonPressed(const FInputActionValue& Value);
 public:
-	void SendSwapEquipmentEvent(EEquipmentType TargetEquipmentType);
+	void SendSwapEquipmentEvent(EEquipmentSlot TargetEquipmentSlot);
 	
 	UFUNCTION(Client, Reliable)
-	void ClientSwapEquipmentWhenPickupFailed(EEquipmentType FallbackEquipmentType);
+	void ClientSwapEquipmentWhenPickupFailed(EEquipmentSlot FallbackEquipmentSlot);
 	void EquipOverlappingEquipment_Server(class AEquipment* Equipment);
 	UFUNCTION(Server, Reliable)
 	void ServerGivePickupEquipment(class APickupEquipment* PickupEquipment);
@@ -68,8 +68,7 @@ protected:
 
 	void ApplyLoadout();
 	UFUNCTION(Server, Reliable)
-	void ServerSpawnEquipments(EEquipmentName Primary, EEquipmentName Secondary, EEquipmentName Melee, EEquipmentName Throwing);
-	EEquipmentName GetEquipmentName(int32 LoadoutIndex, EEquipmentType EquipmentType);
+	void ServerSpawnEquipments(EEquipmentName Slot1, EEquipmentName Slot2, EEquipmentName Slot3, EEquipmentName Slot4);
 
 	UFUNCTION()
 	void HumanReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* AttackerController, AActor* DamageCauser);

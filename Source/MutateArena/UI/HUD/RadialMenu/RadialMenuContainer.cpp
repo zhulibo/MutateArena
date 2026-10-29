@@ -158,19 +158,19 @@ void URadialMenuContainer::CloseRadialMenuInternal()
 			{
 				if (RadialMenuEquipment->SelectedItemIndex == 0)
 				{
-					HumanCharacter->SendSwapEquipmentEvent(EEquipmentType::Primary);
+					HumanCharacter->SendSwapEquipmentEvent(EEquipmentSlot::Slot1);
 				}
 				else if (RadialMenuEquipment->SelectedItemIndex == 1)
 				{
-					HumanCharacter->SendSwapEquipmentEvent(EEquipmentType::Secondary);
+					HumanCharacter->SendSwapEquipmentEvent(EEquipmentSlot::Slot2);
 				}
 				else if (RadialMenuEquipment->SelectedItemIndex == 2)
 				{
-					HumanCharacter->SendSwapEquipmentEvent(EEquipmentType::Melee);
+					HumanCharacter->SendSwapEquipmentEvent(EEquipmentSlot::Slot3);
 				}
 				else if (RadialMenuEquipment->SelectedItemIndex == 3)
 				{
-					HumanCharacter->SendSwapEquipmentEvent(EEquipmentType::Throwing);
+					HumanCharacter->SendSwapEquipmentEvent(EEquipmentSlot::Slot4);
 				}
 			}
 			// 突变体

@@ -73,10 +73,10 @@ void URadialMenuEquipment::SetHumanRadialMenuText()
 		// 3. 将轮盘索引映射到实际的武器槽位
 		if (CombatComp)
 		{
-			if (i == 0) CurrentSlotEquipment = CombatComp->PrimaryEquipment;
-			else if (i == 1) CurrentSlotEquipment = CombatComp->SecondaryEquipment;
-			else if (i == 2) CurrentSlotEquipment = CombatComp->MeleeEquipment;
-			else if (i == 3) CurrentSlotEquipment = CombatComp->ThrowingEquipment;
+			if (i == 0) CurrentSlotEquipment = CombatComp->Slot1Equipment;
+			else if (i == 1) CurrentSlotEquipment = CombatComp->Slot2Equipment;
+			else if (i == 2) CurrentSlotEquipment = CombatComp->Slot3Equipment;
+			else if (i == 3) CurrentSlotEquipment = CombatComp->Slot4Equipment;
 		}
 
 		if (CurrentSlotEquipment)

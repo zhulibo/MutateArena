@@ -15,19 +15,19 @@ class MUTATEARENA_API UDevSetting : public UDeveloperSettings
 
 public:
 	UDevSetting();
-	
+
 	UPROPERTY(Config, EditAnywhere, Category = "Equipment")
 	bool bIsUseCustomEquipment = true;
 	UPROPERTY(Config, EditAnywhere, Category = "Equipment")
 	bool bIsAdjustEquipmentSocketTransform = false;
 	UPROPERTY(Config, EditAnywhere, Category = "Equipment")
-	EEquipmentName PrimaryEquipment = EEquipmentName::None;
+	EEquipmentName Slot1EquipmentName = EEquipmentName::None;
 	UPROPERTY(Config, EditAnywhere, Category = "Equipment")
-	EEquipmentName SecondaryEquipment = EEquipmentName::None;
+	EEquipmentName Slot2EquipmentName = EEquipmentName::None;
 	UPROPERTY(Config, EditAnywhere, Category = "Equipment")
-	EEquipmentName MeleeEquipment = EEquipmentName::None;
+	EEquipmentName Slot3EquipmentName = EEquipmentName::None;
 	UPROPERTY(Config, EditAnywhere, Category = "Equipment")
-	EEquipmentName ThrowingEquipment = EEquipmentName::None;
+	EEquipmentName Slot4EquipmentName = EEquipmentName::None;
 
 	UPROPERTY(Config, EditAnywhere, Category = "Dev")
 	bool bKeepInMap = true;
@@ -43,7 +43,7 @@ public:
 	UPROPERTY(Config, EditAnywhere, Category = "Mutation")
 	int32 TotalRound = 12;
 	UPROPERTY(Config, EditAnywhere, Category = "Mutation")
-	int32 WarmupTime = 1;
+	int32 WarmupTime = 3;
 	UPROPERTY(Config, EditAnywhere, Category = "Mutation")
 	int32 RoundTime = 180;
 	UPROPERTY(Config, EditAnywhere, Category = "Mutation")

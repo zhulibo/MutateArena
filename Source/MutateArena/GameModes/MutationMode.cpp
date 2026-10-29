@@ -1,17 +1,14 @@
 #include "MutationMode.h"
 
-#include "DataRegistrySubsystem.h"
 #include "EngineUtils.h"
 #include "TimerManager.h"
 #include "Engine/GameInstance.h"
-#include "MutateArena/MutateArena.h"
 #include "MutateArena/Abilities/AttributeSetBase.h"
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "MutateArena/Characters/MutantCharacter.h"
 #include "MutateArena/PlayerControllers/MutationController.h"
 #include "MutateArena/PlayerStates/MutationPlayerState.h"
 #include "MutateArena/GameStates/MutationGameState.h"
-#include "MutateArena/Equipments/Equipment.h"
 #include "MutateArena/Equipments/Data/DamageTypeMutantInfect.h"
 #include "MutateArena/Equipments/Data/DamageTypeMutantDamage.h"
 #include "MutateArena/Equipments/Pickups/Pickup.h"
@@ -21,7 +18,7 @@
 #include "MutateArena/System/DevSetting.h"
 #include "MutateArena/Utils/LibraryCommon.h"
 #include "GameFramework/PlayerStart.h"
-#include "MutateArena/Characters/Data/CharacterAsset.h"
+#include "MutateArena/Characters/Data/CharacterCommonAsset.h"
 #include "MutateArena/Equipments/Herbs/HerbRage.h"
 #include "MutateArena/Equipments/Herbs/HerbRepelReceived.h"
 #include "MutateArena/Equipments/Pickups/ItemSpawnPoint.h"
@@ -74,10 +71,7 @@ void AMutationMode::BeginPlay()
 			}
 		}
 
-		if (PIEPlayerCount > 0)
-		{
-			WarmupTime *= PIEPlayerCount;
-		}
+		WarmupTime += PIEPlayerCount * 0.5f;
 	}
 #endif
 
@@ -369,52 +363,32 @@ void AMutationMode::OnPostLogin(AController* Controller)
 void AMutationMode::RandomMutate()
 {
 	if (MutationGameState == nullptr) MutationGameState = GetGameState<AMutationGameState>();
-	if (MutationGameState == nullptr) return;
+	if (MutationGameState == nullptr || BaseGameState == nullptr) return;
 
 	TArray<ABasePlayerState*> PlayerStates;
 	BaseGameState->GetPlayerStates(ETeam::Team1, PlayerStates);
 
-	int32 MutateNum;
-	if (PlayerStates.Num() <= 1)
-	{
-		MutateNum = 0;
-	}
-	else if (PlayerStates.Num() >= 2 && PlayerStates.Num() <= 6)
-	{
-		MutateNum = 1;
-	}
-	else if (PlayerStates.Num() >= 7 && PlayerStates.Num() <= 14)
-	{
-		MutateNum = 2;
-	}
-	else if (PlayerStates.Num() >= 15 && PlayerStates.Num() <= 18)
-	{
-		MutateNum = 3;
-	}
-	else
-	{
-		MutateNum = 4;
-	}
+	if (PlayerStates.IsEmpty()) return;
 
-	for (int i = 0; i < MutateNum; ++i)
+	// 1/3 的概率变为突变体（向上取整）
+	int32 MutateNum = FMath::DivideAndRoundUp(PlayerStates.Num(), 3);
+
+	for (int32 i = 0; i < MutateNum; ++i)
 	{
+		if (PlayerStates.IsEmpty()) break;
+
 		int32 RandomIndex = FMath::RandRange(0, PlayerStates.Num() - 1);
 
 #if WITH_EDITOR
 		if (GetWorld()->WorldType == EWorldType::PIE)
 		{
-			if (MutateNum == 1)
+			// 第一个突变名额优先使用 DevSetting 指定的玩家索引
+			if (i == 0)
 			{
 				int32 MutateClientIndex = GetDefault<UDevSetting>()->MutateClientIndex;
 				if (MutateClientIndex >= 0)
 				{
-					RandomIndex = MutateClientIndex;
-
-					// 设置的玩家索引超出玩家数量，则使用最后一个玩家
-					if (RandomIndex > PlayerStates.Num() - 1)
-					{
-						RandomIndex = PlayerStates.Num() - 1;
-					}
+					RandomIndex = FMath::Min(MutateClientIndex, PlayerStates.Num() - 1);
 				}
 			}
 		}
@@ -439,7 +413,11 @@ void AMutationMode::RandomMutate()
 				MutationPlayerState->AddRage(MutationPlayerState->RageLevel3);
 			}
 		}
+
+		// 从待选池中移除已被抽中的玩家，防止后续循环重复抽中
+		PlayerStates.RemoveAtSwap(RandomIndex);
 	}
+
 	// 突变后开始监视对局状态
 	bWatchRoundState = true;
 

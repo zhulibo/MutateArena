@@ -4,7 +4,7 @@
 #include "MutateArena/Characters/AnimInstMutant.h"
 #include "AnimInstTank.generated.h"
 
-UCLASS()
+UCLASS(Abstract)
 class MUTATEARENA_API UAnimInstTank : public UAnimInstMutant
 {
 	GENERATED_BODY()

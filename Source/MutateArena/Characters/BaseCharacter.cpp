@@ -25,7 +25,7 @@
 #include "Components/MAMovementComponent.h"
 #include "Components/OverheadWidget.h"
 #include "Components/WidgetComponent.h"
-#include "Data/CharacterAsset.h"
+#include "Data/CharacterCommonAsset.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Data/InputAsset.h"
 #include "Components/SceneCaptureComponent2D.h"
@@ -352,25 +352,31 @@ void ABaseCharacter::PollInit_PlayerStateTeam()
 
 void ABaseCharacter::PollInit_ControllerAndPSAndTeam()
 {
-	if (IsLocallyControlled() && !bIsControllerAndPSAndTeamReady)
+	if (!IsLocallyControlled() || bIsControllerAndPSAndTeamReady)
 	{
-		if (BaseController == nullptr) BaseController = Cast<ABaseController>(Controller);
-		if (BaseController)
+		return;
+	}
+
+	if (!BaseController)
+	{
+		BaseController = Cast<ABaseController>(Controller);
+	}
+
+	if (BaseController)
+	{
+		if (!bIsLocallyControllerReady)
 		{
-			if (!bIsLocallyControllerReady)
-			{
-				bIsLocallyControllerReady = true;
-				OnLocallyControllerReady();
-			}
+			bIsLocallyControllerReady = true;
+			OnLocallyControllerReady();
+		}
 
-			// InitHUD依赖Controller和Controller中的PlayerState和Controller中的PlayerState中的Team
-			ABasePlayerState* PS = Cast<ABasePlayerState>(BaseController->PlayerState);
-			if (PS && PS->Team != ETeam::NoTeam)
-			{
-				bIsControllerAndPSAndTeamReady = true;
+		// InitHUD 依赖 Controller 和 Controller 中的 PlayerState 以及 Team
+		ABasePlayerState* PS = BaseController->GetPlayerState<ABasePlayerState>();
+		if (PS && PS->Team != ETeam::NoTeam)
+		{
+			bIsControllerAndPSAndTeamReady = true;
 
-				BaseController->InitHUD();
-			}
+			BaseController->InitHUD();
 		}
 	}
 }
@@ -586,9 +592,9 @@ void ABaseCharacter::OnEnhancedVisionTagChanged(FGameplayTag GameplayTag, int Ne
 	if (!IsLocallyControlled()) return;
 
 	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-	if (AssetSubsystem && AssetSubsystem->CharacterAsset && AssetSubsystem->CharacterAsset->MPC_EnhancedVision)
+	if (AssetSubsystem && AssetSubsystem->CharacterCommonAsset && AssetSubsystem->CharacterCommonAsset->MPC_EnhancedVision)
 	{
-		if (UMaterialParameterCollectionInstance* MPCI = GetWorld()->GetParameterCollectionInstance(AssetSubsystem->CharacterAsset->MPC_EnhancedVision))
+		if (UMaterialParameterCollectionInstance* MPCI = GetWorld()->GetParameterCollectionInstance(AssetSubsystem->CharacterCommonAsset->MPC_EnhancedVision))
 		{
 			MPCI->SetScalarParameterValue(TEXT("OpacityMul"), NewCount > 0 ? 0.9f : 1.0f);
 		}
@@ -947,25 +953,25 @@ void ABaseCharacter::PlayFootSound()
 
 	GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECollisionChannel::ECC_Visibility, Params);
 	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-	if (HitResult.bBlockingHit && AssetSubsystem && AssetSubsystem->CharacterAsset)
+	if (HitResult.bBlockingHit && AssetSubsystem && AssetSubsystem->CharacterCommonAsset)
 	{
 		UMetaSoundSource* Sound = nullptr;
 		switch (UGameplayStatics::GetSurfaceType(HitResult))
 		{
 		case EPhysicalSurface::SurfaceType1:
-			Sound = AssetSubsystem->CharacterAsset->FootSound_Concrete;
+			Sound = AssetSubsystem->CharacterCommonAsset->FootSound_Concrete;
 			break;
 		case EPhysicalSurface::SurfaceType2:
-			Sound = AssetSubsystem->CharacterAsset->FootSound_Dirt;
+			Sound = AssetSubsystem->CharacterCommonAsset->FootSound_Dirt;
 			break;
 		case EPhysicalSurface::SurfaceType3:
-			Sound = AssetSubsystem->CharacterAsset->FootSound_Metal;
+			Sound = AssetSubsystem->CharacterCommonAsset->FootSound_Metal;
 			break;
 		case EPhysicalSurface::SurfaceType4:
-			Sound = AssetSubsystem->CharacterAsset->FootSound_Wood;
+			Sound = AssetSubsystem->CharacterCommonAsset->FootSound_Wood;
 			break;
 		default:
-			Sound = AssetSubsystem->CharacterAsset->FootSound_Concrete;
+			Sound = AssetSubsystem->CharacterCommonAsset->FootSound_Concrete;
 		}
 
 		float VolumeMultiplier;
@@ -1036,7 +1042,7 @@ void ABaseCharacter::PlayFootSound()
 			{
 				float LifeSpan = 8.0f;
 				UDecalComponent* FootprintDecal = UGameplayStatics::SpawnDecalAttached(
-					AssetSubsystem->CharacterAsset->MI_Footprint,
+					AssetSubsystem->CharacterCommonAsset->MI_Footprint,
 					DecalSize,
 					HitComponent, // 附着到的目标组件
 					HitResult.BoneName, // 附着到特定骨骼
@@ -1068,22 +1074,22 @@ void ABaseCharacter::PlayFootLandSound()
 
 	GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECollisionChannel::ECC_Visibility, Params);
 	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-	if (HitResult.bBlockingHit && AssetSubsystem && AssetSubsystem->CharacterAsset)
+	if (HitResult.bBlockingHit && AssetSubsystem && AssetSubsystem->CharacterCommonAsset)
 	{
-		UMetaSoundSource* Sound = AssetSubsystem->CharacterAsset->FootLandSound_Concrete;
+		UMetaSoundSource* Sound = AssetSubsystem->CharacterCommonAsset->FootLandSound_Concrete;
 		switch (UGameplayStatics::GetSurfaceType(HitResult))
 		{
 		case EPhysicalSurface::SurfaceType1:
-			Sound = AssetSubsystem->CharacterAsset->FootLandSound_Concrete;
+			Sound = AssetSubsystem->CharacterCommonAsset->FootLandSound_Concrete;
 			break;
 		case EPhysicalSurface::SurfaceType2:
-			Sound = AssetSubsystem->CharacterAsset->FootLandSound_Dirt;
+			Sound = AssetSubsystem->CharacterCommonAsset->FootLandSound_Dirt;
 			break;
 		case EPhysicalSurface::SurfaceType3:
-			Sound = AssetSubsystem->CharacterAsset->FootLandSound_Metal;
+			Sound = AssetSubsystem->CharacterCommonAsset->FootLandSound_Metal;
 			break;
 		case EPhysicalSurface::SurfaceType4:
-			Sound = AssetSubsystem->CharacterAsset->FootLandSound_Wood;
+			Sound = AssetSubsystem->CharacterCommonAsset->FootLandSound_Wood;
 			break;
 		}
 
@@ -1109,9 +1115,9 @@ void ABaseCharacter::GetFootstepAudioSettings(float& OutVolumeMultiplier, USound
 	OutVolumeMultiplier = 1.0f;
 	OutAttenuation = nullptr;
 
-	if (AssetSubsystem && AssetSubsystem->CharacterAsset)
+	if (AssetSubsystem && AssetSubsystem->CharacterCommonAsset)
 	{
-		OutAttenuation = AssetSubsystem->CharacterAsset->Atten_Footstep_Normal;
+		OutAttenuation = AssetSubsystem->CharacterCommonAsset->Atten_Footstep_Normal;
 	}
 
 	if (APlayerController* LocalPC = UGameplayStatics::GetPlayerController(GetWorld(), 0))
@@ -1132,9 +1138,9 @@ void ABaseCharacter::GetFootstepAudioSettings(float& OutVolumeMultiplier, USound
 						{
 							OutVolumeMultiplier = 1.5f;
 
-							if (AssetSubsystem && AssetSubsystem->CharacterAsset)
+							if (AssetSubsystem && AssetSubsystem->CharacterCommonAsset)
 							{
-								OutAttenuation = AssetSubsystem->CharacterAsset->Atten_Footstep_Enhanced;
+								OutAttenuation = AssetSubsystem->CharacterCommonAsset->Atten_Footstep_Enhanced;
 							}
 						}
 					}
@@ -1276,9 +1282,9 @@ void ABaseCharacter::ApplyHurtEffect(const FOnAttributeChangeData& Data)
 	if (!MID_Hurt)
 	{
 		UAssetSubsystem* Subsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-		if (Subsystem && Subsystem->CharacterAsset && Subsystem->CharacterAsset->MI_Hurt)
+		if (Subsystem && Subsystem->CharacterCommonAsset && Subsystem->CharacterCommonAsset->MI_Hurt)
 		{
-			MID_Hurt = UMaterialInstanceDynamic::Create(Subsystem->CharacterAsset->MI_Hurt, this);
+			MID_Hurt = UMaterialInstanceDynamic::Create(Subsystem->CharacterCommonAsset->MI_Hurt, this);
 			MID_Hurt->SetVectorParameterValue(FName("BloodColor"), BloodColor);
 		}
 	}
@@ -1357,9 +1363,9 @@ void ABaseCharacter::ApplyFlashbangEffect(float InRadius, float InMaxFlashTime, 
 	if (!MID_Flashbang)
 	{
 		UAssetSubsystem* Subsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-		if (Subsystem && Subsystem->CharacterAsset && Subsystem->CharacterAsset->MI_Flashbang)
+		if (Subsystem && Subsystem->CharacterCommonAsset && Subsystem->CharacterCommonAsset->MI_Flashbang)
 		{
-			MID_Flashbang = UMaterialInstanceDynamic::Create(Subsystem->CharacterAsset->MI_Flashbang, this);
+			MID_Flashbang = UMaterialInstanceDynamic::Create(Subsystem->CharacterCommonAsset->MI_Flashbang, this);
 		}
 	}
 

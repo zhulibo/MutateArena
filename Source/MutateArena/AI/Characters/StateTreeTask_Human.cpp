@@ -67,7 +67,7 @@ EStateTreeRunStatus FStateTreeTask_HumanChase::Tick(FStateTreeExecutionContext& 
 	float DistSq = FVector::DistSquared(MyLoc, TargetLoc);
 	
 	float DynamicAcceptanceRadius = InstanceData.AcceptanceRadius; 
-	if (MyHumanCharacter->CombatComp && MyHumanCharacter->CombatComp->CurEquipmentType == EEquipmentType::Melee)
+	if (MyHumanCharacter->CombatComp && MyHumanCharacter->CombatComp->CurEquipmentSlot == EEquipmentSlot::Slot3)
 	{
 		DynamicAcceptanceRadius = InstanceData.AcceptanceRadius_Melee;
 	}

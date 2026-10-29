@@ -21,10 +21,10 @@ void APickupAmmo::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AAct
 	AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(OtherActor);
 	if (HumanCharacter && HumanCharacter->CombatComp)
 	{
-		if (AWeapon* PrimaryEquipment = HumanCharacter->CombatComp->PrimaryEquipment)
+		if (AWeapon* Slot1Equipment = HumanCharacter->CombatComp->Slot1Equipment)
 		{
-			PrimaryEquipment->SetAmmo(PrimaryEquipment->FragWeapon->MagCapacity);
-			PrimaryEquipment->SetCarriedAmmo(PrimaryEquipment->FragWeapon->MaxCarriedAmmo);
+			Slot1Equipment->SetAmmo(Slot1Equipment->FragWeapon->MagCapacity);
+			Slot1Equipment->SetCarriedAmmo(Slot1Equipment->FragWeapon->MaxCarriedAmmo);
 			
 			Destroy();
 		}

@@ -4,7 +4,7 @@
 #include "MutateArena/Characters/AnimInstMutant.h"
 #include "AnimInstCutter.generated.h"
 
-UCLASS()
+UCLASS(Abstract)
 class MUTATEARENA_API UAnimInstCutter : public UAnimInstMutant
 {
 	GENERATED_BODY()

@@ -39,11 +39,11 @@ void UAnimInstHuman1P::NativeUpdateAnimation(float DeltaSeconds)
 		WalkPlayRate = HumanChar->GetMaxWalkSpeed() / HumanChar->DefaultMaxWalkSpeed;
 		if (CombatComp->IsAiming())
 		{
-			WalkPlayRate *= CurEquipment->AimingWalkSpeedMul;
+			WalkPlayRate *= CurEquipment->EquipmentAsset->GetAimingWalkSpeedMul();
 		}
 		else
 		{
-			WalkPlayRate *= CurEquipment->WalkSpeedMul;
+			WalkPlayRate *= CurEquipment->EquipmentAsset->GetWalkSpeedMul();
 		}
 	}
 	else

@@ -39,11 +39,6 @@ protected:
 	void OnLanguageChanged(FName SelectedItem, ESelectInfo::Type SelectionType);
 
 	UPROPERTY(meta = (BindWidget))
-	UCommonComboBox2* HideSkinsComboBox;
-	UFUNCTION()
-	void OnHideSkinsChanged(FName SelectedItem, ESelectInfo::Type SelectionType);
-
-	UPROPERTY(meta = (BindWidget))
 	UCommonComboBox2* ObfuscateNameComboBox;
 	UFUNCTION()
 	void OnObfuscateNameChanged(FName SelectedItem, ESelectInfo::Type SelectionType);

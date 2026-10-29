@@ -5,6 +5,7 @@
 #include "GameFramework/Actor.h"
 #include "Equipment.generated.h"
 
+class UAnimInstEquipment;
 class UEquipmentSkinAsset;
 class UEquipmentAsset;
 struct FGameplayAbilitySpecHandle;
@@ -32,26 +33,16 @@ public:
 	USkeletalMeshComponent* EquipmentMesh1P;
 	UPROPERTY(VisibleAnywhere)
 	USphereComponent* OverlapSphere;
-
-	UPROPERTY(EditAnywhere)
-	EEquipmentName EquipmentName = EEquipmentName::None;
-	UPROPERTY(Transient)
-	TObjectPtr<const UEquipmentAsset> BaseEquipmentAsset = nullptr;
-	UPROPERTY(Transient)
-	TObjectPtr<const UEquipmentSkinAsset> SkinEquipmentAsset = nullptr;
 	
-	UPROPERTY(EditAnywhere)
-	UAnimMontage* SwapInMontage_C;
-	UPROPERTY(EditAnywhere)
-	UAnimMontage* SwapInMontage_E;
+	// 值由 AHumanCharacter::ServerSpawnEquipments_Implementation 创建时传入
+	UPROPERTY(Replicated)
+	EEquipmentName EquipmentName = EEquipmentName::None;
 
-	UPROPERTY(EditAnywhere)
-	UAnimMontage* SwapOutMontage_C;
-	UPROPERTY(EditAnywhere)
-	UAnimMontage* SwapOutMontage_E;
+	UPROPERTY(Transient)
+	TObjectPtr<const UEquipmentAsset> EquipmentAsset;
 
-	class UAnimInstEquipment* GetEquipmentAnimInst();
-	class UAnimInstEquipment1P* GetEquipmentAnimInst1P();
+	UAnimInstEquipment* GetEquipmentAnimInst();
+	UAnimInstEquipment* GetEquipmentAnimInst1P();
 
 	void SetHiddenMesh(bool TempbIsHidden);
 
@@ -70,7 +61,7 @@ protected:
 	UPROPERTY()
 	UAnimInstEquipment* AnimInstEquipment;
 	UPROPERTY()
-	UAnimInstEquipment1P* AnimInstEquipment1P;
+	UAnimInstEquipment* AnimInstEquipment1P;
 	UPROPERTY()
 	class UAssetSubsystem* AssetSubsystem;
 	UPROPERTY()
@@ -81,21 +72,10 @@ protected:
 	                                 UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 public:
-	UPROPERTY()
-	EEquipmentName EquipmentParentName = EEquipmentName::None;
-	UPROPERTY()
-	EEquipmentCate EquipmentCate = EEquipmentCate::None;
-	UPROPERTY()
-	EEquipmentType EquipmentType = EEquipmentType::None;
-
 	UPROPERTY(ReplicatedUsing = OnRep_EquipmentState)
 	EEquipmentState EquipmentState;
 	UFUNCTION()
 	virtual void OnRep_EquipmentState(EEquipmentState OldState);
-	UPROPERTY()
-	float WalkSpeedMul = 1.f;
-	UPROPERTY()
-	float AimingWalkSpeedMul = 1.f;
 
 	virtual void OnGiven(class AHumanCharacter* HumanChar);
 	void HandleDrop();
@@ -105,7 +85,12 @@ protected:
 	UPROPERTY(replicated)
 	ETeam OwnerTeam;
 	void SetOwnerTeam();
+	
+public:
+	const UEquipmentAsset* EnsureEquipmentAsset();
 
+protected:
+	FTimerHandle AreaSphereTimerHandle;
 	void SetAreaSphereCollision();
 
 	FTimerHandle DestroyEquipmentTimerHandle;

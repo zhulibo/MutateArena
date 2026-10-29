@@ -59,7 +59,7 @@ void AWeaponShotgun::Fire(const FVector& HitTarget, float RecoilVert, float Reco
 
 		if (Projectile)
 		{
-			Projectile->EquipmentParentName = EquipmentParentName;
+			Projectile->EquipmentParentName = EquipmentAsset->GetEquipmentParentName();
 			Projectile->InitialPenetrationPower = FragWeapon->PenetrationPower;
 
 			// 设置队伍碰撞免伤通道

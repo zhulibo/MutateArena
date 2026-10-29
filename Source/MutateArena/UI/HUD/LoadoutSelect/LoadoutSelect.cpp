@@ -3,10 +3,8 @@
 #include "LoadoutSelectButton.h"
 #include "CommonHierarchicalScrollBox.h"
 #include "CommonTextBlock.h"
-#include "DataRegistrySubsystem.h"
 #include "Components/ScrollBoxSlot.h"
 #include "Engine/GameInstance.h"
-#include "MutateArena/MutateArena.h"
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "MutateArena/Equipments/Data/EquipmentAsset.h"
 #include "MutateArena/System/UISubsystem.h"
@@ -35,28 +33,28 @@ void ULoadoutSelect::NativeOnInitialized()
 			{
 				const FLoadout& CurrentLoadout = StorageSubsystem->CacheLoadout->Loadouts[i];
 
-				// Primary
-				if (UEquipmentAsset* Asset = AssetSubsystem->GetEquipmentAssetByName(CurrentLoadout.Primary))
+				// Slot1
+				if (UEquipmentAsset* Asset = AssetSubsystem->GetEquipmentAssetByName(CurrentLoadout.Slot1EquipmentName))
 				{
-					LoadoutSelectButton->PrimaryEquipmentText->SetText(Asset->ShowName);
+					LoadoutSelectButton->Slot1EquipmentText->SetText(Asset->ShowName);
 				}
 
-				// Secondary
-				if (UEquipmentAsset* Asset = AssetSubsystem->GetEquipmentAssetByName(CurrentLoadout.Secondary))
+				// Slot2
+				if (UEquipmentAsset* Asset = AssetSubsystem->GetEquipmentAssetByName(CurrentLoadout.Slot2EquipmentName))
 				{
-					LoadoutSelectButton->SecondaryEquipmentText->SetText(Asset->ShowName);
+					LoadoutSelectButton->Slot2EquipmentText->SetText(Asset->ShowName);
 				}
 
 				// Melee
-				if (UEquipmentAsset* Asset = AssetSubsystem->GetEquipmentAssetByName(CurrentLoadout.Melee))
+				if (UEquipmentAsset* Asset = AssetSubsystem->GetEquipmentAssetByName(CurrentLoadout.Slot3EquipmentName))
 				{
-					LoadoutSelectButton->MeleeEquipmentText->SetText(Asset->ShowName);
+					LoadoutSelectButton->Slot3EquipmentText->SetText(Asset->ShowName);
 				}
 
 				// Throwing
-				if (UEquipmentAsset* Asset = AssetSubsystem->GetEquipmentAssetByName(CurrentLoadout.Throwing))
+				if (UEquipmentAsset* Asset = AssetSubsystem->GetEquipmentAssetByName(CurrentLoadout.Slot4EquipmentName))
 				{
-					LoadoutSelectButton->ThrowingEquipmentText->SetText(Asset->ShowName);
+					LoadoutSelectButton->Slot4EquipmentText->SetText(Asset->ShowName);
 				}
 
 				LoadoutSelectButton->OnClicked().AddUObject(this, &ThisClass::OnLoadoutSelectButtonClicked, i);

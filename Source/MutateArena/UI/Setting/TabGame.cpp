@@ -27,8 +27,6 @@ void UTabGame::NativeOnInitialized()
 
 	LanguageComboBox->OnGenerateItemWidget.BindDynamic(this, &ThisClass::GenerateComboBoxWidget);
 	LanguageComboBox->OnGenerateContentWidget.BindDynamic(this, &ThisClass::GenerateComboBoxWidget);
-	HideSkinsComboBox->OnGenerateItemWidget.BindDynamic(this, &ThisClass::GenerateComboBoxWidget);
-	HideSkinsComboBox->OnGenerateContentWidget.BindDynamic(this, &ThisClass::GenerateComboBoxWidget);
 	ObfuscateNameComboBox->OnGenerateItemWidget.BindDynamic(this, &ThisClass::GenerateComboBoxWidget);
 	ObfuscateNameComboBox->OnGenerateContentWidget.BindDynamic(this, &ThisClass::GenerateComboBoxWidget);
 	ObfuscateTextChatComboBox->OnGenerateItemWidget.BindDynamic(this, &ThisClass::GenerateComboBoxWidget);
@@ -36,8 +34,6 @@ void UTabGame::NativeOnInitialized()
 
 	LanguageComboBox->AddOption(Settings::EN);
 	LanguageComboBox->AddOption(Settings::ZH);
-	HideSkinsComboBox->AddOption(Settings::On);
-	HideSkinsComboBox->AddOption(Settings::Off);
 	ObfuscateNameComboBox->AddOption(Settings::On);
 	ObfuscateNameComboBox->AddOption(Settings::Off);
 	ObfuscateTextChatComboBox->AddOption(Settings::On);
@@ -46,7 +42,6 @@ void UTabGame::NativeOnInitialized()
 	SetUISavedValue();
 	
 	LanguageComboBox->OnSelectionChanged.AddUniqueDynamic(this, &ThisClass::OnLanguageChanged);
-	HideSkinsComboBox->OnSelectionChanged.AddUniqueDynamic(this, &ThisClass::OnHideSkinsChanged);
 	ObfuscateNameComboBox->OnSelectionChanged.AddUniqueDynamic(this, &ThisClass::OnObfuscateNameChanged);
 	ObfuscateTextChatComboBox->OnSelectionChanged.AddUniqueDynamic(this, &ThisClass::OnObfuscateTextChatChanged);
 
@@ -119,7 +114,6 @@ void UTabGame::SetUISavedValue()
 		}
 		LanguageComboBox->SetSelectedOption(Language);
 		
-		HideSkinsComboBox->SetSelectedOption(StorageSubsystem->CacheSetting->bHideSkins ? Settings::On : Settings::Off);
 		ObfuscateNameComboBox->SetSelectedOption(StorageSubsystem->CacheSetting->bObfuscateName ? Settings::On : Settings::Off);
 		ObfuscateTextChatComboBox->SetSelectedOption(StorageSubsystem->CacheSetting->bObfuscateTextChat ? Settings::On : Settings::Off);
 	}
@@ -133,16 +127,6 @@ void UTabGame::OnLanguageChanged(FName SelectedItem, ESelectInfo::Type Selection
 	if (StorageSubsystem && StorageSubsystem->CacheSetting)
 	{
 		StorageSubsystem->CacheSetting->Language = SelectedItem;
-		StorageSubsystem->SaveSetting();
-	}
-}
-
-void UTabGame::OnHideSkinsChanged(FName SelectedItem, ESelectInfo::Type SelectionType)
-{
-	if (StorageSubsystem == nullptr) StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
-	if (StorageSubsystem && StorageSubsystem->CacheSetting)
-	{
-		StorageSubsystem->CacheSetting->bHideSkins = SelectedItem == Settings::On;
 		StorageSubsystem->SaveSetting();
 	}
 }
@@ -181,12 +165,10 @@ void UTabGame::SetDefault()
 				Language = Settings::EN;
 			}
 			LanguageComboBox->SetSelectedOption(Language);
-			HideSkinsComboBox->SetSelectedOption(DefaultConfig->bHideSkins ? Settings::On : Settings::Off);
 			ObfuscateNameComboBox->SetSelectedOption(DefaultConfig->bObfuscateName ? Settings::On : Settings::Off);
 			ObfuscateTextChatComboBox->SetSelectedOption(DefaultConfig->bObfuscateTextChat ? Settings::On : Settings::Off);
 
 			StorageSubsystem->CacheSetting->Language = DefaultConfig->Language;
-			StorageSubsystem->CacheSetting->bHideSkins = DefaultConfig->bHideSkins;
 			StorageSubsystem->CacheSetting->bObfuscateName = DefaultConfig->bObfuscateName;
 			StorageSubsystem->CacheSetting->bObfuscateTextChat = DefaultConfig->bObfuscateTextChat;
 			StorageSubsystem->SaveSetting();

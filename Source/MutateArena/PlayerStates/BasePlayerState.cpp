@@ -11,7 +11,7 @@
 #include "MutateArena/Abilities/MAAbilitySystemComponent.h"
 #include "MutateArena/Abilities/AttributeSetBase.h"
 #include "MutateArena/Assets/Data/CommonAsset.h"
-#include "MutateArena/Characters/Data/CharacterAsset.h"
+#include "MutateArena/Characters/Data/CharacterCommonAsset.h"
 #include "MutateArena/Characters/Data/DNAAsset2.h"
 #include "MutateArena/GameStates/BaseGameState.h"
 #include "MutateArena/PlayerControllers/BaseController.h"

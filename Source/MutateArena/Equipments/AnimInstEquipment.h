@@ -4,7 +4,7 @@
 #include "Animation/AnimInstance.h"
 #include "AnimInstEquipment.generated.h"
 
-UCLASS()
+UCLASS(Abstract)
 class MUTATEARENA_API UAnimInstEquipment : public UAnimInstance
 {
 	GENERATED_BODY()
@@ -12,9 +12,9 @@ class MUTATEARENA_API UAnimInstEquipment : public UAnimInstance
 public:
 	UAnimInstEquipment();
 
-protected:
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
-
+	
+protected:
 	UPROPERTY()
 	class AEquipment* Equipment;
 

@@ -33,20 +33,20 @@ UCombatComponent::UCombatComponent()
 	
 	SetIsReplicatedByDefault(true);
 
-	// 模拟正在使用副武器，以便开局切换到主武器后，LastEquipmentType默认为副武器
-	CurEquipmentType = EEquipmentType::Secondary;
+	// 模拟正在使用副武器，以便开局切换到主武器后，LastEquipmentSlot默认为副武器
+	CurEquipmentSlot = EEquipmentSlot::Slot2;
 }
 
 void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	
-	DOREPLIFETIME(UCombatComponent, PrimaryEquipment);
-	DOREPLIFETIME(UCombatComponent, SecondaryEquipment);
-	DOREPLIFETIME(UCombatComponent, MeleeEquipment);
-	DOREPLIFETIME(UCombatComponent, ThrowingEquipment);
-	DOREPLIFETIME(UCombatComponent, CurEquipmentType);
-	DOREPLIFETIME(UCombatComponent, LastEquipmentType);
+	DOREPLIFETIME(UCombatComponent, Slot1Equipment);
+	DOREPLIFETIME(UCombatComponent, Slot2Equipment);
+	DOREPLIFETIME(UCombatComponent, Slot3Equipment);
+	DOREPLIFETIME(UCombatComponent, Slot4Equipment);
+	DOREPLIFETIME(UCombatComponent, CurEquipmentSlot);
+	DOREPLIFETIME(UCombatComponent, LastEquipmentSlot);
 }
 
 void UCombatComponent::BeginPlay()
@@ -76,22 +76,22 @@ void UCombatComponent::TickComponent(float DeltaSeconds, ELevelTick TickType, FA
 
 AEquipment* UCombatComponent::GetCurEquipment()
 {
-	return GetEquipmentByType(CurEquipmentType);
+	return GetEquipmentByType(CurEquipmentSlot);
 }
 
 AEquipment* UCombatComponent::GetLastEquipment()
 {
-	return GetEquipmentByType(LastEquipmentType);
+	return GetEquipmentByType(LastEquipmentSlot);
 }
 
 AWeapon* UCombatComponent::GetCurWeapon()
 {
-	switch (CurEquipmentType)
+	switch (CurEquipmentSlot)
 	{
-	case EEquipmentType::Primary:
-		return PrimaryEquipment;
-	case EEquipmentType::Secondary:
-		return SecondaryEquipment;
+	case EEquipmentSlot::Slot1:
+		return Slot1Equipment;
+	case EEquipmentSlot::Slot2:
+		return Slot2Equipment;
 	default:
 		return nullptr;
 	}
@@ -99,192 +99,145 @@ AWeapon* UCombatComponent::GetCurWeapon()
 
 class AMelee* UCombatComponent::GetCurMelee()
 {
-	switch (CurEquipmentType)
+	switch (CurEquipmentSlot)
 	{
-	case EEquipmentType::Melee:
-		return MeleeEquipment;
+	case EEquipmentSlot::Slot3:
+		return Slot3Equipment;
 	default:
 		return nullptr;
 	}
 }
 
-AEquipment* UCombatComponent::GetEquipmentByType(EEquipmentType EquipmentType)
+AEquipment* UCombatComponent::GetEquipmentByType(EEquipmentSlot EquipmentSlot)
 {
-	switch (EquipmentType)
+	switch (EquipmentSlot)
 	{
-	case EEquipmentType::Primary:
-		return PrimaryEquipment;
-	case EEquipmentType::Secondary:
-		return SecondaryEquipment;
-	case EEquipmentType::Melee:
-		return MeleeEquipment;
-	case EEquipmentType::Throwing:
-		return ThrowingEquipment;
+	case EEquipmentSlot::Slot1:
+		return Slot1Equipment;
+	case EEquipmentSlot::Slot2:
+		return Slot2Equipment;
+	case EEquipmentSlot::Slot3:
+		return Slot3Equipment;
+	case EEquipmentSlot::Slot4:
+		return Slot4Equipment;
 	default:
 		return nullptr;
 	}
 }
 
-bool UCombatComponent::OwnEquipment(EEquipmentType EquipmentType)
+bool UCombatComponent::OwnEquipment(EEquipmentSlot EquipmentSlot)
 {
-	switch (EquipmentType)
+	switch (EquipmentSlot)
 	{
-	case EEquipmentType::Primary:
-		return PrimaryEquipment != nullptr;
-	case EEquipmentType::Secondary:
-		return SecondaryEquipment != nullptr;
-	case EEquipmentType::Melee:
-		return MeleeEquipment != nullptr;
-	case EEquipmentType::Throwing:
-		return ThrowingEquipment != nullptr;
+	case EEquipmentSlot::Slot1:
+		return Slot1Equipment != nullptr;
+	case EEquipmentSlot::Slot2:
+		return Slot2Equipment != nullptr;
+	case EEquipmentSlot::Slot3:
+		return Slot3Equipment != nullptr;
+	case EEquipmentSlot::Slot4:
+		return Slot4Equipment != nullptr;
 	default:
 		return false;
 	}
 }
 
-void UCombatComponent::OnRep_PrimaryEquipment()
+void UCombatComponent::OnRep_Slot1Equipment()
 {
-	GiveEquipment(PrimaryEquipment, CurEquipmentType == EEquipmentType::Primary);
+	GiveEquipment(Slot1Equipment);
 }
 
-void UCombatComponent::OnRep_SecondaryEquipment()
+void UCombatComponent::OnRep_Slot2Equipment()
 {
-	GiveEquipment(SecondaryEquipment, CurEquipmentType == EEquipmentType::Secondary);
+	GiveEquipment(Slot2Equipment);
 }
 
-void UCombatComponent::OnRep_MeleeEquipment()
+void UCombatComponent::OnRep_Slot3Equipment()
 {
-	GiveEquipment(MeleeEquipment, CurEquipmentType == EEquipmentType::Melee);
+	GiveEquipment(Slot3Equipment);
 }
 
-void UCombatComponent::OnRep_ThrowingEquipment()
+void UCombatComponent::OnRep_Slot4Equipment()
 {
-	GiveEquipment(ThrowingEquipment, CurEquipmentType == EEquipmentType::Throwing);
+	GiveEquipment(Slot4Equipment);
 }
 
-void UCombatComponent::OnRep_CurEquipmentType(EEquipmentType OldEquipmentType)
+void UCombatComponent::OnRep_CurEquipmentSlot(EEquipmentSlot OldEquipmentSlot)
 {
-	EEquipmentType TargetType = CurEquipmentType; 
+	EEquipmentSlot TargetType = CurEquipmentSlot; 
 	
-	CurEquipmentType = TargetType;
+	CurEquipmentSlot = TargetType;
 
 	if (AEquipment* TargetEquipment = GetEquipmentByType(TargetType))
 	{
 		// 如果装备实体已经存在，为了让 InstantSwap 的内部检查通过，暂时设回旧值并调用
-		CurEquipmentType = OldEquipmentType;
+		CurEquipmentSlot = OldEquipmentSlot;
 		InstantSwap(TargetType);
 	}
 }
 
-void UCombatComponent::GiveEquipment(AEquipment* Equipment, bool bIsCurrent)
+void UCombatComponent::GiveEquipment(AEquipment* Equipment)
 {
+	if (HumanChar == nullptr) HumanChar = Cast<AHumanCharacter>(GetOwner());
 	if (Equipment == nullptr || HumanChar == nullptr) return;
 
-	// 移除旧装备的GA
-	if (bIsCurrent && HumanChar->HasAuthority() && GetCurEquipment())
+	const UEquipmentAsset* EquipAsset = Equipment->EnsureEquipmentAsset();
+	if (EquipAsset == nullptr) return;
+
+	const EEquipmentSlot EquipSlot = EquipAsset->GetEquipmentSlot();
+	const bool bIsCurrent = (CurEquipmentSlot == EquipSlot);
+
+	// 如果替换的是当前手持槽位，且之前该槽位已有旧武器，先移除旧武器的 GA
+	AEquipment* OldEquipment = GetEquipmentByType(EquipSlot);
+	if (bIsCurrent && HumanChar->HasAuthority() && OldEquipment && OldEquipment != Equipment)
 	{
-		GetCurEquipment()->ClearAbilities(HumanChar->GetAbilitySystemComponent());
+		OldEquipment->ClearAbilities(HumanChar->GetAbilitySystemComponent());
 	}
 
-	AssignEquipment(Equipment);
-	
+	// 1. 槽位指针赋值
+	switch (EquipSlot)
+	{
+	case EEquipmentSlot::Slot1:
+		if (AWeapon* TempEquipment = Cast<AWeapon>(Equipment)) Slot1Equipment = TempEquipment;
+		break;
+	case EEquipmentSlot::Slot2:
+		if (AWeapon* TempEquipment = Cast<AWeapon>(Equipment)) Slot2Equipment = TempEquipment;
+		break;
+	case EEquipmentSlot::Slot3:
+		if (AMelee* TempEquipment = Cast<AMelee>(Equipment)) Slot3Equipment = TempEquipment;
+		break;
+	case EEquipmentSlot::Slot4:
+		if (AThrowing* TempEquipment = Cast<AThrowing>(Equipment)) Slot4Equipment = TempEquipment;
+		break;
+	default:
+		break;
+	}
+
+	// 2. 转换装备自身为被持有状态（关闭物理、设置Owner）
 	Equipment->OnGiven(HumanChar);
 
+	// 3. 根据是否为当前激活槽位，决定挂载到手部还是收起隐藏
 	if (bIsCurrent)
 	{
 		AttachToHand(Equipment, Sockets::SuffixR);
+
+		if (HumanChar->HasAuthority())
+		{
+			Equipment->GiveAbilities(HumanChar->GetAbilitySystemComponent());
+		}
+
+		// 刷新弹药UI与角色移速（解决跨帧OnRep或原地换枪后UI与移速不刷新的问题）
+		RefreshCurEquipmentState();
 	}
 	else
 	{
 		HolsterEquipment(Equipment);
 	}
-
-	// 添加新装备的GA
-	if (bIsCurrent && HumanChar->HasAuthority())
-	{
-		Equipment->GiveAbilities(HumanChar->GetAbilitySystemComponent());
-	}
-}
-
-void UCombatComponent::AssignEquipment(AEquipment* Equipment)
-{
-	if (Equipment == nullptr) return;
-
-	switch (Equipment->EquipmentType)
-	{
-	case EEquipmentType::Primary:
-		if (AWeapon* TempEquipment = Cast<AWeapon>(Equipment)) PrimaryEquipment = TempEquipment;
-		break;
-	case EEquipmentType::Secondary:
-		if (AWeapon* TempEquipment = Cast<AWeapon>(Equipment)) SecondaryEquipment = TempEquipment;
-		break;
-	case EEquipmentType::Melee:
-		if (AMelee* TempEquipment = Cast<AMelee>(Equipment)) MeleeEquipment = TempEquipment;
-		break;
-	case EEquipmentType::Throwing:
-		if (AThrowing* TempEquipment = Cast<AThrowing>(Equipment)) ThrowingEquipment = TempEquipment;
-		break;
-	}
-}
-
-void UCombatComponent::ClientPlayEquipSound_Implementation()
-{
-	if (HumanChar)
-	{
-		if (AssetSubsystem == nullptr) AssetSubsystem = HumanChar->GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-		if (AssetSubsystem && AssetSubsystem->EquipmentCommonAsset)
-		{
-			UGameplayStatics::PlaySound2D(this, AssetSubsystem->EquipmentCommonAsset->EquipSound);
-		}
-	}
-}
-
-void UCombatComponent::InstantSwap(EEquipmentType TargetType)
-{
-	// UE_LOG(LogTemp, Warning, TEXT("GetPlayInEditorID %d %d"), UE::GetPlayInEditorID(), GetWorld()->GetOutermost()->GetPIEInstanceID());
-	if (TargetType == CurEquipmentType) return;
-	
-	AEquipment* TargetEquipment = GetEquipmentByType(TargetType);
-	if (!HumanChar || !TargetEquipment) return;
-	
-	// 移除旧装备的GA
-	if (HumanChar->HasAuthority() && GetCurEquipment())
-	{
-		GetCurEquipment()->ClearAbilities(HumanChar->GetAbilitySystemComponent());
-	}
-	
-	HolsterEquipment(GetCurEquipment());
-	
-	LastEquipmentType = CurEquipmentType;
-	CurEquipmentType = TargetType;
-	DesiredEquipmentType = TargetType;
-	
-	AttachToHand(TargetEquipment, Sockets::SuffixR);
-	
-	// 添加新装备的GA
-	if (HumanChar->HasAuthority())
-	{
-		TargetEquipment->GiveAbilities(HumanChar->GetAbilitySystemComponent());
-	}
-	
-	// 更新子弹
-	if (BaseController == nullptr) BaseController = Cast<ABaseController>(HumanChar->GetController());
-	if (HumanChar->IsLocallyControlled() && BaseController)
-	{
-		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
-		{
-			UISubsystem->OnAmmoChange.Broadcast(GetCurWeapon() ? GetCurWeapon()->Ammo : 0);
-			UISubsystem->OnCarriedAmmoChange.Broadcast(GetCurWeapon() ? GetCurWeapon()->CarriedAmmo : 0);
-			
-			UISubsystem->OnCrosshairHidden.Broadcast(IsAiming());
-		}
-	}
-
-	HumanChar->UpdateMaxWalkSpeed();
 }
 
 void UCombatComponent::HolsterEquipment(AEquipment* Equipment)
 {
+	if (HumanChar == nullptr) HumanChar = Cast<AHumanCharacter>(GetOwner());
 	if (Equipment == nullptr || HumanChar == nullptr) return;
 
 	if (Equipment->EquipmentMesh)
@@ -301,12 +254,15 @@ void UCombatComponent::HolsterEquipment(AEquipment* Equipment)
 
 void UCombatComponent::AttachToHand(AEquipment* Equipment, FName SocketNameSuffix)
 {
-	if (HumanChar == nullptr || Equipment == nullptr) return;
+	UE_LOG(LogTemp, Warning, TEXT("AttachToHand 1"));
+	if (HumanChar == nullptr) HumanChar = Cast<AHumanCharacter>(GetOwner());
+	if (HumanChar == nullptr || Equipment == nullptr || Equipment->EquipmentAsset == nullptr) return;
 
+	UE_LOG(LogTemp, Warning, TEXT("AttachToHand 2"));
 	if (HumanChar->BodyMesh && Equipment->EquipmentMesh)
 	{
-		FString EquipmentSocketStr = StaticEnum<EEquipmentName>()->GetNameStringByValue(static_cast<int64>(Equipment->EquipmentParentName)) + SocketNameSuffix.ToString();
-		
+		UE_LOG(LogTemp, Warning, TEXT("AttachToHand 3"));
+		FString EquipmentSocketStr = StaticEnum<EEquipmentName>()->GetNameStringByValue(static_cast<int64>(Equipment->EquipmentAsset->GetBaseEquipmentName())) + SocketNameSuffix.ToString();
 		Equipment->EquipmentMesh->SetVisibility(true);
 		Equipment->EquipmentMesh->SetOwnerNoSee(true);
 		Equipment->EquipmentMesh->AttachToComponent(HumanChar->BodyMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName(*EquipmentSocketStr));
@@ -314,10 +270,85 @@ void UCombatComponent::AttachToHand(AEquipment* Equipment, FName SocketNameSuffi
 
 	if (HumanChar->Mesh1P && Equipment->EquipmentMesh1P)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("AttachToHand 4"));
 		Equipment->EquipmentMesh1P->SetVisibility(true);
 		Equipment->EquipmentMesh1P->SetOnlyOwnerSee(true);
 		Equipment->EquipmentMesh1P->AttachToComponent(HumanChar->Mesh1P, FAttachmentTransformRules::SnapToTargetNotIncludingScale, Sockets::WeaponRoot);
 	}
+}
+
+void UCombatComponent::RefreshCurEquipmentState()
+{
+	if (!HumanChar) return;
+
+	if (BaseController == nullptr) BaseController = Cast<ABaseController>(HumanChar->GetController());
+	if (HumanChar->IsLocallyControlled() && BaseController)
+	{
+		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
+		{
+			UISubsystem->OnAmmoChange.Broadcast(GetCurWeapon() ? GetCurWeapon()->Ammo : 0);
+			UISubsystem->OnCarriedAmmoChange.Broadcast(GetCurWeapon() ? GetCurWeapon()->CarriedAmmo : 0);
+			UISubsystem->OnCrosshairHidden.Broadcast(IsAiming());
+		}
+	}
+
+	HumanChar->UpdateMaxWalkSpeed();
+}
+
+void UCombatComponent::ClientPlayEquipSound_Implementation()
+{
+	if (HumanChar)
+	{
+		if (AssetSubsystem == nullptr) AssetSubsystem = HumanChar->GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+		if (AssetSubsystem && AssetSubsystem->EquipmentCommonAsset)
+		{
+			UGameplayStatics::PlaySound2D(this, AssetSubsystem->EquipmentCommonAsset->EquipSound);
+		}
+	}
+}
+
+void UCombatComponent::InstantSwap(EEquipmentSlot TargetType)
+{
+	UE_LOG(LogTemp, Warning, TEXT("InstantSwap"));
+	// UE_LOG(LogTemp, Warning, TEXT("GetPlayInEditorID %d %d"), UE::GetPlayInEditorID(), GetWorld()->GetOutermost()->GetPIEInstanceID());
+	if (TargetType == CurEquipmentSlot) return;
+	
+	if (HumanChar == nullptr) HumanChar = Cast<AHumanCharacter>(GetOwner());
+	AEquipment* TargetEquipment = GetEquipmentByType(TargetType);
+	if (!HumanChar || !TargetEquipment) return;
+	
+	AEquipment* OldCurEquipment = GetCurEquipment();
+
+	// 移除旧装备的GA
+	if (HumanChar->HasAuthority() && OldCurEquipment)
+	{
+		OldCurEquipment->ClearAbilities(HumanChar->GetAbilitySystemComponent());
+	}
+	
+	HolsterEquipment(OldCurEquipment);
+	
+	// 仅在旧槽位确实持有装备时才将其记录为 LastEquipmentSlot；
+	// 若因丢枪导致旧槽位已空，且切往的正好是原来的 LastEquipmentSlot，则将上一把武器回退指向近战武器（Slot3）
+	if (OldCurEquipment != nullptr)
+	{
+		LastEquipmentSlot = CurEquipmentSlot;
+	}
+	else if (LastEquipmentSlot == TargetType || GetLastEquipment() == nullptr)
+	{
+		LastEquipmentSlot = (TargetType != EEquipmentSlot::Slot3) ? EEquipmentSlot::Slot3 : EEquipmentSlot::Slot2;
+	}
+
+	CurEquipmentSlot = TargetType;
+	
+	AttachToHand(TargetEquipment, Sockets::SuffixR);
+	
+	// 添加新装备的GA
+	if (HumanChar->HasAuthority())
+	{
+		TargetEquipment->GiveAbilities(HumanChar->GetAbilitySystemComponent());
+	}
+	
+	RefreshCurEquipmentState();
 }
 
 bool UCombatComponent::IsAiming()
@@ -331,8 +362,10 @@ bool UCombatComponent::IsAiming()
 
 void UCombatComponent::LocalSetAiming(bool bIsAiming)
 {
+	if (HumanChar == nullptr) HumanChar = Cast<AHumanCharacter>(GetOwner());
+	if (HumanChar == nullptr || HumanChar->BodyMesh == nullptr) return;
 	if (AnimInstHuman == nullptr) AnimInstHuman = Cast<UAnimInstHuman>(HumanChar->BodyMesh->GetAnimInstance());
-	if (HumanChar == nullptr || GetCurWeapon() == nullptr || AnimInstHuman == nullptr) return;
+	if (GetCurWeapon() == nullptr || AnimInstHuman == nullptr) return;
 
 	if (HumanChar->IsLocallyControlled()) // TODO 非本地瞄准动画暂时禁用了
 	{
@@ -350,7 +383,7 @@ void UCombatComponent::LocalSetAiming(bool bIsAiming)
 		// 	{
 		// 		AnimInstHuman->Montage_Play(GetCurWeapon()->ADSMontage_C);
 		// 		
-		// 		StartInterpFOV(DefaultFOV * GetCurWeapon()->AimingFOVMul, GetCurWeapon()->ADSMontage_C->GetPlayLength());
+		// 		StartInterpFOV(DefaultFOV * GetCurWeapon()->ADSMontage_C->GetPlayLength());
 		// 	}
 		// }
 		// else // 取消瞄准
@@ -436,9 +469,9 @@ void UCombatComponent::InterpFOV(float DeltaSeconds)
 	HumanChar->Camera->FieldOfView = FMath::Lerp(StartFOV, TargetFOV, Alpha);
 
 	// HACK 计算瞄准进度，子弹偏移受瞄准进度影响，完全进入瞄准状态子弹偏移为0
-	// if (GetCurWeapon() && AnimInstHuman && AnimInstHuman->Montage_IsPlaying(GetCurWeapon()->ADSMontage_C))
+	if (AWeapon* CurWeapon = GetCurWeapon(); CurWeapon && CurWeapon->FragWeapon)
 	{
-		float DiffFOV = DefaultFOV - GetCurWeapon()->FragWeapon->AimingFOVMul * DefaultFOV;
+		float DiffFOV = DefaultFOV - CurWeapon->FragWeapon->AimingFOVMul * DefaultFOV;
 		if (DiffFOV != 0.f)
 		{
 			AimingProgress = FMath::Abs(DefaultFOV - HumanChar->Camera->FieldOfView) / DiffFOV;
@@ -475,7 +508,7 @@ void UCombatComponent::TraceUnderCrosshair(FHitResult& TraceHitResult)
 	if (bScreenToWorld)
 	{
 		FVector Start = Position + Direction * 100.f;
-		FVector End = Start + Direction * TRACE_LENGTH;
+		FVector End = Start + Direction * GameConstants::TraceLength;
 		
 		FCollisionQueryParams Params;
 		Params.AddIgnoredActor(HumanChar);
@@ -488,23 +521,35 @@ void UCombatComponent::TraceUnderCrosshair(FHitResult& TraceHitResult)
 	}
 }
 
-void UCombatComponent::ServerDestroyEquipments_Implementation()
+void UCombatComponent::ServerDestroyEquipments_Implementation(bool bIsDestroySlot1)
 {
-	LocalDestroyEquipments();
-}
+	if (!HumanChar || !HumanChar->HasAuthority()) return;
 
-void UCombatComponent::LocalDestroyEquipments(bool bIsDestroyPrimary)
-{
-	if (PrimaryEquipment && bIsDestroyPrimary) PrimaryEquipment->Destroy();
-	if (SecondaryEquipment) SecondaryEquipment->Destroy();
-	if (MeleeEquipment) MeleeEquipment->Destroy();
-	if (ThrowingEquipment) ThrowingEquipment->Destroy();
+	UAbilitySystemComponent* ASC = HumanChar->GetAbilitySystemComponent();
+
+	auto DestroySlot = [ASC](auto*& EquipPtr)
+	{
+		if (EquipPtr)
+		{
+			EquipPtr->ClearAbilities(ASC);
+			EquipPtr->Destroy();
+			EquipPtr = nullptr;
+		}
+	};
+
+	if (bIsDestroySlot1)
+	{
+		DestroySlot(Slot1Equipment);
+	}
+	DestroySlot(Slot2Equipment);
+	DestroySlot(Slot3Equipment);
+	DestroySlot(Slot4Equipment);
 }
 
 void UCombatComponent::SetAttackCollisionEnabled(bool bIsEnabled)
 {
-	if (MeleeEquipment)
+	if (Slot3Equipment)
 	{
-		MeleeEquipment->SetAttackCollisionEnabled(bIsEnabled);
+		Slot3Equipment->SetAttackCollisionEnabled(bIsEnabled);
 	}
 }

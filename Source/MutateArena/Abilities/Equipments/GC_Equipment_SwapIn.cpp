@@ -3,6 +3,7 @@
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "MutateArena/Equipments/Equipment.h"
 #include "MutateArena/Equipments/AnimInstEquipment.h"
+#include "MutateArena/Equipments/Data/EquipmentAsset.h"
 
 UGC_Equipment_SwapIn::UGC_Equipment_SwapIn()
 {
@@ -28,7 +29,7 @@ bool UGC_Equipment_SwapIn::OnExecute_Implementation(AActor* MyTarget, const FGam
 				// 1. 客户端本地预测执行 (Mag == 0) -> 播放
 				// 2. 模拟端收到服务端多播 (IsLocallyControlled == false, Mag == 1) -> 播放
 				// 3. 房主本地执行 (HasAuthority == true, Mag == 1) -> 播放
-				EquipmentAnimInst->Montage_Play(CurEquipment->SwapInMontage_E);
+				EquipmentAnimInst->Montage_Play(CurEquipment->EquipmentAsset->GetSwapInMontage_E());
 				// UE_LOG(LogTemp, Warning, TEXT("GC %d - Play Montage"), UE::GetPlayInEditorID());
 			}
 		}

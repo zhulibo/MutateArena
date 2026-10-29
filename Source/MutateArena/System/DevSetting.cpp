@@ -6,10 +6,10 @@ UDevSetting::UDevSetting()
 {
 	if (const UDefaultConfig* DefaultConfig = GetDefault<UDefaultConfig>())
 	{
-		PrimaryEquipment = DefaultConfig->Primary;
-		SecondaryEquipment = DefaultConfig->Secondary;
-		MeleeEquipment = DefaultConfig->Melee;
-		ThrowingEquipment = DefaultConfig->Throwing;
+		Slot1EquipmentName = DefaultConfig->Slot1EquipmentName;
+		Slot2EquipmentName = DefaultConfig->Slot2EquipmentName;
+		Slot3EquipmentName = DefaultConfig->Slot3EquipmentName;
+		Slot4EquipmentName = DefaultConfig->Slot4EquipmentName;
 	}
 }
 

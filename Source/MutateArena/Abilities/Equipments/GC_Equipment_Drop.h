@@ -12,7 +12,6 @@ class MUTATEARENA_API UGC_Equipment_Drop : public UGameplayCueNotify_Static
 public:
 	UGC_Equipment_Drop();
 
-protected:
 	virtual bool OnExecute_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters) const override;
 	
 };

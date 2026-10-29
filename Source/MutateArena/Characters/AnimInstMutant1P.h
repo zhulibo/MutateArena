@@ -4,7 +4,7 @@
 #include "Animation/AnimInstance.h"
 #include "AnimInstMutant1P.generated.h"
 
-UCLASS()
+UCLASS(Abstract)
 class MUTATEARENA_API UAnimInstMutant1P : public UAnimInstance
 {
 	GENERATED_BODY()

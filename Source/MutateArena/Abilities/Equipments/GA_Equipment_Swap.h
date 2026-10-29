@@ -5,6 +5,9 @@
 #include "MutateArena/Equipments/Data/EquipmentType.h"
 #include "GA_Equipment_Swap.generated.h"
 
+class UAnimMontage;
+class AEquipment;
+
 UCLASS(Abstract)
 class MUTATEARENA_API UGA_Equipment_Swap : public UGA_Equipment
 {
@@ -12,36 +15,35 @@ class MUTATEARENA_API UGA_Equipment_Swap : public UGA_Equipment
 
 public:
 	UGA_Equipment_Swap();
-	
-	virtual bool CanActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
-		const FGameplayTagContainer* SourceTags = nullptr, const FGameplayTagContainer* TargetTags = nullptr, FGameplayTagContainer* OptionalRelevantTags = nullptr) const override;
-	
-	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
-		const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
 
-	virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
-		const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
+	virtual bool CanActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
+	                                const FGameplayTagContainer* SourceTags = nullptr, const FGameplayTagContainer* TargetTags = nullptr,
+	                                FGameplayTagContainer* OptionalRelevantTags = nullptr) const override;
 
 protected:
-	// 监听来自 AN_SwapOutEnd 的切出完成事件
-	UFUNCTION()
-	void OnSwapOutEventReceived(FGameplayEventData Payload);
+	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
+								 const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
+
+	virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
+							const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
 	
+	// 监听来自切入动画 AN_SendGameplayEvent 的提前完成事件（允许切入动画尾段提前开火）
 	UFUNCTION()
 	void OnSwapInEventReceived(FGameplayEventData Payload);
 
-	bool bIsPlayingSwapIn = false;
-	
-	UFUNCTION()
-	void OnSwapOutMontageFinished();
-	UFUNCTION()
-	void OnSwapInMontageFinished();
+	// 1P手臂切入蒙太奇自然结束回调
+	void OnSwapInMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
-	// 缓存要切换到的目标装备类型
-	UPROPERTY()
-	EEquipmentType TargetEquipmentType;
+	// 服务端远端角色超时保底回调
+	UFUNCTION()
+	void OnServerWaitDelayFinished();
 
 	UPROPERTY()
-	class AEquipment* TargetEquipment;
-	
+	EEquipmentSlot TargetEquipmentSlot = EEquipmentSlot::None;
+
+	UPROPERTY()
+	TObjectPtr<AEquipment> TargetEquipment;
+
+	UPROPERTY()
+	TObjectPtr<UAnimMontage> CurrentSwapInMontage;
 };

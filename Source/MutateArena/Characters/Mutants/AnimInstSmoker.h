@@ -4,7 +4,7 @@
 #include "MutateArena/Characters/AnimInstMutant.h"
 #include "AnimInstSmoker.generated.h"
 
-UCLASS()
+UCLASS(Abstract)
 class MUTATEARENA_API UAnimInstSmoker : public UAnimInstMutant
 {
 	GENERATED_BODY()

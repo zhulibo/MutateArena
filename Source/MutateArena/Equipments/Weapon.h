@@ -27,18 +27,11 @@ public:
 	UPROPERTY(ReplicatedUsing = OnRep_Ammo)
 	int32 Ammo; // 当前弹匣子弹数量
 
-	UPROPERTY()
-	int32 MaxCarriedAmmo; // 最大携弹量
-	UPROPERTY()
-	int32 MagCapacity; // 弹匣容量
-
 	FORCEINLINE bool IsEmpty() const { return Ammo <= 0; }
-	FORCEINLINE bool IsFull() const { return Ammo == MagCapacity; }
+	FORCEINLINE bool IsFull() const { return Ammo == FragWeapon->MagCapacity; }
 	FORCEINLINE float GetFireDelay() const { return 60 / FragWeapon->FireRate; }
 
 protected:
-	void InitData();
-	
 	UFUNCTION()
 	void OnRep_Ammo();
 	UFUNCTION()

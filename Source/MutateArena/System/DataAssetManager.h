@@ -30,8 +30,6 @@ public:
 	void UnloadTrackedAsset(const UObject* Asset);
 
 protected:
-	virtual void StartInitialLoading() override;
-
 	static UObject* SyncLoadAsset(const FSoftObjectPath& AssetPath);
 	void AddLoadedAsset(const UObject* Asset);
 

@@ -11,12 +11,12 @@ class MUTATEARENA_API ULoadoutSelectButton : public UCommonButtonBase
 
 public:
 	UPROPERTY(meta = (BindWidget))
-	class UCommonTextBlock* PrimaryEquipmentText;
+	class UCommonTextBlock* Slot1EquipmentText;
 	UPROPERTY(meta = (BindWidget))
-	UCommonTextBlock* SecondaryEquipmentText;
+	UCommonTextBlock* Slot2EquipmentText;
 	UPROPERTY(meta = (BindWidget))
-	UCommonTextBlock* MeleeEquipmentText;
+	UCommonTextBlock* Slot3EquipmentText;
 	UPROPERTY(meta = (BindWidget))
-	UCommonTextBlock* ThrowingEquipmentText;
+	UCommonTextBlock* Slot4EquipmentText;
 
 };

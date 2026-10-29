@@ -4,6 +4,7 @@
 #include "AbilitySystemComponent.h"
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "MutateArena/Equipments/Melee.h"
+#include "MutateArena/Equipments/Data/EquipmentAsset.h"
 #include "MutateArena/System/GameplayTags.h"
 
 UGA_Melee_Attack::UGA_Melee_Attack()
@@ -58,7 +59,7 @@ void UGA_Melee_Attack::PlayMeleeMontage()
 
 	// 播放角色蒙太奇
 	UAbilityTask_PlayMontageAndWait* MontageTask = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(
-		this, NAME_None, CurMelee->bIsLightAttack ? CurMelee->LightAttackMontage_C : CurMelee->HeavyAttackMontage_C);
+		this, NAME_None, CurMelee->bIsLightAttack ? CurMelee->FragMelee->LightAttackMontage_C : CurMelee->FragMelee->HeavyAttackMontage_C);
 	MontageTask->OnCompleted.AddDynamic(this, &UGA_Melee_Attack::OnMontageCompleted);
 	MontageTask->OnInterrupted.AddDynamic(this, &UGA_Melee_Attack::OnMontageInterruptedOrCancelled);
 	MontageTask->OnCancelled.AddDynamic(this, &UGA_Melee_Attack::OnMontageInterruptedOrCancelled);

@@ -6,6 +6,7 @@
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "MutateArena/Characters/Components/CombatComponent.h"
 #include "MutateArena/Equipments/Throwing.h"
+#include "MutateArena/Equipments/Data/EquipmentAsset.h"
 #include "MutateArena/System/GameplayTags.h"
 
 UGA_Throwing_Throw::UGA_Throwing_Throw()
@@ -49,14 +50,14 @@ void UGA_Throwing_Throw::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 
 	bHasThrownOut = false;
 
-	if (ThrowingEquip->ThrowMontage_C)
+	if (ThrowingEquip->FragThrowing->ThrowMontage_C)
 	{
 		UAbilityTask_WaitGameplayEvent* WaitEventTask = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(this, TAG_EVENT_THROWING_THROWOUT);
 		WaitEventTask->EventReceived.AddDynamic(this, &ThisClass::OnThrowOutEventReceived);
 		WaitEventTask->ReadyForActivation();
 
 		UAbilityTask_PlayMontageAndWait* MontageTask = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(
-			this, NAME_None, ThrowingEquip->ThrowMontage_C, 1.f, NAME_None, false);
+			this, NAME_None, ThrowingEquip->FragThrowing->ThrowMontage_C, 1.f, NAME_None, false);
 		MontageTask->OnCompleted.AddDynamic(this, &ThisClass::OnMontageFinished);
 		MontageTask->OnInterrupted.AddDynamic(this, &ThisClass::OnMontageFinished);
 		MontageTask->OnCancelled.AddDynamic(this, &ThisClass::OnMontageFinished);
@@ -83,7 +84,7 @@ void UGA_Throwing_Throw::OnThrowOutEventReceived(FGameplayEventData Payload)
 	{
 		ThrowingEquip->ThrowOut();
 		
-		CombatComp->ThrowingEquipment = nullptr;
+		CombatComp->Slot4Equipment = nullptr;
 		bHasThrownOut = true;
 	}
 }
@@ -101,7 +102,7 @@ void UGA_Throwing_Throw::EndAbility(const FGameplayAbilitySpecHandle Handle, con
 	// 必须加上 !bWasCancelled 切换装备会取消投掷造成死循环
 	if (!bWasCancelled && bHasThrownOut && HumanChar && HumanChar->IsLocallyControlled() && CombatComp)
 	{
-		HumanChar->SendSwapEquipmentEvent(CombatComp->LastEquipmentType);
+		HumanChar->SendSwapEquipmentEvent(CombatComp->LastEquipmentSlot);
 	}
 
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);

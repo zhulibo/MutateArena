@@ -4,14 +4,14 @@
 #include "Engine/DataAsset.h"
 #include "MutateArena/Characters/Data/CharacterType.h"
 #include "MutateArena/MutateArena.h"
-#include "CharacterAsset.generated.h"
+#include "CharacterCommonAsset.generated.h"
 
 class UTextureRenderTarget2D;
 class UMaterialParameterCollection;
 class UMaterialInterface;
 
 UCLASS()
-class MUTATEARENA_API UCharacterAsset : public UPrimaryDataAsset
+class MUTATEARENA_API UCharacterCommonAsset : public UPrimaryDataAsset
 {
 	GENERATED_BODY()
 
@@ -82,7 +82,7 @@ public:
 	
 	virtual FPrimaryAssetId GetPrimaryAssetId() const override
 	{
-		return FPrimaryAssetId(DataAsset::Character, GetFName());
+		return FPrimaryAssetId(DataAsset::CharacterCommon, GetFName());
 	}
 
 };

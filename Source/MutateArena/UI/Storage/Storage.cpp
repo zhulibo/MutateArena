@@ -35,7 +35,7 @@
 #include "Serialization/ObjectAndNameAsStringProxyArchive.h"
 #include "Widgets/CommonActivatableWidgetContainer.h"
 #include "MutateArena/Equipments/Data/EquipmentAsset.h"
-#include "MutateArena/Characters/Data/CharacterAsset.h"
+#include "MutateArena/Characters/Data/CharacterCommonAsset.h"
 
 #define LOCTEXT_NAMESPACE "UStorage"
 
@@ -61,7 +61,7 @@ void UStorage::NativeOnInitialized()
 	{
 		DNAButton2->OnClicked().AddUObject(this, &ThisClass::OnDNAButton2Clicked);
 	}
-	
+
 	// 添加顶部库存分类Tab按钮
 	CreateStorageTypeTabs();
 }
@@ -160,34 +160,31 @@ void UStorage::ApplyLoadoutData(USaveGameLoadout* SaveGameLoadout)
 	if (DefaultConfig == nullptr) return;
 
 	// 判断是否拥有装备且槽位类型匹配，否则把存档恢复默认
-	auto IsLoadoutSlotValid = [&](EEquipmentName EquipName, EEquipmentType ExpectedType)
+	auto IsLoadoutSlotValid = [&](EEquipmentName EquipName, EEquipmentSlot ExpectedType)
 	{
 		if (!HasEquipment(EquipName)) return false;
 
-		const UEquipmentAsset* BaseAsset = nullptr;
-		const UEquipmentSkinAsset* SkinAsset = nullptr;
-		AssetSubsystem->ResolveEquipmentAssets(EquipName, BaseAsset, SkinAsset);
-
-		return BaseAsset && BaseAsset->EquipmentType == ExpectedType;
+		const UEquipmentAsset* EquipAsset = AssetSubsystem->GetEquipmentAssetByName(EquipName);
+		return EquipAsset && EquipAsset->GetEquipmentSlot() == ExpectedType;
 	};
 
 	for (int32 i = 0; i < SaveGameLoadout->Loadouts.Num(); ++i)
 	{
-		if (!IsLoadoutSlotValid(SaveGameLoadout->Loadouts[i].Primary, EEquipmentType::Primary))
+		if (!IsLoadoutSlotValid(SaveGameLoadout->Loadouts[i].Slot1EquipmentName, EEquipmentSlot::Slot1))
 		{
-			SaveGameLoadout->Loadouts[i].Primary = DefaultConfig->Primary;
+			SaveGameLoadout->Loadouts[i].Slot1EquipmentName = DefaultConfig->Slot1EquipmentName;
 		}
-		if (!IsLoadoutSlotValid(SaveGameLoadout->Loadouts[i].Secondary, EEquipmentType::Secondary))
+		if (!IsLoadoutSlotValid(SaveGameLoadout->Loadouts[i].Slot2EquipmentName, EEquipmentSlot::Slot2))
 		{
-			SaveGameLoadout->Loadouts[i].Secondary = DefaultConfig->Secondary;
+			SaveGameLoadout->Loadouts[i].Slot2EquipmentName = DefaultConfig->Slot2EquipmentName;
 		}
-		if (!IsLoadoutSlotValid(SaveGameLoadout->Loadouts[i].Melee, EEquipmentType::Melee))
+		if (!IsLoadoutSlotValid(SaveGameLoadout->Loadouts[i].Slot3EquipmentName, EEquipmentSlot::Slot3))
 		{
-			SaveGameLoadout->Loadouts[i].Melee = DefaultConfig->Melee;
+			SaveGameLoadout->Loadouts[i].Slot3EquipmentName = DefaultConfig->Slot3EquipmentName;
 		}
-		if (!IsLoadoutSlotValid(SaveGameLoadout->Loadouts[i].Throwing, EEquipmentType::Throwing))
+		if (!IsLoadoutSlotValid(SaveGameLoadout->Loadouts[i].Slot4EquipmentName, EEquipmentSlot::Slot4))
 		{
-			SaveGameLoadout->Loadouts[i].Throwing = DefaultConfig->Throwing;
+			SaveGameLoadout->Loadouts[i].Slot4EquipmentName = DefaultConfig->Slot4EquipmentName;
 		}
 	}
 
@@ -204,18 +201,12 @@ void UStorage::ApplyLoadoutData(USaveGameLoadout* SaveGameLoadout)
 					LoadoutItemTarget->EquipmentName = EquipAsset->EquipmentName;
 					LoadoutItemTarget->ShowImg->SetBrushFromLazyTexture(EquipAsset->ShowImg);
 				}
-				else if (UEquipmentSkinAsset* SkinAsset = AssetSubsystem->GetEquipmentSkinAssetByName(EquipName))
-				{
-					LoadoutItemTarget->ShowName->SetText(SkinAsset->SkinName);
-					LoadoutItemTarget->EquipmentName = SkinAsset->EquipmentName;
-					LoadoutItemTarget->ShowImg->SetBrushFromLazyTexture(SkinAsset->SkinIcon);
-				}
 			};
 
-			AssignEquipmentUI(SaveGameLoadout->Loadouts[i].Primary, LoadoutContent->Primary);
-			AssignEquipmentUI(SaveGameLoadout->Loadouts[i].Secondary, LoadoutContent->Secondary);
-			AssignEquipmentUI(SaveGameLoadout->Loadouts[i].Melee, LoadoutContent->Melee);
-			AssignEquipmentUI(SaveGameLoadout->Loadouts[i].Throwing, LoadoutContent->Throwing);
+			AssignEquipmentUI(SaveGameLoadout->Loadouts[i].Slot1EquipmentName, LoadoutContent->Slot1Item);
+			AssignEquipmentUI(SaveGameLoadout->Loadouts[i].Slot2EquipmentName, LoadoutContent->Slot2Item);
+			AssignEquipmentUI(SaveGameLoadout->Loadouts[i].Slot3EquipmentName, LoadoutContent->Slot3Item);
+			AssignEquipmentUI(SaveGameLoadout->Loadouts[i].Slot4EquipmentName, LoadoutContent->Slot4Item);
 		}
 	}
 
@@ -251,16 +242,19 @@ bool UStorage::HasEquipment(EEquipmentName EquipmentName)
 {
 	if (!AssetSubsystem) return false;
 
-	// 1. 基础装备默认拥有
-	if (AssetSubsystem->GetEquipmentAssetByName(EquipmentName))
+	if (UEquipmentAsset* Asset = AssetSubsystem->GetEquipmentAssetByName(EquipmentName))
 	{
-		return true;
-	}
+		// 补给箱武器直接排除
+		if (Asset->bIsSupply) return false;
 
-	// 2. 装备皮肤（排除补给箱武器，且需校验 EOS 权限）
-	if (UEquipmentSkinAsset* SkinAsset = AssetSubsystem->GetEquipmentSkinAssetByName(EquipmentName))
-	{
-		if (!SkinAsset->bIsSupply && EOSSubsystem && EOSSubsystem->OwnEntitlement(SkinAsset->AudienceItemId))
+		// 基础装备
+		if (!Asset->IsSkin())
+		{
+			return true;
+		}
+
+		// 皮肤
+		if (EOSSubsystem && EOSSubsystem->OwnEntitlement(Asset->AudienceItemId))
 		{
 			return true;
 		}
@@ -348,11 +342,11 @@ void UStorage::OnStorageTypeButtonClicked(UCommonButton* CommonButton)
 	// 将其他按钮置为未选中状态
 	for (int32 i = 0; i < StorageTypeButtonContainer->GetChildrenCount(); ++i)
 	{
-		if (UCommonButton* EquipmentTypeButton = Cast<UCommonButton>(StorageTypeButtonContainer->GetChildAt(i)))
+		if (UCommonButton* EquipmentSlotButton = Cast<UCommonButton>(StorageTypeButtonContainer->GetChildAt(i)))
 		{
-			if (EquipmentTypeButton != CommonButton)
+			if (EquipmentSlotButton != CommonButton)
 			{
-				EquipmentTypeButton->ClearSelection();
+				EquipmentSlotButton->ClearSelection();
 			}
 			else
 			{
@@ -385,38 +379,20 @@ void UStorage::OnStorageTypeButtonClicked(UCommonButton* CommonButton)
 void UStorage::AddEquipments(FString EquipmentType)
 {
 	if (!AssetSubsystem || !EOSSubsystem) return;
-
-	// 添加皮肤装备
-	for (const TPair<EEquipmentName, UEquipmentSkinAsset*>& Pair : AssetSubsystem->CachedEquipmentSkinAssets)
-	{
-		UEquipmentSkinAsset* SkinValue = Pair.Value;
-		if (SkinValue == nullptr || SkinValue->bIsSupply) continue;
-
-		UEquipmentAsset* ParentAsset = AssetSubsystem->GetEquipmentAssetByName(SkinValue->EquipmentParentName);
-		if (ParentAsset == nullptr) continue;
-
-		FString EnumValue = StaticEnum<EEquipmentType>()->GetNameStringByValue(static_cast<int64>(ParentAsset->EquipmentType));
-
-		if (EquipmentType == STORAGE_TYPE_ALL || EnumValue == EquipmentType)
-		{
-			if (EOSSubsystem->OwnEntitlement(SkinValue->AudienceItemId))
-			{
-				AddEquipmentSkinButton(SkinValue, ParentAsset);
-			}
-		}
-	}
-
-	// 添加基础装备
+	
 	for (const TPair<EEquipmentName, UEquipmentAsset*>& Pair : AssetSubsystem->CachedEquipmentAssets)
 	{
 		UEquipmentAsset* ItemValue = Pair.Value;
 		if (ItemValue == nullptr) continue;
 
-		FString EnumValue = StaticEnum<EEquipmentType>()->GetNameStringByValue(static_cast<int64>(ItemValue->EquipmentType));
+		FString EnumValue = StaticEnum<EEquipmentType>()->GetNameStringByValue(static_cast<int64>(ItemValue->GetEquipmentType()));
 
 		if (EquipmentType == STORAGE_TYPE_ALL || EnumValue == EquipmentType)
 		{
-			AddEquipmentButton(ItemValue);
+			if (HasEquipment(ItemValue->EquipmentName))
+			{
+				AddEquipmentButton(ItemValue);
+			}
 		}
 	}
 }
@@ -426,7 +402,7 @@ void UStorage::AddHumanCharacters()
 {
 	if (!AssetSubsystem) return;
 
-	for (const TPair<EHumanCharacterName, UCharacterHumanAsset*>& Pair : AssetSubsystem->CachedHumanCharacterAssets)
+	for (const TPair<EHumanCharacterName, UCharacterHumanAsset*>& Pair : AssetSubsystem->CachedCharacterHumanAssets)
 	{
 		UCharacterHumanAsset* ItemValue = Pair.Value;
 		if (ItemValue == nullptr) continue;
@@ -451,29 +427,7 @@ void UStorage::AddEquipmentButton(UEquipmentAsset* EquipmentAsset)
 		EquipmentButton->ShowImg->SetBrushFromLazyTexture(EquipmentAsset->ShowImg);
 		EquipmentButton->ShowImgPath = EquipmentAsset->ShowImg;
 		EquipmentButton->EquipmentName = EquipmentAsset->EquipmentName;
-		EquipmentButton->EquipmentType = EquipmentAsset->EquipmentType;
-		EquipmentButton->OnClicked().AddUObject(this, &ThisClass::OnEquipmentButtonClicked, EquipmentButton);
-
-		if (UWrapBoxSlot* NewSlot = Cast<UWrapBoxSlot>(StorageButtonContainer->AddChild(EquipmentButton)))
-		{
-			NewSlot->SetPadding(FMargin(0, 0, 20, 20));
-		}
-	}
-}
-
-// 添加装备皮肤
-void UStorage::AddEquipmentSkinButton(UEquipmentSkinAsset* SkinAsset, UEquipmentAsset* ParentAsset)
-{
-	if (SkinAsset == nullptr || ParentAsset == nullptr) return;
-
-	if (UStorageButton* EquipmentButton = CreateWidget<UStorageButton>(this, EquipmentButtonClass))
-	{
-		EquipmentButton->ShowName->SetText(SkinAsset->SkinName);
-		EquipmentButton->Name = SkinAsset->SkinName;
-		EquipmentButton->ShowImg->SetBrushFromLazyTexture(SkinAsset->SkinIcon);
-		EquipmentButton->ShowImgPath = SkinAsset->SkinIcon;
-		EquipmentButton->EquipmentName = SkinAsset->EquipmentName;
-		EquipmentButton->EquipmentType = ParentAsset->EquipmentType;
+		EquipmentButton->EquipmentSlot = EquipmentAsset->GetEquipmentSlot();
 		EquipmentButton->OnClicked().AddUObject(this, &ThisClass::OnEquipmentButtonClicked, EquipmentButton);
 
 		if (UWrapBoxSlot* NewSlot = Cast<UWrapBoxSlot>(StorageButtonContainer->AddChild(EquipmentButton)))
@@ -511,27 +465,27 @@ void UStorage::OnEquipmentButtonClicked(UStorageButton* EquipmentButton)
 
 	if (ULoadoutContent* LoadoutContent = Cast<ULoadoutContent>(LoadoutSwitcher->GetActiveWidget()))
 	{
-		switch (EquipmentButton->EquipmentType)
+		switch (EquipmentButton->EquipmentSlot)
 		{
-		case EEquipmentType::Primary:
-			LoadoutContent->Primary->ShowName->SetText(EquipmentButton->Name);
-			LoadoutContent->Primary->ShowImg->SetBrushFromLazyTexture(EquipmentButton->ShowImgPath);
-			LoadoutContent->Primary->EquipmentName = EquipmentButton->EquipmentName;
+		case EEquipmentSlot::Slot1:
+			LoadoutContent->Slot1Item->ShowName->SetText(EquipmentButton->Name);
+			LoadoutContent->Slot1Item->ShowImg->SetBrushFromLazyTexture(EquipmentButton->ShowImgPath);
+			LoadoutContent->Slot1Item->EquipmentName = EquipmentButton->EquipmentName;
 			break;
-		case EEquipmentType::Secondary:
-			LoadoutContent->Secondary->ShowName->SetText(EquipmentButton->Name);
-			LoadoutContent->Secondary->ShowImg->SetBrushFromLazyTexture(EquipmentButton->ShowImgPath);
-			LoadoutContent->Secondary->EquipmentName = EquipmentButton->EquipmentName;
+		case EEquipmentSlot::Slot2:
+			LoadoutContent->Slot2Item->ShowName->SetText(EquipmentButton->Name);
+			LoadoutContent->Slot2Item->ShowImg->SetBrushFromLazyTexture(EquipmentButton->ShowImgPath);
+			LoadoutContent->Slot2Item->EquipmentName = EquipmentButton->EquipmentName;
 			break;
-		case EEquipmentType::Melee:
-			LoadoutContent->Melee->ShowName->SetText(EquipmentButton->Name);
-			LoadoutContent->Melee->ShowImg->SetBrushFromLazyTexture(EquipmentButton->ShowImgPath);
-			LoadoutContent->Melee->EquipmentName = EquipmentButton->EquipmentName;
+		case EEquipmentSlot::Slot3:
+			LoadoutContent->Slot3Item->ShowName->SetText(EquipmentButton->Name);
+			LoadoutContent->Slot3Item->ShowImg->SetBrushFromLazyTexture(EquipmentButton->ShowImgPath);
+			LoadoutContent->Slot3Item->EquipmentName = EquipmentButton->EquipmentName;
 			break;
-		case EEquipmentType::Throwing:
-			LoadoutContent->Throwing->ShowName->SetText(EquipmentButton->Name);
-			LoadoutContent->Throwing->ShowImg->SetBrushFromLazyTexture(EquipmentButton->ShowImgPath);
-			LoadoutContent->Throwing->EquipmentName = EquipmentButton->EquipmentName;
+		case EEquipmentSlot::Slot4:
+			LoadoutContent->Slot4Item->ShowName->SetText(EquipmentButton->Name);
+			LoadoutContent->Slot4Item->ShowImg->SetBrushFromLazyTexture(EquipmentButton->ShowImgPath);
+			LoadoutContent->Slot4Item->EquipmentName = EquipmentButton->EquipmentName;
 			break;
 		}
 	}
@@ -548,10 +502,10 @@ void UStorage::SaveEquipmentsToLoadouts()
 		if (ULoadoutContent* LoadoutContent = Cast<ULoadoutContent>(LoadoutSwitcher->GetChildAt(i)))
 		{
 			FLoadout Loadout;
-			Loadout.Primary = LoadoutContent->Primary->EquipmentName;
-			Loadout.Secondary = LoadoutContent->Secondary->EquipmentName;
-			Loadout.Melee = LoadoutContent->Melee->EquipmentName;
-			Loadout.Throwing = LoadoutContent->Throwing->EquipmentName;
+			Loadout.Slot1EquipmentName = LoadoutContent->Slot1Item->EquipmentName;
+			Loadout.Slot2EquipmentName = LoadoutContent->Slot2Item->EquipmentName;
+			Loadout.Slot3EquipmentName = LoadoutContent->Slot3Item->EquipmentName;
+			Loadout.Slot4EquipmentName = LoadoutContent->Slot4Item->EquipmentName;
 			Loadouts.Add(Loadout);
 		}
 	}

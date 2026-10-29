@@ -22,7 +22,7 @@ void AMeleeMode::BeginPlay()
 			MatchTime = 60.f * EOSSubsystem->GetLobbyMatchTime();
 		}
 	}
-	
+
 #if WITH_EDITOR
 	if (GetWorld()->WorldType == EWorldType::PIE)
 	{
@@ -30,7 +30,7 @@ void AMeleeMode::BeginPlay()
 		{
 			WarmupTime = GetDefault<UDevSetting>()->WarmupTime;
 		}
-				
+
 		// 使用反射获取PIE设置中的玩家数量，避免Runtime模块强依赖UnrealEd导致打包失败
 		int32 PIEPlayerCount = 1;
 		if (UClass* PlaySettingsClass = FindObject<UClass>(nullptr, TEXT("/Script/UnrealEd.LevelEditorPlaySettings")))
@@ -44,13 +44,10 @@ void AMeleeMode::BeginPlay()
 			}
 		}
 
-		if (PIEPlayerCount > 0)
-		{
-			WarmupTime *= PIEPlayerCount;
-		}
+		WarmupTime += PIEPlayerCount * 0.5f;
 	}
 #endif
-	
+
 }
 
 void AMeleeMode::Tick(float DeltaSeconds)

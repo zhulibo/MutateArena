@@ -1,7 +1,5 @@
 #include "BaseMode.h"
 
-#include "DataRegistryId.h"
-#include "DataRegistrySubsystem.h"
 #include "EngineUtils.h"
 #include "TimerManager.h"
 #include "Engine/GameInstance.h"
@@ -9,17 +7,14 @@
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "MutateArena/Equipments/Equipment.h"
 #include "MutateArena/Equipments/Data/DamageTypeFall.h"
-#include "MutateArena/Equipments/Data/EquipmentType.h"
 #include "MutateArena/GameStates/BaseGameState.h"
 #include "MutateArena/PlayerStates/BasePlayerState.h"
 #include "MutateArena/PlayerStates/TeamType.h"
-#include "MutateArena/System/DataAssetManager.h"
 #include "MutateArena/System/EOSSubsystem.h"
 #include "MutateArena/UI/TextChat/TextChat.h"
 #include "MutateArena/Utils/LibraryCommon.h"
 #include "GameFramework/PlayerStart.h"
-#include "MutateArena/Characters/Components/CombatComponent.h"
-#include "MutateArena/Characters/Data/CharacterAsset.h"
+#include "MutateArena/Characters/Data/CharacterCommonAsset.h"
 #include "MutateArena/Equipments/Data/EquipmentAsset.h"
 #include "MutateArena/System/AssetSubsystem.h"
 #include "MutateArena/System/DevSetting.h"
@@ -161,7 +156,7 @@ void ABaseMode::SpawnHumanCharacter(AController* Controller)
 
 	ABasePlayerState* BasePlayerState = Cast<ABasePlayerState>(Controller->PlayerState);
 	if (!BasePlayerState) return;
-
+	
 	// 获取角色类
 	TSubclassOf<AHumanCharacter> CharacterClass;
 	if (UAssetSubsystem* AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>())
@@ -172,11 +167,11 @@ void ABaseMode::SpawnHumanCharacter(AController* Controller)
 		}
 	}
 	if (CharacterClass == nullptr) return;
-
+	
 	// 获取出生点
 	AActor* StartSpot = FindCharacterPlayerStart(BasePlayerState->Team);
 	if (StartSpot == nullptr) return;
-
+	
 	// 生成角色
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
@@ -271,7 +266,6 @@ void ABaseMode::AddKillLog(ABasePlayerState* AttackerState, AActor* DamageCauser
 			{
 				if (AEquipment* CauserEquipment = Cast<AEquipment>(DamageCauser->GetOwner()))
 				{
-					// 使用 O(1) 的 AssetSubsystem 获取武器名称
 					if (AssetSubsystem)
 					{
 						if (UEquipmentAsset* Asset = AssetSubsystem->GetEquipmentAssetByName(CauserEquipment->EquipmentName))
@@ -285,7 +279,6 @@ void ABaseMode::AddKillLog(ABasePlayerState* AttackerState, AActor* DamageCauser
 		case EDamageCauserType::Melee:
 			if (AEquipment* CauserEquipment = Cast<AEquipment>(DamageCauser))
 			{
-				// 使用 O(1) 的 AssetSubsystem 获取近战武器名称
 				if (AssetSubsystem)
 				{
 					if (UEquipmentAsset* Asset = AssetSubsystem->GetEquipmentAssetByName(CauserEquipment->EquipmentName))

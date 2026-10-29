@@ -70,7 +70,7 @@ void UGA_Weapon_Reload_Shotgun::OnShellInsertEventReceived(FGameplayEventData Pa
 	}
 
 	int32 Ammo = CurWeapon->Ammo;
-	int32 MagCapacity = CurWeapon->MagCapacity;
+	int32 MagCapacity = CurWeapon->FragWeapon->MagCapacity;
 	int32 CarriedAmmo = CurWeapon->CarriedAmmo;
 
 	// 执行单发装弹逻辑

@@ -8,13 +8,12 @@
 #define STORAGE_TYPE_ALL FString(TEXT("All"))
 #define STORAGE_TYPE_CHARACTER FString(TEXT("Character"))
 
-class UEquipmentSkinAsset;
 class UDNAAsset2;
 class UCharacterHumanAsset;
 class UEquipmentAsset;
 enum class EHumanCharacterName : uint8;
 enum class EEquipmentName : uint8;
-enum class EEquipmentType : uint8;
+enum class EEquipmentSlot : uint8;
 
 UCLASS()
 class MUTATEARENA_API UStorage : public UCommonActivatableWidget
@@ -62,8 +61,7 @@ protected:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UStorageButton> EquipmentButtonClass;
 	void AddEquipmentButton(UEquipmentAsset* EquipmentAsset);
-	void AddEquipmentSkinButton(UEquipmentSkinAsset* SkinAsset, UEquipmentAsset* ParentAsset);
-	
+
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UStorageButton> CharacterButtonClass;
 	void AddCharacterButton(UCharacterHumanAsset* CharacterAsset);

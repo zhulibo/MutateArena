@@ -3,6 +3,7 @@
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "MutateArena/Equipments/AnimInstEquipment.h"
 #include "MutateArena/Equipments/Melee.h"
+#include "MutateArena/Equipments/Data/EquipmentAsset.h"
 
 UGC_Melee_Attack::UGC_Melee_Attack()
 {
@@ -15,7 +16,7 @@ bool UGC_Melee_Attack::OnActive_Implementation(AActor* MyTarget, const FGameplay
 	
 	if (HumanChar && CurMelee)
 	{
-		if (UAnimMontage* MontageToPlay = Parameters.RawMagnitude == 1.f ? CurMelee->LightAttackMontage_E : CurMelee->HeavyAttackMontage_E)
+		if (UAnimMontage* MontageToPlay = Parameters.RawMagnitude == 1.f ? CurMelee->FragMelee->LightAttackMontage_E : CurMelee->FragMelee->HeavyAttackMontage_E)
 		{
 			if (UAnimInstEquipment* EquipAnimInst = CurMelee->GetEquipmentAnimInst())
 			{
@@ -34,7 +35,7 @@ bool UGC_Melee_Attack::OnRemove_Implementation(AActor* MyTarget, const FGameplay
 	
 	if (HumanChar && CurMelee)
 	{
-		if (UAnimMontage* MontagePlayed = Parameters.RawMagnitude == 1.f ? CurMelee->LightAttackMontage_E : CurMelee->HeavyAttackMontage_E)
+		if (UAnimMontage* MontagePlayed = Parameters.RawMagnitude == 1.f ? CurMelee->FragMelee->LightAttackMontage_E : CurMelee->FragMelee->HeavyAttackMontage_E)
 		{
 			if (UAnimInstEquipment* EquipAnimInst = CurMelee->GetEquipmentAnimInst())
 			{

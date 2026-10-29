@@ -5,6 +5,7 @@
 #include "Equipment.h"
 #include "Melee.generated.h"
 
+class UFragMelee;
 class UAnimMontage;
 class UAssetSubsystem; // 前向声明
 
@@ -19,16 +20,9 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
-
-	UPROPERTY(EditAnywhere)
-	UAnimMontage* LightAttackMontage_C;
-	UPROPERTY(EditAnywhere)
-	UAnimMontage* LightAttackMontage_E;
-
-	UPROPERTY(EditAnywhere)
-	UAnimMontage* HeavyAttackMontage_C;
-	UPROPERTY(EditAnywhere)
-	UAnimMontage* HeavyAttackMontage_E;
+	
+	UPROPERTY(Transient)
+	TObjectPtr<const UFragMelee> FragMelee = nullptr;
 
 	virtual void OnStartSwapOut() override;
 	void SetAttackCollisionEnabled(bool bIsEnabled);
@@ -38,13 +32,6 @@ public:
 	UPROPERTY(Replicated)
 	bool bIsLightAttack = false;
 
-protected:
-	UPROPERTY()
-	float LightAttackDamage;
-	UPROPERTY()
-	float HeavyAttackDamage;
-
-public:
 	virtual void OnGiven(class AHumanCharacter* HumanChar) override;
 
 protected:
@@ -63,14 +50,6 @@ protected:
 
 	// 播放击中墙体/静态物体的贴花与音效 (新增 TraceDirection 参数)
 	void SpawnHitWallEffects(const FHitResult& HitResult, const FVector& TraceDirection);
-
-	// 扫掠检测插槽名称数组
-	UPROPERTY()
-	TArray<FName> TraceSockets;
-
-	// 扫掠检测的球体半径
-	UPROPERTY()
-	float TraceRadius;
 
 	// 是否正在进行攻击判定
 	UPROPERTY()

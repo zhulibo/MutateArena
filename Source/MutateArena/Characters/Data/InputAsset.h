@@ -54,17 +54,17 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Human")
 	UInputAction* DropAction;
 	UPROPERTY(EditAnywhere, Category = "Human")
-	UInputAction* SwapPrimaryEquipmentAction;
+	UInputAction* SwapSlot1EquipmentAction;
 	UPROPERTY(EditAnywhere, Category = "Human")
-	UInputAction* SwapSecondaryEquipmentAction;
+	UInputAction* SwapSlot2EquipmentAction;
 	UPROPERTY(EditAnywhere, Category = "Human")
-	UInputAction* SwapMeleeEquipmentAction;
+	UInputAction* SwapSlot3EquipmentAction;
 	UPROPERTY(EditAnywhere, Category = "Human")
-	UInputAction* SwapThrowingEquipmentAction;
+	UInputAction* SwapSlot4EquipmentAction;
 	UPROPERTY(EditAnywhere, Category = "Human")
-	UInputAction* SwapLastEquipmentAction;
+	UInputAction* SwapLastSlotEquipmentAction;
 	UPROPERTY(EditAnywhere, Category = "Human")
-	UInputAction* SwapBetweenPrimarySecondaryEquipmentAction;
+	UInputAction* SwapBetweenSlot1Slot2EquipmentAction;
 
 	// Mutant
 	UPROPERTY(EditAnywhere, Category = "Mutant")

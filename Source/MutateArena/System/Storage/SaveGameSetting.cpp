@@ -9,7 +9,6 @@ USaveGameSetting::USaveGameSetting()
 	if (DefaultConfig == nullptr) return;
 
 	Language = DefaultConfig->Language;
-	bHideSkins = DefaultConfig->bHideSkins;
 	bObfuscateName = DefaultConfig->bObfuscateName;
 	bObfuscateTextChat = DefaultConfig->bObfuscateTextChat;
 

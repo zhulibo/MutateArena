@@ -5,7 +5,7 @@
 #include "MutateArena/Equipments/Data/EquipmentType.h"
 #include "AnimInstHuman1P.generated.h"
 
-UCLASS()
+UCLASS(Abstract)
 class MUTATEARENA_API UAnimInstHuman1P : public UAnimInstance
 {
 	GENERATED_BODY()

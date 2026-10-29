@@ -6,7 +6,7 @@
 #include "Shop.generated.h"
 
 class UCharacterHumanAsset;
-class UEquipmentSkinAsset;
+class UEquipmentAsset;
 
 UCLASS()
 class MUTATEARENA_API UShop : public UCommonActivatableWidget
@@ -28,7 +28,7 @@ protected:
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UItemButton> EquipmentButtonClass;
-	void AddEquipmentButton(const FOffer& Offer, const UEquipmentSkinAsset* EquipmentAsset);
+	void AddEquipmentButton(const FOffer& Offer, const UEquipmentAsset* EquipmentAsset);
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<UItemButton> CharacterButtonClass;
