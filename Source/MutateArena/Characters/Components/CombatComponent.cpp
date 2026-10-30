@@ -21,7 +21,7 @@
 #include "Engine/GameViewportClient.h"
 #include "Materials/MaterialParameterCollectionInstance.h"
 #include "MutateArena/MutateArena.h"
-#include "MutateArena/Equipments/Throwing.h"
+#include "MutateArena/Equipments/Throwable.h"
 #include "MutateArena/Equipments/Data/EquipmentAsset.h"
 #include "MutateArena/System/UISubsystem.h"
 #include "MutateArena/System/GameplayTags.h"
@@ -207,7 +207,7 @@ void UCombatComponent::GiveEquipment(AEquipment* Equipment)
 		if (AMelee* TempEquipment = Cast<AMelee>(Equipment)) Slot3Equipment = TempEquipment;
 		break;
 	case EEquipmentSlot::Slot4:
-		if (AThrowing* TempEquipment = Cast<AThrowing>(Equipment)) Slot4Equipment = TempEquipment;
+		if (AThrowable* TempEquipment = Cast<AThrowable>(Equipment)) Slot4Equipment = TempEquipment;
 		break;
 	default:
 		break;
@@ -254,15 +254,14 @@ void UCombatComponent::HolsterEquipment(AEquipment* Equipment)
 
 void UCombatComponent::AttachToHand(AEquipment* Equipment, FName SocketNameSuffix)
 {
-	UE_LOG(LogTemp, Warning, TEXT("AttachToHand 1"));
+	UE_LOG(LogTemp, Warning, TEXT("AttachToHand %d"), Equipment->EquipmentAsset->GetParentEquipmentName());
 	if (HumanChar == nullptr) HumanChar = Cast<AHumanCharacter>(GetOwner());
 	if (HumanChar == nullptr || Equipment == nullptr || Equipment->EquipmentAsset == nullptr) return;
 
-	UE_LOG(LogTemp, Warning, TEXT("AttachToHand 2"));
 	if (HumanChar->BodyMesh && Equipment->EquipmentMesh)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("AttachToHand 3"));
-		FString EquipmentSocketStr = StaticEnum<EEquipmentName>()->GetNameStringByValue(static_cast<int64>(Equipment->EquipmentAsset->GetBaseEquipmentName())) + SocketNameSuffix.ToString();
+		UE_LOG(LogTemp, Warning, TEXT("1"));
+		FString EquipmentSocketStr = StaticEnum<EEquipmentName>()->GetNameStringByValue(static_cast<int64>(Equipment->EquipmentAsset->GetParentEquipmentName())) + SocketNameSuffix.ToString();
 		Equipment->EquipmentMesh->SetVisibility(true);
 		Equipment->EquipmentMesh->SetOwnerNoSee(true);
 		Equipment->EquipmentMesh->AttachToComponent(HumanChar->BodyMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName(*EquipmentSocketStr));
@@ -270,7 +269,7 @@ void UCombatComponent::AttachToHand(AEquipment* Equipment, FName SocketNameSuffi
 
 	if (HumanChar->Mesh1P && Equipment->EquipmentMesh1P)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("AttachToHand 4"));
+		UE_LOG(LogTemp, Warning, TEXT("2"));
 		Equipment->EquipmentMesh1P->SetVisibility(true);
 		Equipment->EquipmentMesh1P->SetOnlyOwnerSee(true);
 		Equipment->EquipmentMesh1P->AttachToComponent(HumanChar->Mesh1P, FAttachmentTransformRules::SnapToTargetNotIncludingScale, Sockets::WeaponRoot);
@@ -327,17 +326,10 @@ void UCombatComponent::InstantSwap(EEquipmentSlot TargetType)
 	
 	HolsterEquipment(OldCurEquipment);
 	
-	// 仅在旧槽位确实持有装备时才将其记录为 LastEquipmentSlot；
-	// 若因丢枪导致旧槽位已空，且切往的正好是原来的 LastEquipmentSlot，则将上一把武器回退指向近战武器（Slot3）
-	if (OldCurEquipment != nullptr)
-	{
-		LastEquipmentSlot = CurEquipmentSlot;
-	}
-	else if (LastEquipmentSlot == TargetType || GetLastEquipment() == nullptr)
-	{
-		LastEquipmentSlot = (TargetType != EEquipmentSlot::Slot3) ? EEquipmentSlot::Slot3 : EEquipmentSlot::Slot2;
-	}
-
+	LastEquipmentSlot = CurEquipmentSlot; 
+	// 若为丢枪则把 LastEquipmentSlot 置为近战武器
+	if (!OldCurEquipment) LastEquipmentSlot = EEquipmentSlot::Slot3;
+	
 	CurEquipmentSlot = TargetType;
 	
 	AttachToHand(TargetEquipment, Sockets::SuffixR);

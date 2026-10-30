@@ -1,13 +1,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "MutateArena/Equipments/Throwing.h"
+#include "MutateArena/Equipments/Throwable.h"
 #include "FireBottle.generated.h"
 
 class UAudioComponent;
 
 UCLASS()
-class MUTATEARENA_API AFireBottle : public AThrowing
+class MUTATEARENA_API AFireBottle : public AThrowable
 {
 	GENERATED_BODY()
 

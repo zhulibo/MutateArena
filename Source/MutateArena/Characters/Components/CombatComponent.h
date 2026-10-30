@@ -62,7 +62,7 @@ public:
 	UPROPERTY(ReplicatedUsing = OnRep_Slot3Equipment)
 	class AMelee* Slot3Equipment;
 	UPROPERTY(ReplicatedUsing = OnRep_Slot4Equipment)
-	class AThrowing* Slot4Equipment;
+	class AThrowable* Slot4Equipment;
 	UPROPERTY(ReplicatedUsing = OnRep_CurEquipmentSlot)
 	EEquipmentSlot CurEquipmentSlot;
 	UPROPERTY(Replicated)

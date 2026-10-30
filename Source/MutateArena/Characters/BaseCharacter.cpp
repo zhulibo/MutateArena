@@ -265,38 +265,41 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-	if (AssetSubsystem == nullptr || AssetSubsystem->InputAsset == nullptr) return;
+	if (AssetSubsystem == nullptr) return;
+	
+	UInputAsset* InputAsset = AssetSubsystem->InputAsset;
+	if (!InputAsset) return;
 
 	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
 		{
 			// 观察者销毁时不触发ABaseController::OnUnPossess，在这里移除观察者绑定的输入映射
-			Subsystem->RemoveMappingContext(AssetSubsystem->InputAsset->BaseMappingContext);
-			Subsystem->RemoveMappingContext(AssetSubsystem->InputAsset->SpectatorMappingContext);
+			Subsystem->RemoveMappingContext(InputAsset->BaseMappingContext);
+			Subsystem->RemoveMappingContext(InputAsset->SpectatorMappingContext);
 
-			Subsystem->AddMappingContext(AssetSubsystem->InputAsset->BaseMappingContext, 100);
-			Subsystem->AddMappingContext(AssetSubsystem->InputAsset->DebugMappingContext, 9999);
+			Subsystem->AddMappingContext(InputAsset->BaseMappingContext, 100);
+			Subsystem->AddMappingContext(InputAsset->DebugMappingContext, 9999);
 		}
 	}
 
 	if (UEnhancedInputComponent* EIC = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
 	{
-		EIC->BindAction(AssetSubsystem->InputAsset->MoveAction, ETriggerEvent::Started, this, &ThisClass::MoveStarted);
-		EIC->BindAction(AssetSubsystem->InputAsset->MoveAction, ETriggerEvent::Triggered, this, &ThisClass::Move);
-		EIC->BindAction(AssetSubsystem->InputAsset->MoveAction, ETriggerEvent::Completed, this, &ThisClass::MoveCompleted);
-		EIC->BindAction(AssetSubsystem->InputAsset->LookMouseAction, ETriggerEvent::Triggered, this, &ThisClass::LookMouse);
-		EIC->BindAction(AssetSubsystem->InputAsset->LookStickAction, ETriggerEvent::Triggered, this, &ThisClass::LookStick);
-		EIC->BindAction(AssetSubsystem->InputAsset->JumpAction, ETriggerEvent::Triggered, this, &ThisClass::JumpButtonPressed);
-		EIC->BindAction(AssetSubsystem->InputAsset->CrouchAction, ETriggerEvent::Started, this, &ThisClass::CrouchButtonPressed);
-		EIC->BindAction(AssetSubsystem->InputAsset->CrouchAction, ETriggerEvent::Completed, this, &ThisClass::CrouchButtonReleased);
-		EIC->BindAction(AssetSubsystem->InputAsset->CrouchControllerAction, ETriggerEvent::Triggered, this, &ThisClass::CrouchControllerButtonPressed);
+		EIC->BindAction(InputAsset->MoveAction, ETriggerEvent::Started, this, &ThisClass::MoveStarted);
+		EIC->BindAction(InputAsset->MoveAction, ETriggerEvent::Triggered, this, &ThisClass::Move);
+		EIC->BindAction(InputAsset->MoveAction, ETriggerEvent::Completed, this, &ThisClass::MoveCompleted);
+		EIC->BindAction(InputAsset->LookMouseAction, ETriggerEvent::Triggered, this, &ThisClass::LookMouse);
+		EIC->BindAction(InputAsset->LookStickAction, ETriggerEvent::Triggered, this, &ThisClass::LookStick);
+		EIC->BindAction(InputAsset->JumpAction, ETriggerEvent::Triggered, this, &ThisClass::JumpButtonPressed);
+		EIC->BindAction(InputAsset->CrouchAction, ETriggerEvent::Started, this, &ThisClass::CrouchButtonPressed);
+		EIC->BindAction(InputAsset->CrouchAction, ETriggerEvent::Completed, this, &ThisClass::CrouchButtonReleased);
+		EIC->BindAction(InputAsset->CrouchControllerAction, ETriggerEvent::Triggered, this, &ThisClass::CrouchControllerButtonPressed);
 
-		EIC->BindAction(AssetSubsystem->InputAsset->InteractAction, ETriggerEvent::Started, InteractorComp, &UInteractorComponent::InteractStarted);
-		EIC->BindAction(AssetSubsystem->InputAsset->InteractAction, ETriggerEvent::Ongoing, InteractorComp, &UInteractorComponent::InteractOngoing);
-		EIC->BindAction(AssetSubsystem->InputAsset->InteractAction, ETriggerEvent::Triggered, InteractorComp, &UInteractorComponent::InteractTriggered);
-		EIC->BindAction(AssetSubsystem->InputAsset->InteractAction, ETriggerEvent::Completed, InteractorComp, &UInteractorComponent::InteractCompleted);
-		EIC->BindAction(AssetSubsystem->InputAsset->InteractAction, ETriggerEvent::Canceled, InteractorComp, &UInteractorComponent::InteractCanceled);
+		EIC->BindAction(InputAsset->InteractAction, ETriggerEvent::Started, InteractorComp, &UInteractorComponent::InteractStarted);
+		EIC->BindAction(InputAsset->InteractAction, ETriggerEvent::Ongoing, InteractorComp, &UInteractorComponent::InteractOngoing);
+		EIC->BindAction(InputAsset->InteractAction, ETriggerEvent::Triggered, InteractorComp, &UInteractorComponent::InteractTriggered);
+		EIC->BindAction(InputAsset->InteractAction, ETriggerEvent::Completed, InteractorComp, &UInteractorComponent::InteractCompleted);
+		EIC->BindAction(InputAsset->InteractAction, ETriggerEvent::Canceled, InteractorComp, &UInteractorComponent::InteractCanceled);
 	}
 }
 

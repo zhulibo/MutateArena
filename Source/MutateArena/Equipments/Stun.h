@@ -1,14 +1,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "MutateArena/Equipments/Throwing.h"
+#include "MutateArena/Equipments/Throwable.h"
 #include "Stun.generated.h"
 
 class UGameplayEffect;
 class UCameraShakeBase;
 
 UCLASS()
-class MUTATEARENA_API AStun : public AThrowing
+class MUTATEARENA_API AStun : public AThrowable
 {
 	GENERATED_BODY()
 

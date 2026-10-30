@@ -6,7 +6,7 @@
 #include "MutateArena/Characters/Components/CombatComponent.h"
 #include "MutateArena/Equipments/Equipment.h"
 #include "MutateArena/Equipments/Weapon.h"
-#include "MutateArena/Equipments/Throwing.h"
+#include "MutateArena/Equipments/Throwable.h"
 #include "MutateArena/Equipments/Melee.h"
 #include "MutateArena/Equipments/Data/EquipmentAsset.h"
 #include "MutateArena/Equipments/Data/EquipmentType.h"

@@ -4,7 +4,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "TimerManager.h"
-#include "MutateArena/Equipments/Throwing.h"
+#include "MutateArena/Equipments/Throwable.h"
 #include "Components/AutoHostComponent.h"
 #include "MutateArena/Equipments/Data/EquipmentType.h"
 #include "Components/CombatComponent.h"
@@ -89,37 +89,39 @@ void AHumanCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-	if (AssetSubsystem == nullptr || AssetSubsystem->InputAsset == nullptr) return;
-
+	if (AssetSubsystem == nullptr) return;
+	
+	UInputAsset* InputAsset = AssetSubsystem->InputAsset;
+	if (!InputAsset) return;
+	
 	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
 		{
-			Subsystem->AddMappingContext(AssetSubsystem->InputAsset->HumanMappingContext, 200);
+			Subsystem->AddMappingContext(InputAsset->HumanMappingContext, 200);
 		}
 	}
 
 	if (UEnhancedInputComponent* EIC = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
 	{
-		EIC->BindAction(AssetSubsystem->InputAsset->MoveAction, ETriggerEvent::Triggered, AutoHostComp, &UAutoHostComponent::UpdateActiveTime);
-		EIC->BindAction(AssetSubsystem->InputAsset->LookMouseAction, ETriggerEvent::Triggered, AutoHostComp, &UAutoHostComponent::UpdateActiveTime);
-		EIC->BindAction(AssetSubsystem->InputAsset->LookStickAction, ETriggerEvent::Triggered, AutoHostComp, &UAutoHostComponent::UpdateActiveTime);
-		EIC->BindAction(AssetSubsystem->InputAsset->FireAction, ETriggerEvent::Started, AutoHostComp, &UAutoHostComponent::UpdateActiveTime);
+		EIC->BindAction(InputAsset->MoveAction, ETriggerEvent::Triggered, AutoHostComp, &UAutoHostComponent::UpdateActiveTime);
+		EIC->BindAction(InputAsset->LookMouseAction, ETriggerEvent::Triggered, AutoHostComp, &UAutoHostComponent::UpdateActiveTime);
+		EIC->BindAction(InputAsset->LookStickAction, ETriggerEvent::Triggered, AutoHostComp, &UAutoHostComponent::UpdateActiveTime);
+		EIC->BindAction(InputAsset->FireAction, ETriggerEvent::Started, AutoHostComp, &UAutoHostComponent::UpdateActiveTime);
 
-		EIC->BindAction(AssetSubsystem->InputAsset->AimAction, ETriggerEvent::Started, this, &ThisClass::AimButtonPressed);
-		EIC->BindAction(AssetSubsystem->InputAsset->AimAction, ETriggerEvent::Completed, this, &ThisClass::AimButtonReleased);
-		EIC->BindAction(AssetSubsystem->InputAsset->FireAction, ETriggerEvent::Started, this, &ThisClass::FireButtonPressed);
-		EIC->BindAction(AssetSubsystem->InputAsset->FireAction, ETriggerEvent::Completed, this, &ThisClass::FireButtonReleased);
-		EIC->BindAction(AssetSubsystem->InputAsset->ReloadAction, ETriggerEvent::Triggered, this, &ThisClass::ReloadButtonPressed);
-		EIC->BindAction(AssetSubsystem->InputAsset->DropAction, ETriggerEvent::Triggered, this, &ThisClass::DropButtonPressed);
+		EIC->BindAction(InputAsset->AimAction, ETriggerEvent::Started, this, &ThisClass::AimButtonPressed);
+		EIC->BindAction(InputAsset->AimAction, ETriggerEvent::Completed, this, &ThisClass::AimButtonReleased);
+		EIC->BindAction(InputAsset->FireAction, ETriggerEvent::Started, this, &ThisClass::FireButtonPressed);
+		EIC->BindAction(InputAsset->FireAction, ETriggerEvent::Completed, this, &ThisClass::FireButtonReleased);
+		EIC->BindAction(InputAsset->ReloadAction, ETriggerEvent::Triggered, this, &ThisClass::ReloadButtonPressed);
+		EIC->BindAction(InputAsset->DropAction, ETriggerEvent::Triggered, this, &ThisClass::DropButtonPressed);
 
-		EIC->BindAction(AssetSubsystem->InputAsset->SwapSlot1EquipmentAction, ETriggerEvent::Triggered, this, &ThisClass::SendSwapEquipmentEvent, EEquipmentSlot::Slot1);
-		EIC->BindAction(AssetSubsystem->InputAsset->SwapSlot2EquipmentAction, ETriggerEvent::Triggered, this, &ThisClass::SendSwapEquipmentEvent, EEquipmentSlot::Slot2);
-		EIC->BindAction(AssetSubsystem->InputAsset->SwapSlot3EquipmentAction, ETriggerEvent::Triggered, this, &ThisClass::SendSwapEquipmentEvent, EEquipmentSlot::Slot3);
-		EIC->BindAction(AssetSubsystem->InputAsset->SwapSlot4EquipmentAction, ETriggerEvent::Triggered, this, &ThisClass::SendSwapEquipmentEvent, EEquipmentSlot::Slot4);
-		EIC->BindAction(AssetSubsystem->InputAsset->SwapLastSlotEquipmentAction, ETriggerEvent::Triggered, this, &ThisClass::SwapLastSlotEquipmentButtonPressed);
-		EIC->BindAction(AssetSubsystem->InputAsset->SwapBetweenSlot1Slot2EquipmentAction, ETriggerEvent::Triggered, this,
-		                &ThisClass::SwapBetweenSlot1Slot2EquipmentButtonPressed);
+		EIC->BindAction(InputAsset->SwapSlot1EquipmentAction, ETriggerEvent::Triggered, this, &ThisClass::SendSwapEquipmentEvent, EEquipmentSlot::Slot1);
+		EIC->BindAction(InputAsset->SwapSlot2EquipmentAction, ETriggerEvent::Triggered, this, &ThisClass::SendSwapEquipmentEvent, EEquipmentSlot::Slot2);
+		EIC->BindAction(InputAsset->SwapSlot3EquipmentAction, ETriggerEvent::Triggered, this, &ThisClass::SendSwapEquipmentEvent, EEquipmentSlot::Slot3);
+		EIC->BindAction(InputAsset->SwapSlot4EquipmentAction, ETriggerEvent::Triggered, this, &ThisClass::SendSwapEquipmentEvent, EEquipmentSlot::Slot4);
+		EIC->BindAction(InputAsset->SwapLastSlotEquipmentAction, ETriggerEvent::Triggered, this, &ThisClass::SwapLastSlotEquipmentButtonPressed);
+		EIC->BindAction(InputAsset->SwapBetweenSlot1Slot2EquipmentAction, ETriggerEvent::Triggered, this, &ThisClass::SwapBetweenSlot1Slot2EquipmentButtonPressed);
 	}
 }
 
@@ -308,7 +310,7 @@ void AHumanCharacter::ServerSpawnEquipments_Implementation(EEquipmentName Slot1N
 		}
 	}
 	// 投掷物
-	SpawnEquipment.template operator()<AThrowing>(Slot4Name);
+	SpawnEquipment.template operator()<AThrowable>(Slot4Name);
 }
 
 void AHumanCharacter::AimButtonPressed(const FInputActionValue& Value)
@@ -388,7 +390,7 @@ void AHumanCharacter::FireButtonPressed(const FInputActionValue& Value)
 		}
 		break;
 	case EEquipmentSlot::Slot4:
-		ASC->TryActivateAbilitiesByTag(FGameplayTagContainer(TAG_ABILITY_THROWING_THROW));
+		ASC->TryActivateAbilitiesByTag(FGameplayTagContainer(TAG_ABILITY_THROWABLE_THROW));
 		break;
 	}
 }
@@ -437,23 +439,22 @@ void AHumanCharacter::DropButtonPressed(const FInputActionValue& Value)
 void AHumanCharacter::SwapLastSlotEquipmentButtonPressed(const FInputActionValue& Value)
 {
 	if (!CombatComp) return;
+	
 	SendSwapEquipmentEvent(CombatComp->LastEquipmentSlot);
 }
 
 void AHumanCharacter::SwapBetweenSlot1Slot2EquipmentButtonPressed(const FInputActionValue& Value)
 {
-	if (CombatComp)
+	if (!CombatComp) return;
+	
+	if (AWeapon* Slot1Weapon = Cast<AWeapon>(CombatComp->GetEquipmentByType(EEquipmentSlot::Slot1)))
 	{
-		if (AWeapon* Slot1Weapon = Cast<AWeapon>(CombatComp->GetEquipmentByType(EEquipmentSlot::Slot1)))
+		EEquipmentSlot EquipmentSlot = EEquipmentSlot::Slot1;
+		if (CombatComp->CurEquipmentSlot == EEquipmentSlot::Slot1 || CombatComp->CurEquipmentSlot != EEquipmentSlot::Slot1 && Slot1Weapon->IsEmpty())
 		{
-			EEquipmentSlot EquipmentSlot = EEquipmentSlot::Slot1;
-			if (CombatComp->CurEquipmentSlot == EEquipmentSlot::Slot1 ||
-				CombatComp->CurEquipmentSlot != EEquipmentSlot::Slot1 && Slot1Weapon->IsEmpty())
-			{
-				EquipmentSlot = EEquipmentSlot::Slot2;
-			}
-			SendSwapEquipmentEvent(EquipmentSlot);
+			EquipmentSlot = EEquipmentSlot::Slot2;
 		}
+		SendSwapEquipmentEvent(EquipmentSlot);
 	}
 }
 

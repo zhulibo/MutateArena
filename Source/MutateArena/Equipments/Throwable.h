@@ -2,17 +2,17 @@
 
 #include "CoreMinimal.h"
 #include "MutateArena/Equipments/Equipment.h"
-#include "Throwing.generated.h"
+#include "Throwable.generated.h"
 
-class UFragThrowing;
+class UFragThrowable;
 
 UCLASS()
-class MUTATEARENA_API AThrowing : public AEquipment
+class MUTATEARENA_API AThrowable : public AEquipment
 {
 	GENERATED_BODY()
 
 public:
-	AThrowing();
+	AThrowable();
 
 	virtual void BeginPlay() override;
 
@@ -20,7 +20,7 @@ public:
 	class UProjectileMovementComponent* ProjectileMovement;
 
 	UPROPERTY(Transient)
-	TObjectPtr<const UFragThrowing> FragThrowing = nullptr;
+	TObjectPtr<const UFragThrowable> FragThrowable = nullptr;
 
 	virtual void ThrowOut();
 

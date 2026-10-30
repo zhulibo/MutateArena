@@ -9,27 +9,34 @@ UGA_Equipment::UGA_Equipment()
 {
 }
 
-bool UGA_Equipment::CanActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayTagContainer* SourceTags, const FGameplayTagContainer* TargetTags, FGameplayTagContainer* OptionalRelevantTags) const
+bool UGA_Equipment::CanActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayTagContainer* SourceTags,
+                                       const FGameplayTagContainer* TargetTags, FGameplayTagContainer* OptionalRelevantTags) const
 {
 	if (!Super::CanActivateAbility(Handle, ActorInfo, SourceTags, TargetTags, OptionalRelevantTags))
 	{
 		return false;
 	}
-	
-	AHumanCharacter* HumanChar = GetHumanCharacter();
-	UCombatComponent* CombatComp = HumanChar ? HumanChar->CombatComp : nullptr;
-	AEquipment* CurEquipment = GetCurEquipment();
 
-	if (!HumanChar || !CurEquipment || !CombatComp)
+	AHumanCharacter* HumanChar = ActorInfo ? Cast<AHumanCharacter>(ActorInfo->AvatarActor.Get()) : nullptr;
+	UCombatComponent* CombatComp = HumanChar ? HumanChar->CombatComp : nullptr;
+	AEquipment* CurEquipment = CombatComp ? CombatComp->GetCurEquipment() : nullptr;
+
+	if (!HumanChar || !CombatComp || !CurEquipment)
 	{
 		return false;
 	}
-	
-	AEquipment* SourceEquipment = Cast<AEquipment>(ActorInfo->AbilitySystemComponent->FindAbilitySpecFromHandle(Handle)->SourceObject);
-	// 只有当这个技能所属的武器，就是玩家当前正拿在手里的武器时，才允许激活
-	if (SourceEquipment && CurEquipment != SourceEquipment)
+
+	if (UAbilitySystemComponent* ASC = ActorInfo->AbilitySystemComponent.Get())
 	{
-		return false;
+		if (FGameplayAbilitySpec* Spec = ASC->FindAbilitySpecFromHandle(Handle))
+		{
+			AEquipment* SourceEquipment = Cast<AEquipment>(Spec->SourceObject.Get());
+			// 只有当这个技能所属的武器，就是玩家当前正拿在手里的武器时，才允许激活
+			if (SourceEquipment && CurEquipment != SourceEquipment)
+			{
+				return false;
+			}
+		}
 	}
 
 	return true;
@@ -49,7 +56,7 @@ AEquipment* UGA_Equipment::GetCurEquipment() const
 			return CombatComp->GetCurEquipment();
 		}
 	}
-	
+
 	return nullptr;
 }
 
@@ -62,7 +69,7 @@ AEquipment* UGA_Equipment::GetLastEquipment() const
 			return CombatComp->GetLastEquipment();
 		}
 	}
-	
+
 	return nullptr;
 }
 
@@ -75,7 +82,7 @@ AWeapon* UGA_Equipment::GetCurWeapon() const
 			return CombatComp->GetCurWeapon();
 		}
 	}
-	
+
 	return nullptr;
 }
 
@@ -88,6 +95,6 @@ class AMelee* UGA_Equipment::GetCurMelee() const
 			return CombatComp->GetCurMelee();
 		}
 	}
-	
+
 	return nullptr;
 }

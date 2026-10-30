@@ -80,7 +80,7 @@ void AProjectile::EnsureWeaponFragCached()
 	{
 		if (UAssetSubsystem* AssetSubsystem = GameInstance->GetSubsystem<UAssetSubsystem>())
 		{
-			if (UEquipmentAsset* WeaponAsset = AssetSubsystem->GetEquipmentAssetByName(EquipmentParentName))
+			if (UEquipmentAsset* WeaponAsset = AssetSubsystem->GetEquipmentAssetByName(ParentEquipmentName))
 			{
 				CachedWeaponFrag = WeaponAsset->FindFragmentByClass<UFragWeapon>();
 			}

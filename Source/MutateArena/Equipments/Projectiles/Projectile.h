@@ -36,7 +36,7 @@ public:
 	UFUNCTION()
 	float GetImpulse(float DeclineDamage);
 
-	EEquipmentName EquipmentParentName;
+	EEquipmentName ParentEquipmentName;
 
 protected:
 	virtual void PostActorCreated() override;

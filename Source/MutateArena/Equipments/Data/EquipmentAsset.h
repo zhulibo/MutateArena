@@ -165,7 +165,7 @@ public:
 };
 
 UCLASS(BlueprintType)
-class MUTATEARENA_API UFragThrowing : public UEquipmentFragment
+class MUTATEARENA_API UFragThrowable : public UEquipmentFragment
 {
 	GENERATED_BODY()
 
@@ -217,9 +217,9 @@ protected:
 	TArray<TSoftClassPtr<UGameplayAbility>> GrantedAbilities;
 
 	UPROPERTY(EditAnywhere, meta = (EditCondition = "ParentAsset == nullptr"))
-	TObjectPtr<UAnimMontage> SwapInMontage_C;
+	TObjectPtr<UAnimMontage> EquipMontage_C;
 	UPROPERTY(EditAnywhere, meta = (EditCondition = "ParentAsset == nullptr"))
-	TObjectPtr<UAnimMontage> SwapInMontage_E;
+	TObjectPtr<UAnimMontage> EquipMontage_E;
 
 	UPROPERTY(EditAnywhere, meta = (EditCondition = "ParentAsset == nullptr"))
 	float WalkSpeedMul = 1.f;
@@ -303,16 +303,11 @@ public:
 	
 	bool IsSkin() const { return ParentAsset != nullptr; }
 
-	EEquipmentName GetEquipmentParentName() const
+	EEquipmentName GetParentEquipmentName() const
 	{
-		return ParentAsset ? ParentAsset->EquipmentName : EEquipmentName::None;
+		return ParentAsset ? ParentAsset->GetParentEquipmentName() : EquipmentName;
 	}
-	
-	EEquipmentName GetBaseEquipmentName() const
-	{
-		return ParentAsset ? ParentAsset->GetBaseEquipmentName() : EquipmentName;
-	}
-	
+
 	EEquipmentType GetEquipmentType() const
 	{
 		return ParentAsset ? ParentAsset->GetEquipmentType() : EquipmentType;
@@ -333,14 +328,14 @@ public:
 		return ParentAsset ? ParentAsset->GetGrantedAbilities() : GrantedAbilities;
 	}
 
-	UAnimMontage* GetSwapInMontage_C() const
+	UAnimMontage* GetEquipMontage_C() const
 	{
-		return ParentAsset ? ParentAsset->GetSwapInMontage_C() : SwapInMontage_C.Get();
+		return ParentAsset ? ParentAsset->GetEquipMontage_C() : EquipMontage_C.Get();
 	}
 
-	UAnimMontage* GetSwapInMontage_E() const
+	UAnimMontage* GetEquipMontage_E() const
 	{
-		return ParentAsset ? ParentAsset->GetSwapInMontage_E() : SwapInMontage_E.Get();
+		return ParentAsset ? ParentAsset->GetEquipMontage_E() : EquipMontage_E.Get();
 	}
 
 	float GetWalkSpeedMul() const

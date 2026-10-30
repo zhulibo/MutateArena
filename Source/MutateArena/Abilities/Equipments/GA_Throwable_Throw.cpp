@@ -1,19 +1,19 @@
-#include "GA_Throwing_Throw.h"
+#include "GA_Throwable_Throw.h"
 
 #include "AbilitySystemComponent.h"
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "MutateArena/Characters/Components/CombatComponent.h"
-#include "MutateArena/Equipments/Throwing.h"
+#include "MutateArena/Equipments/Throwable.h"
 #include "MutateArena/Equipments/Data/EquipmentAsset.h"
 #include "MutateArena/System/GameplayTags.h"
 
-UGA_Throwing_Throw::UGA_Throwing_Throw()
+UGA_Throwable_Throw::UGA_Throwable_Throw()
 {
 }
 
-bool UGA_Throwing_Throw::CanActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayTagContainer* SourceTags, const FGameplayTagContainer* TargetTags, FGameplayTagContainer* OptionalRelevantTags) const
+bool UGA_Throwable_Throw::CanActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayTagContainer* SourceTags, const FGameplayTagContainer* TargetTags, FGameplayTagContainer* OptionalRelevantTags) const
 {
 	if (!Super::CanActivateAbility(Handle, ActorInfo, SourceTags, TargetTags, OptionalRelevantTags))
 	{
@@ -21,8 +21,8 @@ bool UGA_Throwing_Throw::CanActivateAbility(const FGameplayAbilitySpecHandle Han
 	}
 
 	// 确保当前拿在手里的是投掷物
-	AThrowing* ThrowingEquip = Cast<AThrowing>(GetCurEquipment());
-	if (!ThrowingEquip)
+	AThrowable* ThrowableEquip = Cast<AThrowable>(GetCurEquipment());
+	if (!ThrowableEquip)
 	{
 		return false;
 	}
@@ -30,7 +30,7 @@ bool UGA_Throwing_Throw::CanActivateAbility(const FGameplayAbilitySpecHandle Han
 	return true;
 }
 
-void UGA_Throwing_Throw::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
+void UGA_Throwable_Throw::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
 {
 	if (!CommitAbility(Handle, ActorInfo, ActivationInfo))
 	{
@@ -40,9 +40,9 @@ void UGA_Throwing_Throw::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 
 	UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
 	AHumanCharacter* HumanChar = GetHumanCharacter();
-	AThrowing* ThrowingEquip = Cast<AThrowing>(GetCurEquipment());
+	AThrowable* ThrowableEquip = Cast<AThrowable>(GetCurEquipment());
 
-	if (!ASC || !HumanChar || !ThrowingEquip)
+	if (!ASC || !HumanChar || !ThrowableEquip)
 	{
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;
@@ -50,14 +50,14 @@ void UGA_Throwing_Throw::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 
 	bHasThrownOut = false;
 
-	if (ThrowingEquip->FragThrowing->ThrowMontage_C)
+	if (ThrowableEquip->FragThrowable->ThrowMontage_C)
 	{
-		UAbilityTask_WaitGameplayEvent* WaitEventTask = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(this, TAG_EVENT_THROWING_THROWOUT);
+		UAbilityTask_WaitGameplayEvent* WaitEventTask = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(this, TAG_EVENT_THROWABLE_THROWOUT);
 		WaitEventTask->EventReceived.AddDynamic(this, &ThisClass::OnThrowOutEventReceived);
 		WaitEventTask->ReadyForActivation();
 
 		UAbilityTask_PlayMontageAndWait* MontageTask = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(
-			this, NAME_None, ThrowingEquip->FragThrowing->ThrowMontage_C, 1.f, NAME_None, false);
+			this, NAME_None, ThrowableEquip->FragThrowable->ThrowMontage_C, 1.f, NAME_None, false);
 		MontageTask->OnCompleted.AddDynamic(this, &ThisClass::OnMontageFinished);
 		MontageTask->OnInterrupted.AddDynamic(this, &ThisClass::OnMontageFinished);
 		MontageTask->OnCancelled.AddDynamic(this, &ThisClass::OnMontageFinished);
@@ -65,8 +65,8 @@ void UGA_Throwing_Throw::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 
 		FGameplayCueParameters CueParams;
 		CueParams.Instigator = HumanChar;
-		CueParams.SourceObject = ThrowingEquip;
-		ASC->ExecuteGameplayCue(TAG_GC_THROWING_THROW, CueParams);
+		CueParams.SourceObject = ThrowableEquip;
+		ASC->ExecuteGameplayCue(TAG_GC_THROWABLE_THROW, CueParams);
 	}
 	else
 	{
@@ -74,27 +74,27 @@ void UGA_Throwing_Throw::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 	}
 }
 
-void UGA_Throwing_Throw::OnThrowOutEventReceived(FGameplayEventData Payload)
+void UGA_Throwable_Throw::OnThrowOutEventReceived(FGameplayEventData Payload)
 {
 	AHumanCharacter* HumanChar = GetHumanCharacter();
 	UCombatComponent* CombatComp = HumanChar ? HumanChar->CombatComp : nullptr;
-	AThrowing* ThrowingEquip = Cast<AThrowing>(GetCurEquipment());
+	AThrowable* ThrowableEquip = Cast<AThrowable>(GetCurEquipment());
 
-	if (ThrowingEquip && CombatComp)
+	if (ThrowableEquip && CombatComp)
 	{
-		ThrowingEquip->ThrowOut();
+		ThrowableEquip->ThrowOut();
 		
 		CombatComp->Slot4Equipment = nullptr;
 		bHasThrownOut = true;
 	}
 }
 
-void UGA_Throwing_Throw::OnMontageFinished()
+void UGA_Throwable_Throw::OnMontageFinished()
 {
 	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 }
 
-void UGA_Throwing_Throw::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
+void UGA_Throwable_Throw::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
 	AHumanCharacter* HumanChar = GetHumanCharacter();
 	UCombatComponent* CombatComp = HumanChar ? HumanChar->CombatComp : nullptr;

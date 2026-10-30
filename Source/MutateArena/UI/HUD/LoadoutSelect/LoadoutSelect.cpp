@@ -51,7 +51,7 @@ void ULoadoutSelect::NativeOnInitialized()
 					LoadoutSelectButton->Slot3EquipmentText->SetText(Asset->ShowName);
 				}
 
-				// Throwing
+				// Throwable
 				if (UEquipmentAsset* Asset = AssetSubsystem->GetEquipmentAssetByName(CurrentLoadout.Slot4EquipmentName))
 				{
 					LoadoutSelectButton->Slot4EquipmentText->SetText(Asset->ShowName);

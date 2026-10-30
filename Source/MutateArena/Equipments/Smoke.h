@@ -1,11 +1,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "MutateArena/Equipments/Throwing.h"
+#include "MutateArena/Equipments/Throwable.h"
 #include "Smoke.generated.h"
 
 UCLASS()
-class MUTATEARENA_API ASmoke : public AThrowing
+class MUTATEARENA_API ASmoke : public AThrowable
 {
 	GENERATED_BODY()
 

@@ -1,4 +1,4 @@
-#include "Throwing.h"
+#include "Throwable.h"
 
 #include "MetaSoundSource.h"
 #include "Components/SphereComponent.h"
@@ -8,7 +8,7 @@
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "MutateArena/System/AssetSubsystem.h"
 
-AThrowing::AThrowing()
+AThrowable::AThrowable()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -21,23 +21,23 @@ AThrowing::AThrowing()
 	ProjectileMovement->SetAutoActivate(false);
 }
 
-void AThrowing::BeginPlay()
+void AThrowable::BeginPlay()
 {
 	Super::BeginPlay();
 	
 	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
 	check(AssetSubsystem);
 
-	FragThrowing = EquipmentAsset->FindFragmentByClass<UFragThrowing>();
-	check(FragThrowing);
+	FragThrowable = EquipmentAsset->FindFragmentByClass<UFragThrowable>();
+	check(FragThrowable);
 	
 	if (ProjectileMovement)
 	{
-		ProjectileMovement->OnProjectileBounce.AddDynamic(this, &AThrowing::OnProjectileBounce);
+		ProjectileMovement->OnProjectileBounce.AddDynamic(this, &AThrowable::OnProjectileBounce);
 	}
 }
 
-void AThrowing::ThrowOut()
+void AThrowable::ThrowOut()
 {
 	EquipmentState = EEquipmentState::Thrown;
 
@@ -60,7 +60,7 @@ void AThrowing::ThrowOut()
 	SetReplicateMovement(true);
 }
 
-void AThrowing::OnRep_EquipmentState(EEquipmentState OldState)
+void AThrowable::OnRep_EquipmentState(EEquipmentState OldState)
 {
 	Super::OnRep_EquipmentState(OldState);
 	
@@ -73,14 +73,14 @@ void AThrowing::OnRep_EquipmentState(EEquipmentState OldState)
 	}
 }
 
-void AThrowing::OnProjectileBounce(const FHitResult& ImpactResult, const FVector& ImpactVelocity)
+void AThrowable::OnProjectileBounce(const FHitResult& ImpactResult, const FVector& ImpactVelocity)
 {
-	if (!FragThrowing->HitSound || bHasBounced) return;
+	if (!FragThrowable->HitSound || bHasBounced) return;
 
 	bHasBounced = true;
 
 	UGameplayStatics::SpawnSoundAttached(
-		FragThrowing->HitSound, 
+		FragThrowable->HitSound, 
 		GetRootComponent(), 
 		NAME_None, 
 		FVector::ZeroVector, 
