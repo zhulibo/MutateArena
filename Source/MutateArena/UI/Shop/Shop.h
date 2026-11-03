@@ -5,7 +5,7 @@
 #include "MutateArena/System/EOSSubsystem.h"
 #include "Shop.generated.h"
 
-class UCharacterHumanAsset;
+class UHumanAsset;
 class UEquipmentAsset;
 
 UCLASS()
@@ -32,7 +32,7 @@ protected:
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<UItemButton> CharacterButtonClass;
-	void AddCharacterButton(const FOffer& Offer, const UCharacterHumanAsset* CharacterAsset);
+	void AddCharacterButton(const FOffer& Offer, const UHumanAsset* CharacterAsset);
 
 	void OnItemButtonClicked(UItemButton* ItemButton);
 

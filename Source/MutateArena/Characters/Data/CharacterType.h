@@ -4,7 +4,7 @@
 #include "CharacterType.generated.h"
 
 UENUM(BlueprintType)
-enum class EHumanCharacterName : uint8
+enum class EHumanName : uint8
 {
 	Solider,
 	Doctor,
@@ -13,17 +13,19 @@ enum class EHumanCharacterName : uint8
 };
 
 UENUM(BlueprintType)
-enum class EMutantCharacterName : uint8
+enum class EMutantName : uint8
 {
 	Tank,
 	Ghost,
 	Smoker,
-	Cutter,
-	CorpseDriver,
+	Reaper,
+	Boomer,
+
+	// 未实现
 	Cook,
-	Echo,
+	Caller,
+	Clicker,
 	Generator,
-	Venom,
 
 	None
 };
@@ -38,91 +40,14 @@ enum class EDNA2 : uint8
 	HighBoneDensity,
 	AcceleratedClotting,
 	ToxicityImmunity,
+
 	// 未实现
 	AcceleratedMetabolism,
 	ThermalRegulation,
 	PainModulation,
 	CoreMaintenance,
-	
+
 	None
-};
-
-USTRUCT(BlueprintType)
-struct FHumanCharacterMain : public FTableRowBase
-{
-	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere)
-	FText ShowName;
-
-	UPROPERTY(EditAnywhere)
-	EHumanCharacterName HumanCharacterName = EHumanCharacterName::None;
-	
-	UPROPERTY(EditAnywhere)
-	TSoftObjectPtr<UTexture2D> ShowImg;
-	
-	UPROPERTY(EditAnywhere)
-	TSoftObjectPtr<UTexture2D> ShowImgFullBody;
-
-	UPROPERTY(EditAnywhere)
-	TSoftClassPtr<class AHumanCharacter> HumanCharacterClass;
-
-	/**
-	 * Must be the same as the OfferId in dev portal,
-	 * Used to determine the button type in the UShop::OnQueryOffersComplete.
-	 */
-	UPROPERTY(EditAnywhere)
-	FString OfferId;
-
-	/**
-	 * Must be same as the audience item ID in dev portal,
-	 * Used to determine whether player's account owns the product.
-	 */
-	UPROPERTY(EditAnywhere)
-	FString AudienceItemId;
-
-};
-
-USTRUCT(BlueprintType)
-struct FMutantCharacterMain : public FTableRowBase
-{
-	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere)
-	FText ShowName;
-
-	UPROPERTY(EditAnywhere)
-	EMutantCharacterName MutantCharacterName = EMutantCharacterName::None;
-	
-	UPROPERTY(EditAnywhere)
-	TSoftObjectPtr<UTexture2D> ShowImg;
-	
-	UPROPERTY(EditAnywhere)
-	TSoftObjectPtr<UTexture2D> ShowImgFullBody;
-
-	UPROPERTY(EditAnywhere)
-	TSoftClassPtr<class AMutantCharacter> MutantCharacterClass;
-
-	UPROPERTY(EditAnywhere)
-	float LightAttackDamage = 0.f;
-	UPROPERTY(EditAnywhere)
-	float HeavyAttackDamage = 0.f;
-
-	UPROPERTY(EditAnywhere)
-	FText Attribute;
-	UPROPERTY(EditAnywhere)
-	FText Skill;
-	UPROPERTY(EditAnywhere)
-	FText Desc;
-
-	UPROPERTY(EditAnywhere)
-	TArray<FName> TraceSockets_R;
-	UPROPERTY(EditAnywhere)
-	float TraceRadius_R = 10.f;
-	UPROPERTY(EditAnywhere)
-	TArray<FName> TraceSockets_L;
-	UPROPERTY(EditAnywhere)
-	float TraceRadius_L = 10.f;
 };
 
 UENUM(BlueprintType)

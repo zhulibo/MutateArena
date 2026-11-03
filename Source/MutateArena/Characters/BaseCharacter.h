@@ -77,6 +77,8 @@ public:
 	virtual void OnRep_PlayerState() override;
 	virtual void Destroyed() override;
 	
+	virtual bool CanJumpInternal_Implementation() const override;
+	
 protected:
 	UPROPERTY()
 	class UAssetSubsystem* AssetSubsystem;
@@ -97,9 +99,9 @@ protected:
 	void ServerSetInputType(ECommonInputType TempInputType);
 	
 public:
-	// 标准行走速度参考值，用于计算行走动画播放速度。在子类中会被赋值，赋值时需保证与角色ASC中的MaxWalkSpeed一级速度一致
+	// 标准行走速度参考值，用于计算行走动画播放速度。
 	UPROPERTY()
-	float DefaultMaxWalkSpeed = 500.f;
+	float Level1MaxWalkSpeed = 500.f;
 
 	bool bIsPlayerStateTeamReady = false;
 protected:
@@ -158,9 +160,9 @@ protected:
 	void LookMouse(const FInputActionValue& Value);
 	void LookStick(const FInputActionValue& Value);
 	void JumpButtonPressed(const FInputActionValue& Value);
+	void JumpButtonReleased(const FInputActionValue& Value);
 	void CrouchButtonPressed(const FInputActionValue& Value);
 	void CrouchButtonReleased(const FInputActionValue& Value);
-	void CrouchControllerButtonPressed(const FInputActionValue& Value);
 
 	// 血量
 public:
@@ -176,17 +178,11 @@ protected:
 	void OnMaxHealthChanged(const FOnAttributeChangeData& Data);
 	virtual void OnHealthChanged(const FOnAttributeChangeData& Data);
 	void OnJumpZVelocityChanged(const FOnAttributeChangeData& Data);
-	
-	// 连跳 测试结果 跳1.1m 跳蹲1.3m 连跳1.5m 跳跳蹲1.7m
-	UPROPERTY()
-	float JumpBufferWindow = 0.2f;
-	UPROPERTY()
-	float ComboJumpZMultiplier = 1.2f;
-	UPROPERTY()
-	float LastLandedTime = 0.f;
-	// 记录按下跳跃键的时间
-	float LastJumpPressedTime = -999.f;
-	
+	void OnMaxWalkSpeedChanged(const FOnAttributeChangeData& Data);
+
+	// 连跳 测试结果 跳1.1m 跳蹲1.2m 连跳1.3m 跳跳蹲1.5m
+	// 记录在空中按下跳跃键的时间戳
+	double LastJumpPressedTime = -100.f;
 	// 跌落
 	virtual void Landed(const FHitResult& Hit) override;
 	float CalcFallDamageRate();

@@ -1,18 +1,18 @@
-#include "GC_MutantCorpseDriverSkill.h"
+#include "GC_MutantCallerSkill.h"
 #include "Kismet/GameplayStatics.h"
 #include "NiagaraFunctionLibrary.h"
-#include "MutateArena/Characters/Mutants/MutantCorpseDriver.h"
+#include "MutateArena/Characters/Mutants/MutantCaller.h"
 
-AGC_MutantCorpseDriverSkill::AGC_MutantCorpseDriverSkill()
+AGC_MutantCallerSkill::AGC_MutantCallerSkill()
 {
 	PrimaryActorTick.bCanEverTick = false;
 	bAutoDestroyOnRemove = true;
 }
 
-bool AGC_MutantCorpseDriverSkill::OnExecute_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters)
+bool AGC_MutantCallerSkill::OnExecute_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters)
 {
-	AMutantCorpseDriver* MutantCorpseDriver = Cast<AMutantCorpseDriver>(MyTarget);
-	if (MutantCorpseDriver == nullptr)
+	AMutantCaller* MutantCaller = Cast<AMutantCaller>(MyTarget);
+	if (MutantCaller == nullptr)
 	{
 		return Super::OnExecute_Implementation(MyTarget, Parameters);
 	}
@@ -38,11 +38,11 @@ bool AGC_MutantCorpseDriverSkill::OnExecute_Implementation(AActor* MyTarget, con
 		UGameplayStatics::PlaySoundAtLocation(this, SummonSound, FXLocation);
 	}
     
-	if (MutantCorpseDriver->IsLocallyControlled())
+	if (MutantCaller->IsLocallyControlled())
 	{
 		if (SkillActivationSound)
 		{
-			UGameplayStatics::PlaySound2D(MutantCorpseDriver, SkillActivationSound);
+			UGameplayStatics::PlaySound2D(MutantCaller, SkillActivationSound);
 		}
 	}
 	

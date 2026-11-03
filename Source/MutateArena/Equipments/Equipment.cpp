@@ -86,13 +86,10 @@ void AEquipment::BeginPlay()
 	}
     
 	// 初始赋值 EquipmentAsset 并强制校验有效
-	UGameInstance* GameInstance = GetWorld() ? GetWorld()->GetGameInstance() : nullptr;
-	check(GameInstance);
-
-	if (!AssetSubsystem) AssetSubsystem = GameInstance->GetSubsystem<UAssetSubsystem>();
+	if (!AssetSubsystem) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
 	check(AssetSubsystem);
     
-	if (!EquipmentAsset) EquipmentAsset = AssetSubsystem->GetEquipmentAssetByName(EquipmentName);
+	EquipmentAsset = AssetSubsystem->GetEquipmentAssetByName(EquipmentName);
 	check(EquipmentAsset);
 
 	// 应用皮肤材质覆盖

@@ -5,8 +5,8 @@
 #include "SaveGameLoadout.generated.h"
 
 enum class EDNA2 : uint8;
-enum class EMutantCharacterName : uint8;
-enum class EHumanCharacterName : uint8;
+enum class EMutantName : uint8;
+enum class EHumanName : uint8;
 
 UCLASS()
 class MUTATEARENA_API USaveGameLoadout : public USaveGame
@@ -25,9 +25,9 @@ public:
 	int32 LoadoutIndex;
 	
 	UPROPERTY()
-	EHumanCharacterName HumanCharacterName;
+	EHumanName HumanName;
 	UPROPERTY()
-	EMutantCharacterName MutantCharacterName;
+	EMutantName MutantName;
 
 	UPROPERTY()
 	EDNA2 DNA1;

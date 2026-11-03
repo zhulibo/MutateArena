@@ -10,7 +10,7 @@
 #include "MutateArena/Utils/LibraryCommon.h"
 #include "MutateArena/Utils/LibraryNotify.h"
 #include "MutateArena/System/AssetSubsystem.h"
-#include "MutateArena/Characters/Data/CharacterCommonAsset.h"
+#include "MutateArena/Characters/Data/CharacterAsset.h"
 #include "MutateArena/Equipments/Data/EquipmentAsset.h"
 
 #define LOCTEXT_NAMESPACE "UShop"
@@ -65,7 +65,7 @@ void UShop::OnQueryOffersComplete(bool bWasSuccessful)
 				bool bMatched = false;
 
 				// 判断是装备还是角色
-				for (const auto& Pair : AssetSubsystem->CachedCharacterHumanAssets)
+				for (const auto& Pair : AssetSubsystem->CachedHumanAssets)
 				{
 					if (Pair.Value && Pair.Value->OfferId == Offers[i].OfferId)
 					{
@@ -122,7 +122,7 @@ void UShop::AddEquipmentButton(const FOffer& Offer, const UEquipmentAsset* Equip
 }
 
 // 添加角色按钮
-void UShop::AddCharacterButton(const FOffer& Offer, const UCharacterHumanAsset* CharacterAsset)
+void UShop::AddCharacterButton(const FOffer& Offer, const UHumanAsset* CharacterAsset)
 {
 	if (!CharacterAsset) return;
 

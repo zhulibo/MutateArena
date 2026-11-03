@@ -9,12 +9,6 @@
 AMutantGhost::AMutantGhost(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-	MutantCharacterName = EMutantCharacterName::Ghost;
-	
-	// 需保证与角色ASC中的MaxWalkSpeed一级速度一致
-	DefaultMaxWalkSpeed = 550.f;
-	GetCharacterMovement()->MaxWalkSpeed = DefaultMaxWalkSpeed;
-	GetCharacterMovement()->MaxWalkSpeedCrouched = DefaultMaxWalkSpeed * 0.5f;
 }
 
 void AMutantGhost::BeginPlay()

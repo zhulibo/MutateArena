@@ -4,6 +4,11 @@
 #include "Animation/AnimInstance.h"
 #include "AnimInstMutant.generated.h"
 
+class AMutantCharacter;
+class UPlayerSubsystem;
+class UMAMovementComponent;
+class APlayerController;
+
 UCLASS(Abstract)
 class MUTATEARENA_API UAnimInstMutant : public UAnimInstance
 {
@@ -12,15 +17,19 @@ class MUTATEARENA_API UAnimInstMutant : public UAnimInstance
 public:
 	UAnimInstMutant();
 
+	virtual void NativeInitializeAnimation() override;
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
+	virtual void NativeThreadSafeUpdateAnimation(float DeltaSeconds) override;
 
 protected:
 	UPROPERTY()
-	class AMutantCharacter* MutantChar;
+	TObjectPtr<AMutantCharacter> MutantChar;
 	UPROPERTY()
-	class UPlayerSubsystem* PlayerSubsystem;
+	TObjectPtr<UMAMovementComponent> MovementComp;
 	UPROPERTY()
-	class UMAMovementComponent* MovementComp;
+	TObjectPtr<UPlayerSubsystem> PlayerSubsystem;
+	UPROPERTY()
+	TObjectPtr<APlayerController> PlayerController;
 	
 	UPROPERTY(BlueprintReadOnly)
 	bool bIsOnLadder;

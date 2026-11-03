@@ -18,7 +18,7 @@
 #include "MutateArena/System/DevSetting.h"
 #include "MutateArena/Utils/LibraryCommon.h"
 #include "GameFramework/PlayerStart.h"
-#include "MutateArena/Characters/Data/CharacterCommonAsset.h"
+#include "MutateArena/Characters/Data/CharacterAsset.h"
 #include "MutateArena/Equipments/Herbs/HerbRage.h"
 #include "MutateArena/Equipments/Herbs/HerbRepelReceived.h"
 #include "MutateArena/Equipments/Pickups/ItemSpawnPoint.h"
@@ -638,10 +638,12 @@ void AMutationMode::MutantRespawn(ACharacter* Character, ABaseController* BaseCo
 }
 
 // 生成突变体角色
-void AMutationMode::SpawnMutantCharacter(AController* Controller, ESpawnMutantReason SpawnMutantReason,
-                                         FVector Location, FRotator ActorRotation, FRotator ViewRotation)
+void AMutationMode::SpawnMutantCharacter(AController* Controller, ESpawnMutantReason SpawnMutantReason, FVector Location, FRotator ActorRotation, FRotator ViewRotation)
 {
 	if (Controller == nullptr) return;
+
+	UWorld* World = GetWorld();
+	if (!World) return;
 	
 	ABasePlayerState* BasePlayerState = Cast<ABasePlayerState>(Controller->PlayerState);
 	if (!BasePlayerState) return;
@@ -650,9 +652,9 @@ void AMutationMode::SpawnMutantCharacter(AController* Controller, ESpawnMutantRe
 	TSubclassOf<AMutantCharacter> CharacterClass;
 	if (UAssetSubsystem* AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>())
 	{
-		if (UCharacterMutantAsset* CharacterMutantAsset = AssetSubsystem->GetCharacterMutantAssetByName(BasePlayerState->MutantCharacterName))
+		if (UMutantAsset* MutantAsset = AssetSubsystem->GetMutantAssetByName(BasePlayerState->MutantName))
 		{
-			CharacterClass = CharacterMutantAsset->CharacterClass.LoadSynchronous();
+			CharacterClass = UDataAssetManager::Get().GetSubclass(MutantAsset->CharacterClass);
 		}
 	}
 	if (CharacterClass == nullptr) return;
@@ -667,35 +669,42 @@ void AMutationMode::SpawnMutantCharacter(AController* Controller, ESpawnMutantRe
 		}
 	}
 
-	// 生成角色
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
-	AMutantCharacter* MutantCharacter = GetWorld()->SpawnActor<AMutantCharacter>(
+	FTransform SpawnTransform(ActorRotation, Location);
+
+	// 延迟生成角色
+	AMutantCharacter* MutantCharacter = World->SpawnActorDeferred<AMutantCharacter>(
 		CharacterClass,
-		Location,
-		ActorRotation,
-		SpawnParams
+		SpawnTransform,
+		Controller,
+		nullptr,
+		ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn
 	);
 
-	MutantCharacter->SpawnMutantReason = SpawnMutantReason;
-
-	Controller->Possess(MutantCharacter);
-
-	// 如果是突变体重生，重置俯仰
-	if (SpawnMutantReason == ESpawnMutantReason::Respawn)
+	if (MutantCharacter)
 	{
-		Controller->SetControlRotation(MutantCharacter->GetActorRotation());
-		Controller->ClientSetRotation(MutantCharacter->GetActorRotation());
-	}
-	// 瞬时切换角色，维持俯仰
-	if (SpawnMutantReason == ESpawnMutantReason::RoundStartMutate
-		|| SpawnMutantReason == ESpawnMutantReason::Infected
-		|| SpawnMutantReason == ESpawnMutantReason::Damaged
-		|| SpawnMutantReason == ESpawnMutantReason::SelectMutant
-	)
-	{
-		Controller->SetControlRotation(ViewRotation);
-		Controller->ClientSetRotation(ViewRotation);
+		MutantCharacter->MutantName = BasePlayerState->MutantName;
+		MutantCharacter->SpawnMutantReason = SpawnMutantReason;
+
+		MutantCharacter->FinishSpawning(SpawnTransform);
+
+		Controller->Possess(MutantCharacter);
+
+		// 如果是突变体重生，重置俯仰
+		if (SpawnMutantReason == ESpawnMutantReason::Respawn)
+		{
+			Controller->SetControlRotation(MutantCharacter->GetActorRotation());
+			Controller->ClientSetRotation(MutantCharacter->GetActorRotation());
+		}
+		// 瞬时切换角色，维持俯仰
+		if (SpawnMutantReason == ESpawnMutantReason::RoundStartMutate
+			|| SpawnMutantReason == ESpawnMutantReason::Infected
+			|| SpawnMutantReason == ESpawnMutantReason::Damaged
+			|| SpawnMutantReason == ESpawnMutantReason::SelectMutant
+		)
+		{
+			Controller->SetControlRotation(ViewRotation);
+			Controller->ClientSetRotation(ViewRotation);
+		}
 	}
 }
 

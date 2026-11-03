@@ -50,8 +50,8 @@ namespace DataAsset
 	inline const FName DNA(TEXT("DNA"));
 	inline const FName Common(TEXT("Common"));
 	inline const FName CharacterCommon(TEXT("CharacterCommon"));
-	inline const FName CharacterHuman(TEXT("CharacterHuman"));
-	inline const FName CharacterMutant(TEXT("CharacterMutant"));
+	inline const FName Human(TEXT("Human"));
+	inline const FName Mutant(TEXT("Mutant"));
 	inline const FName EquipmentCommon(TEXT("EquipmentCommon"));
 	inline const FName Equipment(TEXT("Equipment"));
 	inline const FName Input(TEXT("Input"));
@@ -61,9 +61,9 @@ namespace DataAsset
 // tag
 namespace Tags
 {
-	inline const FName CharacterBase(TEXT("BaseCharacter"));
-	inline const FName CharacterHuman(TEXT("HumanCharacter"));
-	inline const FName CharacterMutant(TEXT("MutantCharacter"));
+	inline const FName BaseCharacter(TEXT("BaseCharacter"));
+	inline const FName HumanCharacter(TEXT("HumanCharacter"));
+	inline const FName MutantCharacter(TEXT("MutantCharacter"));
 	inline const FName Equipment(TEXT("Equipment"));
 	inline const FName SmokeActor(TEXT("SmokeActor"));
 	inline const FName Herb(TEXT("PickupHerb"));

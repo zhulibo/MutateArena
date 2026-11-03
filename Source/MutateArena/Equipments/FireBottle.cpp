@@ -153,7 +153,7 @@ void AFireBottle::ServerDetectActors()
 	{
 		if (OverlapActor == nullptr) continue;
 
-		if (OverlapActor->ActorHasTag(Tags::CharacterMutant))
+		if (OverlapActor->ActorHasTag(Tags::MutantCharacter))
 		{
 			if (ABaseCharacter* BaseCharacter = Cast<ABaseCharacter>(OverlapActor))
 			{
@@ -166,7 +166,7 @@ void AFireBottle::ServerDetectActors()
 				);
 			}
 		}
-		else if (OverlapActor->ActorHasTag(Tags::CharacterHuman))
+		else if (OverlapActor->ActorHasTag(Tags::HumanCharacter))
 		{
 			if (ABaseCharacter* BaseCharacter = Cast<ABaseCharacter>(OverlapActor))
 			{

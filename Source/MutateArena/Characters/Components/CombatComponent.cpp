@@ -26,6 +26,8 @@
 #include "MutateArena/System/UISubsystem.h"
 #include "MutateArena/System/GameplayTags.h"
 #include "Net/UnrealNetwork.h"
+#include "MutateArena/Characters/AnimInstHuman1P_Layer.h"
+#include "MutateArena/Characters/AnimInstHuman_Layer.h"
 
 UCombatComponent::UCombatComponent()
 {
@@ -310,6 +312,7 @@ void UCombatComponent::InstantSwap(EEquipmentSlot TargetType)
 {
 	UE_LOG(LogTemp, Warning, TEXT("InstantSwap"));
 	// UE_LOG(LogTemp, Warning, TEXT("GetPlayInEditorID %d %d"), UE::GetPlayInEditorID(), GetWorld()->GetOutermost()->GetPIEInstanceID());
+	
 	if (TargetType == CurEquipmentSlot) return;
 	
 	if (HumanChar == nullptr) HumanChar = Cast<AHumanCharacter>(GetOwner());
@@ -327,13 +330,21 @@ void UCombatComponent::InstantSwap(EEquipmentSlot TargetType)
 	HolsterEquipment(OldCurEquipment);
 	
 	LastEquipmentSlot = CurEquipmentSlot; 
-	// 若为丢枪则把 LastEquipmentSlot 置为近战武器
-	if (!OldCurEquipment) LastEquipmentSlot = EEquipmentSlot::Slot3;
-	
+	if (!OldCurEquipment) LastEquipmentSlot = EEquipmentSlot::Slot3; // 若为丢枪则把 LastEquipmentSlot 置为近战武器
 	CurEquipmentSlot = TargetType;
 	
 	AttachToHand(TargetEquipment, Sockets::SuffixR);
 	
+	// 挂载动画层
+	if (TSubclassOf<UAnimInstHuman1P_Layer> LayerClass = TargetEquipment->EquipmentAsset->GetAnimInstHuman1P_Layer())
+	{
+		HumanChar->Mesh1P->LinkAnimClassLayers(LayerClass);
+	}
+	if (TSubclassOf<UAnimInstHuman_Layer> LayerClass = TargetEquipment->EquipmentAsset->GetAnimInstHuman_Layer())
+	{
+		HumanChar->GetMesh()->LinkAnimClassLayers(LayerClass);
+	}
+
 	// 添加新装备的GA
 	if (HumanChar->HasAuthority())
 	{

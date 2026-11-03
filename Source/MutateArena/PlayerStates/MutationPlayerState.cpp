@@ -8,6 +8,7 @@
 #include "MutateArena/Abilities/MAAbilitySystemComponent.h"
 #include "MutateArena/Assets/Data/CommonAsset.h"
 #include "MutateArena/Characters/MutantCharacter.h"
+#include "MutateArena/Characters/Data/CharacterAsset.h"
 #include "MutateArena/PlayerControllers/MutationController.h"
 #include "MutateArena/System/AssetSubsystem.h"
 #include "MutateArena/System/UISubsystem.h"
@@ -163,7 +164,7 @@ void AMutationPlayerState::ApplyLevelUpEffect()
 	{
 		FGameplayEffectContextHandle EffectContext = AbilitySystemComponent->MakeEffectContext();
 		EffectContext.AddSourceObject(this);
-		FGameplayEffectSpecHandle SpecHandle = AbilitySystemComponent->MakeOutgoingSpec(MutantCharacter->LevelUpEffect, GetCharacterLevel(), EffectContext);
+		FGameplayEffectSpecHandle SpecHandle = AbilitySystemComponent->MakeOutgoingSpec(MutantCharacter->MutantAsset->LevelUpEffect, GetCharacterLevel(), EffectContext);
 		if (SpecHandle.IsValid())
 		{
 			AbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());

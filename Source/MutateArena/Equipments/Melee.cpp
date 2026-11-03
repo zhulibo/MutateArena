@@ -175,7 +175,7 @@ void AMelee::ProcessMeleeHit(const FHitResult& HitResult, const FVector& TraceDi
 
 		float Damage = bIsLightAttack ? FragMelee->LightAttackDamage : FragMelee->HeavyAttackDamage;
 
-		if (OtherActor->ActorHasTag(Tags::CharacterBase))
+		if (OtherActor->ActorHasTag(Tags::BaseCharacter))
 		{
 			DropBlood(EquipmentMesh, OtherActor, OtherComp, Damage, HitResult);
 		}

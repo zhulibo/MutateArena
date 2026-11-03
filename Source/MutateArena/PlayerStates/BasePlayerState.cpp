@@ -11,7 +11,7 @@
 #include "MutateArena/Abilities/MAAbilitySystemComponent.h"
 #include "MutateArena/Abilities/AttributeSetBase.h"
 #include "MutateArena/Assets/Data/CommonAsset.h"
-#include "MutateArena/Characters/Data/CharacterCommonAsset.h"
+#include "MutateArena/Characters/Data/CharacterAsset.h"
 #include "MutateArena/Characters/Data/DNAAsset2.h"
 #include "MutateArena/GameStates/BaseGameState.h"
 #include "MutateArena/PlayerControllers/BaseController.h"
@@ -31,8 +31,8 @@ ABasePlayerState::ABasePlayerState()
 
 	if (const UDefaultConfig* DefaultConfig = GetDefault<UDefaultConfig>())
 	{
-		HumanCharacterName = DefaultConfig->HumanCharacterName;
-		MutantCharacterName = DefaultConfig->MutantCharacterName;
+		HumanName = DefaultConfig->HumanName;
+		MutantName = DefaultConfig->MutantName;
 	}
 }
 
@@ -41,8 +41,8 @@ void ABasePlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ThisClass, InputType);
-	DOREPLIFETIME(ThisClass, HumanCharacterName);
-	DOREPLIFETIME(ThisClass, MutantCharacterName);
+	DOREPLIFETIME(ThisClass, HumanName);
+	DOREPLIFETIME(ThisClass, MutantName);
 	DOREPLIFETIME(ThisClass, Team);
 	DOREPLIFETIME(ThisClass, Damage);
 	DOREPLIFETIME(ThisClass, Death);
@@ -63,8 +63,8 @@ void ABasePlayerState::BeginPlay()
 		UStorageSubsystem* StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
 		if (StorageSubsystem && StorageSubsystem->CacheLoadout)
 		{
-			ServerSetHumanCharacterName(StorageSubsystem->CacheLoadout->HumanCharacterName);
-			ServerSetMutantCharacterName(StorageSubsystem->CacheLoadout->MutantCharacterName);
+			ServerSetHumanName(StorageSubsystem->CacheLoadout->HumanName);
+			ServerSetMutantName(StorageSubsystem->CacheLoadout->MutantName);
 		}
 	}
 }
@@ -167,19 +167,19 @@ void ABasePlayerState::OnRep_Team()
 	}
 }
 
-void ABasePlayerState::ServerSetHumanCharacterName_Implementation(EHumanCharacterName Name)
+void ABasePlayerState::ServerSetHumanName_Implementation(EHumanName Name)
 {
-	HumanCharacterName = Name;
+	HumanName = Name;
 }
 
-void ABasePlayerState::ServerSetMutantCharacterName_Implementation(EMutantCharacterName Name)
+void ABasePlayerState::ServerSetMutantName_Implementation(EMutantName Name)
 {
-	MutantCharacterName = Name;
+	SetMutantName(Name);
 }
 
-void ABasePlayerState::SetMutantCharacterName(EMutantCharacterName Name)
+void ABasePlayerState::SetMutantName(EMutantName Name)
 {
-	MutantCharacterName = Name;
+	MutantName = Name;
 }
 
 void ABasePlayerState::AddDamage(float TempDamage)

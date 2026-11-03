@@ -2,9 +2,75 @@
 
 #include "Engine/World.h"
 #include "GameFramework/Character.h"
+#include "MutateArena/Characters/BaseCharacter.h"
 
 UMAMovementComponent::UMAMovementComponent()
 {
+}
+
+bool UMAMovementComponent::CanAttemptJump() const
+{
+   // 移除引擎源码中的 !bWantsToCrouch 限制，允许蹲跳
+   return IsJumpAllowed() && (IsMovingOnGround() || IsFalling());
+}
+
+void UMAMovementComponent::ProcessLanded(const FHitResult& Hit, float remainingTime, int32 Iterations)
+{
+   // 记录落地时间并打开 bCanTriggerBHop
+   LastLandedTime = GetWorld()->GetTimeSeconds();
+   bCanTriggerBHop = true;
+
+   Super::ProcessLanded(Hit, remainingTime, Iterations);
+}
+
+bool UMAMovementComponent::DoJump(bool bReplayingMoves, float DeltaTime)
+{
+   if (ABaseCharacter* BaseCharacter = Cast<ABaseCharacter>(CharacterOwner))
+   {
+      const double CurrentTime = GetWorld()->GetTimeSeconds();
+
+      // 无论是“落地前 BHopPreLandBufferTime 预输入(在Landed里触发Jump)”还是“落地后 BHopPostLandGraceTime 内按键”，
+      // 最终走到 DoJump 时，距离 ProcessLanded 的时间差都在 BHopPostLandGraceTime 以内！
+      // 服务端放宽 0.02s 容差以吸收网络帧切片误差
+      const float PostLandWindow = (BaseCharacter->HasAuthority() && !BaseCharacter->IsLocallyControlled()) ? BHopPostLandGraceTime + 0.02f : BHopPostLandGraceTime;
+      const bool bIsBHop = bCanTriggerBHop && ((CurrentTime - LastLandedTime) <= PostLandWindow);
+
+      if (bIsBHop)
+      {
+         JumpZVelocity = BaseCharacter->GetJumpZVelocity() * 1.2f;
+      }
+      else
+      {
+         JumpZVelocity = BaseCharacter->GetJumpZVelocity();
+      }
+
+      // 消耗掉连跳状态，防止单次落地多次触发
+      bCanTriggerBHop = false;
+   }
+
+   return Super::DoJump(bReplayingMoves, DeltaTime);
+}
+
+float UMAMovementComponent::GetMaxSpeed() const
+{
+   if (IsCrouching())
+   {
+      // 1. 在空中蹲跳时，最大速度上限按正常站立行走速度（或专门的鬼跳速度上限）计算
+      // 否则在空中按住 WASD 时，AirControl 会把你的目标速度限制在 MaxWalkSpeedCrouched
+      if (IsFalling())
+      {
+         return MaxWalkSpeed;
+      }
+
+      // 2. 落地瞬间如果处于鬼跳宽限期内，同样返回正常速度上限
+      // 防止 CalcVelocity 在落地那一帧把 Velocity 直接 Clamp 到蹲伏速度
+      if (GetWorld() && GetWorld()->GetTimeSeconds() - LastLandedTime <= BHopPostLandGraceTime)
+      {
+         return MaxWalkSpeed;
+      }
+   }
+
+   return Super::GetMaxSpeed();
 }
 
 bool UMAMovementComponent::StepUp(const FVector& GravDir, const FVector& Delta, const FHitResult& InHit, FStepDownResult* OutStepDownResult)
@@ -112,20 +178,30 @@ void UMAMovementComponent::PhysLadder(float deltaTime, int32 Iterations)
 
 void UMAMovementComponent::CalcVelocity(float DeltaTime, float Friction, bool bFluid, float BrakingDeceleration)
 {
-   // 处理空中加速
+   // 1. 空中阶段：执行 Quake/Source 风格的空速投影加速
    if (MovementMode == MOVE_Falling && CustomMovementMode == CMOVE_None && !HasAnimRootMotion() && !CurrentRootMotion.HasActiveRootMotionSources())
    {
-      float OriginalZ = Velocity.Z;
-      FVector WishDir = Acceleration.GetSafeNormal2D();
-      float WishSpeed = WishDir.IsNearlyZero() ? 0.0f : MaxAirSpeed;
-   
+      const float OriginalZ = Velocity.Z;
+      const FVector WishDir = Acceleration.GetSafeNormal2D();
+      const float WishSpeed = WishDir.IsNearlyZero() ? 0.0f : MaxAirSpeed;
+
       ApplyQuakeAirAccelerate(DeltaTime, WishDir, WishSpeed);
-   
+
       Velocity.Z = OriginalZ;
-      return; // 绕过默认截断
+      return; // 绕过引擎默认的空气阻力和截断
    }
 
-   // 其他状态（含处理过摩擦力的地面状态、梯子状态）走默认逻辑
+   // 2. 地面蹲伏阶段：如果处于鬼跳落地宽限期内，将摩擦力与制动减速度清零
+   if (IsCrouching() && IsMovingOnGround() && GetWorld())
+   {
+      if (GetWorld()->GetTimeSeconds() - LastLandedTime <= BHopPostLandGraceTime)
+      {
+         Friction = 0.f;
+         BrakingDeceleration = 0.f;
+      }
+   }
+
+   // 3. 地面及其他常规移动状态（走原生的摩擦力、制动及爬坡结算）
    Super::CalcVelocity(DeltaTime, Friction, bFluid, BrakingDeceleration);
 }
 

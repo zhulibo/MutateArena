@@ -17,15 +17,15 @@ public:
 
 	// Returns the asset referenced by a TSoftObjectPtr. This will synchronously load the asset if it's not already loaded.
 	template <typename AssetType>
-	static AssetType* GetAsset(const TSoftObjectPtr<AssetType>& AssetPointer, bool bKeepInMemory = false);
+	static AssetType* GetAsset(const TSoftObjectPtr<AssetType>& AssetPointer, bool bKeepInMemory = true);
 
 	// 通过 FPrimaryAssetId 同步加载资产
 	template <typename AssetType>
-	static AssetType* GetAsset(const FPrimaryAssetId& PrimaryAssetId, bool bKeepInMemory = false);
+	static AssetType* GetAsset(const FPrimaryAssetId& PrimaryAssetId, bool bKeepInMemory = true);
 
 	// Returns the subclass referenced by a TSoftClassPtr. This will synchronously load the asset if it's not already loaded.
 	template <typename AssetType>
-	static TSubclassOf<AssetType> GetSubclass(const TSoftClassPtr<AssetType>& AssetPointer, bool bKeepInMemory = false);
+	static TSubclassOf<AssetType> GetSubclass(const TSoftClassPtr<AssetType>& AssetPointer, bool bKeepInMemory = true);
 
 	void UnloadTrackedAsset(const UObject* Asset);
 
@@ -51,7 +51,9 @@ AssetType* UDataAssetManager::GetAsset(const TSoftObjectPtr<AssetType>& AssetPoi
 
 	if (AssetPath.IsValid())
 	{
+		// 尝试直接从内存中获取该资源指针，如果该资源之前已经加载过且未被 GC 回收，这里会直接拿到有效指针
 		LoadedAsset = AssetPointer.Get();
+		
 		if (!LoadedAsset)
 		{
 			LoadedAsset = Cast<AssetType>(SyncLoadAsset(AssetPath));

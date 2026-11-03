@@ -26,8 +26,6 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Base")
 	UInputAction* CrouchAction;
 	UPROPERTY(EditAnywhere, Category = "Base")
-	UInputAction* CrouchControllerAction;
-	UPROPERTY(EditAnywhere, Category = "Base")
 	UInputAction* InteractAction;
 
 	UPROPERTY(EditAnywhere, Category = "Base")

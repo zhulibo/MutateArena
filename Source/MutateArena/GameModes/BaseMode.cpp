@@ -14,9 +14,10 @@
 #include "MutateArena/UI/TextChat/TextChat.h"
 #include "MutateArena/Utils/LibraryCommon.h"
 #include "GameFramework/PlayerStart.h"
-#include "MutateArena/Characters/Data/CharacterCommonAsset.h"
+#include "MutateArena/Characters/Data/CharacterAsset.h"
 #include "MutateArena/Equipments/Data/EquipmentAsset.h"
 #include "MutateArena/System/AssetSubsystem.h"
+#include "MutateArena/System/DataAssetManager.h"
 #include "MutateArena/System/DevSetting.h"
 #include "Online/SchemaTypes.h"
 
@@ -154,6 +155,9 @@ void ABaseMode::SpawnHumanCharacter(AController* Controller)
 {
 	if (Controller == nullptr) return;
 
+	UWorld* World = GetWorld();
+	if (!World) return;
+
 	ABasePlayerState* BasePlayerState = Cast<ABasePlayerState>(Controller->PlayerState);
 	if (!BasePlayerState) return;
 	
@@ -161,9 +165,9 @@ void ABaseMode::SpawnHumanCharacter(AController* Controller)
 	TSubclassOf<AHumanCharacter> CharacterClass;
 	if (UAssetSubsystem* AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>())
 	{
-		if (UCharacterHumanAsset* CharacterHumanAsset = AssetSubsystem->GetCharacterHumanAssetByName(BasePlayerState->HumanCharacterName))
+		if (UHumanAsset* HumanAsset = AssetSubsystem->GetHumanAssetByName(BasePlayerState->HumanName))
 		{
-			CharacterClass = CharacterHumanAsset->CharacterClass.LoadSynchronous();
+			CharacterClass = UDataAssetManager::Get().GetSubclass(HumanAsset->CharacterClass);
 		}
 	}
 	if (CharacterClass == nullptr) return;
@@ -172,20 +176,29 @@ void ABaseMode::SpawnHumanCharacter(AController* Controller)
 	AActor* StartSpot = FindCharacterPlayerStart(BasePlayerState->Team);
 	if (StartSpot == nullptr) return;
 	
-	// 生成角色
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
-	AHumanCharacter* HumanCharacter = GetWorld()->SpawnActor<AHumanCharacter>(
+	FTransform SpawnTransform(StartSpot->GetActorRotation(), StartSpot->GetActorLocation());
+
+	// 延迟生成角色
+	AHumanCharacter* HumanCharacter = World->SpawnActorDeferred<AHumanCharacter>(
 		CharacterClass,
-		StartSpot->GetActorLocation(),
-		StartSpot->GetActorRotation(),
-		SpawnParams
+		SpawnTransform,
+		Controller,
+		 nullptr,
+		ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn
 	);
 
-	// 搞搞Controller
-	Controller->Possess(HumanCharacter);
-	// 重置俯仰
-	Controller->ClientSetRotation(HumanCharacter->GetActorRotation());
+	if (HumanCharacter)
+	{
+		HumanCharacter->HumanName = BasePlayerState->HumanName;
+
+		HumanCharacter->FinishSpawning(SpawnTransform);
+
+		Controller->Possess(HumanCharacter);
+		
+		// 重置俯仰
+		Controller->SetControlRotation(HumanCharacter->GetActorRotation());
+		Controller->ClientSetRotation(HumanCharacter->GetActorRotation());
+	}
 }
 
 // 寻找角色出生点

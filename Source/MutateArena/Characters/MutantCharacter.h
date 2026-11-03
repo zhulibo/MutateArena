@@ -7,7 +7,8 @@
 #include "MutateArena/Interfaces/Interactable.h"
 #include "MutantCharacter.generated.h"
 
-enum class EMutantCharacterName : uint8;
+class UMutantAsset;
+enum class EMutantName : uint8;
 enum class ESpawnMutantReason : uint8;
 
 UCLASS()
@@ -17,15 +18,12 @@ class MUTATEARENA_API AMutantCharacter : public ABaseCharacter, public IInteract
 
 public:
 	AMutantCharacter(const FObjectInitializer& ObjectInitializer);
-
-	UPROPERTY(EditAnywhere)
-	UAnimMontage* LightAttackMontage;
-	UPROPERTY(EditAnywhere)
-	UAnimMontage* HeavyAttackMontage;
-
-	UPROPERTY(EditAnywhere)
-	class UMetaSoundSource* MutantBornSound;
 	
+	UPROPERTY()
+	EMutantName MutantName;
+	UPROPERTY(Transient)
+	TObjectPtr<const UMutantAsset> MutantAsset = nullptr;
+
 	float LastRepelTime = 0.f;
 	UPROPERTY()
 	float RepelCooldown = 0.2f;
@@ -56,15 +54,10 @@ public:
 	// GAS
 	UPROPERTY()
 	ESpawnMutantReason SpawnMutantReason;
-	UPROPERTY(EditAnywhere)
-	TSubclassOf<class UGameplayAbilityBase> SkillAbility;
-	UPROPERTY(EditAnywhere)
-	TSubclassOf<UGameplayEffect> LevelUpEffect;
 protected:
 	virtual void OnASCInit() override;
 	void OnLocalSkillCooldownTagChanged(FGameplayTag GameplayTag, int32 TagCount);
 	void OnLocalCharacterLevelChanged(const FOnAttributeChangeData& Data);
-	void OnMaxWalkSpeedChanged(const FOnAttributeChangeData& Data);
 	virtual void OnHealthChanged(const FOnAttributeChangeData& Data) override;
 	void SkillButtonPressed(const FInputActionValue& Value);
 	virtual void MoveStarted(const FInputActionValue& Value) override;
@@ -83,12 +76,6 @@ public:
 	virtual void HeavyAttackButtonReleased(const FInputActionValue& Value);
 	UPROPERTY(Replicated)
 	bool bIsLightAttack = false;
-protected:
-	UPROPERTY()
-	float LightAttackDamage = 0.f;
-	UPROPERTY()
-	float HeavyAttackDamage = 0.f;
-public:
 	UPROPERTY()
 	TArray<AActor*> RightHandHitEnemies;
 	UPROPERTY()
@@ -98,14 +85,6 @@ public:
 	virtual void LeftHandAttackBegin();
 	virtual void LeftHandAttackEnd();
 protected:
-	UPROPERTY()
-	TArray<FName> TraceSockets_R;
-	UPROPERTY()
-	float TraceRadius_R = 10.f;
-	UPROPERTY()
-	TArray<FName> TraceSockets_L;
-	UPROPERTY()
-	float TraceRadius_L = 10.f;
 	bool bIsRightHandAttacking = false;
 	bool bIsLeftHandAttacking = false;
 	TMap<FName, FVector> RightHandPreviousSocketLocations;
@@ -143,10 +122,8 @@ protected:
 	void RemoveMappingContext();
 
 public:
-	UPROPERTY()
-	EMutantCharacterName MutantCharacterName;
 	UFUNCTION(Server, Reliable)
-	void ServerSelectMutant(EMutantCharacterName TempMutantCharacterName);
+	void ServerSelectMutant(EMutantName TempMutantName);
 
 	// 交互
 	virtual bool CanInteract(ABaseCharacter* Interactor) override;

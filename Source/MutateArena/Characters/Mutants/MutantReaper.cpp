@@ -1,47 +1,41 @@
-#include "MutantCutter.h"
+#include "MutantReaper.h"
 
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemGlobals.h"
 #include "MutateArena/Characters/Data/CharacterType.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
-AMutantCutter::AMutantCutter(const FObjectInitializer& ObjectInitializer)
+AMutantReaper::AMutantReaper(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-	MutantCharacterName = EMutantCharacterName::Cutter;
-	
-	// 需保证与角色ASC中的MaxWalkSpeed一级速度一致
-	DefaultMaxWalkSpeed = 550.f;
-	GetCharacterMovement()->MaxWalkSpeed = DefaultMaxWalkSpeed;
-	GetCharacterMovement()->MaxWalkSpeedCrouched = DefaultMaxWalkSpeed * 0.5f;
 }
 
-void AMutantCutter::BeginPlay()
+void AMutantReaper::BeginPlay()
 {
 	Super::BeginPlay();
 }
 
-void AMutantCutter::LightAttackButtonPressed(const FInputActionValue& Value)
+void AMutantReaper::LightAttackButtonPressed(const FInputActionValue& Value)
 {
 	Super::LightAttackButtonPressed(Value);
 }
 
-void AMutantCutter::LightAttackButtonReleased(const FInputActionValue& Value)
+void AMutantReaper::LightAttackButtonReleased(const FInputActionValue& Value)
 {
 	Super::LightAttackButtonReleased(Value);
 }
 
-void AMutantCutter::HeavyAttackButtonPressed(const FInputActionValue& Value)
+void AMutantReaper::HeavyAttackButtonPressed(const FInputActionValue& Value)
 {
 	Super::HeavyAttackButtonPressed(Value);
 }
 
-void AMutantCutter::HeavyAttackButtonReleased(const FInputActionValue& Value)
+void AMutantReaper::HeavyAttackButtonReleased(const FInputActionValue& Value)
 {
 	Super::HeavyAttackButtonReleased(Value);
 }
 
-void AMutantCutter::ServerApplyDamage_Implementation(AActor* OtherActor, float Damage)
+void AMutantReaper::ServerApplyDamage_Implementation(AActor* OtherActor, float Damage)
 {
 	Super::ServerApplyDamage_Implementation(OtherActor, Damage);
 	
@@ -56,7 +50,7 @@ void AMutantCutter::ServerApplyDamage_Implementation(AActor* OtherActor, float D
 			// 创建 GE 上下文
 			FGameplayEffectContextHandle ContextHandle = InstigatorASC->MakeEffectContext();
 			
-			// 【非常重要】将 Cutter (this) 注册为伤害的 Instigator 和 Causer
+			// 【非常重要】将 Reaper (this) 注册为伤害的 Instigator 和 Causer
 			// 这是后续在 AttributeSet 里面能拿到 InstigatorController 的关键
 			ContextHandle.AddInstigator(this, this);
 

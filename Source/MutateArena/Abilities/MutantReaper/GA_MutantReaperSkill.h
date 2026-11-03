@@ -2,15 +2,15 @@
 
 #include "CoreMinimal.h"
 #include "MutateArena/Abilities/GameplayAbilityBase.h"
-#include "GA_MutantCutterSkill.generated.h"
+#include "GA_MutantReaperSkill.generated.h"
 
 UCLASS(Abstract)
-class MUTATEARENA_API UGA_MutantCutterSkill : public UGameplayAbilityBase
+class MUTATEARENA_API UGA_MutantReaperSkill : public UGameplayAbilityBase
 {
 	GENERATED_BODY()
 
 public:
-	UGA_MutantCutterSkill();
+	UGA_MutantReaperSkill();
 
 protected:
 	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,

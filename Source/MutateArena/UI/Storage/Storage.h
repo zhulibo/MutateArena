@@ -9,9 +9,9 @@
 #define STORAGE_TYPE_CHARACTER FString(TEXT("Character"))
 
 class UDNAAsset2;
-class UCharacterHumanAsset;
+class UHumanAsset;
 class UEquipmentAsset;
-enum class EHumanCharacterName : uint8;
+enum class EHumanName : uint8;
 enum class EEquipmentName : uint8;
 enum class EEquipmentSlot : uint8;
 
@@ -34,7 +34,7 @@ protected:
 	void ApplyLoadoutData(class USaveGameLoadout* SaveGameLoadout);
 
 	bool HasEquipment(EEquipmentName EquipmentName);
-	bool HasHumanCharacter(EHumanCharacterName HumanCharacterName);
+	bool HasHumanCharacter(EHumanName HumanName);
 
 	UPROPERTY()
 	class UStorageSubsystem* StorageSubsystem;
@@ -64,7 +64,7 @@ protected:
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UStorageButton> CharacterButtonClass;
-	void AddCharacterButton(UCharacterHumanAsset* CharacterAsset);
+	void AddCharacterButton(UHumanAsset* CharacterAsset);
 
 	void OnEquipmentButtonClicked(class UStorageButton* EquipmentButton);
 

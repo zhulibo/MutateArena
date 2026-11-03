@@ -5,6 +5,10 @@
 #include "MutateArena/Equipments/Data/EquipmentType.h"
 #include "AnimInstHuman.generated.h"
 
+class AHumanCharacter;
+class UCombatComponent;
+class UMAMovementComponent;
+
 UCLASS(Abstract)
 class MUTATEARENA_API UAnimInstHuman : public UAnimInstance
 {
@@ -12,16 +16,18 @@ class MUTATEARENA_API UAnimInstHuman : public UAnimInstance
 
 public:
 	UAnimInstHuman();
-	
+
+	virtual void NativeInitializeAnimation() override;
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
+	virtual void NativeThreadSafeUpdateAnimation(float DeltaSeconds) override;
 
 protected:
 	UPROPERTY()
-	class AHumanCharacter* HumanChar;
+	TObjectPtr<AHumanCharacter> HumanChar;
 	UPROPERTY()
-	class UCombatComponent* CombatComp;
+	TObjectPtr<UCombatComponent> CombatComp;
 	UPROPERTY()
-	class UMAMovementComponent* MovementComp;
+	TObjectPtr<UMAMovementComponent> MovementComp;
 
 	UPROPERTY(BlueprintReadOnly)
 	bool bIsOnLadder;
@@ -49,5 +55,4 @@ protected:
 	FRotator Spine_02_Rotator;
 	UPROPERTY(BlueprintReadOnly)
 	FRotator Spine_03_Rotator;
-
 };

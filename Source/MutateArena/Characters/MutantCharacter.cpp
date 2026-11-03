@@ -25,7 +25,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Data/InputAsset.h"
-#include "Data/CharacterCommonAsset.h"
+#include "Data/CharacterAsset.h"
 #include "Engine/GameInstance.h"
 #include "Kismet/GameplayStatics.h"
 #include "MutateArena/System/UISubsystem.h"
@@ -41,7 +41,7 @@ AMutantCharacter::AMutantCharacter(const FObjectInitializer& ObjectInitializer)
 
 	BloodColor = Colors::Green;
 
-	Tags.Add(Tags::CharacterMutant);
+	Tags.Add(Tags::MutantCharacter);
 }
 
 void AMutantCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -62,27 +62,18 @@ void AMutantCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	if (!AssetSubsystem) AssetSubsystem = GetWorld()->GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-	if (AssetSubsystem)
-	{
-		if (UCharacterMutantAsset* MutantAsset = AssetSubsystem->GetCharacterMutantAssetByName(MutantCharacterName))
-		{
-			LightAttackDamage = MutantAsset->LightAttackDamage;
-			HeavyAttackDamage = MutantAsset->HeavyAttackDamage;
-             
-			TraceSockets_R = MutantAsset->TraceSockets_R;
-			TraceRadius_R = MutantAsset->TraceRadius_R;
-			TraceSockets_L = MutantAsset->TraceSockets_L;
-			TraceRadius_L = MutantAsset->TraceRadius_L;
-		}
-	}
+	if (!AssetSubsystem) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+	check(AssetSubsystem);
+    
+	MutantAsset = AssetSubsystem->GetMutantAssetByName(MutantName);
+	check(MutantAsset);
 
 	if (HasAuthority())
 	{
 		OnTakeAnyDamage.AddUniqueDynamic(this, &ThisClass::MutantReceiveDamage);
 	}
 
-	UGameplayStatics::SpawnSoundAttached(MutantBornSound, GetMesh());
+	UGameplayStatics::SpawnSoundAttached(MutantAsset->BornSound, GetMesh());
     
 	SetMutantTraceObjectTypes();
 }
@@ -130,11 +121,11 @@ void AMutantCharacter::Tick(float DeltaSeconds)
 	
 	if (bIsRightHandAttacking)
 	{
-		PerformHandTrace(TraceSockets_R, RightHandPreviousSocketLocations, true);
+		PerformHandTrace(MutantAsset->TraceSockets_R, RightHandPreviousSocketLocations, true);
 	}
 	if (bIsLeftHandAttacking)
 	{
-		PerformHandTrace(TraceSockets_L, LeftHandPreviousSocketLocations, false);
+		PerformHandTrace(MutantAsset->TraceSockets_L, LeftHandPreviousSocketLocations, false);
 	}
 }
 
@@ -160,7 +151,7 @@ void AMutantCharacter::PossessedBy(AController* NewController)
 			}
 		}
 		
-		ASC->GiveAbility(FGameplayAbilitySpec(SkillAbility, 1, INDEX_NONE, this));
+		ASC->GiveAbility(FGameplayAbilitySpec(MutantAsset->SkillAbility, 1, INDEX_NONE, this));
 	}
 }
 
@@ -214,12 +205,6 @@ void AMutantCharacter::OnLocalCharacterLevelChanged(const FOnAttributeChangeData
 	}
 }
 
-void AMutantCharacter::OnMaxWalkSpeedChanged(const FOnAttributeChangeData& Data)
-{
-	GetCharacterMovement()->MaxWalkSpeed = Data.NewValue;
-	GetCharacterMovement()->MaxWalkSpeedCrouched = Data.NewValue * 0.5f;
-}
-
 void AMutantCharacter::OnHealthChanged(const FOnAttributeChangeData& Data)
 {
 	Super::OnHealthChanged(Data);
@@ -237,7 +222,7 @@ void AMutantCharacter::SkillButtonPressed(const FInputActionValue& Value)
 	if (ASC && GetCharacterLevel() >= 2.f)
 	{
 		FScopedPredictionWindow PredictionWindow(ASC, IsLocallyControlled() && !HasAuthority());
-		ASC->TryActivateAbilityByClass(SkillAbility);
+		ASC->TryActivateAbilityByClass(MutantAsset->SkillAbility);
 	}
 }
 
@@ -364,7 +349,7 @@ void AMutantCharacter::RightHandAttackBegin()
 	
 	if (GetMesh())
 	{
-		for (const FName& SocketName : TraceSockets_R)
+		for (const FName& SocketName : MutantAsset->TraceSockets_R)
 		{
 			RightHandPreviousSocketLocations.Add(SocketName, GetMesh()->GetSocketLocation(SocketName));
 		}
@@ -385,7 +370,7 @@ void AMutantCharacter::LeftHandAttackBegin()
 	
 	if (GetMesh())
 	{
-		for (const FName& SocketName : TraceSockets_L)
+		for (const FName& SocketName : MutantAsset->TraceSockets_L)
 		{
 			LeftHandPreviousSocketLocations.Add(SocketName, GetMesh()->GetSocketLocation(SocketName));
 		}
@@ -425,7 +410,7 @@ void AMutantCharacter::PerformHandTrace(const TArray<FName>& TraceSockets, TMap<
 			QueryParams.bTraceComplex = true;
 			QueryParams.bReturnPhysicalMaterial = true; // 开启物理材质检测
 
-			float TraceRadius = bIsRightHand ? TraceRadius_R : TraceRadius_L;
+			float TraceRadius = bIsRightHand ? MutantAsset->TraceRadius_R : MutantAsset->TraceRadius_L;
 			
 			FCollisionShape SphereShape = FCollisionShape::MakeSphere(TraceRadius);
 
@@ -471,9 +456,9 @@ void AMutantCharacter::ProcessMutantHit(const FHitResult& HitResult, const FVect
 	
 	TargetHitEnemies.Add(OtherActor);
 
-	float Damage = bIsLightAttack ? LightAttackDamage : HeavyAttackDamage;
+	float Damage = bIsLightAttack ? MutantAsset->LightAttackDamage : MutantAsset->HeavyAttackDamage;
 
-	if (OtherActor->ActorHasTag(Tags::CharacterHuman))
+	if (OtherActor->ActorHasTag(Tags::HumanCharacter))
 	{
 		DropBlood(GetMesh(), OtherActor, OtherComp, Damage, HitResult);
 	}
@@ -707,13 +692,13 @@ void AMutantCharacter::RemoveMappingContext()
 	}
 }
 
-void AMutantCharacter::ServerSelectMutant_Implementation(EMutantCharacterName TempMutantCharacterName)
+void AMutantCharacter::ServerSelectMutant_Implementation(EMutantName TempMutantName)
 {
 	// 在服务器上保存角色，生成角色时会用
 	if (BasePlayerState == nullptr) BasePlayerState = GetPlayerState<ABasePlayerState>();
 	if (BasePlayerState)
 	{
-		BasePlayerState->SetMutantCharacterName(TempMutantCharacterName);
+		BasePlayerState->SetMutantName(TempMutantName);
 	}
 
 	if (MutationMode == nullptr) MutationMode = GetWorld()->GetAuthGameMode<AMutationMode>();

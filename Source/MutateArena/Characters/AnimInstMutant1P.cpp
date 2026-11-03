@@ -12,25 +12,67 @@ UAnimInstMutant1P::UAnimInstMutant1P()
 {
 }
 
+void UAnimInstMutant1P::NativeInitializeAnimation()
+{
+	Super::NativeInitializeAnimation();
+
+	MutantChar = Cast<AMutantCharacter>(TryGetPawnOwner());
+	if (MutantChar)
+	{
+		MovementComp = MutantChar->MovementComp;
+	}
+	if (UWorld* World = GetWorld())
+	{
+		PlayerSubsystem = ULocalPlayer::GetSubsystem<UPlayerSubsystem>(World->GetFirstLocalPlayerFromController());
+		PlayerController = World->GetFirstPlayerController();
+	}
+}
+
 void UAnimInstMutant1P::NativeUpdateAnimation(float DeltaSeconds)
 {
 	Super::NativeUpdateAnimation(DeltaSeconds);
 
 	if (MutantChar == nullptr) MutantChar = Cast<AMutantCharacter>(TryGetPawnOwner());
 	if (MovementComp == nullptr) MovementComp = MutantChar ? MutantChar->MovementComp : nullptr;
+	if (PlayerSubsystem == nullptr)
+	{
+		if (UWorld* World = GetWorld())
+		{
+			PlayerSubsystem = ULocalPlayer::GetSubsystem<UPlayerSubsystem>(World->GetFirstLocalPlayerFromController());
+		}
+	}
+	if (PlayerController == nullptr)
+	{
+		if (UWorld* World = GetWorld())
+		{
+			PlayerController = World->GetFirstPlayerController();
+		}
+	}
+}
+
+void UAnimInstMutant1P::NativeThreadSafeUpdateAnimation(float DeltaSeconds)
+{
+	Super::NativeThreadSafeUpdateAnimation(DeltaSeconds);
+
 	if (!MutantChar || !MovementComp) return;
 
 	bIsOnLadder = MovementComp->MovementMode == MOVE_Custom && MovementComp->CustomMovementMode == CMOVE_Ladder;
-	
+
 	FVector Velocity = MutantChar->GetVelocity();
 	Speed = bIsOnLadder ? FMath::Abs(Velocity.Z) : Velocity.Size2D();
 
-	WalkPlayRate = MutantChar->GetMaxWalkSpeed() / MutantChar->DefaultMaxWalkSpeed;
+	WalkPlayRate = MutantChar->GetMaxWalkSpeed() / MutantChar->Level1MaxWalkSpeed;
 	// UE_LOG(LogTemp, Warning, TEXT("DefaultWalkSpeed %f GetMaxWalkSpeed %f WalkPlayRate: %f"), MutantCharacter->DefaultWalkSpeed, MutantCharacter->GetMaxWalkSpeed(), WalkPlayRate);
-	
+
 	bIsInAir = MovementComp->IsFalling() && !bIsOnLadder;
 	bIsAccelerating = MovementComp->GetCurrentAcceleration().Size() > 0.f;
 	bIsCrouched = MutantChar->bIsCrouched;
+
+	// 计算瞄准方向与移动方向的偏移量，用于控制脚步朝向
+	FRotator AimRotation = MutantChar->GetBaseAimRotation();
+	FRotator MovementRotation = UKismetMathLibrary::MakeRotFromX(MutantChar->GetVelocity());
+	FRotator DiffRotation = UKismetMathLibrary::NormalizedDeltaRotator(MovementRotation, AimRotation);
+	AimYaw = DiffRotation.Yaw;
 
 	/**
 	 * 瞬时切换角色，需要保持被销毁角色的AimPitch，但新角色生成后头几帧AimPitch为0，角色躯体闪动。
@@ -42,13 +84,18 @@ void UAnimInstMutant1P::NativeUpdateAnimation(float DeltaSeconds)
 	if (AimPitch == 0.f)
 	{
 		// UE_LOG(LogTemp, Warning, TEXT("AimPitch == 0.f"));
-		if (PlayerSubsystem == nullptr) PlayerSubsystem = ULocalPlayer::GetSubsystem<UPlayerSubsystem>(GetWorld()->GetFirstLocalPlayerFromController());
 		if (PlayerSubsystem && PlayerSubsystem->IsDead) // IsDead状态只持续很短时间，尽可能避免将本地AimPitch应用给非本地角色，同时也可避免影响到重生（3s）的本地角色
 		{
-			if (APlayerController* PlayerController = GetWorld()->GetFirstPlayerController())
+			if (PlayerController)
 			{
 				AimPitch = MutantChar->MappingAimPitch(PlayerController->GetControlRotation().Pitch);
 			}
 		}
 	}
+	// TODO 非本地角色躯体闪动暂未处理
+
+	// 根据AimPitch计算骨骼偏移量
+	Spine_01_Rotator.Roll = UKismetMathLibrary::MapRangeClamped(AimPitch, -90.f, 90.f, 10.f, -10.f);
+	Spine_02_Rotator.Roll = UKismetMathLibrary::MapRangeClamped(AimPitch, -90.f, 90.f, 10.f, -10.f);
+	Spine_03_Rotator.Roll = UKismetMathLibrary::MapRangeClamped(AimPitch, -90.f, 90.f, 70.f, -70.f);
 }

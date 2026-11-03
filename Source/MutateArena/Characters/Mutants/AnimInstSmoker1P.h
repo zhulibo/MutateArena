@@ -12,7 +12,8 @@ class MUTATEARENA_API UAnimInstSmoker1P : public UAnimInstMutant
 public:
 	UAnimInstSmoker1P();
 
-protected:
+	virtual void NativeInitializeAnimation() override;
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
+	virtual void NativeThreadSafeUpdateAnimation(float DeltaSeconds) override;
 	
 };

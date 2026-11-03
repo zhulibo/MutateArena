@@ -28,7 +28,7 @@
 #include "Components/CrosshairComponent.h"
 #include "Components/RecoilComponent.h"
 #include "Components/SkeletalMeshComponent.h"
-#include "Data/CharacterCommonAsset.h"
+#include "Data/CharacterAsset.h"
 #include "Data/CharacterType.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Data/InputAsset.h"
@@ -49,17 +49,13 @@ AHumanCharacter::AHumanCharacter(const FObjectInitializer& ObjectInitializer)
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	Tags.Add(Tags::CharacterHuman);
+	Tags.Add(Tags::HumanCharacter);
 
 	BloodColor = Colors::Red;
 
 	CombatComp = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
 	RecoilComp = CreateDefaultSubobject<URecoilComponent>(TEXT("RecoilComponent"));
 	CrosshairComp = CreateDefaultSubobject<UCrosshairComponent>(TEXT("CrosshairComponent"));
-
-	DefaultMaxWalkSpeed = 500.f;
-	GetCharacterMovement()->MaxWalkSpeed = DefaultMaxWalkSpeed;
-	GetCharacterMovement()->MaxWalkSpeedCrouched = DefaultMaxWalkSpeed * 0.5f;
 }
 
 void AHumanCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -77,6 +73,12 @@ void AHumanCharacter::PostInitializeComponents()
 void AHumanCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	
+	if (!AssetSubsystem) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+	check(AssetSubsystem);
+    
+	HumanAsset = AssetSubsystem->GetHumanAssetByName(HumanName);
+	check(HumanAsset);
 
 	if (HasAuthority())
 	{
@@ -151,17 +153,10 @@ void AHumanCharacter::OnASCInit()
 
 	if (ASC && AttributeSetBase)
 	{
-		ASC->GetGameplayAttributeValueChangeDelegate(AttributeSetBase->GetMaxWalkSpeedAttribute()).AddUObject(this, &ThisClass::OnMaxWalkSpeedChanged);
 
 		ASC->RegisterGameplayTagEvent(TAG_STATE_COMBAT_SWAPPING, EGameplayTagEventType::NewOrRemoved).AddUObject(this, &ThisClass::OnSwappingTagChanged);
 		ASC->RegisterGameplayTagEvent(TAG_STATE_COMBAT_AIMING, EGameplayTagEventType::NewOrRemoved).AddUObject(this, &ThisClass::OnAimingTagChanged);
 	}
-}
-
-void AHumanCharacter::OnMaxWalkSpeedChanged(const FOnAttributeChangeData& Data)
-{
-	GetCharacterMovement()->MaxWalkSpeed = Data.NewValue;
-	GetCharacterMovement()->MaxWalkSpeedCrouched = Data.NewValue * 0.5f;
 }
 
 void AHumanCharacter::OnSwappingTagChanged(FGameplayTag GameplayTag, int NewCount)
@@ -261,12 +256,12 @@ void AHumanCharacter::ServerSpawnEquipments_Implementation(EEquipmentName Slot1N
 	if (!AssetSubsystem) return;
 
 	// 封装装备生成辅助 Lambda
-	auto SpawnEquipment = [this, World]<typename EquipActorType>(EEquipmentName EquipName) -> bool
+	auto SpawnEquipment = [this, World]<typename EquipActorType>(EEquipmentName EquipmentName) -> bool
 	{
 
-		if (EquipName == EEquipmentName::None) return false;
+		if (EquipmentName == EEquipmentName::None) return false;
 
-		UEquipmentAsset* Asset = AssetSubsystem->GetEquipmentAssetByName(EquipName);
+		UEquipmentAsset* Asset = AssetSubsystem->GetEquipmentAssetByName(EquipmentName);
 		if (!Asset) return false;
 		
 		TSubclassOf<AEquipment> EquipClass = UDataAssetManager::Get().GetSubclass(Asset->GetEquipmentClass());
@@ -282,9 +277,9 @@ void AHumanCharacter::ServerSpawnEquipments_Implementation(EEquipmentName Slot1N
 
 		if (SpawnedActor)
 		{
-			SpawnedActor->EquipmentName = EquipName;
+			SpawnedActor->EquipmentName = EquipmentName;
 			SpawnedActor->FinishSpawning(FTransform::Identity);
-			UE_LOG(LogTemp, Warning, TEXT("EquipName: %s"), *UEnum::GetDisplayValueAsText(EquipName).ToString());
+			UE_LOG(LogTemp, Warning, TEXT("EquipmentName: %s"), *UEnum::GetDisplayValueAsText(EquipmentName).ToString());
 
 			CombatComp->GiveEquipment(SpawnedActor);
 			return true;

@@ -3,7 +3,7 @@
 #include "Engine/StreamableManager.h"
 #include "MutateArena/Assets/Data/CommonAsset.h"
 #include "MutateArena/Characters/Data/InputAsset.h"
-#include "MutateArena/Characters/Data/CharacterCommonAsset.h"
+#include "MutateArena/Characters/Data/CharacterAsset.h"
 #include "MutateArena/Characters/Data/DNAAsset2.h"
 #include "MutateArena/Equipments/Data/EquipmentAsset.h"
 #include "MutateArena/Maps/Environment/EnvironmentAsset.h"
@@ -15,8 +15,8 @@ void UAssetSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	SyncLoadAsset();
 
 	BuildEnvironmentCache();
-	BuildHumanCharacterCache();
-	BuildMutantCharacterCache();
+	BuildHumanCache();
+	BuildMutantCache();
 	BuildEquipmentCache();
 	BuildDNACache();
 }
@@ -24,8 +24,8 @@ void UAssetSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 void UAssetSubsystem::Deinitialize()
 {
 	CachedEnvironmentAssets.Empty();
-	CachedCharacterHumanAssets.Empty();
-	CachedCharacterMutantAssets.Empty();
+	CachedHumanAssets.Empty();
+	CachedMutantAssets.Empty();
 	CachedEquipmentAssets.Empty();
 	CachedDNAAssets.Empty();
 
@@ -41,7 +41,8 @@ AssetType* UAssetSubsystem::LoadSinglePrimaryAsset(const FName& PrimaryAssetType
 
 	for (const FPrimaryAssetId& AssetId : AssetIds)
 	{
-		if (AssetType* Asset = UDataAssetManager::GetAsset<AssetType>(AssetId))
+		// 传入 false：因为返回后会直接赋给 UAssetSubsystem 的 UPROPERTY() 成员变量，不需要再往 DataAssetManager.LoadedAssets 里塞一份
+		if (AssetType* Asset = UDataAssetManager::GetAsset<AssetType>(AssetId, false))
 		{
 			return Asset;
 		}
@@ -83,6 +84,7 @@ void UAssetSubsystem::BuildPrimaryAssetCache(
 	AssetManager.GetPrimaryAssetIdList(FPrimaryAssetType(PrimaryAssetTypeName), AssetIds);
 	if (AssetIds.Num() == 0) return;
 
+	// 一次性在底层把整个列表的所有主资产全部加载进内存
 	TSharedPtr<FStreamableHandle> Handle = AssetManager.LoadPrimaryAssets(AssetIds, TArray<FName>());
 	if (Handle.IsValid())
 	{
@@ -92,6 +94,7 @@ void UAssetSubsystem::BuildPrimaryAssetCache(
 	OutCacheMap.Reserve(AssetIds.Num());
 	for (const FPrimaryAssetId& AssetId : AssetIds)
 	{
+		// 从内存查找
 		if (AssetType* Asset = AssetManager.GetPrimaryAssetObject<AssetType>(AssetId))
 		{
 			KeyType Key = KeyExtractor(Asset);
@@ -137,32 +140,32 @@ UEnvironmentAsset* UAssetSubsystem::GetEnvironmentAssetByTag(FGameplayTag InTag)
 	return GetCachedAsset(CachedEnvironmentAssets, InTag, FGameplayTag::EmptyTag, TEXT("GetEnvironmentAssetByTag"));
 }
 
-void UAssetSubsystem::BuildHumanCharacterCache()
+void UAssetSubsystem::BuildHumanCache()
 {
-	BuildPrimaryAssetCache<UCharacterHumanAsset, EHumanCharacterName>(
-		DataAsset::CharacterHuman, CachedCharacterHumanAssets,
-		[](const UCharacterHumanAsset* Asset) { return Asset->CharacterName; },
-		EHumanCharacterName::None
+	BuildPrimaryAssetCache<UHumanAsset, EHumanName>(
+		DataAsset::Human, CachedHumanAssets,
+		[](const UHumanAsset* Asset) { return Asset->CharacterName; },
+		EHumanName::None
 	);
 }
 
-UCharacterHumanAsset* UAssetSubsystem::GetCharacterHumanAssetByName(EHumanCharacterName InName) const
+UHumanAsset* UAssetSubsystem::GetHumanAssetByName(EHumanName InName) const
 {
-	return GetCachedAsset(CachedCharacterHumanAssets, InName, EHumanCharacterName::None, TEXT("GetCharacterHumanAssetByName"));
+	return GetCachedAsset(CachedHumanAssets, InName, EHumanName::None, TEXT("GetHumanAssetByName"));
 }
 
-void UAssetSubsystem::BuildMutantCharacterCache()
+void UAssetSubsystem::BuildMutantCache()
 {
-	BuildPrimaryAssetCache<UCharacterMutantAsset, EMutantCharacterName>(
-		DataAsset::CharacterMutant, CachedCharacterMutantAssets,
-		[](const UCharacterMutantAsset* Asset) { return Asset->CharacterName; },
-		EMutantCharacterName::None
+	BuildPrimaryAssetCache<UMutantAsset, EMutantName>(
+		DataAsset::Mutant, CachedMutantAssets,
+		[](const UMutantAsset* Asset) { return Asset->CharacterName; },
+		EMutantName::None
 	);
 }
 
-UCharacterMutantAsset* UAssetSubsystem::GetCharacterMutantAssetByName(EMutantCharacterName InName) const
+UMutantAsset* UAssetSubsystem::GetMutantAssetByName(EMutantName InName) const
 {
-	return GetCachedAsset(CachedCharacterMutantAssets, InName, EMutantCharacterName::None, TEXT("GetCharacterMutantAssetByName"));
+	return GetCachedAsset(CachedMutantAssets, InName, EMutantName::None, TEXT("GetMutantAssetByName"));
 }
 
 void UAssetSubsystem::BuildEquipmentCache()

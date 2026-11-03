@@ -30,9 +30,9 @@ public:
 	int32 LoadoutIndex = 0;
 
 	UPROPERTY()
-	EHumanCharacterName HumanCharacterName = EHumanCharacterName::Solider;
+	EHumanName HumanName = EHumanName::Solider;
 	UPROPERTY()
-	EMutantCharacterName MutantCharacterName = EMutantCharacterName::Tank;
+	EMutantName MutantName = EMutantName::Tank;
 	UPROPERTY()
 	EDNA2 DNA1 = EDNA2::HighBoneDensity;
 	UPROPERTY()

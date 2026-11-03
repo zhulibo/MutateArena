@@ -9,8 +9,8 @@ namespace EWindowMode
 	enum Type : int;
 }
 
-enum class EMutantCharacterName : uint8;
-enum class EHumanCharacterName : uint8;
+enum class EMutantName : uint8;
+enum class EHumanName : uint8;
 
 UCLASS()
 class MUTATEARENA_API USaveGameSetting : public USaveGame

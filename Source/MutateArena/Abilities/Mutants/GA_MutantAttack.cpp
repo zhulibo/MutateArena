@@ -3,6 +3,7 @@
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
 #include "AbilitySystemComponent.h"
 #include "MutateArena/Characters/MutantCharacter.h"
+#include "MutateArena/Characters/Data/CharacterAsset.h"
 #include "MutateArena/System/GameplayTags.h"
 
 UGA_MutantAttack::UGA_MutantAttack()
@@ -56,7 +57,7 @@ void UGA_MutantAttack::PlayAttackMontage()
 	}
 
 	UAbilityTask_PlayMontageAndWait* MontageTask = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(
-		this, NAME_None, bIsLightAttack ? MutantChar->LightAttackMontage : MutantChar->HeavyAttackMontage);
+		this, NAME_None, bIsLightAttack ? MutantChar->MutantAsset->LightAttackMontage1P : MutantChar->MutantAsset->HeavyAttackMontage1P);
 	MontageTask->OnCompleted.AddDynamic(this, &UGA_MutantAttack::OnMontageCompleted);
 	MontageTask->OnInterrupted.AddDynamic(this, &UGA_MutantAttack::OnMontageInterruptedOrCancelled);
 	MontageTask->OnCancelled.AddDynamic(this, &UGA_MutantAttack::OnMontageInterruptedOrCancelled);

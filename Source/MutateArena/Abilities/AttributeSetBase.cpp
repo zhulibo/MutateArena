@@ -71,7 +71,7 @@ void UAttributeSetBase::PostGameplayEffectExecute(const FGameplayEffectModCallba
 {
 	Super::PostGameplayEffectExecute(Data);
 	
-	// 拦截Damage：酸雨 或 Cutter的流血GE
+	// 拦截Damage：酸雨 或 Reaper的流血GE
 	if (Data.EvaluatedData.Attribute == GetDamageAttribute())
 	{
 		// 1. 获取本次 GE 造成的伤害值
@@ -99,7 +99,7 @@ void UAttributeSetBase::PostGameplayEffectExecute(const FGameplayEffectModCallba
 				{
 					DamageTypeClass = UDamageTypeAcidRain::StaticClass();
 				}
-				// 情况 B：施法者是突变体 (Cutter)，说明这是流血攻击
+				// 情况 B：施法者是突变体 (Reaper)，说明这是流血攻击
 				else if (Instigator->IsA<AMutantCharacter>()) 
 				{
 					DamageTypeClass = UDamageTypeBleed::StaticClass();

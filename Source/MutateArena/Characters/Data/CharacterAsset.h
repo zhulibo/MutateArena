@@ -4,8 +4,10 @@
 #include "Engine/DataAsset.h"
 #include "MutateArena/Characters/Data/CharacterType.h"
 #include "MutateArena/MutateArena.h"
-#include "CharacterCommonAsset.generated.h"
+#include "CharacterAsset.generated.h"
 
+class UGameplayEffect;
+class AHumanCharacter;
 class UTextureRenderTarget2D;
 class UMaterialParameterCollection;
 class UMaterialInterface;
@@ -88,7 +90,7 @@ public:
 };
 
 UCLASS()
-class MUTATEARENA_API UCharacterHumanAsset : public UPrimaryDataAsset
+class MUTATEARENA_API UHumanAsset : public UPrimaryDataAsset
 {
 	GENERATED_BODY()
 
@@ -97,7 +99,7 @@ public:
 	FText ShowName;
 
 	UPROPERTY(EditAnywhere)
-	EHumanCharacterName CharacterName = EHumanCharacterName::None;
+	EHumanName CharacterName = EHumanName::None;
     
 	UPROPERTY(EditAnywhere)
 	TSoftObjectPtr<UTexture2D> ShowImg;
@@ -124,13 +126,13 @@ public:
 
 	virtual FPrimaryAssetId GetPrimaryAssetId() const override
 	{
-		return FPrimaryAssetId(DataAsset::CharacterHuman, GetFName());
+		return FPrimaryAssetId(DataAsset::Human, GetFName());
 	}
 	
 };
 
 UCLASS()
-class MUTATEARENA_API UCharacterMutantAsset : public UPrimaryDataAsset
+class MUTATEARENA_API UMutantAsset : public UPrimaryDataAsset
 {
 	GENERATED_BODY()
 
@@ -139,21 +141,16 @@ public:
 	FText ShowName;
 
 	UPROPERTY(EditAnywhere)
-	EMutantCharacterName CharacterName = EMutantCharacterName::None;
-	
+	EMutantName CharacterName = EMutantName::None;
+
 	UPROPERTY(EditAnywhere)
 	TSoftObjectPtr<UTexture2D> ShowImg;
-	
+
 	UPROPERTY(EditAnywhere)
 	TSoftObjectPtr<UTexture2D> ShowImgFullBody;
 
 	UPROPERTY(EditAnywhere)
 	TSoftClassPtr<class AMutantCharacter> CharacterClass;
-
-	UPROPERTY(EditAnywhere)
-	float LightAttackDamage = 0.f;
-	UPROPERTY(EditAnywhere)
-	float HeavyAttackDamage = 0.f;
 
 	UPROPERTY(EditAnywhere)
 	FText Attribute;
@@ -163,6 +160,11 @@ public:
 	FText Desc;
 
 	UPROPERTY(EditAnywhere)
+	float LightAttackDamage = 0.f;
+	UPROPERTY(EditAnywhere)
+	float HeavyAttackDamage = 0.f;
+	
+	UPROPERTY(EditAnywhere)
 	TArray<FName> TraceSockets_R;
 	UPROPERTY(EditAnywhere)
 	float TraceRadius_R = 10.f;
@@ -170,10 +172,27 @@ public:
 	TArray<FName> TraceSockets_L;
 	UPROPERTY(EditAnywhere)
 	float TraceRadius_L = 10.f;
+	
+	UPROPERTY(EditAnywhere)
+	UMetaSoundSource* BornSound;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UAnimMontage> LightAttackMontage1P;
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UAnimMontage> HeavyAttackMontage1P;
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UAnimMontage> LightAttackMontage;
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UAnimMontage> HeavyAttackMontage;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<UGameplayAbilityBase> SkillAbility;
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<UGameplayEffect> LevelUpEffect;
 
 	virtual FPrimaryAssetId GetPrimaryAssetId() const override
 	{
-		return FPrimaryAssetId(DataAsset::CharacterMutant, GetFName());
+		return FPrimaryAssetId(DataAsset::Mutant, GetFName());
 	}
-	
+
 };

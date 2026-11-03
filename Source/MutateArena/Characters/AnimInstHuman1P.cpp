@@ -12,6 +12,18 @@ UAnimInstHuman1P::UAnimInstHuman1P()
 {
 }
 
+void UAnimInstHuman1P::NativeInitializeAnimation()
+{
+	Super::NativeInitializeAnimation();
+
+	HumanChar = Cast<AHumanCharacter>(TryGetPawnOwner());
+	if (HumanChar)
+	{
+		CombatComp = HumanChar->CombatComp;
+		MovementComp = HumanChar->MovementComp;
+	}
+}
+
 void UAnimInstHuman1P::NativeUpdateAnimation(float DeltaSeconds)
 {
 	Super::NativeUpdateAnimation(DeltaSeconds);
@@ -19,24 +31,30 @@ void UAnimInstHuman1P::NativeUpdateAnimation(float DeltaSeconds)
 	if (HumanChar == nullptr) HumanChar = Cast<AHumanCharacter>(TryGetPawnOwner());
 	if (CombatComp == nullptr) CombatComp = HumanChar ? HumanChar->CombatComp : nullptr;
 	if (MovementComp == nullptr) MovementComp = HumanChar ? HumanChar->MovementComp : nullptr;
+}
+
+void UAnimInstHuman1P::NativeThreadSafeUpdateAnimation(float DeltaSeconds)
+{
+	Super::NativeThreadSafeUpdateAnimation(DeltaSeconds);
+
 	if (!HumanChar || !CombatComp || !MovementComp) return;
-	
+
 	bIsOnLadder = MovementComp->MovementMode == MOVE_Custom && MovementComp->CustomMovementMode == CMOVE_Ladder;
-	
+
 	FVector Velocity = HumanChar->GetVelocity();
 	Speed = bIsOnLadder ? FMath::Abs(Velocity.Z) : Velocity.Size2D();
-	
+
 	bIsInAir = MovementComp->IsFalling() && !bIsOnLadder;
 	bIsAccelerating = MovementComp->GetCurrentAcceleration().Size() > 0.f;
 	bIsCrouched = HumanChar->bIsCrouched;
-	
+
 	if (AEquipment* CurEquipment = CombatComp->GetCurEquipment())
 	{
 		EquipmentName = CurEquipment->EquipmentName;
 		// FString EnumString = UEnum::GetValueAsString(CurEquipment->EquipmentName);
 		// UE_LOG(LogTemp, Warning, TEXT("EquipmentName = %s"), *EnumString);
-		
-		WalkPlayRate = HumanChar->GetMaxWalkSpeed() / HumanChar->DefaultMaxWalkSpeed;
+
+		WalkPlayRate = HumanChar->GetMaxWalkSpeed() / HumanChar->Level1MaxWalkSpeed;
 		if (CombatComp->IsAiming())
 		{
 			WalkPlayRate *= CurEquipment->EquipmentAsset->GetAimingWalkSpeedMul();
@@ -62,5 +80,15 @@ void UAnimInstHuman1P::NativeUpdateAnimation(float DeltaSeconds)
 		}
 	}
 
+	// 计算瞄准方向与移动方向的偏移量，用于控制脚步朝向
+	FRotator AimRotation = HumanChar->GetBaseAimRotation();
+	FRotator MovementRotation = UKismetMathLibrary::MakeRotFromX(HumanChar->GetVelocity());
+	FRotator DiffRotation = UKismetMathLibrary::NormalizedDeltaRotator(MovementRotation, AimRotation);
+	AimYaw = DiffRotation.Yaw;
+
+	// 根据AimPitch计算骨骼偏移量
 	AimPitch = HumanChar->AimPitch;
+	Spine_01_Rotator.Roll = UKismetMathLibrary::MapRangeClamped(AimPitch, -90.f, 90.f, 10.f, -10.f);
+	Spine_02_Rotator.Roll = UKismetMathLibrary::MapRangeClamped(AimPitch, -90.f, 90.f, 10.f, -10.f);
+	Spine_03_Rotator.Roll = UKismetMathLibrary::MapRangeClamped(AimPitch, -90.f, 90.f, 70.f, -70.f);
 }

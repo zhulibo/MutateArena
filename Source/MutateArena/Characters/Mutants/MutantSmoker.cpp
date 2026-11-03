@@ -6,11 +6,6 @@
 AMutantSmoker::AMutantSmoker(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-	MutantCharacterName = EMutantCharacterName::Smoker;
-	
-	DefaultMaxWalkSpeed = 550.f;
-	GetCharacterMovement()->MaxWalkSpeed = DefaultMaxWalkSpeed;
-	GetCharacterMovement()->MaxWalkSpeedCrouched = DefaultMaxWalkSpeed * 0.5f;
 }
 
 void AMutantSmoker::BeginPlay()

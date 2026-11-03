@@ -35,7 +35,7 @@
 #include "Serialization/ObjectAndNameAsStringProxyArchive.h"
 #include "Widgets/CommonActivatableWidgetContainer.h"
 #include "MutateArena/Equipments/Data/EquipmentAsset.h"
-#include "MutateArena/Characters/Data/CharacterCommonAsset.h"
+#include "MutateArena/Characters/Data/CharacterAsset.h"
 
 #define LOCTEXT_NAMESPACE "UStorage"
 
@@ -211,13 +211,13 @@ void UStorage::ApplyLoadoutData(USaveGameLoadout* SaveGameLoadout)
 	}
 
 	// 判断是否拥有角色，没有则把存档恢复默认
-	if (!HasHumanCharacter(SaveGameLoadout->HumanCharacterName))
+	if (!HasHumanCharacter(SaveGameLoadout->HumanName))
 	{
-		SaveGameLoadout->HumanCharacterName = DefaultConfig->HumanCharacterName;
+		SaveGameLoadout->HumanName = DefaultConfig->HumanName;
 	}
 
 	// 回显角色
-	if (UCharacterHumanAsset* CharacterAsset = AssetSubsystem->GetCharacterHumanAssetByName(SaveGameLoadout->HumanCharacterName))
+	if (UHumanAsset* CharacterAsset = AssetSubsystem->GetHumanAssetByName(SaveGameLoadout->HumanName))
 	{
 		Human->ShowName->SetText(CharacterAsset->ShowName);
 		if (CharacterAsset->ShowImgFullBody)
@@ -264,11 +264,11 @@ bool UStorage::HasEquipment(EEquipmentName EquipmentName)
 }
 
 // 是否拥有角色
-bool UStorage::HasHumanCharacter(EHumanCharacterName HumanCharacterName)
+bool UStorage::HasHumanCharacter(EHumanName HumanName)
 {
 	if (AssetSubsystem)
 	{
-		if (UCharacterHumanAsset* Asset = AssetSubsystem->GetCharacterHumanAssetByName(HumanCharacterName))
+		if (UHumanAsset* Asset = AssetSubsystem->GetHumanAssetByName(HumanName))
 		{
 			// 免费角色或者拥有相应权限的付费角色
 			if (Asset->AudienceItemId.IsEmpty() || (EOSSubsystem && EOSSubsystem->OwnEntitlement(Asset->AudienceItemId)))
@@ -402,9 +402,9 @@ void UStorage::AddHumanCharacters()
 {
 	if (!AssetSubsystem) return;
 
-	for (const TPair<EHumanCharacterName, UCharacterHumanAsset*>& Pair : AssetSubsystem->CachedCharacterHumanAssets)
+	for (const TPair<EHumanName, UHumanAsset*>& Pair : AssetSubsystem->CachedHumanAssets)
 	{
-		UCharacterHumanAsset* ItemValue = Pair.Value;
+		UHumanAsset* ItemValue = Pair.Value;
 		if (ItemValue == nullptr) continue;
 
 		// 免费角色 || 付费角色且已拥有
@@ -438,7 +438,7 @@ void UStorage::AddEquipmentButton(UEquipmentAsset* EquipmentAsset)
 }
 
 // 添加角色
-void UStorage::AddCharacterButton(UCharacterHumanAsset* CharacterAsset)
+void UStorage::AddCharacterButton(UHumanAsset* CharacterAsset)
 {
 	if (CharacterAsset == nullptr) return;
 
@@ -448,7 +448,7 @@ void UStorage::AddCharacterButton(UCharacterHumanAsset* CharacterAsset)
 		CharacterButton->Name = CharacterAsset->ShowName;
 		CharacterButton->ShowImg->SetBrushFromLazyTexture(CharacterAsset->ShowImg);
 		CharacterButton->ShowImgFullBodyPath = CharacterAsset->ShowImgFullBody;
-		CharacterButton->HumanCharacterName = CharacterAsset->CharacterName;
+		CharacterButton->HumanName = CharacterAsset->CharacterName;
 		CharacterButton->OnClicked().AddUObject(this, &ThisClass::OnCharacterButtonClicked, CharacterButton);
 
 		if (UWrapBoxSlot* NewSlot = Cast<UWrapBoxSlot>(StorageButtonContainer->AddChild(CharacterButton)))
@@ -530,7 +530,7 @@ void UStorage::OnCharacterButtonClicked(UStorageButton* CharacterButton)
 	if (StorageSubsystem == nullptr) StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
 	if (StorageSubsystem && StorageSubsystem->CacheLoadout)
 	{
-		StorageSubsystem->CacheLoadout->HumanCharacterName = CharacterButton->HumanCharacterName;
+		StorageSubsystem->CacheLoadout->HumanName = CharacterButton->HumanName;
 		StorageSubsystem->SaveLoadouts();
 	}
 }

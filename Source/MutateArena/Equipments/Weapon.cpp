@@ -25,7 +25,7 @@ void AWeapon::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
+	if (!AssetSubsystem) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
 	check(AssetSubsystem);
 
 	FragWeapon = EquipmentAsset->FindFragmentByClass<UFragWeapon>();

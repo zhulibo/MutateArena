@@ -4,7 +4,7 @@
 #include "CommonButtonBase.h"
 #include "StorageButton.generated.h"
 
-enum class EHumanCharacterName : uint8;
+enum class EHumanName : uint8;
 enum class EEquipmentName : uint8;
 enum class EEquipmentSlot : uint8;
 
@@ -29,7 +29,7 @@ public:
 	TSoftObjectPtr<UTexture2D> ShowImgFullBodyPath;
 	
 	UPROPERTY()
-	EHumanCharacterName HumanCharacterName;
+	EHumanName HumanName;
 
 	UPROPERTY()
 	EEquipmentName EquipmentName;

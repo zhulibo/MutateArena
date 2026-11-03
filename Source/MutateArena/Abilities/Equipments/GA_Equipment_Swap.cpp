@@ -84,7 +84,7 @@ void UGA_Equipment_Swap::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 	CombatComp->InstantSwap(TargetEquipmentSlot);
 
 	// 播放1P切入动画
-	UAnimMontage* EquipMontage_C = TargetEquipment->EquipmentAsset->GetEquipMontage_C();
+	UAnimMontage* EquipMontage_C = TargetEquipment->EquipmentAsset->GetEquipMontage1P_C();
 	if (!EquipMontage_C)
 	{
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, false);
@@ -130,7 +130,7 @@ void UGA_Equipment_Swap::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 		// 在1P武器网格体（EquipmentMesh1P）上播放装备切入动画
 		if (UAnimInstEquipment* EquipAnimInst1P = TargetEquipment->GetEquipmentAnimInst1P())
 		{
-			if (UAnimMontage* EquipMontage_E = TargetEquipment->EquipmentAsset->GetEquipMontage_E())
+			if (UAnimMontage* EquipMontage_E = TargetEquipment->EquipmentAsset->GetEquipMontage1P_E())
 			{
 				EquipAnimInst1P->Montage_Play(EquipMontage_E, 1.0f);
 			}
@@ -170,7 +170,7 @@ void UGA_Equipment_Swap::EndAbility(const FGameplayAbilitySpecHandle Handle, con
 	{
 		if (CurEquipment->EquipmentAsset)
 		{
-			if (UAnimMontage* EquipMontage_C = CurEquipment->EquipmentAsset->GetEquipMontage_C())
+			if (UAnimMontage* EquipMontage_C = CurEquipment->EquipmentAsset->GetEquipMontage1P_C())
 			{
 				if (AHumanCharacter* HumanChar = GetHumanCharacter())
 				{
@@ -187,7 +187,7 @@ void UGA_Equipment_Swap::EndAbility(const FGameplayAbilitySpecHandle Handle, con
 
 								if (UAnimInstEquipment* EquipAnimInst1P = CurEquipment->GetEquipmentAnimInst1P())
 								{
-									EquipAnimInst1P->Montage_Stop(0.f, CurEquipment->EquipmentAsset->GetEquipMontage_E());
+									EquipAnimInst1P->Montage_Stop(0.f, CurEquipment->EquipmentAsset->GetEquipMontage1P_E());
 								}
 							}
 						}

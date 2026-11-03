@@ -12,7 +12,8 @@ class MUTATEARENA_API UAnimInstTank1P : public UAnimInstMutant
 public:
 	UAnimInstTank1P();
 
-protected:
+	virtual void NativeInitializeAnimation() override;
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
+	virtual void NativeThreadSafeUpdateAnimation(float DeltaSeconds) override;
 	
 };

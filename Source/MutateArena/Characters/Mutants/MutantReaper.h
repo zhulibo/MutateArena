@@ -2,15 +2,15 @@
 
 #include "CoreMinimal.h"
 #include "MutateArena/Characters/MutantCharacter.h"
-#include "MutantCutter.generated.h"
+#include "MutantReaper.generated.h"
 
 UCLASS()
-class MUTATEARENA_API AMutantCutter : public AMutantCharacter
+class MUTATEARENA_API AMutantReaper : public AMutantCharacter
 {
 	GENERATED_BODY()
 
 public:
-	AMutantCutter(const FObjectInitializer& ObjectInitializer);
+	AMutantReaper(const FObjectInitializer& ObjectInitializer);
 
 	virtual void BeginPlay() override;
 

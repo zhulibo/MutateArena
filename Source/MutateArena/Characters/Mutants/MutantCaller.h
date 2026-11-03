@@ -2,15 +2,15 @@
 
 #include "CoreMinimal.h"
 #include "MutateArena/Characters/MutantCharacter.h"
-#include "MutantCorpseDriver.generated.h"
+#include "MutantCaller.generated.h"
 
 UCLASS()
-class MUTATEARENA_API AMutantCorpseDriver : public AMutantCharacter
+class MUTATEARENA_API AMutantCaller : public AMutantCharacter
 {
 	GENERATED_BODY()
 
 public:
-	AMutantCorpseDriver(const FObjectInitializer& ObjectInitializer);
+	AMutantCaller(const FObjectInitializer& ObjectInitializer);
 
 	virtual void BeginPlay() override;
 

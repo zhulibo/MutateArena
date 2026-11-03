@@ -1,4 +1,4 @@
-#include "GA_MutantCorpseDriverSkill.h"
+#include "GA_MutantCallerSkill.h"
 
 #include "AbilitySystemComponent.h"
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
@@ -7,11 +7,11 @@
 #include "MutateArena/Characters/Mutants/Corpse/CorpseCharacter.h"
 #include "MutateArena/System/GameplayTags.h"
 
-UGA_MutantCorpseDriverSkill::UGA_MutantCorpseDriverSkill()
+UGA_MutantCallerSkill::UGA_MutantCallerSkill()
 {
 }
 
-void UGA_MutantCorpseDriverSkill::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
+void UGA_MutantCallerSkill::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
 {
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
@@ -27,10 +27,10 @@ void UGA_MutantCorpseDriverSkill::ActivateAbility(const FGameplayAbilitySpecHand
 	{
 		UAbilityTask_PlayMontageAndWait* MontageTask = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(this, NAME_None, SummonMontage);
 		
-		MontageTask->OnBlendOut.AddDynamic(this, &UGA_MutantCorpseDriverSkill::OnMontageCompleted);
-		MontageTask->OnCompleted.AddDynamic(this, &UGA_MutantCorpseDriverSkill::OnMontageCompleted);
-		MontageTask->OnInterrupted.AddDynamic(this, &UGA_MutantCorpseDriverSkill::OnMontageCancelled);
-		MontageTask->OnCancelled.AddDynamic(this, &UGA_MutantCorpseDriverSkill::OnMontageCancelled);
+		MontageTask->OnBlendOut.AddDynamic(this, &UGA_MutantCallerSkill::OnMontageCompleted);
+		MontageTask->OnCompleted.AddDynamic(this, &UGA_MutantCallerSkill::OnMontageCompleted);
+		MontageTask->OnInterrupted.AddDynamic(this, &UGA_MutantCallerSkill::OnMontageCancelled);
+		MontageTask->OnCancelled.AddDynamic(this, &UGA_MutantCallerSkill::OnMontageCancelled);
 		
 		MontageTask->ReadyForActivation();
 
@@ -44,7 +44,7 @@ void UGA_MutantCorpseDriverSkill::ActivateAbility(const FGameplayAbilitySpecHand
 	}
 }
 
-void UGA_MutantCorpseDriverSkill::SpawnMinion(const FGameplayAbilityActorInfo* ActorInfo)
+void UGA_MutantCallerSkill::SpawnMinion(const FGameplayAbilityActorInfo* ActorInfo)
 {
 	// 【核心：P2P架构下的权限控制】只允许服务器端生成小兵实体！
 	if (HasAuthority(&CurrentActivationInfo) && MinionClassToSpawn)
@@ -73,26 +73,26 @@ void UGA_MutantCorpseDriverSkill::SpawnMinion(const FGameplayAbilityActorInfo* A
 				// 如果需要，还可以传召唤者的朝向
 				CueParams.Normal = AvatarCharacter->GetActorForwardVector(); 
 				// 手动触发（注意：由于我们在 Authority 下，这里会通过 RPC 广播给所有客户端播放）
-				ActorInfo->AbilitySystemComponent->ExecuteGameplayCue(TAG_GC_MUTANT_CORPSEDRIVER_SKILL, CueParams);
+				ActorInfo->AbilitySystemComponent->ExecuteGameplayCue(TAG_GC_MUTANT_CALLER_SKILL, CueParams);
 			}
 		}
 	}
 }
 
-void UGA_MutantCorpseDriverSkill::OnMontageCompleted()
+void UGA_MutantCallerSkill::OnMontageCompleted()
 {
 	// 动画播放完毕后生成小兵（如果是等待 Notify，这里的逻辑就要转移）
 	SpawnMinion(CurrentActorInfo);
 	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 }
 
-void UGA_MutantCorpseDriverSkill::OnMontageCancelled()
+void UGA_MutantCallerSkill::OnMontageCancelled()
 {
 	// 动画被打断（如被击晕），技能取消
 	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
 }
 
-void UGA_MutantCorpseDriverSkill::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
+void UGA_MutantCallerSkill::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }

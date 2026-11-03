@@ -59,7 +59,7 @@ public:
 	UPROPERTY(ReplicatedUsing = OnRep_JumpZVelocity)
 	FGameplayAttributeData JumpZVelocity;
 	ATTRIBUTE_ACCESSORS(UAttributeSetBase, JumpZVelocity)
-	
+
 	UPROPERTY(ReplicatedUsing = OnRep_BodyResistance)
 	FGameplayAttributeData BodyResistance;
 	ATTRIBUTE_ACCESSORS(UAttributeSetBase, BodyResistance)

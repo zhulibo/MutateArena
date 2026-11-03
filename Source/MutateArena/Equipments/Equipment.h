@@ -39,7 +39,7 @@ public:
 	EEquipmentName EquipmentName = EEquipmentName::None;
 
 	UPROPERTY(Transient)
-	TObjectPtr<const UEquipmentAsset> EquipmentAsset;
+	TObjectPtr<const UEquipmentAsset> EquipmentAsset = nullptr;
 
 	UAnimInstEquipment* GetEquipmentAnimInst();
 	UAnimInstEquipment* GetEquipmentAnimInst1P();

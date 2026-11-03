@@ -6,6 +6,7 @@
 #include "Data/CharacterType.h"
 #include "HumanCharacter.generated.h"
 
+class UHumanAsset;
 enum class EEquipmentName : uint8;
 enum class EEquipmentSlot : uint8;
 
@@ -16,13 +17,6 @@ class MUTATEARENA_API AHumanCharacter : public ABaseCharacter, public IInteracta
 
 public:
 	AHumanCharacter(const FObjectInitializer& ObjectInitializer);
-
-	UPROPERTY(VisibleAnywhere)
-	class UCombatComponent* CombatComp;
-	UPROPERTY(VisibleAnywhere)
-	class URecoilComponent* RecoilComp;
-	UPROPERTY(VisibleAnywhere)
-	class UCrosshairComponent* CrosshairComp;
 	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void PostInitializeComponents() override;
@@ -31,10 +25,21 @@ public:
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void PossessedBy(AController* NewController) override;
 
+	UPROPERTY(VisibleAnywhere)
+	class UCombatComponent* CombatComp;
+	UPROPERTY(VisibleAnywhere)
+	class URecoilComponent* RecoilComp;
+	UPROPERTY(VisibleAnywhere)
+	class UCrosshairComponent* CrosshairComp;
+	
+	UPROPERTY()
+	EHumanName HumanName;
+	UPROPERTY(Transient)
+	TObjectPtr<const UHumanAsset> HumanAsset = nullptr;
+
 protected:
 	virtual void OnASCInit() override;
 public:
-	void OnMaxWalkSpeedChanged(const FOnAttributeChangeData& Data);
 	void OnSwappingTagChanged(FGameplayTag GameplayTag, int NewCount);
 	void OnAimingTagChanged(FGameplayTag GameplayTag, int NewCount);
 	void UpdateMaxWalkSpeed();

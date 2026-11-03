@@ -4,7 +4,7 @@
 #include "CommonActivatableWidget.h"
 #include "MutantSelect.generated.h"
 
-enum class EMutantCharacterName : uint8;
+enum class EMutantName : uint8;
 
 UCLASS()
 class MUTATEARENA_API UMutantSelect : public UCommonActivatableWidget
@@ -39,7 +39,7 @@ protected:
 	TSubclassOf<class UMutantSelectButton> MutantSelectButtonClass;
 
 	UFUNCTION()
-	void OnMutantSelectButtonClicked(EMutantCharacterName MutantCharacterName);
+	void OnMutantSelectButtonClicked(EMutantName MutantName);
 
 	void OnRoundEnded();
 

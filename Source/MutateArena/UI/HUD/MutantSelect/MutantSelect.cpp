@@ -6,7 +6,7 @@
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/Characters/Data/CharacterType.h"
 #include "MutateArena/Characters/MutantCharacter.h"
-#include "MutateArena/Characters/Data/CharacterCommonAsset.h"
+#include "MutateArena/Characters/Data/CharacterAsset.h"
 #include "MutateArena/GameStates/MutationGameState.h"
 #include "MutateArena/PlayerControllers/BaseController.h"
 #include "MutateArena/System/AssetSubsystem.h"
@@ -41,9 +41,9 @@ void UMutantSelect::NativeOnInitialized()
     AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
     if (AssetSubsystem)
     {
-       for (const TPair<EMutantCharacterName, UCharacterMutantAsset*>& Pair : AssetSubsystem->CachedCharacterMutantAssets)
+       for (const TPair<EMutantName, UMutantAsset*>& Pair : AssetSubsystem->CachedMutantAssets)
        {
-          UCharacterMutantAsset* Asset = Pair.Value;
+          UMutantAsset* Asset = Pair.Value;
           if (Asset == nullptr) continue;
 
           if (UMutantSelectButton* MutantSelectButton = CreateWidget<UMutantSelectButton>(this, MutantSelectButtonClass))
@@ -52,7 +52,7 @@ void UMutantSelect::NativeOnInitialized()
              MutantSelectButton->Attribute->SetText(Asset->Attribute);
              MutantSelectButton->Skill->SetText(Asset->Skill);
              MutantSelectButton->Desc->SetText(Asset->Desc);
-             MutantSelectButton->MutantCharacterName = Asset->CharacterName;
+             MutantSelectButton->MutantName = Asset->CharacterName;
              
              MutantSelectButton->OnClicked().AddUObject(this, &ThisClass::OnMutantSelectButtonClicked, Asset->CharacterName);
              
@@ -62,11 +62,10 @@ void UMutantSelect::NativeOnInitialized()
              }
 
              // 开发中的变异体，禁用按钮
-             if (Asset->CharacterName == EMutantCharacterName::CorpseDriver
-                || Asset->CharacterName == EMutantCharacterName::Cook
-                || Asset->CharacterName == EMutantCharacterName::Echo
-                || Asset->CharacterName == EMutantCharacterName::Generator
-                || Asset->CharacterName == EMutantCharacterName::Venom)
+             if (Asset->CharacterName == EMutantName::Caller
+                || Asset->CharacterName == EMutantName::Cook
+                || Asset->CharacterName == EMutantName::Clicker
+                || Asset->CharacterName == EMutantName::Generator)
              {
                 MutantSelectButton->Desc->SetText(FText::FromString(TEXT("In Development")));
                 MutantSelectButton->SetIsEnabled(false);
@@ -94,7 +93,7 @@ UWidget* UMutantSelect::NativeGetDesiredFocusTarget() const
        {
           if (UMutantSelectButton* MutantSelectButton = Cast<UMutantSelectButton>(MutantSelectButtonContainer->GetChildAt(i)))
           {
-             if (MutantSelectButton->MutantCharacterName == MutantCharacter->MutantCharacterName)
+             if (MutantSelectButton->MutantName == MutantCharacter->MutantName)
              {
                 return MutantSelectButtonContainer->GetChildAt(i);
              }
@@ -105,20 +104,20 @@ UWidget* UMutantSelect::NativeGetDesiredFocusTarget() const
     return MutantSelectButtonContainer->GetChildAt(0);
 }
 
-void UMutantSelect::OnMutantSelectButtonClicked(EMutantCharacterName MutantCharacterName)
+void UMutantSelect::OnMutantSelectButtonClicked(EMutantName MutantName)
 {
     // 保存到PlayerState
     if (BasePlayerState == nullptr) BasePlayerState = Cast<ABasePlayerState>(GetOwningPlayerState());
     if (BasePlayerState)
     {
-       BasePlayerState->ServerSetMutantCharacterName(MutantCharacterName);
+       BasePlayerState->ServerSetMutantName(MutantName);
     }
 
     // 保存到文件
     if (StorageSubsystem == nullptr) StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
     if (StorageSubsystem && StorageSubsystem->CacheLoadout)
     {
-       StorageSubsystem->CacheLoadout->MutantCharacterName = MutantCharacterName;
+       StorageSubsystem->CacheLoadout->MutantName = MutantName;
        StorageSubsystem->SaveLoadouts();
     }
 
@@ -128,7 +127,7 @@ void UMutantSelect::OnMutantSelectButtonClicked(EMutantCharacterName MutantChara
        UAbilitySystemComponent* ASC = MutantCharacter->GetAbilitySystemComponent();
        if (ASC && ASC->GetTagCount(TAG_STATE_MUTANT_CHANGING) > 0)
        {
-          MutantCharacter->ServerSelectMutant(MutantCharacterName);
+          MutantCharacter->ServerSelectMutant(MutantName);
 
           // 终止切换角色技能
           FScopedPredictionWindow PredictionWindow(ASC, MutantCharacter->IsLocallyControlled() && !MutantCharacter->HasAuthority());

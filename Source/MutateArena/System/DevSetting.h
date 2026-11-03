@@ -43,7 +43,7 @@ public:
 	UPROPERTY(Config, EditAnywhere, Category = "Mutation")
 	int32 TotalRound = 12;
 	UPROPERTY(Config, EditAnywhere, Category = "Mutation")
-	int32 WarmupTime = 3;
+	int32 WarmupTime = 2;
 	UPROPERTY(Config, EditAnywhere, Category = "Mutation")
 	int32 RoundTime = 180;
 	UPROPERTY(Config, EditAnywhere, Category = "Mutation")

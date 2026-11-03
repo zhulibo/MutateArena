@@ -6,6 +6,8 @@
 #include "MutateArena/Equipments/Data/EquipmentType.h"
 #include "EquipmentAsset.generated.h"
 
+class UAnimInstHuman_Layer;
+class UAnimInstHuman1P_Layer;
 class UMaterialInterface;
 class UTextureRenderTarget2D;
 class UMaterialParameterCollection;
@@ -132,6 +134,10 @@ public:
 	TObjectPtr<UMetaSoundSource> MechSound;
 
 	UPROPERTY(EditAnywhere)
+	TObjectPtr<UAnimMontage> ReloadMontage1P_C;
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UAnimMontage> ReloadMontage1P_E;
+	UPROPERTY(EditAnywhere)
 	TObjectPtr<UAnimMontage> ReloadMontage_C;
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UAnimMontage> ReloadMontage_E;
@@ -154,10 +160,18 @@ public:
 	float TraceRadius = 10.f;
 
 	UPROPERTY(EditAnywhere)
+	TObjectPtr<UAnimMontage> LightAttackMontage1P_C;
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UAnimMontage> LightAttackMontage1P_E;
+	UPROPERTY(EditAnywhere)
 	TObjectPtr<UAnimMontage> LightAttackMontage_C;
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UAnimMontage> LightAttackMontage_E;
 
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UAnimMontage> HeavyAttackMontage1P_C;
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UAnimMontage> HeavyAttackMontage1P_E;
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UAnimMontage> HeavyAttackMontage_C;
 	UPROPERTY(EditAnywhere)
@@ -173,6 +187,10 @@ public:
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UMetaSoundSource> HitSound;
 
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UAnimMontage> ThrowMontage1P_C;
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UAnimMontage> ThrowMontage1P_E;
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UAnimMontage> ThrowMontage_C;
 	UPROPERTY(EditAnywhere)
@@ -197,7 +215,7 @@ public:
 	UPROPERTY(EditAnywhere)
 	TSoftObjectPtr<UTexture2D> ShowImg;
 
-	// 使用 protected 约束这些属性只能通过 Getter 访问父级的（皮肤不能自定义这些属性）
+	// 使用 protected 约束这些属性只能通过 Getter 访问父级的（子级皮肤不能自定义这些属性）
 protected:
 	UPROPERTY(EditAnywhere, meta = (EditCondition = "ParentAsset == nullptr"))
 	EEquipmentType EquipmentType = EEquipmentType::None;
@@ -217,9 +235,15 @@ protected:
 	TArray<TSoftClassPtr<UGameplayAbility>> GrantedAbilities;
 
 	UPROPERTY(EditAnywhere, meta = (EditCondition = "ParentAsset == nullptr"))
-	TObjectPtr<UAnimMontage> EquipMontage_C;
+	TSubclassOf<UAnimInstHuman1P_Layer> AnimInstHuman1P_Layer;
+
 	UPROPERTY(EditAnywhere, meta = (EditCondition = "ParentAsset == nullptr"))
-	TObjectPtr<UAnimMontage> EquipMontage_E;
+	TSubclassOf<UAnimInstHuman_Layer> AnimInstHuman_Layer;
+
+	UPROPERTY(EditAnywhere, meta = (EditCondition = "ParentAsset == nullptr"))
+	TObjectPtr<UAnimMontage> EquipMontage1P_C;
+	UPROPERTY(EditAnywhere, meta = (EditCondition = "ParentAsset == nullptr"))
+	TObjectPtr<UAnimMontage> EquipMontage1P_E;
 
 	UPROPERTY(EditAnywhere, meta = (EditCondition = "ParentAsset == nullptr"))
 	float WalkSpeedMul = 1.f;
@@ -327,15 +351,25 @@ public:
 	{
 		return ParentAsset ? ParentAsset->GetGrantedAbilities() : GrantedAbilities;
 	}
-
-	UAnimMontage* GetEquipMontage_C() const
+	
+	TSubclassOf<UAnimInstHuman1P_Layer> GetAnimInstHuman1P_Layer() const
 	{
-		return ParentAsset ? ParentAsset->GetEquipMontage_C() : EquipMontage_C.Get();
+		return ParentAsset ? ParentAsset->GetAnimInstHuman1P_Layer() : AnimInstHuman1P_Layer;
+	}
+	
+	TSubclassOf<UAnimInstHuman_Layer> GetAnimInstHuman_Layer() const
+	{
+		return ParentAsset ? ParentAsset->GetAnimInstHuman_Layer() : AnimInstHuman_Layer;
+	}
+	
+	UAnimMontage* GetEquipMontage1P_C() const
+	{
+		return ParentAsset ? ParentAsset->GetEquipMontage1P_C() : EquipMontage1P_C.Get();
 	}
 
-	UAnimMontage* GetEquipMontage_E() const
+	UAnimMontage* GetEquipMontage1P_E() const
 	{
-		return ParentAsset ? ParentAsset->GetEquipMontage_E() : EquipMontage_E.Get();
+		return ParentAsset ? ParentAsset->GetEquipMontage1P_E() : EquipMontage1P_E.Get();
 	}
 
 	float GetWalkSpeedMul() const

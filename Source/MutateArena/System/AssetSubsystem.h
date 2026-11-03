@@ -8,18 +8,19 @@
 class UCommonAsset;
 class UInputAsset;
 class UCharacterCommonAsset;
-class UCharacterHumanAsset;
-class UCharacterMutantAsset;
+class UHumanAsset;
+class UMutantAsset;
 class UEquipmentCommonAsset;
 class UEquipmentAsset;
 class UDNAAsset2;
 class UEnvironmentAsset;
 
-enum class EHumanCharacterName : uint8;
-enum class EMutantCharacterName : uint8;
+enum class EHumanName : uint8;
+enum class EMutantName : uint8;
 enum class EEquipmentName : uint8;
 enum class EDNA2 : uint8;
 
+// 有明确业务归属的资产放在了 UAssetSubsystem，其他资产通过 UDataAssetManager 缓存
 UCLASS()
 class MUTATEARENA_API UAssetSubsystem : public UGameInstanceSubsystem
 {
@@ -32,23 +33,23 @@ public:
 	void SyncLoadAsset();
 
 	UPROPERTY()
-	TObjectPtr<UCommonAsset> CommonAsset;
+	TObjectPtr<UCommonAsset> CommonAsset = nullptr;
 	UPROPERTY()
-	TObjectPtr<UInputAsset> InputAsset;
+	TObjectPtr<UInputAsset> InputAsset = nullptr;
 	UPROPERTY()
-	TObjectPtr<UCharacterCommonAsset> CharacterCommonAsset;
+	TObjectPtr<UCharacterCommonAsset> CharacterCommonAsset = nullptr;
 	UPROPERTY()
-	TObjectPtr<UEquipmentCommonAsset> EquipmentCommonAsset;
+	TObjectPtr<UEquipmentCommonAsset> EquipmentCommonAsset = nullptr;
 
 	void BuildEnvironmentCache();
-	void BuildHumanCharacterCache();
-	void BuildMutantCharacterCache();
+	void BuildHumanCache();
+	void BuildMutantCache();
 	void BuildEquipmentCache();
 	void BuildDNACache();
 
 	UEnvironmentAsset* GetEnvironmentAssetByTag(FGameplayTag InTag) const;
-	UCharacterHumanAsset* GetCharacterHumanAssetByName(EHumanCharacterName InName) const;
-	UCharacterMutantAsset* GetCharacterMutantAssetByName(EMutantCharacterName InName) const;
+	UHumanAsset* GetHumanAssetByName(EHumanName InName) const;
+	UMutantAsset* GetMutantAssetByName(EMutantName InName) const;
 	UEquipmentAsset* GetEquipmentAssetByName(EEquipmentName InName) const;
 	UDNAAsset2* GetDNAAssetByType(EDNA2 InDNA) const;
 
@@ -76,16 +77,12 @@ public:
 
 	UPROPERTY()
 	TMap<FGameplayTag, TObjectPtr<UEnvironmentAsset>> CachedEnvironmentAssets;
-
 	UPROPERTY()
-	TMap<EHumanCharacterName, TObjectPtr<UCharacterHumanAsset>> CachedCharacterHumanAssets;
-
+	TMap<EHumanName, TObjectPtr<UHumanAsset>> CachedHumanAssets;
 	UPROPERTY()
-	TMap<EMutantCharacterName, TObjectPtr<UCharacterMutantAsset>> CachedCharacterMutantAssets;
-
+	TMap<EMutantName, TObjectPtr<UMutantAsset>> CachedMutantAssets;
 	UPROPERTY()
 	TMap<EEquipmentName, TObjectPtr<UEquipmentAsset>> CachedEquipmentAssets;
-
 	UPROPERTY()
 	TMap<EDNA2, TObjectPtr<UDNAAsset2>> CachedDNAAssets;
 };

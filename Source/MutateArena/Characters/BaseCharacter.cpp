@@ -25,7 +25,7 @@
 #include "Components/MAMovementComponent.h"
 #include "Components/OverheadWidget.h"
 #include "Components/WidgetComponent.h"
-#include "Data/CharacterCommonAsset.h"
+#include "Data/CharacterAsset.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Data/InputAsset.h"
 #include "Components/SceneCaptureComponent2D.h"
@@ -49,6 +49,7 @@
 #include "Perception/AISenseConfig_Sight.h"
 #include "Perception/AISense_Sight.h"
 #include "GroomComponent.h"
+#include "MutateArena/System/DataAssetManager.h"
 
 #define LOCTEXT_NAMESPACE "ABaseCharacter"
 
@@ -57,13 +58,14 @@ ABaseCharacter::ABaseCharacter(const FObjectInitializer& ObjectInitializer)
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	Tags.Add(Tags::CharacterBase);
+	Tags.Add(Tags::BaseCharacter);
 
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 	GetCapsuleComponent()->InitCapsuleSize(34.0f, 90.f);
+	GetMesh()->SetRelativeLocation(FVector(0.f, 0.f, -90.f));
 	GetCharacterMovement()->SetCrouchedHalfHeight(60.f);
-	BaseEyeHeight = 78.f;
-	CrouchedEyeHeight = 48.f;
+	BaseEyeHeight = 75.f;
+	CrouchedEyeHeight = 45.f;
 
 	Mesh1P = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Mesh1P"));
 	Mesh1P->SetupAttachment(GetCapsuleComponent());
@@ -81,9 +83,8 @@ ABaseCharacter::ABaseCharacter(const FObjectInitializer& ObjectInitializer)
 	MovementComp = Cast<UMAMovementComponent>(GetCharacterMovement());
 	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
 	GetCharacterMovement()->bCanWalkOffLedgesWhenCrouching = true;
-	GetCharacterMovement()->SetCrouchedHalfHeight(50.f);
 	// 空中控制
-	GetCharacterMovement()->GravityScale = 1.2f;
+	GetCharacterMovement()->GravityScale = 1.4f;
 	GetCharacterMovement()->AirControl = 0.4f;
 	GetCharacterMovement()->AirControlBoostMultiplier = 2.f;
 	GetCharacterMovement()->AirControlBoostVelocityThreshold = 40.f;
@@ -100,8 +101,8 @@ ABaseCharacter::ABaseCharacter(const FObjectInitializer& ObjectInitializer)
 	SceneCapture->bCaptureOnMovement = false;
 
 	OverheadWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("OverheadWidget"));
-	OverheadWidget->SetupAttachment(BodyMesh, Sockets::Camera);
-	OverheadWidget->SetRelativeLocation(FVector(0.f, 0.f, 60.f));
+	// 构造函数中先挂载到胶囊体上，待 BodyMesh 赋值后二次挂载
+	OverheadWidget->SetupAttachment(GetCapsuleComponent());
 	OverheadWidget->SetDrawSize(FVector2D(120.f, 30.f));
 
 	InteractorComp = CreateDefaultSubobject<UInteractorComponent>(TEXT("InteractorComponent"));
@@ -165,16 +166,10 @@ void ABaseCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 void ABaseCharacter::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
-}
-
-void ABaseCharacter::BeginPlay()
-{
-	Super::BeginPlay();
-
-	// MetaHuman 组件
+	
+	// 组件是直接从 MetaHuman 中复制过来的，未在构造函数中创建，通过名字查找到对应组件
 	TArray<USkeletalMeshComponent*> SkeletalMeshes;
 	GetComponents<USkeletalMeshComponent>(SkeletalMeshes);
-
 	for (USkeletalMeshComponent* SkelMesh : SkeletalMeshes)
 	{
 		if (SkelMesh->GetName().Equals(TEXT("Body")))
@@ -186,18 +181,7 @@ void ABaseCharacter::BeginPlay()
 			FaceMesh = SkelMesh;
 		}
 	}
-	check(BodyMesh); check(FaceMesh);
 	
-	BodyMesh->SetOwnerNoSee(true);
-	BodyMesh->bCastHiddenShadow = true;
-	BodyMesh->SetGenerateOverlapEvents(true);
-	BodyMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
-	
-	FaceMesh->SetOwnerNoSee(true);
-	FaceMesh->bCastHiddenShadow = true;
-	BodyMesh->SetGenerateOverlapEvents(true);
-	FaceMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
-
 	TArray<UGroomComponent*> AllGrooms;
 	GetComponents<UGroomComponent>(AllGrooms);
 	for (UGroomComponent* Groom : AllGrooms)
@@ -232,13 +216,30 @@ void ABaseCharacter::BeginPlay()
 			MustacheComp = Groom;
 		}
 	}
-	check(BeardComp); check(EyebrowsComp); check(EyelashesComp); check(FuzzComp); check(HairComp); check(MustacheComp);
+}
+
+void ABaseCharacter::BeginPlay()
+{
+	Super::BeginPlay();
 	
-	if (GetCapsuleComponent())
-	{
-		GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnLadderBeginOverlap);
-		GetCapsuleComponent()->OnComponentEndOverlap.AddDynamic(this, &ThisClass::OnLadderEndOverlap);
-	}
+	check(BodyMesh); check(FaceMesh); check(BeardComp); check(EyebrowsComp); check(EyelashesComp); check(FuzzComp); check(HairComp); check(MustacheComp);
+	
+	// 找到 BodyMesh 后，动态将 OverheadWidget 挂载到对应的骨骼插槽并保持相对偏移
+	OverheadWidget->AttachToComponent(BodyMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, Sockets::Camera);
+	OverheadWidget->SetRelativeLocation(FVector(0.f, 0.f, 60.f));
+	
+	BodyMesh->SetOwnerNoSee(true);
+	BodyMesh->bCastHiddenShadow = true;
+	BodyMesh->SetGenerateOverlapEvents(true);
+	BodyMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
+
+	FaceMesh->SetOwnerNoSee(true);
+	FaceMesh->bCastHiddenShadow = true;
+	FaceMesh->SetGenerateOverlapEvents(true);
+	FaceMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
+
+	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnLadderBeginOverlap);
+	GetCapsuleComponent()->OnComponentEndOverlap.AddDynamic(this, &ThisClass::OnLadderEndOverlap);
 
 	// 监听输入设备类型改变
 	if (UCommonInputSubsystem* CommonInputSubsystem = UCommonInputSubsystem::Get(GetWorld()->GetFirstLocalPlayerFromController()))
@@ -249,13 +250,10 @@ void ABaseCharacter::BeginPlay()
 		}
 	}
 
-	if (OverheadWidget)
+	if (OverheadWidgetClass == nullptr) OverheadWidgetClass = Cast<UOverheadWidget>(OverheadWidget->GetUserWidgetObject());
+	if (OverheadWidgetClass)
 	{
-		if (OverheadWidgetClass == nullptr) OverheadWidgetClass = Cast<UOverheadWidget>(OverheadWidget->GetUserWidgetObject());
-		if (OverheadWidgetClass)
-		{
-			OverheadWidgetClass->BaseCharacter = this;
-		}
+		OverheadWidgetClass->BaseCharacter = this;
 	}
 }
 
@@ -290,10 +288,10 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		EIC->BindAction(InputAsset->MoveAction, ETriggerEvent::Completed, this, &ThisClass::MoveCompleted);
 		EIC->BindAction(InputAsset->LookMouseAction, ETriggerEvent::Triggered, this, &ThisClass::LookMouse);
 		EIC->BindAction(InputAsset->LookStickAction, ETriggerEvent::Triggered, this, &ThisClass::LookStick);
-		EIC->BindAction(InputAsset->JumpAction, ETriggerEvent::Triggered, this, &ThisClass::JumpButtonPressed);
+		EIC->BindAction(InputAsset->JumpAction, ETriggerEvent::Started, this, &ThisClass::JumpButtonPressed);
+		EIC->BindAction(InputAsset->JumpAction, ETriggerEvent::Completed, this, &ThisClass::JumpButtonReleased);
 		EIC->BindAction(InputAsset->CrouchAction, ETriggerEvent::Started, this, &ThisClass::CrouchButtonPressed);
 		EIC->BindAction(InputAsset->CrouchAction, ETriggerEvent::Completed, this, &ThisClass::CrouchButtonReleased);
-		EIC->BindAction(InputAsset->CrouchControllerAction, ETriggerEvent::Triggered, this, &ThisClass::CrouchControllerButtonPressed);
 
 		EIC->BindAction(InputAsset->InteractAction, ETriggerEvent::Started, InteractorComp, &UInteractorComponent::InteractStarted);
 		EIC->BindAction(InputAsset->InteractAction, ETriggerEvent::Ongoing, InteractorComp, &UInteractorComponent::InteractOngoing);
@@ -506,6 +504,12 @@ void ABaseCharacter::Destroyed()
 	Super::Destroyed();
 }
 
+bool ABaseCharacter::CanJumpInternal_Implementation() const
+{
+	// 移除父函数中 !bIsCrouched 限制，允许蹲跳
+	return JumpIsAllowedInternal();
+}
+
 // 输入设备类型改变
 void ABaseCharacter::OnInputMethodChanged(ECommonInputType TempInputType)
 {
@@ -549,6 +553,7 @@ void ABaseCharacter::OnASCInit()
 		ASC->GetGameplayAttributeValueChangeDelegate(AttributeSetBase->GetMaxHealthAttribute()).AddUObject(this, &ThisClass::OnMaxHealthChanged);
 		ASC->GetGameplayAttributeValueChangeDelegate(AttributeSetBase->GetHealthAttribute()).AddUObject(this, &ThisClass::OnHealthChanged);
 		ASC->GetGameplayAttributeValueChangeDelegate(AttributeSetBase->GetJumpZVelocityAttribute()).AddUObject(this, &ThisClass::OnJumpZVelocityChanged);
+		ASC->GetGameplayAttributeValueChangeDelegate(AttributeSetBase->GetMaxWalkSpeedAttribute()).AddUObject(this, &ThisClass::OnMaxWalkSpeedChanged);
 
 		ASC->RegisterGameplayTagEvent(TAG_STATE_DNA_EnhancedVision, EGameplayTagEventType::NewOrRemoved).AddUObject(this, &ThisClass::OnEnhancedVisionTagChanged);
 	}
@@ -705,15 +710,14 @@ void ABaseCharacter::LookStick(const FInputActionValue& Value)
 	AddControllerPitchInput(AxisVector.Y * StorageSubsystem->CacheSetting->ControllerSensitivity);
 }
 
-// TODO 跳蹲胶囊体中心点变化造成镜头卡顿怎么解决？
 void ABaseCharacter::JumpButtonPressed(const FInputActionValue& Value)
 {
-	if (MovementComp && MovementComp->MovementMode == MOVE_Custom && MovementComp->CustomMovementMode == CMOVE_Ladder)
+	if (!MovementComp) return;
+    
+	// 梯子攀爬时按跳跃键
+	if (MovementComp->MovementMode == MOVE_Custom && MovementComp->CustomMovementMode == CMOVE_Ladder)
 	{
-		// 1. 客户端本地立刻执行脱离（保证手感零延迟）
 		ExitLadderAndJump();
-
-		// 2. 如果当前是客户端，必须通知服务器也执行一次（防止拉扯/吸回）
 		if (!HasAuthority())
 		{
 			Server_JumpOffLadder();
@@ -721,60 +725,33 @@ void ABaseCharacter::JumpButtonPressed(const FInputActionValue& Value)
 		return;
 	}
 
-	if (MovementComp)
+	// 连跳与正常跳跃逻辑
+	if (MovementComp->IsFalling())
 	{
-		float CurrentTime = GetWorld()->GetTimeSeconds();
-		LastJumpPressedTime = CurrentTime;
-
-		// 在极短的落地窗口期内再次起跳（连跳），且确保此时位于地面，给予跳跃力度乘区
-		if ((CurrentTime - LastLandedTime <= JumpBufferWindow) && !MovementComp->IsFalling())
-		{
-			MovementComp->JumpZVelocity = GetJumpZVelocity() * ComboJumpZMultiplier;
-		}
-		else
-		{
-			MovementComp->JumpZVelocity = GetJumpZVelocity();
-		}
-	}
-
-	if (bIsCrouched)
-	{
-		UnCrouch();
+		// 在空中按下跳跃：记录时间戳，用于落地前 BHopPreLandBufferTime 的预输入判定
+		LastJumpPressedTime = GetWorld()->GetTimeSeconds();
 	}
 	else
 	{
+		// 在地面按下跳跃：正常执行 Jump()
 		Jump();
 	}
 }
 
-// 键鼠为长按蹲
+void ABaseCharacter::JumpButtonReleased(const FInputActionValue& Value)
+{
+	// 重置跳跃状态
+	StopJumping();
+}
+
 void ABaseCharacter::CrouchButtonPressed(const FInputActionValue& Value)
 {
-	// if (GetCharacterMovement()->IsFalling()) return;
-
 	Crouch();
 }
 
 void ABaseCharacter::CrouchButtonReleased(const FInputActionValue& Value)
 {
-	// if (GetCharacterMovement()->IsFalling()) return;
-
 	UnCrouch();
-}
-
-// 手柄为切换蹲
-void ABaseCharacter::CrouchControllerButtonPressed(const FInputActionValue& Value)
-{
-	// if (GetCharacterMovement()->IsFalling()) return;
-
-	if (bIsCrouched)
-	{
-		UnCrouch();
-	}
-	else
-	{
-		Crouch();
-	}
 }
 
 void ABaseCharacter::OnRep_bIsDead()
@@ -835,7 +812,7 @@ void ABaseCharacter::OnHealthChanged(const FOnAttributeChangeData& Data)
 		}
 
 		// HACK 对局结束由突变体变为人类时会触发ApplyHurtEffect，拦截
-		if (ActorHasTag(Tags::CharacterHuman) && Data.NewValue == 500.f)
+		if (ActorHasTag(Tags::HumanCharacter) && Data.NewValue == 500.f)
 		{
 			return;
 		}
@@ -854,47 +831,50 @@ void ABaseCharacter::OnJumpZVelocityChanged(const FOnAttributeChangeData& Data)
 	}
 }
 
+void ABaseCharacter::OnMaxWalkSpeedChanged(const FOnAttributeChangeData& Data)
+{
+	if (GetCharacterLevel() == 1)
+	{
+		Level1MaxWalkSpeed = Data.NewValue;
+	}
+
+	GetCharacterMovement()->MaxWalkSpeed = Data.NewValue;
+	GetCharacterMovement()->MaxWalkSpeedCrouched = Data.NewValue * 0.5f;
+}
+
 // 落地事件（只在本地和服务端执行）
 void ABaseCharacter::Landed(const FHitResult& Hit)
 {
 	Super::Landed(Hit);
 
-	// 记录落地时间，用于判断跳跳蹲的窗口期
-	LastLandedTime = GetWorld()->GetTimeSeconds();
-	// 落地时恢复原本的跳跃高度
-	if (MovementComp)
-	{
-		MovementComp->JumpZVelocity = GetJumpZVelocity();
-	}
-
-	// 如果落地时间和最后一次按下跳跃键的时间差，在缓冲窗口期内
-	if (LastLandedTime - LastJumpPressedTime <= JumpBufferWindow)
-	{
-		if (MovementComp)
-		{
-			// 在落地瞬间强行赋予连跳倍率
-			MovementComp->JumpZVelocity = GetJumpZVelocity() * ComboJumpZMultiplier;
-		}
-		// 自动替玩家执行跳跃，实现完美的“落地秒跳”
-		Jump();
-	}
-
-	// 计算扣血倍率
+	// 1. 先处理摔落伤害
 	float DamageRate = CalcFallDamageRate();
 	if (DamageRate > 0.f)
 	{
 		if (HasAuthority())
 		{
-			// 播放叫声
 			MulticastPlayOuchSound(DamageRate);
-
-			// 应用伤害
 			UGameplayStatics::ApplyDamage(this, GetMaxHealth() * DamageRate, Controller, this, UDamageTypeFall::StaticClass());
 		}
 
 		if (IsLocallyControlled())
 		{
 			LocalPlayOuchSound(DamageRate);
+		}
+	}
+
+	// 2. 在本地控制的客户端执行输入缓冲检查
+	if (IsLocallyControlled() && MovementComp)
+	{
+		const double CurrentTime = GetWorld()->GetTimeSeconds();
+
+		// 检查是否在落地前 BHopPreLandBufferTime 内按过跳跃键
+		// 因为此时刚触发 ProcessLanded，直接调用 Jump() 就等价于在“落地后 0.00s”按下了跳跃键！
+		// 下一帧进入 DoJump 时，双端都会自动命中 (CurrentTime - LastLandedTime <= BHopPostLandGraceTime) 的连跳判定！
+		if ((CurrentTime - LastJumpPressedTime) <= MovementComp->BHopPreLandBufferTime)
+		{
+			LastJumpPressedTime = -100.f;
+			Jump();
 		}
 	}
 }
@@ -1246,18 +1226,23 @@ void ABaseCharacter::ServerSprayPaint_Implementation(int32 RadioIndex, FVector_N
 }
 
 void ABaseCharacter::MulticastSprayPaint_Implementation(int32 RadioIndex, FVector_NetQuantize ImpactPoint, FVector_NetQuantizeNormal ImpactNormal,
-                                                        UPrimitiveComponent* HitComp, FName BoneName)
+														UPrimitiveComponent* HitComp, FName BoneName)
 {
 	if (AssetSubsystem == nullptr) AssetSubsystem = GetWorld()->GetGameInstance()->GetSubsystem<UAssetSubsystem>();
 	if (AssetSubsystem && AssetSubsystem->CommonAsset)
 	{
-		auto SprayPaints = AssetSubsystem->CommonAsset->SprayPaints;
+		// 使用 const 引用，避免每次调用都深拷贝整个 TArray
+		const TArray<FSprayPaint>& SprayPaints = AssetSubsystem->CommonAsset->SprayPaints;
 		if (SprayPaints.IsValidIndex(RadioIndex))
 		{
 			if (IsValid(SprayPaintDecal))
 			{
 				SprayPaintDecal->DestroyComponent();
 			}
+
+			// 通过 UDataAssetManager 加载并驻留内存，防止 Decal 销毁后材质被 GC
+			UMaterialInterface* DecalMaterial = UDataAssetManager::Get().GetAsset(SprayPaints[RadioIndex].Material);
+			if (!DecalMaterial) return;
 
 			// 根据法线计算旋转
 			FRotator DecalRotation = FRotationMatrix::MakeFromX(ImpactNormal).Rotator();
@@ -1266,7 +1251,7 @@ void ABaseCharacter::MulticastSprayPaint_Implementation(int32 RadioIndex, FVecto
 
 			// 所有客户端（包括发起者）在相同位置生成贴花
 			SprayPaintDecal = UGameplayStatics::SpawnDecalAttached(
-				SprayPaints[RadioIndex].Material.LoadSynchronous(),
+				DecalMaterial,
 				FVector(5.f, 100.f, 100.f),
 				HitComp,
 				BoneName,

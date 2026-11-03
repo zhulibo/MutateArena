@@ -19,6 +19,24 @@ class MUTATEARENA_API UMAMovementComponent : public UCharacterMovementComponent
 public:
 	UMAMovementComponent();
 	
+	virtual bool CanAttemptJump() const override;
+	
+	// 记录最后一次落地的时间
+	double LastLandedTime = -100.f;
+	// 是否处于刚落地的可触发连跳状态
+	bool bCanTriggerBHop = false;
+	// 是否通过预输入（落地前0.1s）预约了连跳
+	bool bBufferedBHop = false;
+	// 连跳/鬼跳：落地前允许跳跃预输入的时间窗口
+	UPROPERTY()
+	float BHopPreLandBufferTime = 0.1f;
+	// 连跳/鬼跳：落地后允许触发连跳判定及地面免摩擦的宽限时间
+	UPROPERTY()
+	float BHopPostLandGraceTime = 0.1f;
+	virtual void ProcessLanded(const FHitResult& Hit, float remainingTime, int32 Iterations) override;
+	virtual bool DoJump(bool bReplayingMoves, float DeltaTime) override;
+	virtual float GetMaxSpeed() const override;
+	
 	UPROPERTY()
 	float MaxStepUpHeight = 45.f;
 	virtual bool StepUp(const FVector& GravDir, const FVector& Delta, const FHitResult &InHit, FStepDownResult* OutStepDownResult = nullptr) override;

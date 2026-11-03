@@ -9,8 +9,8 @@
 #include "BasePlayerState.generated.h"
 
 enum class ETeam : uint8;
-enum class EHumanCharacterName: uint8;
-enum class EMutantCharacterName: uint8;
+enum class EHumanName: uint8;
+enum class EMutantName: uint8;
 enum class ECommonInputType : uint8;
 
 UCLASS()
@@ -44,19 +44,19 @@ public:
 	virtual void BeginPlay() override;
 	virtual void Destroyed() override;
 
+	UPROPERTY(Replicated)
+	EHumanName HumanName;
 protected:
 	UFUNCTION(Server, Reliable)
-	void ServerSetHumanCharacterName(EHumanCharacterName Name);
+	void ServerSetHumanName(EHumanName Name);
 public:
 	UPROPERTY(Replicated)
-	EHumanCharacterName HumanCharacterName;
-	UPROPERTY(Replicated)
-	EMutantCharacterName MutantCharacterName;
+	EMutantName MutantName;
 	UFUNCTION(Server, Reliable)
-	void ServerSetMutantCharacterName(EMutantCharacterName Name);
+	void ServerSetMutantName(EMutantName Name);
 	UFUNCTION()
-	void SetMutantCharacterName(EMutantCharacterName Name);
-	
+	void SetMutantName(EMutantName Name);
+
 	UPROPERTY(ReplicatedUsing = OnRep_Team)
 	ETeam Team = ETeam::NoTeam;
 	virtual void SetTeam(ETeam TempTeam);

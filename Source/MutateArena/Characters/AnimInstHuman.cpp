@@ -12,6 +12,18 @@ UAnimInstHuman::UAnimInstHuman()
 {
 }
 
+void UAnimInstHuman::NativeInitializeAnimation()
+{
+	Super::NativeInitializeAnimation();
+
+	HumanChar = Cast<AHumanCharacter>(TryGetPawnOwner());
+	if (HumanChar)
+	{
+		CombatComp = HumanChar->CombatComp;
+		MovementComp = HumanChar->MovementComp;
+	}
+}
+
 void UAnimInstHuman::NativeUpdateAnimation(float DeltaSeconds)
 {
 	Super::NativeUpdateAnimation(DeltaSeconds);
@@ -19,24 +31,30 @@ void UAnimInstHuman::NativeUpdateAnimation(float DeltaSeconds)
 	if (HumanChar == nullptr) HumanChar = Cast<AHumanCharacter>(TryGetPawnOwner());
 	if (CombatComp == nullptr) CombatComp = HumanChar ? HumanChar->CombatComp : nullptr;
 	if (MovementComp == nullptr) MovementComp = HumanChar ? HumanChar->MovementComp : nullptr;
+}
+
+void UAnimInstHuman::NativeThreadSafeUpdateAnimation(float DeltaSeconds)
+{
+	Super::NativeThreadSafeUpdateAnimation(DeltaSeconds);
+
 	if (!HumanChar || !CombatComp || !MovementComp) return;
-	
+
 	bIsOnLadder = MovementComp->MovementMode == MOVE_Custom && MovementComp->CustomMovementMode == CMOVE_Ladder;
-	
+
 	FVector Velocity = HumanChar->GetVelocity();
 	Speed = bIsOnLadder ? FMath::Abs(Velocity.Z) : Velocity.Size2D();
-	
+
 	bIsInAir = MovementComp->IsFalling() && !bIsOnLadder;
 	bIsAccelerating = MovementComp->GetCurrentAcceleration().Size() > 0.f;
 	bIsCrouched = HumanChar->bIsCrouched;
-	
+
 	if (AEquipment* CurEquipment = CombatComp->GetCurEquipment())
 	{
 		EquipmentName = CurEquipment->EquipmentName;
 		// FString EnumString = UEnum::GetValueAsString(CurEquipment->EquipmentName);
 		// UE_LOG(LogTemp, Warning, TEXT("EquipmentName = %s"), *EnumString);
-		
-		WalkPlayRate = HumanChar->GetMaxWalkSpeed() / HumanChar->DefaultMaxWalkSpeed;
+
+		WalkPlayRate = HumanChar->GetMaxWalkSpeed() / HumanChar->Level1MaxWalkSpeed;
 		if (CombatComp->IsAiming())
 		{
 			WalkPlayRate *= CurEquipment->EquipmentAsset->GetAimingWalkSpeedMul();
