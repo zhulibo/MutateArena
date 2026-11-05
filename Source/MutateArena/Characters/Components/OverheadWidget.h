@@ -27,11 +27,10 @@ protected:
 	TWeakObjectPtr<class ABaseGameState> BaseGameState;
 	TWeakObjectPtr<class ABaseCharacter> BaseCharacter;
 	TWeakObjectPtr<class ABasePlayerState> BasePlayerState;
-	
+
 	TWeakObjectPtr<class ABaseController> LocalBaseController;
 	TWeakObjectPtr<class ABasePlayerState> LocalBasePlayerState;
-	TWeakObjectPtr<class ABaseCharacter> LocalBaseCharacter;
-	
+
 	UPROPERTY(meta = (BindWidget))
 	class UCommonTextBlock* PlayerName;
 	UPROPERTY(meta = (BindWidget))
@@ -51,7 +50,7 @@ protected:
 	UMaterialInstanceDynamic* HealthBarMID;
 	UPROPERTY(Transient)
 	UMaterialInstanceDynamic* HealthBarLineMID;
-	
+
 	bool bNeedUpdate = true;
 	void MakeDirty();
 	float TraceDistance = 3000.f;
@@ -60,7 +59,7 @@ protected:
 	void TraceOverheadWidget();
 	int32 GetHealthBarLineNum();
 	bool bIsAllowShow = true;
-	
+
 	// 记录上一次处于准星范围内的时间
 	float LastAimTime = -999.f;
 	// 血条延迟显示的时间
@@ -68,5 +67,4 @@ protected:
 	float HealthBarLingerTime = 1.f;
 	// 用于判断是否是首次更新血量，防止出生同步时播放动画
 	bool bIsFirstHealthSync = true;
-	
 };

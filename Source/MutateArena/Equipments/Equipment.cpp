@@ -40,14 +40,14 @@ AEquipment::AEquipment()
 	EquipmentMesh->SetCollisionObjectType(ECollisionChannel::ECC_WorldDynamic);
 	EquipmentMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	EquipmentMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block); // 与血液碰撞
-	EquipmentMesh->SetOwnerNoSee(true);
-	EquipmentMesh->bCastHiddenShadow = true;
+	EquipmentMesh->CastShadow = true;
+	EquipmentMesh->bCastHiddenShadow = false;
 
 	EquipmentMesh1P = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("EquipmentMesh1P"));
 	EquipmentMesh1P->SetupAttachment(RootComponent);
 	EquipmentMesh1P->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	EquipmentMesh1P->SetOnlyOwnerSee(true);
 	EquipmentMesh1P->CastShadow = false;
+	EquipmentMesh1P->SetVisibility(false);
 	EquipmentMesh1P->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::OnlyTickPoseWhenRendered;
 
 	OverlapSphere = CreateDefaultSubobject<USphereComponent>(TEXT("OverlapSphere"));
@@ -69,14 +69,13 @@ void AEquipment::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifeti
 
 	DOREPLIFETIME_CONDITION(AEquipment, EquipmentName, COND_InitialOnly);
 	DOREPLIFETIME(ThisClass, OwnerTeam);
-	DOREPLIFETIME(ThisClass, bIsHidden);
 	DOREPLIFETIME(ThisClass, EquipmentState);
 }
 
 void AEquipment::BeginPlay()
 {
 	Super::BeginPlay();
-    
+	
 	if (UWorld* World = GetWorld())
 	{
 		if (ABaseGameState* GameState = World->GetGameState<ABaseGameState>())
@@ -84,11 +83,11 @@ void AEquipment::BeginPlay()
 			GameState->AddEquipment(this);
 		}
 	}
-    
+	
 	// 初始赋值 EquipmentAsset 并强制校验有效
 	if (!AssetSubsystem) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
 	check(AssetSubsystem);
-    
+	
 	EquipmentAsset = AssetSubsystem->GetEquipmentAssetByName(EquipmentName);
 	check(EquipmentAsset);
 
@@ -104,6 +103,8 @@ void AEquipment::BeginPlay()
 			}
 		}
 	}
+
+	UpdateViewMode();
 }
 
 void AEquipment::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -119,6 +120,14 @@ void AEquipment::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	Super::EndPlay(EndPlayReason);
 }
 
+void AEquipment::OnRep_Owner()
+{
+	Super::OnRep_Owner();
+
+	// 客户端收到 Owner 同步时刷新一次视角状态，避免 Owner 与 bIsHidden 网络包先后到达引起的显隐偏差
+	UpdateViewMode();
+}
+
 void AEquipment::OnAreaSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
                                      UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
@@ -126,7 +135,7 @@ void AEquipment::OnAreaSphereOverlap(UPrimitiveComponent* OverlappedComponent, A
 
 	if (AHumanCharacter* OverlapHumanCharacter = Cast<AHumanCharacter>(OtherActor))
 	{
-		OverlapHumanCharacter->EquipOverlappingEquipment_Server(this);
+		OverlapHumanCharacter->EquipOverlappingEquipment(this);
 	}
 }
 
@@ -142,18 +151,62 @@ UAnimInstEquipment* AEquipment::GetEquipmentAnimInst1P()
 	return AnimInstEquipment1P;
 }
 
-void AEquipment::SetHiddenMesh(bool TempbIsHidden)
+void AEquipment::SetHiddenMesh(bool bInHidden)
 {
-	bIsHidden = TempbIsHidden;
+	bIsHidden = bInHidden;
 
-	OnRep_IsHidden(); 
+	UpdateViewMode();
 }
 
-void AEquipment::OnRep_IsHidden()
+void AEquipment::UpdateViewMode()
 {
+	// 1. 武器被切走（放入背包隐藏）状态：1P 和 3P 模型均不显示，且关闭隐藏阴影避免地面多出悬空枪影
+	if (bIsHidden)
+	{
+		if (EquipmentMesh)
+		{
+			EquipmentMesh->SetVisibility(false);
+			EquipmentMesh->bCastHiddenShadow = false;
+			EquipmentMesh->MarkRenderStateDirty();
+		}
+		if (EquipmentMesh1P)
+		{
+			EquipmentMesh1P->SetVisibility(false);
+		}
+		return;
+	}
+
+	// 2. 武器掉落在地面（或尚未被拾取）状态：显示 3P 模型，关闭隐藏阴影，隐藏 1P 模型
+	ABaseCharacter* OwnerChar = Cast<ABaseCharacter>(GetOwner());
+	if (EquipmentState == EEquipmentState::Dropped || !OwnerChar)
+	{
+		if (EquipmentMesh)
+		{
+			EquipmentMesh->SetVisibility(true);
+			EquipmentMesh->bCastHiddenShadow = false;
+			EquipmentMesh->MarkRenderStateDirty();
+		}
+		if (EquipmentMesh1P)
+		{
+			EquipmentMesh1P->SetVisibility(false);
+		}
+		return;
+	}
+
+	// 3. 武器当前装备在角色手上（Equipped 且 !bIsHidden）：根据持有者是否为当前客户端的 ViewTarget 切换 1P/3P
+	const bool bFirstPerson = OwnerChar->bIsCurrentViewTarget;
+
 	if (EquipmentMesh)
 	{
-		EquipmentMesh->SetVisibility(!bIsHidden);
+		// 1P 视角下隐藏 3P 武器，但开启 bCastHiddenShadow 让地面 MetaHuman 阴影手里有枪
+		EquipmentMesh->SetVisibility(!bFirstPerson);
+		EquipmentMesh->bCastHiddenShadow = bFirstPerson;
+		EquipmentMesh->MarkRenderStateDirty();
+	}
+
+	if (EquipmentMesh1P)
+	{
+		EquipmentMesh1P->SetVisibility(bFirstPerson);
 	}
 }
 
@@ -166,14 +219,13 @@ void AEquipment::OnGiven(AHumanCharacter* HumanChar)
 	if (HumanChar->HasAuthority())
 	{
 		SetReplicateMovement(false);
+		SetOwner(HumanChar);
+		SetOwnerTeam();
+
+		// 清除延迟开启拾取碰撞定时器与销毁定时器
+		GetWorldTimerManager().ClearTimer(AreaSphereTimerHandle);
+		GetWorldTimerManager().ClearTimer(DestroyEquipmentTimerHandle);
 	}
-
-	SetOwner(HumanChar);
-	SetOwnerTeam();
-
-	// 清除延迟开启拾取碰撞定时器与销毁定时器
-	GetWorldTimerManager().ClearTimer(AreaSphereTimerHandle);
-	GetWorldTimerManager().ClearTimer(DestroyEquipmentTimerHandle);
 
 	// 关闭地面物理与拾取碰撞
 	CollisionSphere->SetSimulatePhysics(false);
@@ -202,56 +254,59 @@ void AEquipment::OnRep_EquipmentState(EEquipmentState OldState)
 	}
 	else if (EquipmentState == EEquipmentState::Equipped)
 	{
-		// OnEquip 在所有端都调用了，这里不用处理
+		UpdateViewMode();
 	}
 }
 
 void AEquipment::HandleDrop()
 {
+	bIsHidden = false;
+
 	FDetachmentTransformRules DetachRules(EDetachmentRule::KeepWorld, true);
 	CollisionSphere->DetachFromComponent(DetachRules);
-    
-	// 重置旋转，确保掉落时始终朝上平躺
-	FRotator CurrentRotation = GetActorRotation();
-	CurrentRotation.Pitch = 0.f;
-	CurrentRotation.Roll = 0.f;
-	SetActorRotation(CurrentRotation);
-    
-	CollisionSphere->SetSimulatePhysics(true);
-	CollisionSphere->SetEnableGravity(true);
-	CollisionSphere->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-    
-	if (EquipmentMesh1P)
-	{
-		EquipmentMesh1P->SetVisibility(false);
-	}
+	
+	// 将之前在 AttachToHand 中分别挂到角色 BodyMesh 和 Mesh1P 上的两个网格体重新挂回武器自身的 RootComponent
 	if (EquipmentMesh)
 	{
-		EquipmentMesh->SetOwnerNoSee(false);
-		EquipmentMesh->SetVisibility(true);
+		EquipmentMesh->AttachToComponent(RootComponent, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 	}
-    
-	// 丢弃武器时，给予一个向前的冲量
-	if (AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(GetOwner()))
+	if (EquipmentMesh1P)
 	{
-		if (UCameraComponent* CameraComponent = HumanCharacter->FindComponentByClass<UCameraComponent>())
-		{
-			float Impulse = HumanCharacter->bIsDead ? 100.f : 400.f;
-			CollisionSphere->AddImpulse(CameraComponent->GetForwardVector() * Impulse, NAME_None, true);
-		}
+		EquipmentMesh1P->AttachToComponent(RootComponent, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 	}
-    
-	// 延迟开启AreaSphere碰撞，确保武器已被丢出当前角色的Overlap区域
-	GetWorldTimerManager().SetTimer(AreaSphereTimerHandle, this, &ThisClass::SetAreaSphereCollision, .4f, false);
-
-	// 仅在服务端启动丢弃销毁定时器
+	
 	if (HasAuthority())
 	{
+		// 重置旋转，确保掉落时始终朝上平躺
+		FRotator CurrentRotation = GetActorRotation();
+		CurrentRotation.Pitch = 0.f;
+		CurrentRotation.Roll = 0.f;
+		SetActorRotation(CurrentRotation);
+		
+		CollisionSphere->SetSimulatePhysics(true);
+		CollisionSphere->SetEnableGravity(true);
+		CollisionSphere->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		
+		// 丢弃武器时，给予一个向前的冲量（需在 SetOwner(nullptr) 前执行）
+		if (AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(GetOwner()))
+		{
+			if (UCameraComponent* CameraComponent = HumanCharacter->FindComponentByClass<UCameraComponent>())
+			{
+				float Impulse = HumanCharacter->bIsDead ? 100.f : 400.f;
+				CollisionSphere->AddImpulse(CameraComponent->GetForwardVector() * Impulse, NAME_None, true);
+			}
+		}
+		
+		// 延迟开启AreaSphere碰撞，确保武器已被丢出当前角色的Overlap区域
+		GetWorldTimerManager().SetTimer(AreaSphereTimerHandle, this, &ThisClass::SetAreaSphereCollision, .4f, false);
 		GetWorldTimerManager().SetTimer(DestroyEquipmentTimerHandle, this, &ThisClass::DestroyEquipment, 15.f, false);
+		
+		SetOwner(nullptr);
+		OwnerTeam = ETeam::NoTeam;
 	}
-    
-	SetOwner(nullptr);
-	OwnerTeam = ETeam::NoTeam;
+
+	// 统一刷新为地面掉落的显隐和阴影状态
+	UpdateViewMode();
 }
 
 void AEquipment::SetOwnerTeam()
@@ -295,12 +350,12 @@ void AEquipment::GiveAbilities(UAbilitySystemComponent* ASC)
 {
 	if (!ASC || !HasAuthority()) return; 
 
-	for (TSubclassOf<UGameplayAbility> AbilityClass :Abilities)
+	for (TSubclassOf<UGameplayAbility> AbilityClass : Abilities)
 	{
 		if (AbilityClass)
 		{
 			FGameplayAbilitySpec Spec(AbilityClass, 1, INDEX_NONE, this);
-            
+			
 			FGameplayAbilitySpecHandle Handle = ASC->GiveAbility(Spec);
 			GrantedAbilityHandles.Add(Handle);
 		}
@@ -315,6 +370,6 @@ void AEquipment::ClearAbilities(UAbilitySystemComponent* ASC)
 	{
 		ASC->ClearAbility(Handle);
 	}
-    
+	
 	GrantedAbilityHandles.Empty();
 }

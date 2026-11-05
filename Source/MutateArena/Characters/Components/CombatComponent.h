@@ -51,9 +51,9 @@ public:
 	class AWeapon* GetCurWeapon();
 	// 如果正在使用近战武器，返回近战武器，否则返空。
 	class AMelee* GetCurMelee();
-	AEquipment* GetEquipmentByType(EEquipmentSlot EquipmentSlot);
+	AEquipment* GetEquipmentBySlot(EEquipmentSlot EquipmentSlot);
 protected:
-	bool OwnEquipment(EEquipmentSlot EquipmentSlot);
+	bool HasEquipmentInSlot(EEquipmentSlot EquipmentSlot);
 public:
 	UPROPERTY(ReplicatedUsing = OnRep_Slot1Equipment)
 	class AWeapon* Slot1Equipment;
@@ -64,18 +64,18 @@ public:
 	UPROPERTY(ReplicatedUsing = OnRep_Slot4Equipment)
 	class AThrowable* Slot4Equipment;
 	UPROPERTY(ReplicatedUsing = OnRep_CurEquipmentSlot)
-	EEquipmentSlot CurEquipmentSlot;
+	EEquipmentSlot CurEquipmentSlot = EEquipmentSlot::None;
 	UPROPERTY(Replicated)
-	EEquipmentSlot LastEquipmentSlot;
+	EEquipmentSlot LastEquipmentSlot = EEquipmentSlot::None;
 protected:
 	UFUNCTION()
-	void OnRep_Slot1Equipment();
+	void OnRep_Slot1Equipment(AWeapon* OldEquipment);
 	UFUNCTION()
-	void OnRep_Slot2Equipment();
+	void OnRep_Slot2Equipment(AWeapon* OldEquipment);
 	UFUNCTION()
-	void OnRep_Slot3Equipment();
+	void OnRep_Slot3Equipment(AMelee* OldEquipment);
 	UFUNCTION()
-	void OnRep_Slot4Equipment();
+	void OnRep_Slot4Equipment(AThrowable* OldEquipment);
 	UFUNCTION()
 	void OnRep_CurEquipmentSlot(EEquipmentSlot OldEquipmentSlot);
 
@@ -104,7 +104,6 @@ public:
 	void ServerDestroyEquipments(bool bIsDestroySlot1 = true);
 
 	// 近战
-public:
 	void SetAttackCollisionEnabled(bool bIsEnabled);
 	
 };

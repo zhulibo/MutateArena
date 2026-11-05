@@ -73,22 +73,12 @@ float UMAMovementComponent::GetMaxSpeed() const
    return Super::GetMaxSpeed();
 }
 
+// 临时提高 MaxStepHeight 为45.f（ABaseCharacter 中设为了 MaxStepHeight = 20.f）。允许角色跨上较高障碍物，同时保证从较低边缘走下时能脱离地面进入 Falling 状态并触发 Landed 事件
 bool UMAMovementComponent::StepUp(const FVector& GravDir, const FVector& Delta, const FHitResult& InHit, FStepDownResult* OutStepDownResult)
 {
-   // Cache the original step height (which should be 40.f to trigger falling off ledges).
-   const float OriginalMaxStepHeight = MaxStepHeight;
+	TGuardValue<float> StepHeightGuard(MaxStepHeight, 45.f);
 
-   // Temporarily increase MaxStepHeight to allow stepping up higher obstacles.
-   MaxStepHeight = MaxStepUpHeight;
-
-   // Execute the base step up logic with the increased height allowance.
-   // It will use our temporary 60.f for the upward/downward sweeps within this function.
-   const bool bSuccess = Super::StepUp(GravDir, Delta, InHit, OutStepDownResult);
-
-   // Restore the original step height for downward floor checks (FindFloor).
-   MaxStepHeight = OriginalMaxStepHeight;
-
-   return bSuccess;
+	return Super::StepUp(GravDir, Delta, InHit, OutStepDownResult);
 }
 
 void UMAMovementComponent::PhysCustom(float deltaTime, int32 Iterations)

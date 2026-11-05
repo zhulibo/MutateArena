@@ -34,9 +34,6 @@ UCombatComponent::UCombatComponent()
 	PrimaryComponentTick.bCanEverTick = true;
 	
 	SetIsReplicatedByDefault(true);
-
-	// 模拟正在使用副武器，以便开局切换到主武器后，LastEquipmentSlot默认为副武器
-	CurEquipmentSlot = EEquipmentSlot::Slot2;
 }
 
 void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -78,12 +75,12 @@ void UCombatComponent::TickComponent(float DeltaSeconds, ELevelTick TickType, FA
 
 AEquipment* UCombatComponent::GetCurEquipment()
 {
-	return GetEquipmentByType(CurEquipmentSlot);
+	return GetEquipmentBySlot(CurEquipmentSlot);
 }
 
 AEquipment* UCombatComponent::GetLastEquipment()
 {
-	return GetEquipmentByType(LastEquipmentSlot);
+	return GetEquipmentBySlot(LastEquipmentSlot);
 }
 
 AWeapon* UCombatComponent::GetCurWeapon()
@@ -99,7 +96,7 @@ AWeapon* UCombatComponent::GetCurWeapon()
 	}
 }
 
-class AMelee* UCombatComponent::GetCurMelee()
+AMelee* UCombatComponent::GetCurMelee()
 {
 	switch (CurEquipmentSlot)
 	{
@@ -110,7 +107,7 @@ class AMelee* UCombatComponent::GetCurMelee()
 	}
 }
 
-AEquipment* UCombatComponent::GetEquipmentByType(EEquipmentSlot EquipmentSlot)
+AEquipment* UCombatComponent::GetEquipmentBySlot(EEquipmentSlot EquipmentSlot)
 {
 	switch (EquipmentSlot)
 	{
@@ -127,54 +124,53 @@ AEquipment* UCombatComponent::GetEquipmentByType(EEquipmentSlot EquipmentSlot)
 	}
 }
 
-bool UCombatComponent::OwnEquipment(EEquipmentSlot EquipmentSlot)
+bool UCombatComponent::HasEquipmentInSlot(EEquipmentSlot EquipmentSlot)
 {
-	switch (EquipmentSlot)
-	{
-	case EEquipmentSlot::Slot1:
-		return Slot1Equipment != nullptr;
-	case EEquipmentSlot::Slot2:
-		return Slot2Equipment != nullptr;
-	case EEquipmentSlot::Slot3:
-		return Slot3Equipment != nullptr;
-	case EEquipmentSlot::Slot4:
-		return Slot4Equipment != nullptr;
-	default:
-		return false;
-	}
+	return GetEquipmentBySlot(EquipmentSlot) != nullptr;
 }
 
-void UCombatComponent::OnRep_Slot1Equipment()
+void UCombatComponent::OnRep_Slot1Equipment(AWeapon* OldEquipment)
 {
 	GiveEquipment(Slot1Equipment);
 }
 
-void UCombatComponent::OnRep_Slot2Equipment()
+void UCombatComponent::OnRep_Slot2Equipment(AWeapon* OldEquipment)
 {
 	GiveEquipment(Slot2Equipment);
 }
 
-void UCombatComponent::OnRep_Slot3Equipment()
+void UCombatComponent::OnRep_Slot3Equipment(AMelee* OldEquipment)
 {
 	GiveEquipment(Slot3Equipment);
 }
 
-void UCombatComponent::OnRep_Slot4Equipment()
+void UCombatComponent::OnRep_Slot4Equipment(AThrowable* OldEquipment)
 {
 	GiveEquipment(Slot4Equipment);
 }
 
 void UCombatComponent::OnRep_CurEquipmentSlot(EEquipmentSlot OldEquipmentSlot)
 {
-	EEquipmentSlot TargetType = CurEquipmentSlot; 
-	
-	CurEquipmentSlot = TargetType;
+	EEquipmentSlot TargetSlot = CurEquipmentSlot;
 
-	if (AEquipment* TargetEquipment = GetEquipmentByType(TargetType))
+	// 先切回旧槽位以便在切换函数中正确收起旧武器
+	CurEquipmentSlot = OldEquipmentSlot;
+
+	if (GetEquipmentBySlot(TargetSlot))
 	{
-		// 如果装备实体已经存在，为了让 InstantSwap 的内部检查通过，暂时设回旧值并调用
-		CurEquipmentSlot = OldEquipmentSlot;
-		InstantSwap(TargetType);
+		// 保存服务端同步过来的 LastEquipmentSlot，避免被本地 InstantSwap 覆盖
+		EEquipmentSlot RepLastSlot = LastEquipmentSlot;
+		InstantSwap(TargetSlot);
+		LastEquipmentSlot = RepLastSlot;
+	}
+	else
+	{
+		// 目标槽位装备实体尚未复制到达客户端，先收起旧装备，保持目标槽位值等待 OnRep_SlotXEquipment 触发挂载
+		if (AEquipment* OldEquipment = GetEquipmentBySlot(OldEquipmentSlot))
+		{
+			HolsterEquipment(OldEquipment);
+		}
+		CurEquipmentSlot = TargetSlot;
 	}
 }
 
@@ -189,11 +185,14 @@ void UCombatComponent::GiveEquipment(AEquipment* Equipment)
 	const EEquipmentSlot EquipSlot = EquipAsset->GetEquipmentSlot();
 	const bool bIsCurrent = (CurEquipmentSlot == EquipSlot);
 
-	// 如果替换的是当前手持槽位，且之前该槽位已有旧武器，先移除旧武器的 GA
-	AEquipment* OldEquipment = GetEquipmentByType(EquipSlot);
-	if (bIsCurrent && HumanChar->HasAuthority() && OldEquipment && OldEquipment != Equipment)
+	// 如果服务端替换的是已有旧武器的槽位，先移除旧武器的 GA
+	AEquipment* OldEquipment = GetEquipmentBySlot(EquipSlot);
+	if (OldEquipment && OldEquipment != Equipment)
 	{
-		OldEquipment->ClearAbilities(HumanChar->GetAbilitySystemComponent());
+		if (HumanChar->HasAuthority())
+		{
+			OldEquipment->ClearAbilities(HumanChar->GetAbilitySystemComponent());
+		}
 	}
 
 	// 1. 槽位指针赋值
@@ -215,10 +214,11 @@ void UCombatComponent::GiveEquipment(AEquipment* Equipment)
 		break;
 	}
 
-	// 2. 转换装备自身为被持有状态（关闭物理、设置Owner）
+	// 2. 转换装备自身为被持有状态（关闭地面物理、设置Owner）
 	Equipment->OnGiven(HumanChar);
 
-	// 3. 根据是否为当前激活槽位，决定挂载到手部还是收起隐藏
+	// 3. 开局生成时 CurEquipmentSlot 为 None，所有武器均走 else 分支进入已入库状态；
+	// 仅当客户端晚收到当前手持武器的 OnRep 或原地替换当前手持槽位武器时，才直接激活挂载。
 	if (bIsCurrent)
 	{
 		AttachToHand(Equipment, Sockets::SuffixR);
@@ -228,7 +228,6 @@ void UCombatComponent::GiveEquipment(AEquipment* Equipment)
 			Equipment->GiveAbilities(HumanChar->GetAbilitySystemComponent());
 		}
 
-		// 刷新弹药UI与角色移速（解决跨帧OnRep或原地换枪后UI与移速不刷新的问题）
 		RefreshCurEquipmentState();
 	}
 	else
@@ -242,39 +241,40 @@ void UCombatComponent::HolsterEquipment(AEquipment* Equipment)
 	if (HumanChar == nullptr) HumanChar = Cast<AHumanCharacter>(GetOwner());
 	if (Equipment == nullptr || HumanChar == nullptr) return;
 
-	if (Equipment->EquipmentMesh)
-	{
-		Equipment->EquipmentMesh->SetVisibility(false);
-	}
-	if (Equipment->EquipmentMesh1P)
-	{
-		Equipment->EquipmentMesh1P->SetVisibility(false);
-	}
-
 	Equipment->AttachToActor(HumanChar, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+	Equipment->SetHiddenMesh(true);
 }
 
 void UCombatComponent::AttachToHand(AEquipment* Equipment, FName SocketNameSuffix)
 {
-	UE_LOG(LogTemp, Warning, TEXT("AttachToHand %d"), Equipment->EquipmentAsset->GetParentEquipmentName());
 	if (HumanChar == nullptr) HumanChar = Cast<AHumanCharacter>(GetOwner());
-	if (HumanChar == nullptr || Equipment == nullptr || Equipment->EquipmentAsset == nullptr) return;
+	if (HumanChar == nullptr || Equipment == nullptr || Equipment->EnsureEquipmentAsset() == nullptr) return;
+	
+	// 先让武器Actor自身附着到角色身上，确保在 BaseCharacter::SetFirstPersonViewMode 中调用 GetAttachedActors 能找到当前手持的武器！
+	Equipment->AttachToActor(HumanChar, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 
 	if (HumanChar->BodyMesh && Equipment->EquipmentMesh)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("1"));
 		FString EquipmentSocketStr = StaticEnum<EEquipmentName>()->GetNameStringByValue(static_cast<int64>(Equipment->EquipmentAsset->GetParentEquipmentName())) + SocketNameSuffix.ToString();
-		Equipment->EquipmentMesh->SetVisibility(true);
-		Equipment->EquipmentMesh->SetOwnerNoSee(true);
 		Equipment->EquipmentMesh->AttachToComponent(HumanChar->BodyMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName(*EquipmentSocketStr));
 	}
 
 	if (HumanChar->Mesh1P && Equipment->EquipmentMesh1P)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("2"));
-		Equipment->EquipmentMesh1P->SetVisibility(true);
-		Equipment->EquipmentMesh1P->SetOnlyOwnerSee(true);
 		Equipment->EquipmentMesh1P->AttachToComponent(HumanChar->Mesh1P, FAttachmentTransformRules::SnapToTargetNotIncludingScale, Sockets::WeaponRoot);
+	}
+
+	// 取消隐藏，内部触发 UpdateViewMode() 自动根据持有者是否为当前 ViewTarget 设置 1P/3P 显隐与隐藏阴影
+	Equipment->SetHiddenMesh(false);
+
+	// 挂载动画层
+	if (TSubclassOf<UAnimInstHuman1P_Layer> LayerClass = Equipment->EquipmentAsset->GetAnimInstHuman1P_Layer())
+	{
+		HumanChar->Mesh1P->LinkAnimClassLayers(LayerClass);
+	}
+	if (TSubclassOf<UAnimInstHuman_Layer> LayerClass = Equipment->EquipmentAsset->GetAnimInstHuman_Layer())
+	{
+		HumanChar->BodyMesh->LinkAnimClassLayers(LayerClass);
 	}
 }
 
@@ -308,17 +308,16 @@ void UCombatComponent::ClientPlayEquipSound_Implementation()
 	}
 }
 
-void UCombatComponent::InstantSwap(EEquipmentSlot TargetType)
+void UCombatComponent::InstantSwap(EEquipmentSlot TargetSlot)
 {
 	UE_LOG(LogTemp, Warning, TEXT("InstantSwap"));
-	// UE_LOG(LogTemp, Warning, TEXT("GetPlayInEditorID %d %d"), UE::GetPlayInEditorID(), GetWorld()->GetOutermost()->GetPIEInstanceID());
-	
-	if (TargetType == CurEquipmentSlot) return;
-	
+
+	if (TargetSlot == CurEquipmentSlot) return;
+
 	if (HumanChar == nullptr) HumanChar = Cast<AHumanCharacter>(GetOwner());
-	AEquipment* TargetEquipment = GetEquipmentByType(TargetType);
+	AEquipment* TargetEquipment = GetEquipmentBySlot(TargetSlot);
 	if (!HumanChar || !TargetEquipment) return;
-	
+
 	AEquipment* OldCurEquipment = GetCurEquipment();
 
 	// 移除旧装备的GA
@@ -326,24 +325,21 @@ void UCombatComponent::InstantSwap(EEquipmentSlot TargetType)
 	{
 		OldCurEquipment->ClearAbilities(HumanChar->GetAbilitySystemComponent());
 	}
-	
-	HolsterEquipment(OldCurEquipment);
-	
-	LastEquipmentSlot = CurEquipmentSlot; 
-	if (!OldCurEquipment) LastEquipmentSlot = EEquipmentSlot::Slot3; // 若为丢枪则把 LastEquipmentSlot 置为近战武器
-	CurEquipmentSlot = TargetType;
-	
+
+	if (OldCurEquipment)
+	{
+		HolsterEquipment(OldCurEquipment);
+		LastEquipmentSlot = CurEquipmentSlot;
+	}
+	else if (CurEquipmentSlot != EEquipmentSlot::None)
+	{
+		// 若为丢枪导致当前槽位变空后自动切枪，则将 LastEquipmentSlot 回退为近战武器
+		LastEquipmentSlot = EEquipmentSlot::Slot3;
+	}
+
+	CurEquipmentSlot = TargetSlot;
+
 	AttachToHand(TargetEquipment, Sockets::SuffixR);
-	
-	// 挂载动画层
-	if (TSubclassOf<UAnimInstHuman1P_Layer> LayerClass = TargetEquipment->EquipmentAsset->GetAnimInstHuman1P_Layer())
-	{
-		HumanChar->Mesh1P->LinkAnimClassLayers(LayerClass);
-	}
-	if (TSubclassOf<UAnimInstHuman_Layer> LayerClass = TargetEquipment->EquipmentAsset->GetAnimInstHuman_Layer())
-	{
-		HumanChar->GetMesh()->LinkAnimClassLayers(LayerClass);
-	}
 
 	// 添加新装备的GA
 	if (HumanChar->HasAuthority())
@@ -547,6 +543,9 @@ void UCombatComponent::ServerDestroyEquipments_Implementation(bool bIsDestroySlo
 	DestroySlot(Slot2Equipment);
 	DestroySlot(Slot3Equipment);
 	DestroySlot(Slot4Equipment);
+
+	CurEquipmentSlot = EEquipmentSlot::None;
+	LastEquipmentSlot = EEquipmentSlot::None;
 }
 
 void UCombatComponent::SetAttackCollisionEnabled(bool bIsEnabled)

@@ -228,13 +228,15 @@ void AHumanCharacter::ApplyLoadout()
 		}
 	}
 
-	// 本地Controller就绪后，在服务端生成装备，然后复制到所有客户端
 	ServerSpawnEquipments(Slot1Name, Slot2Name, Slot3Name, Slot4Name);
 }
 
 void AHumanCharacter::ServerSpawnEquipments_Implementation(EEquipmentName Slot1Name, EEquipmentName Slot2Name, EEquipmentName Slot3Name, EEquipmentName Slot4Name)
 {
-	if (CombatComp == nullptr) return;
+	if (bIsDead || !bCanSwitchLoadout || CombatComp == nullptr) return;
+
+	// 若角色身上已有旧装备（如开局阶段切换 Loadout），先在服务端统一销毁清理
+	CombatComp->ServerDestroyEquipments_Implementation(true);
 	
 #if WITH_EDITOR
 	if (const UDevSetting* DevSetting = GetDefault<UDevSetting>())
@@ -255,10 +257,9 @@ void AHumanCharacter::ServerSpawnEquipments_Implementation(EEquipmentName Slot1N
 	if (!AssetSubsystem) AssetSubsystem = World->GetGameInstance()->GetSubsystem<UAssetSubsystem>();
 	if (!AssetSubsystem) return;
 
-	// 封装装备生成辅助 Lambda
+	// 封装装备生成辅助 Lambda（仅负责生成并入库收起）
 	auto SpawnEquipment = [this, World]<typename EquipActorType>(EEquipmentName EquipmentName) -> bool
 	{
-
 		if (EquipmentName == EEquipmentName::None) return false;
 
 		UEquipmentAsset* Asset = AssetSubsystem->GetEquipmentAssetByName(EquipmentName);
@@ -288,24 +289,50 @@ void AHumanCharacter::ServerSpawnEquipments_Implementation(EEquipmentName Slot1N
 		return false;
 	};
 
-	// 先装备副武器，以便被置为 LastEquipmentSlot
-	SpawnEquipment.template operator()<AWeapon>(Slot2Name);
-
-	// 主武器
-	if (SpawnEquipment.template operator()<AWeapon>(Slot1Name))
-	{
-		CombatComp->InstantSwap(EEquipmentSlot::Slot1);
-	}
-	// 近战武器
-	if (SpawnEquipment.template operator()<AMelee>(Slot3Name))
-	{
-		if (World->GetGameState<AMeleeGameState>() != nullptr)
-		{
-			CombatComp->InstantSwap(EEquipmentSlot::Slot3);
-		}
-	}
-	// 投掷物
+	// 1. 所有武器统一入库（此时 CurEquipmentSlot 为 None，全部自动进入已入库隐藏状态）
+	const bool bHasSlot1 = SpawnEquipment.template operator()<AWeapon>(Slot1Name);
+	const bool bHasSlot2 = SpawnEquipment.template operator()<AWeapon>(Slot2Name);
+	const bool bHasSlot3 = SpawnEquipment.template operator()<AMelee>(Slot3Name);
 	SpawnEquipment.template operator()<AThrowable>(Slot4Name);
+
+	// 2. 决定初始激活槽位
+	const bool bIsMeleeMode = World->GetGameState<AMeleeGameState>() != nullptr;
+	EEquipmentSlot InitialActiveSlot = EEquipmentSlot::None;
+
+	if (bIsMeleeMode && bHasSlot3)
+	{
+		InitialActiveSlot = EEquipmentSlot::Slot3;
+	}
+	else if (bHasSlot1)
+	{
+		InitialActiveSlot = EEquipmentSlot::Slot1;
+	}
+	else if (bHasSlot2)
+	{
+		InitialActiveSlot = EEquipmentSlot::Slot2;
+	}
+	else if (bHasSlot3)
+	{
+		InitialActiveSlot = EEquipmentSlot::Slot3;
+	}
+
+	// 3. 显式计算并写入 LastEquipmentSlot（优先副武器，其次近战武器）
+	EEquipmentSlot InitialLastSlot = EEquipmentSlot::None;
+	if (bHasSlot2 && InitialActiveSlot != EEquipmentSlot::Slot2)
+	{
+		InitialLastSlot = EEquipmentSlot::Slot2;
+	}
+	else if (bHasSlot3 && InitialActiveSlot != EEquipmentSlot::Slot3)
+	{
+		InitialLastSlot = EEquipmentSlot::Slot3;
+	}
+
+	// 4. 单独激活目标武器并写入 LastEquipmentSlot
+	if (InitialActiveSlot != EEquipmentSlot::None)
+	{
+		CombatComp->InstantSwap(InitialActiveSlot);
+	}
+	CombatComp->LastEquipmentSlot = InitialLastSlot;
 }
 
 void AHumanCharacter::AimButtonPressed(const FInputActionValue& Value)
@@ -441,21 +468,23 @@ void AHumanCharacter::SwapLastSlotEquipmentButtonPressed(const FInputActionValue
 void AHumanCharacter::SwapBetweenSlot1Slot2EquipmentButtonPressed(const FInputActionValue& Value)
 {
 	if (!CombatComp) return;
-	
-	if (AWeapon* Slot1Weapon = Cast<AWeapon>(CombatComp->GetEquipmentByType(EEquipmentSlot::Slot1)))
+
+	AWeapon* Slot1Weapon = Cast<AWeapon>(CombatComp->GetEquipmentBySlot(EEquipmentSlot::Slot1));
+	EEquipmentSlot TargetSlot = EEquipmentSlot::Slot1;
+
+	if (CombatComp->CurEquipmentSlot == EEquipmentSlot::Slot1 || !Slot1Weapon || Slot1Weapon->IsEmpty())
 	{
-		EEquipmentSlot EquipmentSlot = EEquipmentSlot::Slot1;
-		if (CombatComp->CurEquipmentSlot == EEquipmentSlot::Slot1 || CombatComp->CurEquipmentSlot != EEquipmentSlot::Slot1 && Slot1Weapon->IsEmpty())
-		{
-			EquipmentSlot = EEquipmentSlot::Slot2;
-		}
-		SendSwapEquipmentEvent(EquipmentSlot);
+		TargetSlot = EEquipmentSlot::Slot2;
 	}
+
+	SendSwapEquipmentEvent(TargetSlot);
 }
 
 void AHumanCharacter::SendSwapEquipmentEvent(EEquipmentSlot TargetEquipmentSlot)
 {
-	if (CombatComp && CombatComp->CurEquipmentSlot == TargetEquipmentSlot) return;
+	if (!CombatComp) return;
+	if (TargetEquipmentSlot == EEquipmentSlot::None || CombatComp->CurEquipmentSlot == TargetEquipmentSlot) return;
+	if (!CombatComp->HasEquipmentInSlot(TargetEquipmentSlot)) return;
 
 	if (ASC)
 	{
@@ -475,10 +504,10 @@ void AHumanCharacter::ClientSwapEquipmentWhenPickupFailed_Implementation(EEquipm
 }
 
 // 装备检测到的重叠装备
-void AHumanCharacter::EquipOverlappingEquipment_Server(AEquipment* Equipment)
+void AHumanCharacter::EquipOverlappingEquipment(AEquipment* Equipment)
 {
 	if (bIsDead || Equipment == nullptr || Equipment->GetOwner() || CombatComp == nullptr) return;
-	if (CombatComp->OwnEquipment(Equipment->EquipmentAsset->GetEquipmentSlot())) return;
+	if (CombatComp->HasEquipmentInSlot(Equipment->EquipmentAsset->GetEquipmentSlot())) return;
 	if (CombatComp->Slot3Equipment) // HACK 排除玩家刚重生还没有装备好武器（近战武器装备后无法丢弃）
 	{
 		CombatComp->GiveEquipment(Equipment);
@@ -490,7 +519,7 @@ void AHumanCharacter::EquipOverlappingEquipment_Server(AEquipment* Equipment)
 // 给予补给箱装备
 void AHumanCharacter::ServerGivePickupEquipment_Implementation(APickupEquipment* PickupEquipment)
 {
-	if (bIsDead || CombatComp == nullptr || PickupEquipment == nullptr) return;
+	if (bIsDead || CombatComp == nullptr || PickupEquipment == nullptr || !ASC) return;
 
 	AEquipment* Equipment = PickupEquipment->Equipment;
 	if (Equipment == nullptr) return;
@@ -502,7 +531,6 @@ void AHumanCharacter::ServerGivePickupEquipment_Implementation(APickupEquipment*
 	}
 
 	// 丢弃旧装备
-	FScopedPredictionWindow PredictionWindow(ASC, IsLocallyControlled() && !HasAuthority());
 	FGameplayEventData Payload;
 	Payload.EventMagnitude = static_cast<float>(Equipment->EquipmentAsset->GetEquipmentSlot());
 	Payload.OptionalObject = PickupEquipment;
@@ -515,8 +543,6 @@ void AHumanCharacter::TrySwitchLoadout()
 
 	if (bCanSwitchLoadout)
 	{
-		CombatComp->ServerDestroyEquipments();
-
 		ApplyLoadout();
 	}
 	else
@@ -617,16 +643,26 @@ void AHumanCharacter::OnDead()
 
 	if (CombatComp)
 	{
+		// 所有端立即隐藏非主武器，防止客户端在等待销毁网络包到达前调用 SetFirstPersonViewMode(false) 导致手枪/刀在尸体手上闪现穿帮
+		for (EEquipmentSlot Slot : { EEquipmentSlot::Slot2, EEquipmentSlot::Slot3, EEquipmentSlot::Slot4 })
+		{
+			if (AEquipment* Equip = CombatComp->GetEquipmentBySlot(Slot))
+			{
+				Equip->SetHiddenMesh(true);
+			}
+		}
+		
 		// 直接在服务端丢弃主武器不走GA
 		if (HasAuthority())
 		{
-			if (AEquipment* Slot1Equip = CombatComp->GetEquipmentByType(EEquipmentSlot::Slot1))
+			if (AEquipment* Slot1Equip = CombatComp->GetEquipmentBySlot(EEquipmentSlot::Slot1))
 			{
 				Slot1Equip->ClearAbilities(ASC);
 				Slot1Equip->Drop();
+				CombatComp->Slot1Equipment = nullptr; // 置空主武器槽位指针，断开与地面掉落武器的关联
 			}
 			
-			CombatComp->ServerDestroyEquipments(false);
+			CombatComp->ServerDestroyEquipments_Implementation(false);
 		}
 	}
 
@@ -640,6 +676,8 @@ void AHumanCharacter::OnDead()
 	BodyMesh->SetSimulatePhysics(true);
 	BodyMesh->SetEnableGravity(true);
 	BodyMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	
+	SetFirstPersonViewMode(false);
 }
 
 void AHumanCharacter::BecomeImmune()

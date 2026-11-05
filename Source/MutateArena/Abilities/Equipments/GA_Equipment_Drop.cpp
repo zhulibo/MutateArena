@@ -47,7 +47,7 @@ void UGA_Equipment_Drop::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 	}
 
 	EEquipmentSlot TargetEquipmentSlot = static_cast<EEquipmentSlot>(TriggerEventData->EventMagnitude);
-	AEquipment* TargetEquipment = CombatComp->GetEquipmentByType(TargetEquipmentSlot);
+	AEquipment* TargetEquipment = CombatComp->GetEquipmentBySlot(TargetEquipmentSlot);
 	
 	if (TargetEquipment)
 	{

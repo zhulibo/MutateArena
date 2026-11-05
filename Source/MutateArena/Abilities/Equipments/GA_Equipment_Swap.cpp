@@ -45,7 +45,7 @@ void UGA_Equipment_Swap::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 	}
 
 	const EEquipmentSlot TargetEquipmentSlot = static_cast<EEquipmentSlot>(TriggerEventData->EventMagnitude);
-	AEquipment* TargetEquipment = CombatComp->GetEquipmentByType(TargetEquipmentSlot);
+	AEquipment* TargetEquipment = CombatComp->GetEquipmentBySlot(TargetEquipmentSlot);
 
 	if (!TargetEquipment || !TargetEquipment->EquipmentAsset)
 	{
@@ -66,13 +66,28 @@ void UGA_Equipment_Swap::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 		return;
 	}
 
-	// 通知旧装备开始切出（清理旧状态），并停止旧装备独立1P网格体上残留的动画
+	// 通知旧装备开始切出（清理旧状态），并停止旧装备在 Mesh1P 和 EquipmentMesh1P 上残留的动画
 	if (AEquipment* OldEquipment = GetCurEquipment())
 	{
 		OldEquipment->OnStartSwapOut();
 
 		if (HumanChar->IsLocallyControlled())
 		{
+			if (UAnimInstance* AnimInst1P = HumanChar->Mesh1P ? HumanChar->Mesh1P->GetAnimInstance() : nullptr)
+			{
+				if (OldEquipment->EquipmentAsset)
+				{
+					if (UAnimMontage* OldEquipMontage_C = OldEquipment->EquipmentAsset->GetEquipMontage1P_C())
+					{
+						if (FAnimMontageInstance* OldMontageInst = AnimInst1P->GetActiveInstanceForMontage(OldEquipMontage_C))
+						{
+							OldMontageInst->OnMontageEnded.Unbind();
+						}
+						AnimInst1P->Montage_Stop(0.f, OldEquipMontage_C);
+					}
+				}
+			}
+
 			if (UAnimInstEquipment* OldEquipAnimInst1P = OldEquipment->GetEquipmentAnimInst1P())
 			{
 				OldEquipAnimInst1P->Montage_Stop(0.f);
@@ -102,9 +117,9 @@ void UGA_Equipment_Swap::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 		// 在1P手臂网格体（Mesh1P）上播放角色切入动画
 		if (UAnimInstance* AnimInst1P = HumanChar->Mesh1P ? HumanChar->Mesh1P->GetAnimInstance() : nullptr)
 		{
-			// 若同一蒙太奇仍在播放（如极速切出又切回同一把武器），先停止旧实例，防止旧实例被打断时误触发新绑定的委托
-			if (AnimInst1P->Montage_IsPlaying(EquipMontage_C))
+			if (FAnimMontageInstance* ExistingInst = AnimInst1P->GetActiveInstanceForMontage(EquipMontage_C))
 			{
+				ExistingInst->OnMontageEnded.Unbind();
 				AnimInst1P->Montage_Stop(0.f, EquipMontage_C);
 			}
 
@@ -132,6 +147,7 @@ void UGA_Equipment_Swap::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 		{
 			if (UAnimMontage* EquipMontage_E = TargetEquipment->EquipmentAsset->GetEquipMontage1P_E())
 			{
+				EquipAnimInst1P->Montage_Stop(0.f);
 				EquipAnimInst1P->Montage_Play(EquipMontage_E, 1.0f);
 			}
 		}
@@ -155,7 +171,14 @@ void UGA_Equipment_Swap::OnEquipEventReceived(FGameplayEventData Payload)
 
 void UGA_Equipment_Swap::OnEquipMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
-	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, bInterrupted);
+	// 严格校验：只有当前手持武器的切入蒙太奇结束时，才结束当前 Ability（防止旧蒙太奇延迟触发回调误杀新切枪）
+	if (AEquipment* CurEquipment = GetCurEquipment())
+	{
+		if (CurEquipment->EquipmentAsset && CurEquipment->EquipmentAsset->GetEquipMontage1P_C() == Montage)
+		{
+			EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, bInterrupted);
+		}
+	}
 }
 
 void UGA_Equipment_Swap::OnServerWaitDelayFinished()

@@ -60,7 +60,7 @@ public:
 	
 	UFUNCTION(Client, Reliable)
 	void ClientSwapEquipmentWhenPickupFailed(EEquipmentSlot FallbackEquipmentSlot);
-	void EquipOverlappingEquipment_Server(class AEquipment* Equipment);
+	void EquipOverlappingEquipment(class AEquipment* Equipment);
 	UFUNCTION(Server, Reliable)
 	void ServerGivePickupEquipment(class APickupEquipment* PickupEquipment);
 

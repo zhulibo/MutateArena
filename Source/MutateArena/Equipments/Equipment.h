@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Data/EquipmentType.h"
 #include "GameFramework/Actor.h"
+#include "MutateArena/PlayerStates/TeamType.h"
 #include "Equipment.generated.h"
 
 class UAnimInstEquipment;
@@ -24,6 +25,7 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	virtual void OnRep_Owner() override;
 
 	UPROPERTY(VisibleAnywhere)
 	class USphereComponent* CollisionSphere;
@@ -44,13 +46,13 @@ public:
 	UAnimInstEquipment* GetEquipmentAnimInst();
 	UAnimInstEquipment* GetEquipmentAnimInst1P();
 
-	void SetHiddenMesh(bool TempbIsHidden);
+	void SetHiddenMesh(bool bInHidden);
+
+	// 统一刷新 1P/3P 武器网格体的显隐与阴影状态（供切枪、拾取、丢弃及观战视角切换调用）
+	void UpdateViewMode();
 
 protected:
-	UPROPERTY(ReplicatedUsing = OnRep_IsHidden)
 	bool bIsHidden = false;
-	UFUNCTION()
-	void OnRep_IsHidden();
 
 public:
 	virtual void OnStartSwapOut()
@@ -73,7 +75,7 @@ protected:
 
 public:
 	UPROPERTY(ReplicatedUsing = OnRep_EquipmentState)
-	EEquipmentState EquipmentState;
+	EEquipmentState EquipmentState = EEquipmentState::Dropped;
 	UFUNCTION()
 	virtual void OnRep_EquipmentState(EEquipmentState OldState);
 
@@ -82,8 +84,8 @@ public:
 	virtual void Drop();
 
 protected:
-	UPROPERTY(replicated)
-	ETeam OwnerTeam;
+	UPROPERTY(Replicated)
+	ETeam OwnerTeam = ETeam::NoTeam;
 	void SetOwnerTeam();
 	
 public:

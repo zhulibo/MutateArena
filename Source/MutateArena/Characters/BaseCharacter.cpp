@@ -49,6 +49,7 @@
 #include "Perception/AISenseConfig_Sight.h"
 #include "Perception/AISense_Sight.h"
 #include "GroomComponent.h"
+#include "MutateArena/Equipments/Equipment.h"
 #include "MutateArena/System/DataAssetManager.h"
 
 #define LOCTEXT_NAMESPACE "ABaseCharacter"
@@ -66,15 +67,15 @@ ABaseCharacter::ABaseCharacter(const FObjectInitializer& ObjectInitializer)
 	GetCharacterMovement()->SetCrouchedHalfHeight(60.f);
 	BaseEyeHeight = 75.f;
 	CrouchedEyeHeight = 45.f;
+	TargetEyeHeight = BaseEyeHeight;
 
 	Mesh1P = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Mesh1P"));
 	Mesh1P->SetupAttachment(GetCapsuleComponent());
 	Mesh1P->SetRelativeLocation(FVector(0.f, 0.f, BaseEyeHeight));
-	Mesh1P->SetOnlyOwnerSee(true);
 	Mesh1P->CastShadow = false;
 	Mesh1P->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	Mesh1P->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::OnlyTickPoseWhenRendered;
-	
+
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->SetupAttachment(GetCapsuleComponent());
 	Camera->bUsePawnControlRotation = true;
@@ -89,8 +90,8 @@ ABaseCharacter::ABaseCharacter(const FObjectInitializer& ObjectInitializer)
 	GetCharacterMovement()->AirControlBoostMultiplier = 2.f;
 	GetCharacterMovement()->AirControlBoostVelocityThreshold = 40.f;
 	GetCharacterMovement()->SetWalkableFloorAngle(50.f);
-	// 临时方案 从高于此高度跌落可触发Landed，可接着按跳完成跳跳蹲（向上迈步不受此值影响，在 UMAMovementComponent::StepUp 中重写了）
-	GetCharacterMovement()->MaxStepHeight = 30.f;
+	// 从高于此高度跌落可触发Landed，可接跳跳蹲，向上迈步不受此值影响，已在 UMAMovementComponent::StepUp 中重写了
+	GetCharacterMovement()->MaxStepHeight = 20.f;
 	// 最好使用平地检测，胶囊体底部的圆弧会影响下落状态
 	GetCharacterMovement()->bUseFlatBaseForFloorChecks = true;
 
@@ -186,7 +187,6 @@ void ABaseCharacter::PostInitializeComponents()
 	GetComponents<UGroomComponent>(AllGrooms);
 	for (UGroomComponent* Groom : AllGrooms)
 	{
-		Groom->SetOwnerNoSee(true);
 		Groom->bCastHiddenShadow = true;
 		Groom->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 		
@@ -228,12 +228,10 @@ void ABaseCharacter::BeginPlay()
 	OverheadWidget->AttachToComponent(BodyMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, Sockets::Camera);
 	OverheadWidget->SetRelativeLocation(FVector(0.f, 0.f, 60.f));
 	
-	BodyMesh->SetOwnerNoSee(true);
 	BodyMesh->bCastHiddenShadow = true;
 	BodyMesh->SetGenerateOverlapEvents(true);
 	BodyMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 
-	FaceMesh->SetOwnerNoSee(true);
 	FaceMesh->bCastHiddenShadow = true;
 	FaceMesh->SetGenerateOverlapEvents(true);
 	FaceMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
@@ -255,6 +253,11 @@ void ABaseCharacter::BeginPlay()
 	{
 		OverheadWidgetClass->BaseCharacter = this;
 	}
+	
+	// 根据初始化时当前客户端的 ViewTarget 状态，设定初始显隐
+	APlayerController* LocalPC = GEngine ? GEngine->GetFirstLocalPlayerController(GetWorld()) : nullptr;
+	bIsCurrentViewTarget = LocalPC && (LocalPC->GetViewTarget() == this);
+	SetFirstPersonViewMode(bIsCurrentViewTarget);
 }
 
 // 增强输入
@@ -308,12 +311,13 @@ void ABaseCharacter::Tick(float DeltaSeconds)
 	PollInit_PlayerStateTeam();
 	PollInit_ControllerAndPSAndTeam();
 	CalcAimPitch();
-
-	if (IsLocallyControlled())
-	{
-		UpdateHurtEffect(DeltaSeconds);
+	UpdateFirstPersonPitch(DeltaSeconds);
+	UpdateEyeHeightOffset(DeltaSeconds);
+	UpdateHurtEffect(DeltaSeconds);
 
 #if WITH_EDITOR
+	if (IsLocallyControlled())
+	{
 		if (GetDefault<UDevSetting>()->bShowSpeed)
 		{
 			if (GEngine)
@@ -324,8 +328,9 @@ void ABaseCharacter::Tick(float DeltaSeconds)
 				GEngine->AddOnScreenDebugMessage(999, 0.0f, FColor::Green, FString::Printf(TEXT("Player Speed -> 2D: %.2f | 3D: %.2f"), Speed2D, Speed3D));
 			}
 		}
-#endif
 	}
+#endif
+
 }
 
 void ABaseCharacter::PollInit_PlayerStateTeam()
@@ -452,6 +457,84 @@ float ABaseCharacter::MappingAimPitch(float TempAimPitch)
 		TempAimPitch = FMath::GetMappedRangeValueClamped(InRange, OutRange, TempAimPitch);
 	}
 	return TempAimPitch;
+}
+
+void ABaseCharacter::BecomeViewTarget(APlayerController* PC)
+{
+	Super::BecomeViewTarget(PC);
+
+	if (PC && PC->IsLocalController())
+	{
+		bIsCurrentViewTarget = true;
+		SetFirstPersonViewMode(true);
+	}
+}
+
+void ABaseCharacter::EndViewTarget(APlayerController* PC)
+{
+	Super::EndViewTarget(PC);
+
+	if (PC && PC->IsLocalController())
+	{
+		bIsCurrentViewTarget = false;
+		SetFirstPersonViewMode(false);
+	}
+}
+
+void ABaseCharacter::UpdateFirstPersonPitch(float DeltaTime)
+{
+	if (!bIsCurrentViewTarget || !Mesh1P || !Camera) return;
+
+	if (IsLocallyControlled())
+	{
+		// 本地操控：Camera 已由 bUsePawnControlRotation 驱动，直接同步 Mesh1P 的 Pitch
+		FRotator MeshRelRot = Mesh1P->GetRelativeRotation();
+		MeshRelRot.Roll = -AimPitch;
+		Mesh1P->SetRelativeRotation(MeshRelRot);
+	}
+	else
+	{
+		// 第一人称观战：无本地 Controller 驱动，插值平滑 AimPitch 并同步给 Camera 和 Mesh1P
+		FRotator CamRelRot = Camera->GetRelativeRotation();
+		const float SmoothedPitch = FMath::FInterpTo(CamRelRot.Pitch, AimPitch, DeltaTime, 20.f);
+
+		CamRelRot.Pitch = SmoothedPitch;
+		Camera->SetRelativeRotation(CamRelRot);
+
+		FRotator MeshRelRot = Mesh1P->GetRelativeRotation();
+		MeshRelRot.Roll = -SmoothedPitch;
+		Mesh1P->SetRelativeRotation(MeshRelRot);
+	}
+}
+
+void ABaseCharacter::SetFirstPersonViewMode(bool bFirstPerson)
+{
+	// 切换第一人称手臂显隐
+	Mesh1P->SetVisibility(bFirstPerson);
+
+	// 立即切换可见性 UOverheadWidget::TraceOverheadWidget 有延迟
+	OverheadWidget->SetVisibility(!bFirstPerson);
+
+	// 切换 MetaHuman 身体、面部与毛发组件显隐
+	BodyMesh->SetVisibility(!bFirstPerson);
+	FaceMesh->SetVisibility(!bFirstPerson);
+	BeardComp->SetVisibility(!bFirstPerson);
+	EyebrowsComp->SetVisibility(!bFirstPerson);
+	EyelashesComp->SetVisibility(!bFirstPerson);
+	FuzzComp->SetVisibility(!bFirstPerson);
+	HairComp->SetVisibility(!bFirstPerson);
+	MustacheComp->SetVisibility(!bFirstPerson);
+
+	// 自动刷新当前角色身上挂载的所有武器（AEquipment）的 1P/3P 显隐与阴影状态
+	TArray<AActor*> AttachedActors;
+	GetAttachedActors(AttachedActors);
+	for (AActor* Actor : AttachedActors)
+	{
+		if (AEquipment* Equipment = Cast<AEquipment>(Actor))
+		{
+			Equipment->UpdateViewMode();
+		}
+	}
 }
 
 void ABaseCharacter::PossessedBy(AController* NewController)
@@ -842,12 +925,103 @@ void ABaseCharacter::OnMaxWalkSpeedChanged(const FOnAttributeChangeData& Data)
 	GetCharacterMovement()->MaxWalkSpeedCrouched = Data.NewValue * 0.5f;
 }
 
+void ABaseCharacter::OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust)
+{
+	// 必须让所有端执行 Super，内部会自动将第三人称 Mesh 上移，防止其他玩家看到模型陷入地面
+	Super::OnStartCrouch(HalfHeightAdjust, ScaledHalfHeightAdjust);
+
+	// Super::OnStartCrouch 内部会把实例的 BaseEyeHeight 改写为 CrouchedEyeHeight (45.f)，
+	// 因此这里从 CDO 读取初始默认的站立眼高 (75.f)
+	const float StandingEyeHeight = GetDefault<ABaseCharacter>(GetClass())->BaseEyeHeight;
+
+	if (GetCharacterMovement()->IsMovingOnGround())
+	{
+		// 地面按下蹲：目标眼高变为 45.f，同时正向补偿胶囊体中心瞬间下移的 30.f
+		UpdateEyeHeightTarget(CrouchedEyeHeight, ScaledHalfHeightAdjust);
+	}
+	else
+	{
+		// 空中按下蹲：维持站立眼高 75.f 不变，胶囊体向中心收缩无位移，补偿为 0.f
+		UpdateEyeHeightTarget(StandingEyeHeight, 0.f);
+	}
+}
+
+void ABaseCharacter::OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust)
+{
+	// 必须让所有端执行 Super，内部会将第三人称 Mesh 恢复到默认相对位置
+	Super::OnEndCrouch(HalfHeightAdjust, ScaledHalfHeightAdjust);
+
+	const float StandingEyeHeight = GetDefault<ABaseCharacter>(GetClass())->BaseEyeHeight;
+
+	// 无论在地面还是空中松开下蹲，目标眼高均恢复为 75.f；
+	// 地面站起时需反向补偿胶囊体中心瞬间上移的 -30.f，空中站起时胶囊体中心不变，补偿为 0.f
+	const float CapsuleMoveZ = GetCharacterMovement()->IsMovingOnGround() ? -ScaledHalfHeightAdjust : 0.f;
+	UpdateEyeHeightTarget(StandingEyeHeight, CapsuleMoveZ);
+}
+
+void ABaseCharacter::OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode)
+{
+	Super::OnMovementModeChanged(PrevMovementMode, PreviousCustomMode);
+
+	// 仅在【按住下蹲从空中落回地面】时，将目标眼高切为 45.f：
+	// 1. 空中按蹲（75.f）落地 -> EyeHeightDiff = 30.f，落地后从 75.f 平滑过渡到 45.f；
+	// 2. 高台蹲着（45.f）掉落并落地 -> TargetEyeHeight 原本就是 45.f，EyeHeightDiff = 0.f，落地无跳变；
+	// 3. 高台蹲着走下边缘刚进入空中（Walking -> Falling）时不触发，下落全程维持高台蹲着时的 45.f 眼高。
+	if (bIsCrouched && PrevMovementMode == MOVE_Falling && GetCharacterMovement()->IsMovingOnGround())
+	{
+		UpdateEyeHeightTarget(CrouchedEyeHeight, 0.f);
+	}
+}
+
+void ABaseCharacter::UpdateEyeHeightTarget(float NewTargetEyeHeight, float AdditionalCapsuleOffset)
+{
+	// 计算切换前后的目标眼高差值
+	const float EyeHeightDiff = TargetEyeHeight - NewTargetEyeHeight;
+
+	TargetEyeHeight = NewTargetEyeHeight;
+
+	// 将眼高差值与胶囊体中心位移量累加到补偿值中，确保切换瞬间世界空间的镜头绝对高度不变（零跳变）
+	CurrentCameraZOffset += (EyeHeightDiff + AdditionalCapsuleOffset);
+
+	ApplyEyeHeightToComponents();
+}
+
+void ABaseCharacter::UpdateEyeHeightOffset(float DeltaSeconds)
+{
+	// 当存在偏移补偿时，每帧平滑插值归零，驱动第一人称镜头和手臂平滑升降
+	if (!FMath::IsNearlyZero(CurrentCameraZOffset))
+	{
+		CurrentCameraZOffset = FMath::FInterpTo(CurrentCameraZOffset, 0.f, DeltaSeconds, CrouchEyeOffsetInterpSpeed);
+		if (FMath::IsNearlyZero(CurrentCameraZOffset))
+		{
+			CurrentCameraZOffset = 0.f;
+		}
+		ApplyEyeHeightToComponents();
+	}
+}
+
+void ABaseCharacter::ApplyEyeHeightToComponents()
+{
+	// 最终相对胶囊体中心的 Z 轴高度 = 目标眼高 + 当前未消除的平滑补偿量
+	const float FinalEyeZ = TargetEyeHeight + CurrentCameraZOffset;
+
+	if (Camera)
+	{
+		Camera->SetRelativeLocation(FVector(0.f, 0.f, FinalEyeZ));
+	}
+	if (Mesh1P)
+	{
+		Mesh1P->SetRelativeLocation(FVector(0.f, 0.f, FinalEyeZ));
+	}
+}
+
 // 落地事件（只在本地和服务端执行）
 void ABaseCharacter::Landed(const FHitResult& Hit)
 {
+	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::Landed"));
 	Super::Landed(Hit);
 
-	// 1. 先处理摔落伤害
+	// 处理摔落伤害
 	float DamageRate = CalcFallDamageRate();
 	if (DamageRate > 0.f)
 	{
@@ -863,7 +1037,7 @@ void ABaseCharacter::Landed(const FHitResult& Hit)
 		}
 	}
 
-	// 2. 在本地控制的客户端执行输入缓冲检查
+	// 在本地控制的客户端执行输入缓冲检查
 	if (IsLocallyControlled() && MovementComp)
 	{
 		const double CurrentTime = GetWorld()->GetTimeSeconds();
@@ -1305,7 +1479,7 @@ void ABaseCharacter::ApplyHurtEffect(const FOnAttributeChangeData& Data)
 
 void ABaseCharacter::UpdateHurtEffect(float DeltaSeconds)
 {
-	if (!MID_Hurt) return;
+	if (!IsLocallyControlled() || !MID_Hurt) return;
 
 	if (BloodRecoveryDelayTimer > 0.f)
 	{

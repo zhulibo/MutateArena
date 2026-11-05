@@ -37,8 +37,6 @@ public:
 	virtual bool DoJump(bool bReplayingMoves, float DeltaTime) override;
 	virtual float GetMaxSpeed() const override;
 	
-	UPROPERTY()
-	float MaxStepUpHeight = 45.f;
 	virtual bool StepUp(const FVector& GravDir, const FVector& Delta, const FHitResult &InHit, FStepDownResult* OutStepDownResult = nullptr) override;
 
 	// 爬梯子速度占玩家当前最大行走速度的比例

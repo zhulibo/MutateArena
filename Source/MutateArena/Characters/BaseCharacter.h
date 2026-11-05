@@ -116,14 +116,19 @@ protected:
 	
 public:
 	UPROPERTY()
-	float AimPitch;
+	float AimPitch = 0.f;
 protected:
 	void CalcAimPitch();
 public:
 	float MappingAimPitch(float TempAimPitch);
+	bool bIsCurrentViewTarget = false;
+	virtual void BecomeViewTarget(APlayerController* PC) override;
+	virtual void EndViewTarget(APlayerController* PC) override;
+protected:
+	void UpdateFirstPersonPitch(float DeltaTime);
+	void SetFirstPersonViewMode(bool bFirstPerson);
 
 	// GAS
-protected:
 	UPROPERTY()
 	class UMAAbilitySystemComponent* ASC;
 	UPROPERTY()
@@ -180,6 +185,23 @@ protected:
 	void OnJumpZVelocityChanged(const FOnAttributeChangeData& Data);
 	void OnMaxWalkSpeedChanged(const FOnAttributeChangeData& Data);
 
+	virtual void OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
+	virtual void OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
+	virtual void OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode) override;
+	// 更新目标眼高，并计算切换瞬间的胶囊体位移补偿以消除镜头跳变
+	void UpdateEyeHeightTarget(float NewTargetEyeHeight, float AdditionalCapsuleOffset = 0.f);
+	// 每帧平滑插值消除眼高偏移补偿
+	void UpdateEyeHeightOffset(float DeltaSeconds);
+	// 将最终计算出的眼高同步应用到 Camera 和 Mesh1P
+	void ApplyEyeHeightToComponents();
+	// 当前目标眼高（站立/空中下蹲为 75.f，地面下蹲为 45.f）
+	float TargetEyeHeight = 75.f;
+	// 当前平滑过渡中的视线 Z 轴偏移补偿量
+	float CurrentCameraZOffset = 0.f;
+	// 下蹲/站起时第一人称视角的平滑插值速度
+	UPROPERTY()
+	float CrouchEyeOffsetInterpSpeed = 12.f;
+	
 	// 连跳 测试结果 跳1.1m 跳蹲1.2m 连跳1.3m 跳跳蹲1.5m
 	// 记录在空中按下跳跃键的时间戳
 	double LastJumpPressedTime = -100.f;
