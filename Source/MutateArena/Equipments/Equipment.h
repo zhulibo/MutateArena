@@ -14,6 +14,22 @@ class UAbilitySystemComponent;
 class UGameplayAbility;
 enum class ETeam : uint8;
 
+USTRUCT()
+struct FEquipmentDropInfo
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	FTransform Transform = FTransform::Identity;
+
+	UPROPERTY()
+	FVector LinearVelocity = FVector::ZeroVector;
+
+	// 确保同一把枪多次掉落时，每次都能触发 OnRep
+	UPROPERTY()
+	uint16 Sequence = 0;
+};
+
 UCLASS()
 class MUTATEARENA_API AEquipment : public AActor
 {
@@ -82,7 +98,11 @@ public:
 	virtual void OnGiven(class AHumanCharacter* HumanChar);
 	void HandleDrop();
 	virtual void Drop();
-
+	UPROPERTY(ReplicatedUsing = OnRep_DropInfo)
+	FEquipmentDropInfo DropInfo;
+	UFUNCTION()
+	void OnRep_DropInfo();
+	
 protected:
 	UPROPERTY(Replicated)
 	ETeam OwnerTeam = ETeam::NoTeam;

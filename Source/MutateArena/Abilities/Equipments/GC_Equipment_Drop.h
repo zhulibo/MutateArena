@@ -1,3 +1,4 @@
+// GC_Equipment_Drop.h
 #pragma once
 
 #include "CoreMinimal.h"

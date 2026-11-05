@@ -70,6 +70,7 @@ void AEquipment::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifeti
 	DOREPLIFETIME_CONDITION(AEquipment, EquipmentName, COND_InitialOnly);
 	DOREPLIFETIME(ThisClass, OwnerTeam);
 	DOREPLIFETIME(ThisClass, EquipmentState);
+	DOREPLIFETIME(ThisClass, DropInfo);
 }
 
 void AEquipment::BeginPlay()
@@ -236,76 +237,143 @@ void AEquipment::OnGiven(AHumanCharacter* HumanChar)
 
 void AEquipment::Drop()
 {
+	if (!HasAuthority() || EquipmentState == EEquipmentState::Dropped)
+	{
+		return;
+	}
+
+	AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(GetOwner());
+
+	FVector ThrowDir = GetActorForwardVector();
+	FVector DropStartLoc = GetActorLocation();
+	FRotator DropRotation = GetActorRotation();
+	FVector InitialVelocity = FVector::ZeroVector;
+
+	if (HumanCharacter)
+	{
+		const FRotator AimRot = HumanCharacter->GetBaseAimRotation();
+		ThrowDir = AimRot.Vector();
+
+		FVector EyeLoc;
+		FRotator EyeRot;
+		HumanCharacter->GetActorEyesViewPoint(EyeLoc, EyeRot);
+
+		DropStartLoc = EyeLoc + ThrowDir * 30.f - FVector(0.f, 0.f, 15.f);
+		DropRotation = FRotator(0.f, AimRot.Yaw, 0.f);
+
+		const float Impulse = HumanCharacter->bIsDead ? 100.f : 400.f;
+		InitialVelocity = ThrowDir * Impulse;
+	}
+	else
+	{
+		DropRotation.Pitch = 0.f;
+		DropRotation.Roll = 0.f;
+	}
+
+	// 开启移动复制
+	SetReplicateMovement(true);
+
 	EquipmentState = EEquipmentState::Dropped;
 
-	if (HasAuthority())
-	{
-		SetReplicateMovement(true);
-	}
-	
+	// 保存服务器计算的最终掉落信息
+	DropInfo.Transform = FTransform(
+		DropRotation,
+		DropStartLoc,
+		GetActorScale3D()
+	);
+
+	DropInfo.LinearVelocity = InitialVelocity;
+	++DropInfo.Sequence;
+
+	// 服务器应用掉落信息
 	HandleDrop();
+
+	// 清除 Owner
+	SetOwner(nullptr);
+	OwnerTeam = ETeam::NoTeam;
+
+	// 服务器负责销毁
+	GetWorldTimerManager().SetTimer(
+		DestroyEquipmentTimerHandle,
+		this,
+		&ThisClass::DestroyEquipment,
+		200.f,
+		false
+	);
+
+	ForceNetUpdate();
 }
 
 void AEquipment::OnRep_EquipmentState(EEquipmentState OldState)
 {
-	if (EquipmentState == EEquipmentState::Dropped)
-	{
-		HandleDrop();
-	}
-	else if (EquipmentState == EEquipmentState::Equipped)
+	if (EquipmentState == EEquipmentState::Equipped)
 	{
 		UpdateViewMode();
 	}
+
+	// Dropped 状态由 OnRep_DropInfo 统一处理
+}
+
+void AEquipment::OnRep_DropInfo()
+{
+	// 确保 EquipmentState 已经进入掉落状态
+	EquipmentState = EEquipmentState::Dropped;
+
+	// 使用服务器复制的 Transform 和初始速度
+	HandleDrop();
 }
 
 void AEquipment::HandleDrop()
 {
 	bIsHidden = false;
 
-	FDetachmentTransformRules DetachRules(EDetachmentRule::KeepWorld, true);
-	CollisionSphere->DetachFromComponent(DetachRules);
-	
-	// 将之前在 AttachToHand 中分别挂到角色 BodyMesh 和 Mesh1P 上的两个网格体重新挂回武器自身的 RootComponent
+	// 先分离 Actor 的 RootComponent，保持世界变换
+	DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+
+	// 将 1P 和 3P 网格体重新挂回武器 RootComponent
 	if (EquipmentMesh)
 	{
-		EquipmentMesh->AttachToComponent(RootComponent, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-	}
-	if (EquipmentMesh1P)
-	{
-		EquipmentMesh1P->AttachToComponent(RootComponent, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-	}
-	
-	if (HasAuthority())
-	{
-		// 重置旋转，确保掉落时始终朝上平躺
-		FRotator CurrentRotation = GetActorRotation();
-		CurrentRotation.Pitch = 0.f;
-		CurrentRotation.Roll = 0.f;
-		SetActorRotation(CurrentRotation);
-		
-		CollisionSphere->SetSimulatePhysics(true);
-		CollisionSphere->SetEnableGravity(true);
-		CollisionSphere->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-		
-		// 丢弃武器时，给予一个向前的冲量（需在 SetOwner(nullptr) 前执行）
-		if (AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(GetOwner()))
-		{
-			if (UCameraComponent* CameraComponent = HumanCharacter->FindComponentByClass<UCameraComponent>())
-			{
-				float Impulse = HumanCharacter->bIsDead ? 100.f : 400.f;
-				CollisionSphere->AddImpulse(CameraComponent->GetForwardVector() * Impulse, NAME_None, true);
-			}
-		}
-		
-		// 延迟开启AreaSphere碰撞，确保武器已被丢出当前角色的Overlap区域
-		GetWorldTimerManager().SetTimer(AreaSphereTimerHandle, this, &ThisClass::SetAreaSphereCollision, .4f, false);
-		GetWorldTimerManager().SetTimer(DestroyEquipmentTimerHandle, this, &ThisClass::DestroyEquipment, 15.f, false);
-		
-		SetOwner(nullptr);
-		OwnerTeam = ETeam::NoTeam;
+		EquipmentMesh->AttachToComponent(
+			RootComponent,
+			FAttachmentTransformRules::SnapToTargetNotIncludingScale
+		);
 	}
 
-	// 统一刷新为地面掉落的显隐和阴影状态
+	if (EquipmentMesh1P)
+	{
+		EquipmentMesh1P->AttachToComponent(
+			RootComponent,
+			FAttachmentTransformRules::SnapToTargetNotIncludingScale
+		);
+	}
+
+	// 使用服务器复制的世界 Transform
+	SetActorTransform(
+		DropInfo.Transform,
+		false,
+		nullptr,
+		ETeleportType::TeleportPhysics
+	);
+
+	// 开启物理
+	CollisionSphere->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	CollisionSphere->SetEnableGravity(true);
+	CollisionSphere->SetSimulatePhysics(true);
+
+	// 使用服务器提供的初始速度
+	CollisionSphere->SetPhysicsLinearVelocity(DropInfo.LinearVelocity);
+	CollisionSphere->SetPhysicsAngularVelocityInDegrees(FVector::ZeroVector);
+	CollisionSphere->WakeAllRigidBodies();
+
+	// 延迟开启拾取碰撞
+	GetWorldTimerManager().SetTimer(
+		AreaSphereTimerHandle,
+		this,
+		&ThisClass::SetAreaSphereCollision,
+		.4f,
+		false
+	);
+
 	UpdateViewMode();
 }
 
