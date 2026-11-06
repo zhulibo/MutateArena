@@ -58,11 +58,8 @@ protected:
 public:
 	void SendSwapEquipmentEvent(EEquipmentSlot TargetEquipmentSlot);
 	
-	UFUNCTION(Client, Reliable)
-	void ClientSwapEquipmentWhenPickupFailed(EEquipmentSlot FallbackEquipmentSlot);
-	void EquipOverlappingEquipment(class AEquipment* Equipment);
-	UFUNCTION(Server, Reliable)
-	void ServerGivePickupEquipment(class APickupEquipment* PickupEquipment);
+	void GiveOverlappingEquipment(class AEquipment* Equipment);
+	void GivePickupEquipment(class APickupEquipment* PickupEquipment);
 
 	UPROPERTY()
 	bool bCanSwitchLoadout = true;

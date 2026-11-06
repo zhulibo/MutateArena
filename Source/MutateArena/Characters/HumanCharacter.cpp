@@ -495,46 +495,101 @@ void AHumanCharacter::SendSwapEquipmentEvent(EEquipmentSlot TargetEquipmentSlot)
 	}
 }
 
-void AHumanCharacter::ClientSwapEquipmentWhenPickupFailed_Implementation(EEquipmentSlot FallbackEquipmentSlot)
-{
-	if (bIsDead || CombatComp == nullptr) return;
-	if (CombatComp->CurEquipmentSlot == FallbackEquipmentSlot) return; // 如果本地客户端已经通过预测切到了目标武器，就不需要再切一次了，防止打断动画
-
-	SendSwapEquipmentEvent(CombatComp->GetLastEquipment() ? CombatComp->LastEquipmentSlot : EEquipmentSlot::Slot3);
-}
-
-// 装备检测到的重叠装备
-void AHumanCharacter::EquipOverlappingEquipment(AEquipment* Equipment)
+// 给予检测到的重叠装备
+void AHumanCharacter::GiveOverlappingEquipment(AEquipment* Equipment)
 {
 	if (bIsDead || Equipment == nullptr || Equipment->GetOwner() || CombatComp == nullptr) return;
 	if (CombatComp->HasEquipmentInSlot(Equipment->EquipmentAsset->GetEquipmentSlot())) return;
-	if (CombatComp->Slot3Equipment) // HACK 排除玩家刚重生还没有装备好武器（近战武器装备后无法丢弃）
-	{
-		CombatComp->GiveEquipment(Equipment);
-
-		CombatComp->ClientPlayEquipSound();
-	}
+	
+	bCanSwitchLoadout = false;
+	CombatComp->GiveEquipment(Equipment);
+	CombatComp->ClientPlayEquipSound();
 }
 
-// 给予补给箱装备
-void AHumanCharacter::ServerGivePickupEquipment_Implementation(APickupEquipment* PickupEquipment)
+// 给予补给箱装备（服务端权威调用）
+void AHumanCharacter::GivePickupEquipment(APickupEquipment* PickupEquipment)
 {
-	if (bIsDead || CombatComp == nullptr || PickupEquipment == nullptr || !ASC) return;
+	if (!HasAuthority() || bIsDead || CombatComp == nullptr || !IsValid(PickupEquipment) || !ASC) return;
 
-	AEquipment* Equipment = PickupEquipment->Equipment;
-	if (Equipment == nullptr) return;
+	AEquipment* NewEquipment = PickupEquipment->Equipment;
+	if (NewEquipment == nullptr) return;
 
-	if (Equipment->EquipmentAsset->GetEquipmentSlot() != EEquipmentSlot::Slot1 && Equipment->EquipmentAsset->GetEquipmentSlot() != EEquipmentSlot::Slot2)
+	const UEquipmentAsset* EquipAsset = NewEquipment->EnsureEquipmentAsset();
+	if (EquipAsset == nullptr) return;
+
+	const EEquipmentSlot TargetSlot = EquipAsset->GetEquipmentSlot();
+	if (TargetSlot != EEquipmentSlot::Slot1 && TargetSlot != EEquipmentSlot::Slot2)
 	{
 		UE_LOG(LogTemp, Error, TEXT("PickupEquipment EquipmentSlot is not Slot1 or Slot2"));
 		return;
 	}
 
-	// 丢弃旧装备
-	FGameplayEventData Payload;
-	Payload.EventMagnitude = static_cast<float>(Equipment->EquipmentAsset->GetEquipmentSlot());
-	Payload.OptionalObject = PickupEquipment;
-	ASC->HandleGameplayEvent(TAG_EVENT_EQUIPMENT_DROP, &Payload);
+	bCanSwitchLoadout = false;
+
+	// 立即置空补给箱内的武器指针并销毁补给箱，防止同帧多次触发
+	PickupEquipment->Equipment = nullptr;
+	PickupEquipment->Destroy();
+
+	const bool bIsReplacingCurrent = (CombatComp->CurEquipmentSlot == TargetSlot);
+
+	// 1. 若目标槽位已有旧武器，在服务端直接执行丢弃与清理
+	if (AEquipment* OldEquipment = CombatComp->GetEquipmentBySlot(TargetSlot))
+	{
+		OldEquipment->OnStartSwapOut();
+		OldEquipment->ClearAbilities(ASC);
+		OldEquipment->Drop();
+
+		FGameplayCueParameters CueParams;
+		CueParams.Instigator = this;
+		CueParams.SourceObject = OldEquipment;
+		ASC->ExecuteGameplayCue(TAG_GC_EQUIPMENT_DROP, CueParams);
+
+		if (TargetSlot == EEquipmentSlot::Slot1)
+		{
+			CombatComp->Slot1Equipment = nullptr;
+		}
+		else if (TargetSlot == EEquipmentSlot::Slot2)
+		{
+			CombatComp->Slot2Equipment = nullptr;
+		}
+	}
+
+	// 2. 若替换的是当前手持槽位，打断当前武器动作，并临时将 CurEquipmentSlot 置为 None
+	// 这样后续 GiveEquipment 会先将其作为 Holstered 入库，紧接着触发 GA_Equipment_Swap 即可走通完整的切枪状态与动画！
+	if (bIsReplacingCurrent)
+	{
+		FGameplayTagContainer CancelTags;
+		CancelTags.AddTag(TAG_ABILITY_WEAPON_FIRE);
+		CancelTags.AddTag(TAG_ABILITY_EQUIPMENT_AIM);
+		CancelTags.AddTag(TAG_ABILITY_WEAPON_RELOAD);
+		ASC->CancelAbilities(&CancelTags);
+
+		// 若为监听服务器房主（Host），直接停止本地旧 1P 动画
+		if (IsLocallyControlled())
+		{
+			if (UAnimInstance* AnimInst1P = Mesh1P ? Mesh1P->GetAnimInstance() : nullptr)
+			{
+				AnimInst1P->Montage_Stop(0.f);
+			}
+		}
+
+		CombatComp->CurEquipmentSlot = EEquipmentSlot::None;
+	}
+
+	// 3. 给予新装备入库
+	CombatComp->GiveEquipment(NewEquipment);
+
+	// 4. 若替换的是当前手持槽位，触发切枪 GA；否则仅通知客户端播放拾取音效
+	if (bIsReplacingCurrent)
+	{
+		FGameplayEventData SwapPayload;
+		SwapPayload.EventMagnitude = static_cast<float>(TargetSlot);
+		ASC->HandleGameplayEvent(TAG_EVENT_EQUIPMENT_SWAP, &SwapPayload);
+	}
+	else
+	{
+		CombatComp->ClientPlayEquipSound();
+	}
 }
 
 void AHumanCharacter::TrySwitchLoadout()
@@ -643,12 +698,12 @@ void AHumanCharacter::OnDead()
 
 	if (CombatComp)
 	{
-		// 所有端立即隐藏非主武器，防止客户端在等待销毁网络包到达前调用 SetFirstPersonViewMode(false) 导致手枪/刀在尸体手上闪现穿帮
+		// 所有端立即收起隐藏非主武器，防止客户端在等待销毁网络包到达前调用 SetFirstPersonViewMode(false) 导致手枪/刀在尸体手上闪现穿帮
 		for (EEquipmentSlot Slot : { EEquipmentSlot::Slot2, EEquipmentSlot::Slot3, EEquipmentSlot::Slot4 })
 		{
 			if (AEquipment* Equip = CombatComp->GetEquipmentBySlot(Slot))
 			{
-				Equip->SetHiddenMesh(true);
+				Equip->SetState(EEquipmentState::Holstered);
 			}
 		}
 		

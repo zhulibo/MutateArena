@@ -62,19 +62,6 @@ public:
 	UAnimInstEquipment* GetEquipmentAnimInst();
 	UAnimInstEquipment* GetEquipmentAnimInst1P();
 
-	void SetHiddenMesh(bool bInHidden);
-
-	// 统一刷新 1P/3P 武器网格体的显隐与阴影状态（供切枪、拾取、丢弃及观战视角切换调用）
-	void UpdateViewMode();
-
-protected:
-	bool bIsHidden = false;
-
-public:
-	virtual void OnStartSwapOut()
-	{
-	};
-
 protected:
 	UPROPERTY()
 	UAnimInstEquipment* AnimInstEquipment;
@@ -92,6 +79,7 @@ protected:
 public:
 	UPROPERTY(ReplicatedUsing = OnRep_EquipmentState)
 	EEquipmentState EquipmentState = EEquipmentState::Dropped;
+	void SetState(EEquipmentState NewState);
 	UFUNCTION()
 	virtual void OnRep_EquipmentState(EEquipmentState OldState);
 
@@ -102,7 +90,14 @@ public:
 	FEquipmentDropInfo DropInfo;
 	UFUNCTION()
 	void OnRep_DropInfo();
-	
+
+	// 统一刷新 1P/3P 武器网格体的显隐与阴影状态（供切枪、拾取、丢弃及观战视角切换调用）
+	void UpdateViewMode();
+
+	virtual void OnStartSwapOut()
+	{
+	};
+
 protected:
 	UPROPERTY(Replicated)
 	ETeam OwnerTeam = ETeam::NoTeam;
@@ -112,8 +107,8 @@ public:
 	const UEquipmentAsset* EnsureEquipmentAsset();
 
 protected:
-	FTimerHandle AreaSphereTimerHandle;
-	void SetAreaSphereCollision();
+	TWeakObjectPtr<class AHumanCharacter> LastDropper;
+	double LastDropperPickupBlockedUntil = 0.0;
 
 	FTimerHandle DestroyEquipmentTimerHandle;
 	void DestroyEquipment();

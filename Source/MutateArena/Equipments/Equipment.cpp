@@ -125,7 +125,7 @@ void AEquipment::OnRep_Owner()
 {
 	Super::OnRep_Owner();
 
-	// 客户端收到 Owner 同步时刷新一次视角状态，避免 Owner 与 bIsHidden 网络包先后到达引起的显隐偏差
+	// 客户端收到 Owner 同步时刷新一次视角状态，避免 Owner 与状态网络包先后到达引起的显隐偏差
 	UpdateViewMode();
 }
 
@@ -136,7 +136,13 @@ void AEquipment::OnAreaSphereOverlap(UPrimitiveComponent* OverlappedComponent, A
 
 	if (AHumanCharacter* OverlapHumanCharacter = Cast<AHumanCharacter>(OtherActor))
 	{
-		OverlapHumanCharacter->EquipOverlappingEquipment(this);
+		// 丢弃者短暂不能立刻捡回刚扔出的装备；其他玩家不受影响。
+		if (LastDropper.Get() == OverlapHumanCharacter && GetWorld()->GetTimeSeconds() < LastDropperPickupBlockedUntil)
+		{
+			return;
+		}
+
+		OverlapHumanCharacter->GiveOverlappingEquipment(this);
 	}
 }
 
@@ -152,65 +158,6 @@ UAnimInstEquipment* AEquipment::GetEquipmentAnimInst1P()
 	return AnimInstEquipment1P;
 }
 
-void AEquipment::SetHiddenMesh(bool bInHidden)
-{
-	bIsHidden = bInHidden;
-
-	UpdateViewMode();
-}
-
-void AEquipment::UpdateViewMode()
-{
-	// 1. 武器被切走（放入背包隐藏）状态：1P 和 3P 模型均不显示，且关闭隐藏阴影避免地面多出悬空枪影
-	if (bIsHidden)
-	{
-		if (EquipmentMesh)
-		{
-			EquipmentMesh->SetVisibility(false);
-			EquipmentMesh->bCastHiddenShadow = false;
-			EquipmentMesh->MarkRenderStateDirty();
-		}
-		if (EquipmentMesh1P)
-		{
-			EquipmentMesh1P->SetVisibility(false);
-		}
-		return;
-	}
-
-	// 2. 武器掉落在地面（或尚未被拾取）状态：显示 3P 模型，关闭隐藏阴影，隐藏 1P 模型
-	ABaseCharacter* OwnerChar = Cast<ABaseCharacter>(GetOwner());
-	if (EquipmentState == EEquipmentState::Dropped || !OwnerChar)
-	{
-		if (EquipmentMesh)
-		{
-			EquipmentMesh->SetVisibility(true);
-			EquipmentMesh->bCastHiddenShadow = false;
-			EquipmentMesh->MarkRenderStateDirty();
-		}
-		if (EquipmentMesh1P)
-		{
-			EquipmentMesh1P->SetVisibility(false);
-		}
-		return;
-	}
-
-	// 3. 武器当前装备在角色手上（Equipped 且 !bIsHidden）：根据持有者是否为当前客户端的 ViewTarget 切换 1P/3P
-	const bool bFirstPerson = OwnerChar->bIsCurrentViewTarget;
-
-	if (EquipmentMesh)
-	{
-		// 1P 视角下隐藏 3P 武器，但开启 bCastHiddenShadow 让地面 MetaHuman 阴影手里有枪
-		EquipmentMesh->SetVisibility(!bFirstPerson);
-		EquipmentMesh->bCastHiddenShadow = bFirstPerson;
-		EquipmentMesh->MarkRenderStateDirty();
-	}
-
-	if (EquipmentMesh1P)
-	{
-		EquipmentMesh1P->SetVisibility(bFirstPerson);
-	}
-}
-
 void AEquipment::OnGiven(AHumanCharacter* HumanChar)
 {
 	if (!HumanChar) return;
@@ -223,8 +170,7 @@ void AEquipment::OnGiven(AHumanCharacter* HumanChar)
 		SetOwner(HumanChar);
 		SetOwnerTeam();
 
-		// 清除延迟开启拾取碰撞定时器与销毁定时器
-		GetWorldTimerManager().ClearTimer(AreaSphereTimerHandle);
+		// 清除销毁定时器
 		GetWorldTimerManager().ClearTimer(DestroyEquipmentTimerHandle);
 	}
 
@@ -243,6 +189,8 @@ void AEquipment::Drop()
 	}
 
 	AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(GetOwner());
+	LastDropper = HumanCharacter;
+	LastDropperPickupBlockedUntil = GetWorld()->GetTimeSeconds() + 0.4;
 
 	FVector ThrowDir = GetActorForwardVector();
 	FVector DropStartLoc = GetActorLocation();
@@ -304,16 +252,6 @@ void AEquipment::Drop()
 	ForceNetUpdate();
 }
 
-void AEquipment::OnRep_EquipmentState(EEquipmentState OldState)
-{
-	if (EquipmentState == EEquipmentState::Equipped)
-	{
-		UpdateViewMode();
-	}
-
-	// Dropped 状态由 OnRep_DropInfo 统一处理
-}
-
 void AEquipment::OnRep_DropInfo()
 {
 	// 确保 EquipmentState 已经进入掉落状态
@@ -325,8 +263,6 @@ void AEquipment::OnRep_DropInfo()
 
 void AEquipment::HandleDrop()
 {
-	bIsHidden = false;
-
 	// 先分离 Actor 的 RootComponent，保持世界变换
 	DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 
@@ -365,16 +301,75 @@ void AEquipment::HandleDrop()
 	CollisionSphere->SetPhysicsAngularVelocityInDegrees(FVector::ZeroVector);
 	CollisionSphere->WakeAllRigidBodies();
 
-	// 延迟开启拾取碰撞
-	GetWorldTimerManager().SetTimer(
-		AreaSphereTimerHandle,
-		this,
-		&ThisClass::SetAreaSphereCollision,
-		.4f,
-		false
-	);
+	// 立即允许其他玩家拾取；丢弃者由 OnAreaSphereOverlap 单独短暂忽略。
+	OverlapSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 
 	UpdateViewMode();
+}
+
+void AEquipment::SetState(EEquipmentState NewState)
+{
+	EquipmentState = NewState;
+	UpdateViewMode();
+}
+
+void AEquipment::OnRep_EquipmentState(EEquipmentState OldState)
+{
+	UpdateViewMode();
+
+	// Dropped 状态由 OnRep_DropInfo 统一处理
+}
+
+void AEquipment::UpdateViewMode()
+{
+	// 1. 收起在背包中的武器：1P 和 3P 模型均不显示，且关闭隐藏阴影避免地面多出悬空枪影
+	if (EquipmentState == EEquipmentState::Holstered)
+	{
+		if (EquipmentMesh)
+		{
+			EquipmentMesh->SetVisibility(false);
+			EquipmentMesh->bCastHiddenShadow = false;
+			EquipmentMesh->MarkRenderStateDirty();
+		}
+		if (EquipmentMesh1P)
+		{
+			EquipmentMesh1P->SetVisibility(false);
+		}
+		return;
+	}
+
+	// 2. 武器掉落在地面（或尚未被拾取）状态：显示 3P 模型，关闭隐藏阴影，隐藏 1P 模型
+	ABaseCharacter* OwnerChar = Cast<ABaseCharacter>(GetOwner());
+	if (EquipmentState == EEquipmentState::Dropped || !OwnerChar)
+	{
+		if (EquipmentMesh)
+		{
+			EquipmentMesh->SetVisibility(true);
+			EquipmentMesh->bCastHiddenShadow = false;
+			EquipmentMesh->MarkRenderStateDirty();
+		}
+		if (EquipmentMesh1P)
+		{
+			EquipmentMesh1P->SetVisibility(false);
+		}
+		return;
+	}
+
+	// 3. 武器当前装备在角色手上（Equipped）：根据持有者是否为当前客户端的 ViewTarget 切换 1P/3P
+	const bool bFirstPerson = OwnerChar->bIsCurrentViewTarget;
+
+	if (EquipmentMesh)
+	{
+		// 1P 视角下隐藏 3P 武器，但开启 bCastHiddenShadow 让地面 MetaHuman 阴影手里有枪
+		EquipmentMesh->SetVisibility(!bFirstPerson);
+		EquipmentMesh->bCastHiddenShadow = bFirstPerson;
+		EquipmentMesh->MarkRenderStateDirty();
+	}
+
+	if (EquipmentMesh1P)
+	{
+		EquipmentMesh1P->SetVisibility(bFirstPerson);
+	}
 }
 
 void AEquipment::SetOwnerTeam()
@@ -402,11 +397,6 @@ const UEquipmentAsset* AEquipment::EnsureEquipmentAsset()
 		}
 	}
 	return EquipmentAsset;
-}
-
-void AEquipment::SetAreaSphereCollision()
-{
-	OverlapSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 }
 
 void AEquipment::DestroyEquipment()

@@ -131,12 +131,66 @@ bool UCombatComponent::HasEquipmentInSlot(EEquipmentSlot EquipmentSlot)
 
 void UCombatComponent::OnRep_Slot1Equipment(AWeapon* OldEquipment)
 {
+	if (HumanChar) HumanChar->bCanSwitchLoadout = false;
+
+	// 切枪 捡枪 捡到补给箱，非开局赋予武器
+	const bool bIsReplacingCurrent =
+		IsValid(OldEquipment) &&
+		IsValid(Slot1Equipment) &&
+		Slot1Equipment != OldEquipment &&
+		CurEquipmentSlot == EEquipmentSlot::Slot1;
+
+	if (bIsReplacingCurrent && HumanChar && HumanChar->IsLocallyControlled())
+	{
+		// 客机原地替换当前手持主武器
+		CurEquipmentSlot = EEquipmentSlot::None;
+	}
+
 	GiveEquipment(Slot1Equipment);
+
+	if (bIsReplacingCurrent && HumanChar)
+	{
+		// 捡到补给箱播放切入动画
+		if (HumanChar->IsLocallyControlled())
+		{
+			HumanChar->SendSwapEquipmentEvent(EEquipmentSlot::Slot1);
+		}
+		else
+		{
+			// 模拟代理直接切换到新武器挂载
+			InstantSwap(EEquipmentSlot::Slot1);
+		}
+	}
 }
 
 void UCombatComponent::OnRep_Slot2Equipment(AWeapon* OldEquipment)
 {
+	if (HumanChar) HumanChar->bCanSwitchLoadout = false;
+
+	const bool bIsReplacingCurrent =
+		IsValid(OldEquipment) &&
+		IsValid(Slot2Equipment) &&
+		Slot2Equipment != OldEquipment &&
+		CurEquipmentSlot == EEquipmentSlot::Slot2;
+
+	if (bIsReplacingCurrent && HumanChar && HumanChar->IsLocallyControlled())
+	{
+		CurEquipmentSlot = EEquipmentSlot::None;
+	}
+
 	GiveEquipment(Slot2Equipment);
+
+	if (bIsReplacingCurrent && HumanChar)
+	{
+		if (HumanChar->IsLocallyControlled())
+		{
+			HumanChar->SendSwapEquipmentEvent(EEquipmentSlot::Slot2);
+		}
+		else
+		{
+			InstantSwap(EEquipmentSlot::Slot2);
+		}
+	}
 }
 
 void UCombatComponent::OnRep_Slot3Equipment(AMelee* OldEquipment)
@@ -242,7 +296,7 @@ void UCombatComponent::HolsterEquipment(AEquipment* Equipment)
 	if (Equipment == nullptr || HumanChar == nullptr) return;
 
 	Equipment->AttachToActor(HumanChar, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-	Equipment->SetHiddenMesh(true);
+	Equipment->SetState(EEquipmentState::Holstered);
 }
 
 void UCombatComponent::AttachToHand(AEquipment* Equipment, FName SocketNameSuffix)
@@ -264,8 +318,8 @@ void UCombatComponent::AttachToHand(AEquipment* Equipment, FName SocketNameSuffi
 		Equipment->EquipmentMesh1P->AttachToComponent(HumanChar->Mesh1P, FAttachmentTransformRules::SnapToTargetNotIncludingScale, Sockets::WeaponRoot);
 	}
 
-	// 取消隐藏，内部触发 UpdateViewMode() 自动根据持有者是否为当前 ViewTarget 设置 1P/3P 显隐与隐藏阴影
-	Equipment->SetHiddenMesh(false);
+	// 切换为手持状态，并根据持有者是否为当前 ViewTarget 设置 1P/3P 显隐与阴影。
+	Equipment->SetState(EEquipmentState::Equipped);
 
 	// 挂载动画层
 	if (TSubclassOf<UAnimInstHuman1P_Layer> LayerClass = Equipment->EquipmentAsset->GetAnimInstHuman1P_Layer())

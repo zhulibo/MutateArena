@@ -79,8 +79,9 @@ enum class EEquipmentSlot : uint8
 UENUM(BlueprintType)
 enum class EEquipmentState : uint8
 {
-	Equipped,
 	Dropped,
+	Holstered,
+	Equipped,
 	Thrown
 };
 
