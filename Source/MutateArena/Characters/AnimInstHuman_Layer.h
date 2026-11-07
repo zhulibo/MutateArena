@@ -25,5 +25,8 @@ protected:
 	TObjectPtr<UCombatComponent> CombatComp;
 	UPROPERTY()
 	TObjectPtr<UMAMovementComponent> MovementComp;
+	
+	UPROPERTY(BlueprintReadOnly)
+	float AimPitch;
 
 };

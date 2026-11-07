@@ -131,18 +131,18 @@ bool UCombatComponent::HasEquipmentInSlot(EEquipmentSlot EquipmentSlot)
 
 void UCombatComponent::OnRep_Slot1Equipment(AWeapon* OldEquipment)
 {
-	if (HumanChar) HumanChar->bCanSwitchLoadout = false;
+	// 只有存在旧武器被替换时，才锁死切换背包（避免开局首次生成装备就把 bCanSwitchLoadout 锁死）
+	if (HumanChar && OldEquipment)
+	{
+		HumanChar->bCanSwitchLoadout = false;
+	}
 
-	// 切枪 捡枪 捡到补给箱，非开局赋予武器
-	const bool bIsReplacingCurrent =
-		IsValid(OldEquipment) &&
-		IsValid(Slot1Equipment) &&
-		Slot1Equipment != OldEquipment &&
-		CurEquipmentSlot == EEquipmentSlot::Slot1;
-
+	// 只有当 OldEquipment 存在（原地换枪）时，才走切入动画流程；
+	// 开局首次同步（OldEquipment == nullptr）直接交给 GiveEquipment 正常挂载到手上。
+	const bool bIsReplacingCurrent = (CurEquipmentSlot == EEquipmentSlot::Slot1 && Slot1Equipment && OldEquipment != nullptr && Slot1Equipment != OldEquipment);
 	if (bIsReplacingCurrent && HumanChar && HumanChar->IsLocallyControlled())
 	{
-		// 客机原地替换当前手持主武器
+		// 客机原地替换当前手持主武器时，先置为 None 让 GiveEquipment 以 Holstered 入库，再通过 SendSwapEquipmentEvent 触发本地 1P 切入动画
 		CurEquipmentSlot = EEquipmentSlot::None;
 	}
 
@@ -157,7 +157,7 @@ void UCombatComponent::OnRep_Slot1Equipment(AWeapon* OldEquipment)
 		}
 		else
 		{
-			// 模拟代理直接切换到新武器挂载
+			// 模拟代理（其他玩家视角）直接切换到新武器挂载
 			InstantSwap(EEquipmentSlot::Slot1);
 		}
 	}
@@ -165,14 +165,12 @@ void UCombatComponent::OnRep_Slot1Equipment(AWeapon* OldEquipment)
 
 void UCombatComponent::OnRep_Slot2Equipment(AWeapon* OldEquipment)
 {
-	if (HumanChar) HumanChar->bCanSwitchLoadout = false;
+	if (HumanChar && OldEquipment)
+	{
+		HumanChar->bCanSwitchLoadout = false;
+	}
 
-	const bool bIsReplacingCurrent =
-		IsValid(OldEquipment) &&
-		IsValid(Slot2Equipment) &&
-		Slot2Equipment != OldEquipment &&
-		CurEquipmentSlot == EEquipmentSlot::Slot2;
-
+	const bool bIsReplacingCurrent = (CurEquipmentSlot == EEquipmentSlot::Slot2 && Slot2Equipment && OldEquipment != nullptr && Slot2Equipment != OldEquipment);
 	if (bIsReplacingCurrent && HumanChar && HumanChar->IsLocallyControlled())
 	{
 		CurEquipmentSlot = EEquipmentSlot::None;

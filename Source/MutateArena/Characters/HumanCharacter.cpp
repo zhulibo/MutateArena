@@ -543,15 +543,6 @@ void AHumanCharacter::GivePickupEquipment(APickupEquipment* PickupEquipment)
 		CueParams.Instigator = this;
 		CueParams.SourceObject = OldEquipment;
 		ASC->ExecuteGameplayCue(TAG_GC_EQUIPMENT_DROP, CueParams);
-
-		if (TargetSlot == EEquipmentSlot::Slot1)
-		{
-			CombatComp->Slot1Equipment = nullptr;
-		}
-		else if (TargetSlot == EEquipmentSlot::Slot2)
-		{
-			CombatComp->Slot2Equipment = nullptr;
-		}
 	}
 
 	// 2. 若替换的是当前手持槽位，打断当前武器动作，并临时将 CurEquipmentSlot 置为 None

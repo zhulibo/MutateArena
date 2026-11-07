@@ -28,4 +28,6 @@ void UAnimInstHuman_Layer::NativeThreadSafeUpdateAnimation(float DeltaSeconds)
 	Super::NativeThreadSafeUpdateAnimation(DeltaSeconds);
 
 	if (!HumanChar || !CombatComp || !MovementComp) return;
+	
+	AimPitch = HumanChar->AimPitch;
 }

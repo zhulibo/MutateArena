@@ -47,7 +47,7 @@ void UGA_Equipment_Swap::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 	const EEquipmentSlot TargetEquipmentSlot = static_cast<EEquipmentSlot>(TriggerEventData->EventMagnitude);
 	AEquipment* TargetEquipment = CombatComp->GetEquipmentBySlot(TargetEquipmentSlot);
 
-	if (!TargetEquipment || !TargetEquipment->EquipmentAsset)
+	if (!TargetEquipment || !TargetEquipment->EnsureEquipmentAsset())
 	{
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;

@@ -36,7 +36,7 @@ protected:
 	void OnRep_Ammo();
 	UFUNCTION()
 	void OnRep_CarriedAmmo();
-	
+
 public:
 	float LastFireTime = 0.f;
 	virtual void Fire(const FVector& HitTarget, float RecoilVert, float RecoilHor, float SpreadPitch, float SpreadYaw);
