@@ -2,6 +2,7 @@
 
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/Characters/HumanCharacter.h"
+#include "MutateArena/Characters/Components/CombatComponent.h"
 #include "MutateArena/PlayerControllers/BaseController.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/SphereComponent.h"
@@ -52,38 +53,60 @@ void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 	DOREPLIFETIME(ThisClass, CarriedAmmo);
 }
 
-void AWeapon::Fire(const FVector& HitTarget, float RecoilVert, float RecoilHor, float SpreadPitch, float SpreadYaw)
+FVector AWeapon::CalcFinalTarget(const FVector& HitTarget, float RecoilVert, float RecoilHor, float SpreadPitch, float SpreadYaw) const
 {
-	if (FragWeapon->ShellClass)
+	USkeletalMeshComponent* WeaponMesh = GetVisibleEquipmentMesh();
+	if (!WeaponMesh)
 	{
-		if (const USkeletalMeshSocket* ShellEjectSocket = EquipmentMesh->GetSocketByName(Sockets::ShellEject))
-		{
-			FTransform SocketTransform = ShellEjectSocket->GetSocketTransform(EquipmentMesh);
-
-			if (UObjectPoolSubsystem* PoolSubsystem = GetWorld()->GetSubsystem<UObjectPoolSubsystem>())
-			{
-				AActor* SpawnedActor = PoolSubsystem->AcquireObject(FragWeapon->ShellClass, SocketTransform);
-
-				if (AShell* Shell = Cast<AShell>(SpawnedActor))
-				{
-					if (AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(GetOwner()))
-					{
-						Shell->LaunchShell(HumanCharacter->GetVelocity());
-					}
-				}
-			}
-		}
+		return HitTarget;
 	}
 
+	const USkeletalMeshSocket* MuzzleSocket = WeaponMesh->GetSocketByName(Sockets::Muzzle);
+	if (!MuzzleSocket)
+	{
+		return HitTarget;
+	}
+
+	const FTransform SocketTransform = MuzzleSocket->GetSocketTransform(WeaponMesh);
+	FRotator TargetRotation = (HitTarget - SocketTransform.GetLocation()).Rotation();
+	TargetRotation.Pitch += RecoilVert + SpreadPitch;
+	TargetRotation.Yaw += RecoilHor + SpreadYaw;
+
+	return SocketTransform.GetLocation() + TargetRotation.Vector() * 10000.f;
+}
+
+void AWeapon::Fire(const FVector& FinalTarget)
+{
+	AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(GetOwner());
+	const int32 ShotCount = HumanCharacter && HumanCharacter->CombatComp
+		? HumanCharacter->CombatComp->CurShotCount
+		: 1;
+	SpawnProjectile(FinalTarget, ShotCount);
 	SpendRound();
 }
 
-void AWeapon::MulticastFire_Implementation(FVector HitTarget, float RecoilVert, float RecoilHor, float SpreadX, float SpreadY)
+void AWeapon::EjectShell()
 {
-	AHumanCharacter* HumanChar = Cast<AHumanCharacter>(GetOwner());
-	if (HumanChar && !HumanChar->IsLocallyControlled())
+	USkeletalMeshComponent* WeaponMesh = GetVisibleEquipmentMesh();
+	if (!FragWeapon || !FragWeapon->ShellClass || !WeaponMesh)
 	{
-		Fire(HitTarget, RecoilVert, RecoilHor, SpreadX, SpreadY);
+		return;
+	}
+
+	if (const USkeletalMeshSocket* ShellEjectSocket = WeaponMesh->GetSocketByName(Sockets::ShellEject))
+	{
+		const FTransform SocketTransform = ShellEjectSocket->GetSocketTransform(WeaponMesh);
+		if (UObjectPoolSubsystem* PoolSubsystem = GetWorld()->GetSubsystem<UObjectPoolSubsystem>())
+		{
+			AActor* SpawnedActor = PoolSubsystem->AcquireObject(FragWeapon->ShellClass, SocketTransform);
+			if (AShell* Shell = Cast<AShell>(SpawnedActor))
+			{
+				if (AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(GetOwner()))
+				{
+					Shell->LaunchShell(HumanCharacter->GetVelocity());
+				}
+			}
+		}
 	}
 }
 

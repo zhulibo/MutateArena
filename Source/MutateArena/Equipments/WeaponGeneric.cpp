@@ -17,27 +17,23 @@ AWeaponGeneric::AWeaponGeneric()
 {
 }
 
-void AWeaponGeneric::Fire(const FVector& HitTarget, float RecoilVert, float RecoilHor, float SpreadPitch, float SpreadYaw)
+void AWeaponGeneric::SpawnProjectile(const FVector& FinalTarget, int32)
 {
-	Super::Fire(HitTarget, RecoilVert, RecoilHor, SpreadPitch, SpreadYaw);
-
 	AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(GetOwner());
+	USkeletalMeshComponent* WeaponMesh = GetVisibleEquipmentMesh();
 	if (OwnerTeam == ETeam::NoTeam) SetOwnerTeam();
-	const USkeletalMeshSocket* MuzzleSocket = EquipmentMesh->GetSocketByName(Sockets::Muzzle);
+	if (!HumanCharacter || !FragWeapon || !FragWeapon->ProjectileClass || !WeaponMesh)
+	{
+		return;
+	}
 
-	if (!HumanCharacter || !FragWeapon->ProjectileClass || OwnerTeam == ETeam::NoTeam || !MuzzleSocket) return;
+	const USkeletalMeshSocket* MuzzleSocket = WeaponMesh->GetSocketByName(Sockets::Muzzle);
+
+	if (OwnerTeam == ETeam::NoTeam || !MuzzleSocket) return;
 	
 	// 子弹是从枪口发出，射向准星在世界场景的投射点，所以穿透后的弹着点会有视差，这是正常的
-	FTransform SocketTransform = MuzzleSocket->GetSocketTransform(EquipmentMesh);
-	FRotator TargetRotation = (HitTarget - SocketTransform.GetLocation()).Rotation();
-
-	// 添加后座
-	TargetRotation.Pitch += RecoilVert;
-	TargetRotation.Yaw += RecoilHor;
-
-	// 添加散布
-	TargetRotation.Pitch += SpreadPitch;
-	TargetRotation.Yaw += SpreadYaw;
+	FTransform SocketTransform = MuzzleSocket->GetSocketTransform(WeaponMesh);
+	FRotator TargetRotation = (FinalTarget - SocketTransform.GetLocation()).Rotation();
 
 	// 构造生成的 Transform
 	FTransform SpawnTransform(TargetRotation, SocketTransform.GetLocation());

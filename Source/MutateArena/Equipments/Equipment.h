@@ -61,6 +61,7 @@ public:
 
 	UAnimInstEquipment* GetEquipmentAnimInst();
 	UAnimInstEquipment* GetEquipmentAnimInst1P();
+	USkeletalMeshComponent* GetVisibleEquipmentMesh() const;
 
 protected:
 	UPROPERTY()

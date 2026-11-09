@@ -29,35 +29,35 @@ bool UGC_Weapon_Fire::OnExecute_Implementation(AActor* MyTarget, const FGameplay
         return Super::OnExecute_Implementation(MyTarget, Parameters);
     }
 
-    // 播放角色动画
-    if (UAnimInstHuman* HumanAnimInst = Cast<UAnimInstHuman>(HumanChar->BodyMesh->GetAnimInstance()))
-    {
-        // if (HumanAnimInst->Montage_IsPlaying(CurWeapon->ADSMontage_C))
-        // {
-        // }
-        // else
-        {
-            // UAnimMontage* CharMontage = CombatComp->IsAiming() ? CurWeapon->FireADSMontage_C : CurWeapon->FireMontage_C;
-            // if (!HumanChar->IsLocallyControlled())
-            // {
-            //     CharMontage = CurWeapon->FireMontage_C; // TODO 非本地瞄准动画暂时禁用了
-            // }
-            // HumanAnimInst->Montage_Play(CharMontage); 
-        }
-    }
+ //    // 播放角色动画
+ //    if (UAnimInstHuman* HumanAnimInst = Cast<UAnimInstHuman>(HumanChar->BodyMesh->GetAnimInstance()))
+ //    {
+ //        if (HumanAnimInst->Montage_IsPlaying(CurWeapon->ADSMontage_C))
+ //        {
+ //        }
+ //        else
+ //        {
+ //            UAnimMontage* CharMontage = CombatComp->IsAiming() ? CurWeapon->FireADSMontage_C : CurWeapon->FireMontage_C;
+ //            if (!HumanChar->IsLocallyControlled())
+ //            {
+ //                CharMontage = CurWeapon->FireMontage_C;
+ //            }
+ //            HumanAnimInst->Montage_Play(CharMontage);
+ //        }
+ //    }
+ //
+	// // 播放武器动画
+ //    if (UAnimInstEquipment* EquipmentAnimInst = CurWeapon->GetEquipmentAnimInst())
+ //    {
+ //        UAnimMontage* WeapMontage = CombatComp->IsAiming() ? CurWeapon->FireADSMontage_E : CurWeapon->FireMontage_E;
+ //        if (!HumanChar->IsLocallyControlled())
+ //        {
+ //            WeapMontage = CurWeapon->FireMontage_E;
+ //        }
+ //        EquipmentAnimInst->Montage_Play(WeapMontage);
+ //    }
 
-	// 播放武器动画
-    if (UAnimInstEquipment* EquipmentAnimInst = CurWeapon->GetEquipmentAnimInst())
-    {
-        // UAnimMontage* WeapMontage = CombatComp->IsAiming() ? CurWeapon->FireADSMontage_E : CurWeapon->FireMontage_E;
-        // if (!HumanChar->IsLocallyControlled())
-        // {
-        //     WeapMontage = CurWeapon->FireMontage_E; // TODO 非本地瞄准动画暂时禁用了
-        // }
-        // EquipmentAnimInst->Montage_Play(WeapMontage);
-    }
-
-    if (USceneComponent* WeaponMesh = CurWeapon->EquipmentMesh)
+	if (USceneComponent* WeaponMesh = CurWeapon->GetVisibleEquipmentMesh())
     {
         if (CurWeapon->FragWeapon->MuzzleFlashEffect)
         {
@@ -75,6 +75,14 @@ bool UGC_Weapon_Fire::OnExecute_Implementation(AActor* MyTarget, const FGameplay
         UGameplayStatics::SpawnSoundAttached(CurWeapon->FragWeapon->FireSound, WeaponMesh, Sockets::Muzzle);
         UGameplayStatics::SpawnSoundAttached(CurWeapon->FragWeapon->MechSound, WeaponMesh, Sockets::Muzzle);
     }
+
+	CurWeapon->EjectShell();
+
+	if (!HumanChar->IsLocallyControlled() && !HumanChar->HasAuthority())
+	{
+		const int32 ShotCount = FMath::Max(1, FMath::RoundToInt(Parameters.RawMagnitude));
+		CurWeapon->SpawnProjectile(Parameters.Location, ShotCount);
+	}
 
     if (HumanChar->IsLocallyControlled())
     {

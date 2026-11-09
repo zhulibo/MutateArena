@@ -39,9 +39,10 @@ protected:
 
 public:
 	float LastFireTime = 0.f;
-	virtual void Fire(const FVector& HitTarget, float RecoilVert, float RecoilHor, float SpreadPitch, float SpreadYaw);
-	UFUNCTION(NetMulticast, Unreliable)
-	void MulticastFire(FVector HitTarget, float RecoilVert, float RecoilHor, float SpreadX, float SpreadY);
+	virtual FVector CalcFinalTarget(const FVector& HitTarget, float RecoilVert, float RecoilHor, float SpreadPitch, float SpreadYaw) const;
+	virtual void Fire(const FVector& FinalTarget);
+	virtual void SpawnProjectile(const FVector& FinalTarget, int32 ShotCount) {}
+	void EjectShell();
 	virtual void SetAmmo(int32 AmmoNum);
 	virtual void SetCarriedAmmo(int32 AmmoNum);
 protected:

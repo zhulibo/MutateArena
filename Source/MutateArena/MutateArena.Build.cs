@@ -14,6 +14,7 @@ public class MutateArena : ModuleRules
 				"Core",
 				"CoreUObject",
 				"Engine",
+				"NetCore",
 				"InputCore",
 				"EnhancedInput",
 				"OnlineServicesInterface",

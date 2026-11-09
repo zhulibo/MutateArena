@@ -96,14 +96,7 @@ void UGA_Weapon_Fire::StartFireLoop()
 
     if (!ASC || !CurWeapon || !HumanChar || !CombatComp) return;
 
-	FScopedPredictionWindow ScopedPrediction(ASC, true);
-	// 触发开火GC
-	FGameplayCueParameters CueParams;
-	CueParams.Instigator = HumanChar;
-	CueParams.SourceObject = CurWeapon;
-	ASC->ExecuteGameplayCue(TAG_GC_WEAPON_FIRE, CueParams);
-	
-	OnFireEventReceived();
+	OnFireEventTrigger();
 
     UAbilityTask_WaitDelay* DelayTask = UAbilityTask_WaitDelay::WaitDelay(this, CurWeapon->GetFireDelay());
     DelayTask->OnFinish.AddDynamic(this, &ThisClass::OnFireIntervalFinished);
@@ -139,7 +132,7 @@ void UGA_Weapon_Fire::OnFireIntervalFinished()
     }
 }
 
-void UGA_Weapon_Fire::OnFireEventReceived()
+void UGA_Weapon_Fire::OnFireEventTrigger()
 {
 	UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
 	AHumanCharacter* HumanChar = GetHumanCharacter();
@@ -158,34 +151,46 @@ void UGA_Weapon_Fire::OnFireEventReceived()
 			HumanChar->RecoilComp->IncRecoil();
 		}
 		
-		// 创建数据包并塞入本地这一瞬间的数值
-		FGameplayAbilityTargetData_FireInfo* FireData = new FGameplayAbilityTargetData_FireInfo();
-		
 		FHitResult HitResult;
 		CombatComp->TraceUnderCrosshair(HitResult);
-		FireData->HitTarget = HitResult.ImpactPoint;
-		
-		FireData->RecoilVert = RecoilComp->GetCurRecoilVert();
-		FireData->RecoilHor = RecoilComp->GetCurRecoilHor();
+		const float RecoilVert = RecoilComp->GetCurRecoilVert();
+		const float RecoilHor = RecoilComp->GetCurRecoilHor();
         
-		FVector2D Spread = RecoilComp->GetCurSpreadVector();
-		FireData->SpreadX = Spread.X;
-		FireData->SpreadY = Spread.Y;
-
-		FGameplayAbilityTargetDataHandle TargetDataHandle;
-		TargetDataHandle.Add(FireData);
-
-		// 发送到服务端
-		ASC->CallServerSetReplicatedTargetData(
-			CurrentSpecHandle,
-			CurrentActivationInfo.GetActivationPredictionKey(),
-			TargetDataHandle,
-			FGameplayTag(),
-			ASC->ScopedPredictionKey
+		const FVector2D Spread = RecoilComp->GetCurSpreadVector();
+		const FVector_NetQuantize FinalTarget = CurWeapon->CalcFinalTarget(
+			HitResult.ImpactPoint,
+			RecoilVert,
+			RecoilHor,
+			Spread.X,
+			Spread.Y
 		);
 
-		// 本地立即执行开火
-		CurWeapon->Fire(FireData->HitTarget, FireData->RecoilVert, FireData->RecoilHor, FireData->SpreadX, FireData->SpreadY);
+		FScopedPredictionWindow ScopedPrediction(ASC, true);
+		FGameplayCueParameters CueParams;
+		CueParams.Instigator = HumanChar;
+		CueParams.SourceObject = CurWeapon;
+		CueParams.Location = FinalTarget;
+		CueParams.RawMagnitude = static_cast<float>(FMath::Max(1, CombatComp->CurShotCount));
+		ASC->ExecuteGameplayCue(TAG_GC_WEAPON_FIRE, CueParams);
+
+		if (!HumanChar->HasAuthority())
+		{
+			FGameplayAbilityTargetData_FireInfo* FireData = new FGameplayAbilityTargetData_FireInfo();
+			FireData->FinalTarget = FinalTarget;
+
+			FGameplayAbilityTargetDataHandle TargetDataHandle;
+			TargetDataHandle.Add(FireData);
+
+			ASC->CallServerSetReplicatedTargetData(
+				CurrentSpecHandle,
+				CurrentActivationInfo.GetActivationPredictionKey(),
+				TargetDataHandle,
+				FGameplayTag(),
+				ASC->ScopedPredictionKey
+			);
+		}
+
+		CurWeapon->Fire(FinalTarget);
 	}
 }
 
@@ -200,18 +205,33 @@ void UGA_Weapon_Fire::OnTargetDataReceived(const FGameplayAbilityTargetDataHandl
 	// 服务器收到数据后清理缓存，防止内存泄漏或重复处理
 	ASC->ConsumeClientReplicatedTargetData(CurrentSpecHandle, CurrentActivationInfo.GetActivationPredictionKey());
 	
-	// 服务端收到数据包后触发 GC 同步给所有客户端，因携带了预测密钥本地客户端不会执行两次
-	FGameplayCueParameters CueParams;
-	CueParams.Instigator = HumanChar;
-	CueParams.SourceObject = CurWeapon;
-	ASC->ExecuteGameplayCue(TAG_GC_WEAPON_FIRE, CueParams);
-	
-	// 从数据包中解包，执行开火
+	// Server validates the ammo state before accepting this shot.
+	if (CurWeapon->IsEmpty()) return;
+
 	if (Data.Num() > 0)
 	{
 		if (const FGameplayAbilityTargetData_FireInfo* FireData = static_cast<const FGameplayAbilityTargetData_FireInfo*>(Data.Get(0)))
 		{
-			CurWeapon->MulticastFire(FireData->HitTarget, FireData->RecoilVert, FireData->RecoilHor, FireData->SpreadX, FireData->SpreadY);
+			UCombatComponent* CombatComp = HumanChar->CombatComp;
+			const int32 ShotCount = CombatComp ? FMath::Max(1, CombatComp->CurShotCount) : 1;
+			if (!HumanChar->IsLocallyControlled())
+			{
+				CurWeapon->Fire(FireData->FinalTarget);
+				if (CurWeapon->FragWeapon && CurWeapon->FragWeapon->bIsAutomatic)
+				{
+					if (CombatComp)
+					{
+						CombatComp->CurShotCount++;
+					}
+				}
+			}
+
+			FGameplayCueParameters CueParams;
+			CueParams.Instigator = HumanChar;
+			CueParams.SourceObject = CurWeapon;
+			CueParams.Location = FireData->FinalTarget;
+			CueParams.RawMagnitude = static_cast<float>(ShotCount);
+			ASC->ExecuteGameplayCue(TAG_GC_WEAPON_FIRE, CueParams);
 		}
 	}
 }

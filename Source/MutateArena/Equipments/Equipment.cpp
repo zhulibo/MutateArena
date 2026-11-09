@@ -158,6 +158,19 @@ UAnimInstEquipment* AEquipment::GetEquipmentAnimInst1P()
 	return AnimInstEquipment1P;
 }
 
+USkeletalMeshComponent* AEquipment::GetVisibleEquipmentMesh() const
+{
+	if (const AHumanCharacter* OwnerCharacter = Cast<AHumanCharacter>(GetOwner()))
+	{
+		if (OwnerCharacter->bIsCurrentViewTarget && EquipmentMesh1P)
+		{
+			return EquipmentMesh1P;
+		}
+	}
+
+	return EquipmentMesh;
+}
+
 void AEquipment::OnGiven(AHumanCharacter* HumanChar)
 {
 	if (!HumanChar) return;

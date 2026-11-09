@@ -9,7 +9,7 @@
 #include "Curves/CurveVector.h"
 #include "Data/EquipmentAsset.h"
 #include "Engine/SkeletalMeshSocket.h"
-#include "Kismet/KismetMathLibrary.h"
+#include "Math/RandomStream.h"
 #include "Kismet/GameplayStatics.h"
 #include "MutateArena/Characters/Components/CombatComponent.h"
 #include "Projectiles/ProjectileBullet.h"
@@ -18,32 +18,42 @@ AWeaponShotgun::AWeaponShotgun()
 {
 }
 
-void AWeaponShotgun::Fire(const FVector& HitTarget, float RecoilVert, float RecoilHor, float SpreadPitch, float SpreadYaw)
+FVector AWeaponShotgun::CalcFinalTarget(const FVector& HitTarget, float RecoilVert, float RecoilHor, float, float) const
 {
-	Super::Fire(HitTarget, RecoilVert, RecoilHor, SpreadPitch, SpreadYaw);
+	// Shotgun pellets use the recoil curve for their cone spread; the generic random spread offsets are not applied.
+	return Super::CalcFinalTarget(HitTarget, RecoilVert, RecoilHor, 0.f, 0.f);
+}
 
+void AWeaponShotgun::SpawnProjectile(const FVector& FinalTarget, int32 ShotCount)
+{
 	AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(GetOwner());
+	USkeletalMeshComponent* WeaponMesh = GetVisibleEquipmentMesh();
 	if (OwnerTeam == ETeam::NoTeam) SetOwnerTeam();
-	const USkeletalMeshSocket* MuzzleSocket = EquipmentMesh->GetSocketByName(Sockets::Muzzle);
+	if (!FragWeapon || !FragWeapon->ProjectileClass || !FragWeapon->RecoilCurve || !WeaponMesh
+		|| !HumanCharacter || !HumanCharacter->CombatComp || OwnerTeam == ETeam::NoTeam)
+	{
+		return;
+	}
 
-	if (!FragWeapon->ProjectileClass || !FragWeapon->RecoilCurve 
-		|| !HumanCharacter || !HumanCharacter->CombatComp || OwnerTeam == ETeam::NoTeam || !MuzzleSocket) return;
+	const USkeletalMeshSocket* MuzzleSocket = WeaponMesh->GetSocketByName(Sockets::Muzzle);
 
-	FTransform SocketTransform = MuzzleSocket->GetSocketTransform(EquipmentMesh);
-	FRotator TargetRotation = (HitTarget - SocketTransform.GetLocation()).Rotation();
+	if (!MuzzleSocket) return;
 
-	// 添加后座
-	TargetRotation.Pitch += RecoilVert;
-	TargetRotation.Yaw += RecoilHor;
+	FTransform SocketTransform = MuzzleSocket->GetSocketTransform(WeaponMesh);
+	FRotator TargetRotation = (FinalTarget - SocketTransform.GetLocation()).Rotation();
 
 	// 霰弹枪每次射击的弹丸循环
-	FVector RecoilKick = FragWeapon->RecoilCurve->GetVectorValue(HumanCharacter->CombatComp->CurShotCount);
+	FVector RecoilKick = FragWeapon->RecoilCurve->GetVectorValue(ShotCount);
+	// 主控端、服务器和观察端使用同一 ShotCount，确保每颗弹丸采样相同的散射序列。
+	FRandomStream PelletRandomStream(ShotCount);
 
 	for (int32 i = 0; i < FragWeapon->PelletNum; ++i)
 	{
 		// 添加散布
-		FVector ToTargetWithSpread = UKismetMathLibrary::RandomUnitVectorInConeInDegrees(
-			TargetRotation.Vector(), RecoilKick.Z);
+		FVector ToTargetWithSpread = PelletRandomStream.VRandCone(
+			TargetRotation.Vector(),
+			FMath::DegreesToRadians(RecoilKick.Z)
+		);
 
 		// 构造当前这发弹丸的 Transform
 		FTransform SpawnTransform(ToTargetWithSpread.Rotation(), SocketTransform.GetLocation());
