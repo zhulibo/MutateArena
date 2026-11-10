@@ -3,40 +3,38 @@
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "..\PlayerStates\TeamType.h"
-#include "MutateArena/Characters/Components/CombatComponent.h"
-#include "MutateArena/Utils/LibraryCommon.h"
 #include "Components/BoxComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Data/EquipmentAsset.h"
-#include "Engine/SkeletalMeshSocket.h"
 #include "Kismet/GameplayStatics.h"
-#include "Kismet/KismetMathLibrary.h"
 #include "Projectiles/ProjectileBullet.h"
 
 AWeaponGeneric::AWeaponGeneric()
 {
 }
 
-void AWeaponGeneric::SpawnProjectile(const FVector& FinalTarget, int32)
+void AWeaponGeneric::SpawnProjectile(const FVector& FinalTarget, int32, int32)
 {
 	AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(GetOwner());
-	USkeletalMeshComponent* WeaponMesh = GetVisibleEquipmentMesh();
 	if (OwnerTeam == ETeam::NoTeam) SetOwnerTeam();
-	if (!HumanCharacter || !FragWeapon || !FragWeapon->ProjectileClass || !WeaponMesh)
+	if (!HumanCharacter || !FragWeapon || !FragWeapon->ProjectileClass || OwnerTeam == ETeam::NoTeam)
 	{
 		return;
 	}
 
-	const USkeletalMeshSocket* MuzzleSocket = WeaponMesh->GetSocketByName(Sockets::Muzzle);
+	FVector SpawnLocation;
+	FVector MuzzleLocation;
+	if (!GetFireLocations(SpawnLocation, MuzzleLocation))
+	{
+		return;
+	}
 
-	if (OwnerTeam == ETeam::NoTeam || !MuzzleSocket) return;
-	
-	// 子弹是从枪口发出，射向准星在世界场景的投射点，所以穿透后的弹着点会有视差，这是正常的
-	FTransform SocketTransform = MuzzleSocket->GetSocketTransform(WeaponMesh);
-	FRotator TargetRotation = (FinalTarget - SocketTransform.GetLocation()).Rotation();
+	const FVector ShotDirection = (FinalTarget - SpawnLocation).GetSafeNormal();
+	const FRotator TargetRotation = ShotDirection.Rotation();
+	const float BlendDistance = CalcVisualBlendDistance(SpawnLocation, ShotDirection);
 
-	// 构造生成的 Transform
-	FTransform SpawnTransform(TargetRotation, SocketTransform.GetLocation());
+	// 构造生成的 Transform（起点在摄像机，方向直指准星目标点）
+	const FTransform SpawnTransform(TargetRotation, SpawnLocation);
 
 	AProjectileBullet* Projectile = GetWorld()->SpawnActorDeferred<AProjectileBullet>(
 		FragWeapon->ProjectileClass,
@@ -50,7 +48,9 @@ void AWeaponGeneric::SpawnProjectile(const FVector& FinalTarget, int32)
 	{
 		Projectile->ParentEquipmentName = EquipmentAsset->GetParentEquipmentName();
 		Projectile->InitialPenetrationPower = FragWeapon->PenetrationPower;
-
+		Projectile->MuzzleLocation = MuzzleLocation;
+		Projectile->BlendDistance = BlendDistance;
+		
 		// 设置队伍碰撞通道
 		switch (OwnerTeam)
 		{

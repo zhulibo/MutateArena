@@ -61,18 +61,19 @@ void UGA_Weapon_Fire::ActivateAbility(const FGameplayAbilitySpecHandle Handle, c
 	
 	CurWeapon->LastFireTime = GetWorld()->GetTimeSeconds();
 	
+	// 没子弹了播放击锤声音
 	if (CurWeapon->IsEmpty())
 	{
 		FGameplayCueParameters CueParams;
 		CueParams.Instigator = HumanChar;
 		CueParams.SourceObject = CurWeapon;
-		ASC->ExecuteGameplayCue(TAG_GC_WEAPON_DRYFIRE, CueParams); // 使用GC让所有玩家都能听到击锤声音
+		ASC->ExecuteGameplayCue(TAG_GC_WEAPON_DRYFIRE, CueParams);
         
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, false);
 		return;
 	}
 	
-	// 让服务端准备好接收客户端的数据包裹
+	// 让服务端准备好接收客户端的开火信息
 	if (HumanChar->HasAuthority())
 	{
 		ASC->AbilityTargetDataSetDelegate(CurrentSpecHandle, CurrentActivationInfo.GetActivationPredictionKey()).AddUObject(this, &UGA_Weapon_Fire::OnTargetDataReceived);
@@ -80,7 +81,7 @@ void UGA_Weapon_Fire::ActivateAbility(const FGameplayAbilitySpecHandle Handle, c
 	
 	CombatComp->CurShotCount = 1;
 	
-	// 只允许本地控制的角色开启循环定时器，服务端只等数据包发过来
+	// 只允许本地控制的角色开启循环定时器，服务端只等开火信息发过来
 	if (HumanChar->IsLocallyControlled())
 	{
 		StartFireLoop();
@@ -89,14 +90,10 @@ void UGA_Weapon_Fire::ActivateAbility(const FGameplayAbilitySpecHandle Handle, c
 
 void UGA_Weapon_Fire::StartFireLoop()
 {
-	UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
     AWeapon* CurWeapon = GetCurWeapon();
-    AHumanCharacter* HumanChar = GetHumanCharacter();
-    UCombatComponent* CombatComp = HumanChar ? HumanChar->CombatComp : nullptr;
+    if (!CurWeapon) return;
 
-    if (!ASC || !CurWeapon || !HumanChar || !CombatComp) return;
-
-	OnFireEventTrigger();
+	LocalFireOnce();
 
     UAbilityTask_WaitDelay* DelayTask = UAbilityTask_WaitDelay::WaitDelay(this, CurWeapon->GetFireDelay());
     DelayTask->OnFinish.AddDynamic(this, &ThisClass::OnFireIntervalFinished);
@@ -132,7 +129,7 @@ void UGA_Weapon_Fire::OnFireIntervalFinished()
     }
 }
 
-void UGA_Weapon_Fire::OnFireEventTrigger()
+void UGA_Weapon_Fire::LocalFireOnce()
 {
 	UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
 	AHumanCharacter* HumanChar = GetHumanCharacter();
@@ -151,36 +148,28 @@ void UGA_Weapon_Fire::OnFireEventTrigger()
 			HumanChar->RecoilComp->IncRecoil();
 		}
 		
-		FHitResult HitResult;
-		CombatComp->TraceUnderCrosshair(HitResult);
+		// 构造开火信息
 		const float RecoilVert = RecoilComp->GetCurRecoilVert();
 		const float RecoilHor = RecoilComp->GetCurRecoilHor();
-        
 		const FVector2D Spread = RecoilComp->GetCurSpreadVector();
 		const FVector_NetQuantize FinalTarget = CurWeapon->CalcFinalTarget(
-			HitResult.ImpactPoint,
 			RecoilVert,
 			RecoilHor,
 			Spread.X,
 			Spread.Y
 		);
+		const int32 SpreadSeed = CombatComp->GenerateSpreadSeed();
 
-		FScopedPredictionWindow ScopedPrediction(ASC, true);
-		FGameplayCueParameters CueParams;
-		CueParams.Instigator = HumanChar;
-		CueParams.SourceObject = CurWeapon;
-		CueParams.Location = FinalTarget;
-		CueParams.RawMagnitude = static_cast<float>(FMath::Max(1, CombatComp->CurShotCount));
-		ASC->ExecuteGameplayCue(TAG_GC_WEAPON_FIRE, CueParams);
+		FGameplayAbilityTargetData_FireInfo* FireData = new FGameplayAbilityTargetData_FireInfo();
+		FireData->FinalTarget = FinalTarget;
+		FireData->SpreadSeed = SpreadSeed;
 
+		FGameplayAbilityTargetDataHandle TargetDataHandle;
+		TargetDataHandle.Add(FireData);
+
+		// 把开火信息传给服务端
 		if (!HumanChar->HasAuthority())
 		{
-			FGameplayAbilityTargetData_FireInfo* FireData = new FGameplayAbilityTargetData_FireInfo();
-			FireData->FinalTarget = FinalTarget;
-
-			FGameplayAbilityTargetDataHandle TargetDataHandle;
-			TargetDataHandle.Add(FireData);
-
 			ASC->CallServerSetReplicatedTargetData(
 				CurrentSpecHandle,
 				CurrentActivationInfo.GetActivationPredictionKey(),
@@ -190,7 +179,17 @@ void UGA_Weapon_Fire::OnFireEventTrigger()
 			);
 		}
 
-		CurWeapon->Fire(FinalTarget);
+		// 本地开火
+		FScopedPredictionWindow ScopedPrediction(ASC, true);
+		FGameplayCueParameters CueParams;
+		CueParams.Instigator = HumanChar;
+		CueParams.SourceObject = CurWeapon;
+		CueParams.Location = FinalTarget;
+		CueParams.RawMagnitude = static_cast<float>(FMath::Max(1, CombatComp->CurShotCount));
+		CueParams.AbilityLevel = SpreadSeed; // 种子通过 AbilityLevel 传递
+		ASC->ExecuteGameplayCue(TAG_GC_WEAPON_FIRE, CueParams);
+
+		CurWeapon->Fire(FinalTarget, SpreadSeed);
 	}
 }
 
@@ -205,7 +204,6 @@ void UGA_Weapon_Fire::OnTargetDataReceived(const FGameplayAbilityTargetDataHandl
 	// 服务器收到数据后清理缓存，防止内存泄漏或重复处理
 	ASC->ConsumeClientReplicatedTargetData(CurrentSpecHandle, CurrentActivationInfo.GetActivationPredictionKey());
 	
-	// Server validates the ammo state before accepting this shot.
 	if (CurWeapon->IsEmpty()) return;
 
 	if (Data.Num() > 0)
@@ -216,7 +214,8 @@ void UGA_Weapon_Fire::OnTargetDataReceived(const FGameplayAbilityTargetDataHandl
 			const int32 ShotCount = CombatComp ? FMath::Max(1, CombatComp->CurShotCount) : 1;
 			if (!HumanChar->IsLocallyControlled())
 			{
-				CurWeapon->Fire(FireData->FinalTarget);
+				CurWeapon->Fire(FireData->FinalTarget, FireData->SpreadSeed);
+
 				if (CurWeapon->FragWeapon && CurWeapon->FragWeapon->bIsAutomatic)
 				{
 					if (CombatComp)
@@ -231,6 +230,7 @@ void UGA_Weapon_Fire::OnTargetDataReceived(const FGameplayAbilityTargetDataHandl
 			CueParams.SourceObject = CurWeapon;
 			CueParams.Location = FireData->FinalTarget;
 			CueParams.RawMagnitude = static_cast<float>(ShotCount);
+			CueParams.AbilityLevel = FireData->SpreadSeed;
 			ASC->ExecuteGameplayCue(TAG_GC_WEAPON_FIRE, CueParams);
 		}
 	}

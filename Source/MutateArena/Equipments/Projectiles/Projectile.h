@@ -4,6 +4,10 @@
 #include "GameFramework/Actor.h"
 #include "Projectile.generated.h"
 
+class UProjectileMovementComponent;
+class UBoxComponent;
+class UNiagaraSystem;
+class UNiagaraComponent;
 enum class EEquipmentName : uint8;
 class UFragWeapon;
 
@@ -15,14 +19,19 @@ class MUTATEARENA_API AProjectile : public AActor
 public:
 	AProjectile();
 
-	UPROPERTY(VisibleAnywhere)
-	class UBoxComponent* CollisionBox;
+	virtual void Tick(float DeltaTime) override;
 
 	UPROPERTY(VisibleAnywhere)
-	class UStaticMeshComponent* ProjectileMesh;
+	UBoxComponent* CollisionBox;
 
 	UPROPERTY(VisibleAnywhere)
-	class UProjectileMovementComponent* ProjectileMovement;
+	TObjectPtr<USceneComponent> VisualRootComp;
+
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* ProjectileMesh;
+
+	UPROPERTY(VisibleAnywhere)
+	UProjectileMovementComponent* ProjectileMovement;
 
 	UPROPERTY()
 	float InitialSpeed = 40000.f;
@@ -38,41 +47,47 @@ public:
 
 	EEquipmentName ParentEquipmentName;
 
+	// 根据当前飞行距离更新视觉偏移
+	void UpdateVisualOffset();
+
+	// 立即完成视觉合并（用于进入传送门或终止碰撞时）
+	void CompleteVisualBlend();
+
 protected:
-	virtual void PostActorCreated() override;
 	virtual void BeginPlay() override;
 
-	// 在空中留下的轨迹
 	UPROPERTY(EditAnywhere)
-	class UNiagaraSystem* TrailEffect;
-
+	UNiagaraSystem* TrailEffect;
 	UPROPERTY()
-	class UNiagaraComponent* TrailEffectComponent;
-
+	UNiagaraComponent* TrailEffectComponent;
 	void SpawnTrailEffect();
 
-	// 尾部效果
 	UPROPERTY(EditAnywhere)
-	class UNiagaraSystem* TracerEffect;
-
+	UNiagaraSystem* TracerEffect;
 	UPROPERTY()
-	class UNiagaraComponent* TracerEffectComponent;
-
+	UNiagaraComponent* TracerEffectComponent;
 	void SpawnTracerEffect();
 
-	// 击中效果
 	UPROPERTY(EditAnywhere)
-	class UNiagaraSystem* ImpactEffect;
-
-	// 弹孔
+	UNiagaraSystem* ImpactEffect;
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UMaterialInterface> ImpactDecal;
-
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UMaterialInterface> ImpactDecalExit;
 
+	UPROPERTY()
 	const UFragWeapon* CachedWeaponFrag = nullptr;
 	bool bIsWeaponFragCached = false;
 
 	void EnsureWeaponFragCached();
+
+public:
+	FVector MuzzleLocation = FVector::ZeroVector;
+	float BlendDistance = 1000.f;
+protected:
+	FVector InitialRelativeOffset = FVector::ZeroVector;
+	FRotator InitialRelativeRotation = FRotator::ZeroRotator;
+	FVector LastTickLocation = FVector::ZeroVector;
+	float TraveledDistance = 0.f;
+	bool bNeedsVisualBlend = false;
 };

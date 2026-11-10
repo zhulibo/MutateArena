@@ -20,33 +20,84 @@ AProjectile::AProjectile()
 	CollisionBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldDynamic, ECollisionResponse::ECR_Block);
 	CollisionBox->SetUseCCD(true);
 
+	VisualRootComp = CreateDefaultSubobject<USceneComponent>(TEXT("VisualRootComp"));
+	VisualRootComp->SetupAttachment(RootComponent);
+
 	ProjectileMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ProjectileMesh"));
-	ProjectileMesh->SetupAttachment(RootComponent);
+	ProjectileMesh->SetupAttachment(VisualRootComp);
 	ProjectileMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-}
-
-void AProjectile::PostActorCreated()
-{
-	Super::PostActorCreated();
-
-	// 尽早生成，避免OnHit时Component还未生成
-	SpawnTrailEffect();
-	SpawnTracerEffect();
 }
 
 void AProjectile::BeginPlay()
 {
 	Super::BeginPlay();
+	
 	SpawnLocation = GetActorLocation();
+	LastTickLocation = SpawnLocation;
+
+	if (VisualRootComp)
+	{
+		InitialRelativeOffset = GetActorTransform().InverseTransformPosition(MuzzleLocation);
+		// 让弹头和特效在合并阶段朝向汇聚点，消除侧面平移感
+		InitialRelativeRotation = (FVector(BlendDistance, 0.f, 0.f) - InitialRelativeOffset).Rotation();
+
+		VisualRootComp->SetRelativeLocationAndRotation(
+			InitialRelativeOffset,
+			InitialRelativeRotation,
+			false,
+			nullptr,
+			ETeleportType::TeleportPhysics
+		);
+		bNeedsVisualBlend = true;
+	}
+
+	SpawnTrailEffect();
+	SpawnTracerEffect();
+}
+
+void AProjectile::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	UpdateVisualOffset();
+}
+
+void AProjectile::UpdateVisualOffset()
+{
+	if (!bNeedsVisualBlend || !VisualRootComp) return;
+
+	const FVector CurrentLocation = GetActorLocation();
+	TraveledDistance += FVector::Distance(LastTickLocation, CurrentLocation);
+	LastTickLocation = CurrentLocation;
+
+	// 已会聚距离除以总会聚距离算出插值参数Alpha
+	const float Alpha = FMath::Clamp(TraveledDistance / BlendDistance, 0.f, 1.f);
+	const FVector NewRelLoc = FMath::Lerp(InitialRelativeOffset, FVector::ZeroVector, Alpha);
+	const FRotator NewRelRot = FMath::Lerp(InitialRelativeRotation, FRotator::ZeroRotator, Alpha);
+	VisualRootComp->SetRelativeLocationAndRotation(NewRelLoc, NewRelRot);
+
+	if (Alpha >= 1.f)
+	{
+		bNeedsVisualBlend = false;
+	}
+}
+
+void AProjectile::CompleteVisualBlend()
+{
+	if (VisualRootComp)
+	{
+		VisualRootComp->SetRelativeLocationAndRotation(FVector::ZeroVector, FRotator::ZeroRotator);
+	}
+	bNeedsVisualBlend = false;
 }
 
 void AProjectile::SpawnTrailEffect()
 {
-	// if (TrailEffect)
+	// if (TrailEffect && VisualRootComp)
 	// {
 	//     TrailEffectComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
 	//        TrailEffect,
-	//        GetRootComponent(),
+	//        VisualRootComp,
 	//        TEXT(""),
 	//        FVector::ZeroVector,
 	//        FRotator::ZeroRotator,
@@ -58,11 +109,11 @@ void AProjectile::SpawnTrailEffect()
 
 void AProjectile::SpawnTracerEffect()
 {
-	if (TracerEffect)
+	if (TracerEffect && VisualRootComp)
 	{
 		TracerEffectComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
 			TracerEffect,
-			GetRootComponent(),
+			VisualRootComp,
 			TEXT(""),
 			FVector::ZeroVector,
 			FRotator::ZeroRotator,

@@ -12,6 +12,9 @@ struct FGameplayAbilityTargetData_FireInfo : public FGameplayAbilityTargetData
 	UPROPERTY()
 	FVector_NetQuantize FinalTarget = FVector::ZeroVector;
 
+	UPROPERTY()
+	int32 SpreadSeed = 0;
+
 	// 返回静态结构体信息
 	virtual UScriptStruct* GetScriptStruct() const override
 	{
@@ -21,7 +24,10 @@ struct FGameplayAbilityTargetData_FireInfo : public FGameplayAbilityTargetData
 	// 网络序列化（决定了数据怎么在网线中打包传输）
 	bool NetSerialize(FArchive& Ar, class UPackageMap* Map, bool& bOutSuccess)
 	{
-		return FinalTarget.NetSerialize(Ar, Map, bOutSuccess);
+		const bool bTargetSuccess = FinalTarget.NetSerialize(Ar, Map, bOutSuccess);
+		Ar << SpreadSeed;
+		bOutSuccess = bTargetSuccess && !Ar.IsError();
+		return bOutSuccess;
 	}
 };
 
@@ -51,7 +57,7 @@ protected:
 		const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
 
 	UFUNCTION()
-	void OnFireEventTrigger();
+	void LocalFireOnce();
 	// 用来接收解包数据的函数
 	UFUNCTION()
 	void OnTargetDataReceived(const FGameplayAbilityTargetDataHandle& Data, FGameplayTag ActivationTag);

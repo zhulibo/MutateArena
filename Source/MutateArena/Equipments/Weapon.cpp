@@ -1,5 +1,6 @@
 #include "Weapon.h"
 
+#include "Camera/CameraComponent.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "MutateArena/Characters/Components/CombatComponent.h"
@@ -53,35 +54,70 @@ void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 	DOREPLIFETIME(ThisClass, CarriedAmmo);
 }
 
-FVector AWeapon::CalcFinalTarget(const FVector& HitTarget, float RecoilVert, float RecoilHor, float SpreadPitch, float SpreadYaw) const
+FVector AWeapon::CalcFinalTarget(float RecoilVert, float RecoilHor, float SpreadPitch, float SpreadYaw) const
 {
-	USkeletalMeshComponent* WeaponMesh = GetVisibleEquipmentMesh();
-	if (!WeaponMesh)
+	const AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(GetOwner());
+	if (!HumanCharacter || !HumanCharacter->Camera)
 	{
-		return HitTarget;
+		return FVector::ZeroVector;
+	}
+
+	const FVector CameraLoc = HumanCharacter->Camera->GetComponentLocation();
+	FRotator TargetRotation = HumanCharacter->Camera->GetComponentRotation();
+	TargetRotation.Pitch += RecoilVert + SpreadPitch;
+	TargetRotation.Yaw += RecoilHor + SpreadYaw;
+
+	return CameraLoc + TargetRotation.Vector() * 10000.f;
+}
+
+bool AWeapon::GetFireLocations(FVector& OutSpawnLocation, FVector& OutMuzzleLocation) const
+{
+	const AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(GetOwner());
+	USkeletalMeshComponent* WeaponMesh = GetVisibleEquipmentMesh();
+	if (!HumanCharacter || !HumanCharacter->Camera || !WeaponMesh)
+	{
+		return false;
 	}
 
 	const USkeletalMeshSocket* MuzzleSocket = WeaponMesh->GetSocketByName(Sockets::Muzzle);
 	if (!MuzzleSocket)
 	{
-		return HitTarget;
+		return false;
 	}
 
-	const FTransform SocketTransform = MuzzleSocket->GetSocketTransform(WeaponMesh);
-	FRotator TargetRotation = (HitTarget - SocketTransform.GetLocation()).Rotation();
-	TargetRotation.Pitch += RecoilVert + SpreadPitch;
-	TargetRotation.Yaw += RecoilHor + SpreadYaw;
-
-	return SocketTransform.GetLocation() + TargetRotation.Vector() * 10000.f;
+	// 物理生成起点：统一为角色摄像机世界位置
+	OutSpawnLocation = HumanCharacter->Camera->GetComponentLocation();
+	// 视觉表现起点：自动根据当前视角取 1P 或 3P 模型的枪口位置
+	OutMuzzleLocation = MuzzleSocket->GetSocketTransform(WeaponMesh).GetLocation();
+	return true;
 }
 
-void AWeapon::Fire(const FVector& FinalTarget)
+float AWeapon::CalcVisualBlendDistance(const FVector& SpawnLocation, const FVector& ShotDirection, float MaxBlendDistance) const
+{
+	UWorld* World = GetWorld();
+	if (!World) return MaxBlendDistance;
+
+	FHitResult HitResult;
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(this);
+	Params.AddIgnoredActor(GetOwner());
+
+	const FVector TraceEnd = SpawnLocation + ShotDirection * MaxBlendDistance;
+	if (World->LineTraceSingleByChannel(HitResult, SpawnLocation, TraceEnd, ECC::Trace, Params))
+	{
+		return FMath::Clamp(HitResult.Distance, 50.f, MaxBlendDistance);
+	}
+
+	return MaxBlendDistance;
+}
+
+void AWeapon::Fire(const FVector& FinalTarget, int32 SpreadSeed)
 {
 	AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(GetOwner());
 	const int32 ShotCount = HumanCharacter && HumanCharacter->CombatComp
 		? HumanCharacter->CombatComp->CurShotCount
 		: 1;
-	SpawnProjectile(FinalTarget, ShotCount);
+	SpawnProjectile(FinalTarget, ShotCount, SpreadSeed);
 	SpendRound();
 }
 

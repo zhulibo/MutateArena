@@ -12,6 +12,6 @@ class MUTATEARENA_API AWeaponGeneric : public AWeapon
 public:
 	AWeaponGeneric();
 
-	virtual void SpawnProjectile(const FVector& FinalTarget, int32 ShotCount) override;
+	virtual void SpawnProjectile(const FVector& FinalTarget, int32 ShotCount, int32 SpreadSeed) override;
 
 };

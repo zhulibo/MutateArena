@@ -45,9 +45,15 @@ void AProjectileBullet::BeginPlay()
 
 void AProjectileBullet::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	// 【核心拦截】：如果是传送门，直接移交业务并拦截打墙逻辑
+	// 先根据本帧已移动的距离刷新一次视觉偏移，确保高速子弹在首帧撞墙时 VisualRootComp 已精确合拢到弹孔中心
+	UpdateVisualOffset();
+	
+	// 如果是传送门，直接在此处理并拦截，以防后续打到墙
 	if (ATeleportPortal* Portal = Cast<ATeleportPortal>(OtherActor))
 	{
+		// 穿过传送门后强制完成视觉合并，保证从出口飞出时处于中心位置
+		CompleteVisualBlend();
+
 		// 抢救可能因撞击瞬间被底层归零的速度，用于传送后的动能维持
 		if (ProjectileMovement->Velocity.IsNearlyZero())
 		{
@@ -71,7 +77,7 @@ void AProjectileBullet::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, 
 
 	LifeTime = FMath::FRandRange(4.f, 5.f);
 
-	// 子弹是从枪口发出，射向准星在世界场景的投射点，所以穿透后的弹着点会有视差，这是正常的
+	// 子弹碰撞盒从摄像机中心发出，穿透后的弹道与准星严格对齐，无视差
 	FVector ShotDirection = ProjectileMovement->Velocity.GetSafeNormal();
 	if (ShotDirection.IsNearlyZero()) ShotDirection = GetActorForwardVector();
 
@@ -194,6 +200,7 @@ void AProjectileBullet::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, 
 	}
 
 	// 无法穿透，物理停滞
+	CompleteVisualBlend();
 	SetLifeSpan(LifeTime);
 	if (TracerEffectComponent) TracerEffectComponent->DestroyComponent();
 	if (ProjectileMovement) ProjectileMovement->StopMovementImmediately();

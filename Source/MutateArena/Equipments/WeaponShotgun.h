@@ -12,7 +12,7 @@ class MUTATEARENA_API AWeaponShotgun : public AWeapon
 public:
 	AWeaponShotgun();
 
-	virtual FVector CalcFinalTarget(const FVector& HitTarget, float RecoilVert, float RecoilHor, float SpreadPitch, float SpreadYaw) const override;
-	virtual void SpawnProjectile(const FVector& FinalTarget, int32 ShotCount) override;
+	virtual FVector CalcFinalTarget(float RecoilVert, float RecoilHor, float SpreadPitch, float SpreadYaw) const override;
+	virtual void SpawnProjectile(const FVector& FinalTarget, int32 ShotCount, int32 SpreadSeed) override;
 
 };

@@ -18,34 +18,36 @@ AWeaponShotgun::AWeaponShotgun()
 {
 }
 
-FVector AWeaponShotgun::CalcFinalTarget(const FVector& HitTarget, float RecoilVert, float RecoilHor, float, float) const
+FVector AWeaponShotgun::CalcFinalTarget(float RecoilVert, float RecoilHor, float, float) const
 {
-	// Shotgun pellets use the recoil curve for their cone spread; the generic random spread offsets are not applied.
-	return Super::CalcFinalTarget(HitTarget, RecoilVert, RecoilHor, 0.f, 0.f);
+	// 单颗弹丸有各自的散布，整组弹丸不应该有散布
+	return Super::CalcFinalTarget(RecoilVert, RecoilHor, 0.f, 0.f);
 }
 
-void AWeaponShotgun::SpawnProjectile(const FVector& FinalTarget, int32 ShotCount)
+void AWeaponShotgun::SpawnProjectile(const FVector& FinalTarget, int32 ShotCount, int32 SpreadSeed)
 {
 	AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(GetOwner());
-	USkeletalMeshComponent* WeaponMesh = GetVisibleEquipmentMesh();
 	if (OwnerTeam == ETeam::NoTeam) SetOwnerTeam();
-	if (!FragWeapon || !FragWeapon->ProjectileClass || !FragWeapon->RecoilCurve || !WeaponMesh
+	if (!FragWeapon || !FragWeapon->ProjectileClass || !FragWeapon->RecoilCurve
 		|| !HumanCharacter || !HumanCharacter->CombatComp || OwnerTeam == ETeam::NoTeam)
 	{
 		return;
 	}
 
-	const USkeletalMeshSocket* MuzzleSocket = WeaponMesh->GetSocketByName(Sockets::Muzzle);
+	FVector SpawnLocation;
+	FVector MuzzleLocation;
+	if (!GetFireLocations(SpawnLocation, MuzzleLocation))
+	{
+		return;
+	}
 
-	if (!MuzzleSocket) return;
-
-	FTransform SocketTransform = MuzzleSocket->GetSocketTransform(WeaponMesh);
-	FRotator TargetRotation = (FinalTarget - SocketTransform.GetLocation()).Rotation();
+	const FVector BaseShotDir = (FinalTarget - SpawnLocation).GetSafeNormal();
+	const FRotator TargetRotation = BaseShotDir.Rotation();
 
 	// 霰弹枪每次射击的弹丸循环
 	FVector RecoilKick = FragWeapon->RecoilCurve->GetVectorValue(ShotCount);
-	// 主控端、服务器和观察端使用同一 ShotCount，确保每颗弹丸采样相同的散射序列。
-	FRandomStream PelletRandomStream(ShotCount);
+	// 主控端、服务器和观察端使用同一 SpreadSeed，确保每颗弹丸采样相同的散射序列。
+	FRandomStream PelletRandomStream(SpreadSeed);
 
 	for (int32 i = 0; i < FragWeapon->PelletNum; ++i)
 	{
@@ -55,8 +57,11 @@ void AWeaponShotgun::SpawnProjectile(const FVector& FinalTarget, int32 ShotCount
 			FMath::DegreesToRadians(RecoilKick.Z)
 		);
 
-		// 构造当前这发弹丸的 Transform
-		FTransform SpawnTransform(ToTargetWithSpread.Rotation(), SocketTransform.GetLocation());
+		// 每颗弹丸按自身散布方向独立计算障碍物合并距离，避免擦掩体边缘射击时飞向远处的弹丸提前折线
+		const float BlendDistance = CalcVisualBlendDistance(SpawnLocation, ToTargetWithSpread);
+
+		// 构造当前这发弹丸的 Transform（起点为摄像机）
+		FTransform SpawnTransform(ToTargetWithSpread.Rotation(), SpawnLocation);
 
 		// 使用延迟生成
 		AProjectileBullet* Projectile = GetWorld()->SpawnActorDeferred<AProjectileBullet>(
@@ -71,6 +76,8 @@ void AWeaponShotgun::SpawnProjectile(const FVector& FinalTarget, int32 ShotCount
 		{
 			Projectile->ParentEquipmentName = EquipmentAsset->GetParentEquipmentName();
 			Projectile->InitialPenetrationPower = FragWeapon->PenetrationPower;
+			Projectile->MuzzleLocation = MuzzleLocation;
+			Projectile->BlendDistance = BlendDistance;
 
 			// 设置队伍碰撞免伤通道
 			switch (OwnerTeam)

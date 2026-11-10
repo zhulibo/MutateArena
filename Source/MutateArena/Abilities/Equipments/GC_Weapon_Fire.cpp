@@ -81,7 +81,11 @@ bool UGC_Weapon_Fire::OnExecute_Implementation(AActor* MyTarget, const FGameplay
 	if (!HumanChar->IsLocallyControlled() && !HumanChar->HasAuthority())
 	{
 		const int32 ShotCount = FMath::Max(1, FMath::RoundToInt(Parameters.RawMagnitude));
-		CurWeapon->SpawnProjectile(Parameters.Location, ShotCount);
+		// AbilityLevel 传递本次开火种子；RawMagnitude 仍用于查询后坐力曲线。
+		const int32 SpreadSeed = Parameters.AbilityLevel > 0
+			? Parameters.AbilityLevel
+			: ShotCount;
+		CurWeapon->SpawnProjectile(Parameters.Location, ShotCount, SpreadSeed);
 	}
 
     if (HumanChar->IsLocallyControlled())

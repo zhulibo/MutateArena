@@ -96,8 +96,14 @@ public:
 	void LocalSetAiming(bool TempBIsAiming);
 
 	// 射击
-	void TraceUnderCrosshair(FHitResult& TraceHitResult);
 	int32 CurShotCount = 1;
+	// 每次本地开火生成不同种子，再通过开火数据同步到服务器和观察端。
+	int32 LastSpreadSeed = 0;
+	int32 GenerateSpreadSeed()
+	{
+		LastSpreadSeed = LastSpreadSeed == MAX_int32 ? 1 : LastSpreadSeed + 1;
+		return LastSpreadSeed;
+	}
 
 	// 销毁
 	UFUNCTION(Server, Reliable)

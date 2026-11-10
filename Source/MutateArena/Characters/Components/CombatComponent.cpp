@@ -18,7 +18,6 @@
 #include "Animation/AnimMontage.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/GameInstance.h"
-#include "Engine/GameViewportClient.h"
 #include "Materials/MaterialParameterCollectionInstance.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/Equipments/Throwable.h"
@@ -539,36 +538,6 @@ void UCombatComponent::InterpFOV(float DeltaSeconds)
 		HumanChar->Camera->FieldOfView = TargetFOV;
 		
 		bNeedInterpFOV = false; 
-	}
-}
-
-// 检测准星对应游戏世界的物体
-void UCombatComponent::TraceUnderCrosshair(FHitResult& TraceHitResult)
-{
-	FVector2D ViewportSize;
-	GEngine->GameViewport->GetViewportSize(ViewportSize);
-
-	FVector2D CrosshairLocation(ViewportSize.X / 2.f, ViewportSize.Y / 2.f);
-	FVector Position;
-	FVector Direction;
-	bool bScreenToWorld = UGameplayStatics::DeprojectScreenToWorld(
-		UGameplayStatics::GetPlayerController(this, 0),
-		CrosshairLocation, Position, Direction
-	);
-
-	if (bScreenToWorld)
-	{
-		FVector Start = Position + Direction * 100.f;
-		FVector End = Start + Direction * GameConstants::TraceLength;
-		
-		FCollisionQueryParams Params;
-		Params.AddIgnoredActor(HumanChar);
-		Params.AddIgnoredActor(GetCurEquipment());
-		GetWorld()->LineTraceSingleByChannel(TraceHitResult, Start, End, ECC::Trace);
-		if (!TraceHitResult.bBlockingHit)
-		{
-			TraceHitResult.ImpactPoint = End;
-		}
 	}
 }
 
