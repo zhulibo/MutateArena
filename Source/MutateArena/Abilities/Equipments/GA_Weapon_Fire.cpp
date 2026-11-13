@@ -167,6 +167,11 @@ void UGA_Weapon_Fire::LocalFireOnce()
 		FGameplayAbilityTargetDataHandle TargetDataHandle;
 		TargetDataHandle.Add(FireData);
 
+		// 每一发都生成新的本地预测Key，且必须在发送 TargetData 之前生成：
+		// 服务端会在该Key的预测窗口内执行开火GC，多播时本地客户端识别出这是自己预测过的Key从而跳过，避免开火GC重复播放（表现为射速翻倍）。
+		// 连发的第2发起是从定时器回调进入，此时没有有效的预测Key，若不在这里生成，服务端多播会在本地再播一次。
+		FScopedPredictionWindow ScopedPrediction(ASC, true);
+
 		// 把开火信息传给服务端
 		if (!HumanChar->HasAuthority())
 		{
@@ -180,13 +185,12 @@ void UGA_Weapon_Fire::LocalFireOnce()
 		}
 
 		// 本地开火
-		FScopedPredictionWindow ScopedPrediction(ASC, true);
 		FGameplayCueParameters CueParams;
 		CueParams.Instigator = HumanChar;
 		CueParams.SourceObject = CurWeapon;
 		CueParams.Location = FinalTarget;
 		CueParams.RawMagnitude = static_cast<float>(FMath::Max(1, CombatComp->CurShotCount));
-		CueParams.AbilityLevel = SpreadSeed; // 种子通过 AbilityLevel 传递
+		CueParams.AbilityLevel = FMath::Clamp(SpreadSeed, 1, 31); // 种子通过 AbilityLevel 传递（GC 网络序列化上限 31）
 		ASC->ExecuteGameplayCue(TAG_GC_WEAPON_FIRE, CueParams);
 
 		CurWeapon->Fire(FinalTarget, SpreadSeed);
@@ -230,7 +234,7 @@ void UGA_Weapon_Fire::OnTargetDataReceived(const FGameplayAbilityTargetDataHandl
 			CueParams.SourceObject = CurWeapon;
 			CueParams.Location = FireData->FinalTarget;
 			CueParams.RawMagnitude = static_cast<float>(ShotCount);
-			CueParams.AbilityLevel = FireData->SpreadSeed;
+			CueParams.AbilityLevel = FMath::Clamp(FireData->SpreadSeed, 1, 31);
 			ASC->ExecuteGameplayCue(TAG_GC_WEAPON_FIRE, CueParams);
 		}
 	}
@@ -238,5 +242,16 @@ void UGA_Weapon_Fire::OnTargetDataReceived(const FGameplayAbilityTargetDataHandl
 
 void UGA_Weapon_Fire::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
+	// 技能实例是 InstancedPerActor 会被复用，结束时解绑本次激活的 TargetData 委托并清理缓存
+	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo())
+	{
+		if (ASC->IsOwnerActorAuthoritative())
+		{
+			const FPredictionKey ActivationKey = ActivationInfo.GetActivationPredictionKey();
+			ASC->AbilityTargetDataSetDelegate(Handle, ActivationKey).RemoveAll(this);
+			ASC->ConsumeAllReplicatedData(Handle, ActivationKey);
+		}
+	}
+
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }

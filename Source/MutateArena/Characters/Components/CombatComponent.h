@@ -92,16 +92,18 @@ public:
 	void InstantSwap(EEquipmentSlot TargetType);
 
 	// 瞄准
+	UPROPERTY(Replicated)
+	bool bIsAiming = false;
 	bool IsAiming();
 	void LocalSetAiming(bool TempBIsAiming);
 
 	// 射击
 	int32 CurShotCount = 1;
-	// 每次本地开火生成不同种子，再通过开火数据同步到服务器和观察端。
+	// 每次本地开火生成不同种子，再通过开火数据同步到服务器和观察端（FGameplayCueParameters::AbilityLevel 网络序列化上限为 31）。
 	int32 LastSpreadSeed = 0;
 	int32 GenerateSpreadSeed()
 	{
-		LastSpreadSeed = LastSpreadSeed == MAX_int32 ? 1 : LastSpreadSeed + 1;
+		LastSpreadSeed = (LastSpreadSeed % 31) + 1;
 		return LastSpreadSeed;
 	}
 

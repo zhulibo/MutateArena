@@ -115,8 +115,6 @@ protected:
 	void DestroyEquipment();
 
 public:
-	UPROPERTY(EditAnywhere)
-	TArray<TSubclassOf<UGameplayAbility>> Abilities;
 	void GiveAbilities(UAbilitySystemComponent* ASC);
 	void ClearAbilities(UAbilitySystemComponent* ASC);
 

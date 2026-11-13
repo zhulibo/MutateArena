@@ -51,5 +51,5 @@ protected:
 	void SpendRound();
 	void SetHUDAmmo();
 	void SetHUDCarriedAmmo();
-	
+
 };

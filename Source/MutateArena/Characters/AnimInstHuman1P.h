@@ -1,58 +1,31 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Animation/AnimInstance.h"
-#include "MutateArena/Equipments/Data/EquipmentType.h"
+#include "AnimInstHumanBase.h"
 #include "AnimInstHuman1P.generated.h"
 
-class AHumanCharacter;
-class UCombatComponent;
-class UMAMovementComponent;
-
+/**
+ * 第一人称人类手臂动画实例 (Mesh1P / Blender FPArms)
+ * 继承自 UAnimInstHumanBase：
+ * - 第一人称枪械统一挂载在 weapon_root 骨骼的 WeaponRoot 插槽上。
+ * - 在 Blender 制作各枪械 Idle 动画时，直接移动并旋转了 weapon_root 骨骼将枪放到手上。
+ * - 重写 BuildWeaponPivotOffsetTransform，结合 weapon_root 当前动画帧的骨骼朝向，将 UFragWeapon 中按
+ *   UE 标准语义坐标系 (X=前后, Y=左右, Z=上下) 配置的参数动态转换到 weapon_root 局部空间。
+ */
 UCLASS(Abstract)
-class MUTATEARENA_API UAnimInstHuman1P : public UAnimInstance
+class MUTATEARENA_API UAnimInstHuman1P : public UAnimInstHumanBase
 {
 	GENERATED_BODY()
 
 public:
-	UAnimInstHuman1P();
-
-	virtual void NativeInitializeAnimation() override;
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
-	virtual void NativeThreadSafeUpdateAnimation(float DeltaSeconds) override;
 
 protected:
-	UPROPERTY()
-	TObjectPtr<AHumanCharacter> HumanChar;
-	UPROPERTY()
-	TObjectPtr<UCombatComponent> CombatComp;
-	UPROPERTY()
-	TObjectPtr<UMAMovementComponent> MovementComp;
+	virtual FTransform BuildWeaponPivotOffsetTransform(const FVector& StdLocation, const FRotator& StdRotation) override;
 
-	UPROPERTY(BlueprintReadOnly)
-	bool bIsOnLadder;
-	UPROPERTY(BlueprintReadOnly)
-	float Speed;
-	UPROPERTY(BlueprintReadOnly)
-	float WalkPlayRate = 1.f;
-	UPROPERTY(BlueprintReadOnly)
-	bool bIsInAir;
-	UPROPERTY(BlueprintReadOnly)
-	bool bIsAccelerating;
-	UPROPERTY(BlueprintReadOnly)
-	bool bIsCrouched;
-	UPROPERTY(BlueprintReadOnly)
-	bool bIsAiming = false;
-	UPROPERTY(BlueprintReadOnly)
-	EEquipmentName EquipmentName = EEquipmentName::None;
-	UPROPERTY(BlueprintReadOnly)
-	float AimYaw;
-	UPROPERTY(BlueprintReadOnly)
-	float AimPitch;
-	UPROPERTY(BlueprintReadOnly)
-	FRotator Spine_01_Rotator;
-	UPROPERTY(BlueprintReadOnly)
-	FRotator Spine_02_Rotator;
-	UPROPERTY(BlueprintReadOnly)
-	FRotator Spine_03_Rotator;
+private:
+	// 主线程缓存的 weapon_root 纯动画组件空间旋转（已剥离上一帧 Control Rig 写回的旋转）
+	FQuat CachedWeaponRootCompRot = FQuat::Identity;
+	// 上一帧 Control Rig 写回给 weapon_root 的组件空间旋转，用于下一帧还原纯动画朝向
+	FQuat LastAppliedCompRot = FQuat::Identity;
 };

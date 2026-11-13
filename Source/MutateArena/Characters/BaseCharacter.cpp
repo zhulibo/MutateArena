@@ -30,6 +30,7 @@
 #include "Data/InputAsset.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Animation/AnimInstance.h"
 #include "Components/StateTreeComponent.h"
 #include "Data/DNAAsset2.h"
 #include "Engine/GameInstance.h"
@@ -624,6 +625,14 @@ void ABaseCharacter::InitAbilityActorInfo()
 		if (ASC)
 		{
 			ASC->InitAbilityActorInfo(BasePlayerState, this);
+
+			// GAS 的 InitAbilityActorInfo 默认会绑定 ACharacter::GetMesh()，而本项目的第三人称 MetaHuman 身体网格体和动画蓝图挂在子组件 BodyMesh 上，
+			// 因此需要手动将 AbilityActorInfo 的骨骼网格体与动画实例重定向到 BodyMesh，确保 PlayMontageAndWait 等任务能找到正确的 AnimInstance。
+			if (BodyMesh && ASC->AbilityActorInfo.IsValid())
+			{
+				ASC->AbilityActorInfo->SkeletalMeshComponent = BodyMesh;
+				ASC->AbilityActorInfo->AnimInstance = BodyMesh->GetAnimInstance();
+			}
 		}
 		AttributeSetBase = BasePlayerState->GetAttributeSetBase();
 	}

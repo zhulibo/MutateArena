@@ -18,5 +18,8 @@ protected:
 
 	UFUNCTION()
 	void OnShellInsertEventReceived(FGameplayEventData Payload);
+
+	// 霰弹枪逐发装弹在 OnShellInsertEventReceived 中完成，跳过基类的整匣装填逻辑
+	virtual void ReloadAmmo() override;
 	
 };

@@ -99,6 +99,38 @@ public:
 	float AimingFOVMul = 0.9f;
 	UPROPERTY(EditAnywhere)
 	float ScopeFOV = 90.f;
+	// 瞄准过渡耗时（同时驱动镜头 FOV 缩放与角色程序化瞄准姿态插值）
+	UPROPERTY(EditAnywhere)
+	float ADSTime = 0.2f;
+
+	// 程序化动画参数
+	UPROPERTY(EditAnywhere)
+	FVector ADSOffsetLocation = FVector(0.f, 0.f, 0.f);
+	UPROPERTY(EditAnywhere)
+	FRotator ADSOffsetRotation = FRotator::MakeFromEuler(FVector(0.f, 0.f, 0.f));
+	UPROPERTY(EditAnywhere)
+	FVector RecoilKickLocation = FVector(0.f, 0.f, 0.f);
+	UPROPERTY(EditAnywhere)
+	FRotator RecoilKickRotation = FRotator::MakeFromEuler(FVector(0.f, 0.f, 0.f));
+	// 程序化后坐力最大累积上限（X 反向为 -X，正向复进过冲为 +0.5*X）
+	UPROPERTY(EditAnywhere)
+	FVector RecoilMaxLocation = FVector(999.f, 999.f, 999.f);
+	UPROPERTY(EditAnywhere)
+	FRotator RecoilMaxRotation = FRotator::MakeFromEuler(FVector(90.f, 90.f, 90.f));
+	// 分段非对称弹簧频率倍率：远离原点爆发期 (Kick) 与靠近原点回正期 (Recovery)
+	UPROPERTY(EditAnywhere)
+	float RecoilKickSpeedMul = 1.f;
+	UPROPERTY(EditAnywhere)
+	float RecoilRecoverySpeedMul = 1.f;
+	// 弹簧阻尼倍率（越小过冲余波越明显，越大越稳重收敛）
+	UPROPERTY(EditAnywhere)
+	float RecoilDampingMul = 1.f;
+	// 连发横向柏林噪波与奇偶拧转强度倍率
+	UPROPERTY(EditAnywhere)
+	float RecoilNoiseScale = 1.f;
+	// 机瞄状态下程序化后坐力幅度缩放比例
+	UPROPERTY(EditAnywhere)
+	float ADSRecoilScale = 0.5f;
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UCurveVector> RecoilCurve;

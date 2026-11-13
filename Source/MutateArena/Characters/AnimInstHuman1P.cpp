@@ -1,94 +1,42 @@
 #include "AnimInstHuman1P.h"
 
-#include "HumanCharacter.h"
-#include "GameFramework/CharacterMovementComponent.h"
-#include "Kismet/KismetMathLibrary.h"
-#include "Components/CombatComponent.h"
-#include "Components/MAMovementComponent.h"
-#include "MutateArena/Equipments/Equipment.h"
-#include "MutateArena/Equipments/Weapon.h"
-
-UAnimInstHuman1P::UAnimInstHuman1P()
-{
-}
-
-void UAnimInstHuman1P::NativeInitializeAnimation()
-{
-	Super::NativeInitializeAnimation();
-
-	HumanChar = Cast<AHumanCharacter>(TryGetPawnOwner());
-	if (HumanChar)
-	{
-		CombatComp = HumanChar->CombatComp;
-		MovementComp = HumanChar->MovementComp;
-	}
-}
+#include "Components/SkeletalMeshComponent.h"
+#include "MutateArena/MutateArena.h"
 
 void UAnimInstHuman1P::NativeUpdateAnimation(float DeltaSeconds)
 {
 	Super::NativeUpdateAnimation(DeltaSeconds);
 
-	if (HumanChar == nullptr) HumanChar = Cast<AHumanCharacter>(TryGetPawnOwner());
-	if (CombatComp == nullptr) CombatComp = HumanChar ? HumanChar->CombatComp : nullptr;
-	if (MovementComp == nullptr) MovementComp = HumanChar ? HumanChar->MovementComp : nullptr;
+	// 读取 weapon_root 在组件空间中的旋转，并剥离上一帧 Control Rig (Set Transform - Bone) 写回的附加旋转，
+	// 还原 Blender 动画本身赋予 weapon_root 的真实朝向
+	if (USkeletalMeshComponent* SkelMesh = GetSkelMeshComponent())
+	{
+		if (SkelMesh->GetBoneIndex(Bones1P::WeaponRoot) != INDEX_NONE)
+		{
+			const FQuat RawBoneCompRot = SkelMesh->GetBoneQuaternion(Bones1P::WeaponRoot, EBoneSpaces::ComponentSpace);
+			CachedWeaponRootCompRot = (LastAppliedCompRot.Inverse() * RawBoneCompRot).GetNormalized();
+		}
+	}
 }
 
-void UAnimInstHuman1P::NativeThreadSafeUpdateAnimation(float DeltaSeconds)
+FTransform UAnimInstHuman1P::BuildWeaponPivotOffsetTransform(const FVector& StdLocation, const FRotator& StdRotation)
 {
-	Super::NativeThreadSafeUpdateAnimation(DeltaSeconds);
+	// 1. FPArms 网格体在角色蓝图中绕 Z 轴旋转了 -90 度，因此组件空间中：+Y = 前后(+前), -X = 左右(+右), +Z = 上下(+上)
+	const FQuat StdToComp = FRotator(0.f, 90.f, 0.f).Quaternion();
+	const FQuat StdQuat = StdRotation.Quaternion();
+	const FQuat CompSpaceRot = StdToComp * StdQuat * StdToComp.Inverse();
 
-	if (!HumanChar || !CombatComp || !MovementComp) return;
+	// 记录本帧实际写入 weapon_root 的组件空间旋转，供下一帧 NativeUpdateAnimation 剥离
+	LastAppliedCompRot = FQuat::Slerp(FQuat::Identity, CompSpaceRot, WeaponIKAlpha);
 
-	bIsOnLadder = MovementComp->MovementMode == MOVE_Custom && MovementComp->CustomMovementMode == CMOVE_Ladder;
+	// 2. Blender 动画中移动/旋转了 weapon_root，而 CR_Human1P 中 Multiply(A, B) 会将 A 放在 B (weapon_root) 的局部空间下计算：
+	//    Result.Loc = B_Rot * A_Loc + B_Loc
+	//    Result.Rot = B_Rot * A_Rot
+	//    因此乘以 CachedWeaponRootCompRot.Inverse() 抵消 B_Rot，使无论 weapon_root 在 Blender 里如何旋转，
+	//    UFragWeapon 的 X=前后, Y=左右, Z=上下 始终严格沿着第一人称镜头的前后、左右、上下方向生效！
+	const FQuat StdToBone = CachedWeaponRootCompRot.Inverse() * StdToComp;
+	const FVector BoneSpaceLoc = StdToBone.RotateVector(StdLocation);
+	const FQuat BoneSpaceRot = StdToBone * StdQuat * StdToBone.Inverse();
 
-	FVector Velocity = HumanChar->GetVelocity();
-	Speed = bIsOnLadder ? FMath::Abs(Velocity.Z) : Velocity.Size2D();
-
-	bIsInAir = MovementComp->IsFalling() && !bIsOnLadder;
-	bIsAccelerating = MovementComp->GetCurrentAcceleration().Size() > 0.f;
-	bIsCrouched = HumanChar->bIsCrouched;
-
-	if (AEquipment* CurEquipment = CombatComp->GetCurEquipment())
-	{
-		EquipmentName = CurEquipment->EquipmentName;
-		// FString EnumString = UEnum::GetValueAsString(CurEquipment->EquipmentName);
-		// UE_LOG(LogTemp, Warning, TEXT("EquipmentName = %s"), *EnumString);
-
-		WalkPlayRate = HumanChar->GetMaxWalkSpeed() / HumanChar->Level1MaxWalkSpeed;
-		if (CombatComp->IsAiming())
-		{
-			WalkPlayRate *= CurEquipment->EquipmentAsset->GetAimingWalkSpeedMul();
-		}
-		else
-		{
-			WalkPlayRate *= CurEquipment->EquipmentAsset->GetWalkSpeedMul();
-		}
-	}
-	else
-	{
-		WalkPlayRate = 1.f;
-	}
-
-	if (HumanChar->IsLocallyControlled()) // TODO 非本地瞄准动画暂时禁用了
-	{
-		if (AWeapon* CurWeapon = CombatComp->GetCurWeapon())
-		{
-			// if (!Montage_IsPlaying(CurWeapon->ADSMontage_C)) // 完全进入瞄准状态
-			{
-				bIsAiming = CombatComp->IsAiming();
-			}
-		}
-	}
-
-	// 计算瞄准方向与移动方向的偏移量，用于控制脚步朝向
-	FRotator AimRotation = HumanChar->GetBaseAimRotation();
-	FRotator MovementRotation = UKismetMathLibrary::MakeRotFromX(HumanChar->GetVelocity());
-	FRotator DiffRotation = UKismetMathLibrary::NormalizedDeltaRotator(MovementRotation, AimRotation);
-	AimYaw = DiffRotation.Yaw;
-
-	// 根据AimPitch计算骨骼偏移量
-	AimPitch = HumanChar->AimPitch;
-	Spine_01_Rotator.Roll = UKismetMathLibrary::MapRangeClamped(AimPitch, -90.f, 90.f, 10.f, -10.f);
-	Spine_02_Rotator.Roll = UKismetMathLibrary::MapRangeClamped(AimPitch, -90.f, 90.f, 10.f, -10.f);
-	Spine_03_Rotator.Roll = UKismetMathLibrary::MapRangeClamped(AimPitch, -90.f, 90.f, 70.f, -70.f);
+	return FTransform(BoneSpaceRot, BoneSpaceLoc, FVector::OneVector);
 }

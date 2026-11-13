@@ -2,7 +2,7 @@
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "MutateArena/Equipments/Weapon.h"
 #include "MutateArena/Characters/Components/CombatComponent.h"
-#include "MutateArena/Characters/AnimInstHuman.h"
+#include "MutateArena/Characters/AnimInstHumanBase.h"
 #include "MutateArena/Equipments/AnimInstEquipment.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Kismet/GameplayStatics.h"
@@ -24,38 +24,20 @@ bool UGC_Weapon_Fire::OnExecute_Implementation(AActor* MyTarget, const FGameplay
     AHumanCharacter* HumanChar = Cast<AHumanCharacter>(MyTarget);
     AWeapon* CurWeapon = Cast<AWeapon>(const_cast<UObject*>(Parameters.SourceObject.Get()));
 	UCombatComponent* CombatComp = HumanChar ? HumanChar->CombatComp : nullptr;
+    
     if (!HumanChar || !CurWeapon || !CombatComp)
     {
         return Super::OnExecute_Implementation(MyTarget, Parameters);
     }
 
- //    // 播放角色动画
- //    if (UAnimInstHuman* HumanAnimInst = Cast<UAnimInstHuman>(HumanChar->BodyMesh->GetAnimInstance()))
- //    {
- //        if (HumanAnimInst->Montage_IsPlaying(CurWeapon->ADSMontage_C))
- //        {
- //        }
- //        else
- //        {
- //            UAnimMontage* CharMontage = CombatComp->IsAiming() ? CurWeapon->FireADSMontage_C : CurWeapon->FireMontage_C;
- //            if (!HumanChar->IsLocallyControlled())
- //            {
- //                CharMontage = CurWeapon->FireMontage_C;
- //            }
- //            HumanAnimInst->Montage_Play(CharMontage);
- //        }
- //    }
- //
-	// // 播放武器动画
- //    if (UAnimInstEquipment* EquipmentAnimInst = CurWeapon->GetEquipmentAnimInst())
- //    {
- //        UAnimMontage* WeapMontage = CombatComp->IsAiming() ? CurWeapon->FireADSMontage_E : CurWeapon->FireMontage_E;
- //        if (!HumanChar->IsLocallyControlled())
- //        {
- //            WeapMontage = CurWeapon->FireMontage_E;
- //        }
- //        EquipmentAnimInst->Montage_Play(WeapMontage);
- //    }
+    // 根据当前视角选择 1P (Mesh1P) 或 3P (BodyMesh) 动画实例，触发程序化开火后坐力脉冲
+    if (USkeletalMeshComponent* TargetCharMesh = HumanChar->bIsCurrentViewTarget ? HumanChar->Mesh1P : HumanChar->BodyMesh.Get())
+    {
+        if (UAnimInstHumanBase* HumanAnimInst = Cast<UAnimInstHumanBase>(TargetCharMesh->GetAnimInstance()))
+        {
+            HumanAnimInst->AddRecoilImpulse(CurWeapon->FragWeapon);
+        }
+    }
 
 	if (USceneComponent* WeaponMesh = CurWeapon->GetVisibleEquipmentMesh())
     {

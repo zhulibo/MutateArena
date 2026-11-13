@@ -45,6 +45,7 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(UCombatComponent, Slot4Equipment);
 	DOREPLIFETIME(UCombatComponent, CurEquipmentSlot);
 	DOREPLIFETIME(UCombatComponent, LastEquipmentSlot);
+	DOREPLIFETIME(UCombatComponent, bIsAiming);
 }
 
 void UCombatComponent::BeginPlay()
@@ -389,6 +390,7 @@ void UCombatComponent::InstantSwap(EEquipmentSlot TargetSlot)
 	}
 
 	CurEquipmentSlot = TargetSlot;
+	bIsAiming = false;
 
 	AttachToHand(TargetEquipment, Sockets::SuffixR);
 
@@ -403,91 +405,37 @@ void UCombatComponent::InstantSwap(EEquipmentSlot TargetSlot)
 
 bool UCombatComponent::IsAiming()
 {
-	if (HumanChar && HumanChar->GetAbilitySystemComponent())
+	if (HumanChar && (HumanChar->IsLocallyControlled() || HumanChar->HasAuthority()))
 	{
-		return HumanChar->GetAbilitySystemComponent()->HasMatchingGameplayTag(TAG_STATE_COMBAT_AIMING);
+		if (UAbilitySystemComponent* ASC = HumanChar->GetAbilitySystemComponent())
+		{
+			return ASC->HasMatchingGameplayTag(TAG_STATE_COMBAT_AIMING);
+		}
 	}
-	return false;
+	return bIsAiming;
 }
 
-void UCombatComponent::LocalSetAiming(bool bIsAiming)
+void UCombatComponent::LocalSetAiming(bool TempBIsAiming)
 {
 	if (HumanChar == nullptr) HumanChar = Cast<AHumanCharacter>(GetOwner());
-	if (HumanChar == nullptr || HumanChar->BodyMesh == nullptr) return;
-	if (AnimInstHuman == nullptr) AnimInstHuman = Cast<UAnimInstHuman>(HumanChar->BodyMesh->GetAnimInstance());
-	if (GetCurWeapon() == nullptr || AnimInstHuman == nullptr) return;
+	if (HumanChar == nullptr || !HumanChar->IsLocallyControlled()) return;
 
-	if (HumanChar->IsLocallyControlled()) // TODO 非本地瞄准动画暂时禁用了
+	if (AWeapon* CurWeapon = GetCurWeapon(); CurWeapon && CurWeapon->FragWeapon)
 	{
-		// 角色瞄准动画
-		// if (bIsAiming) // 瞄准
-		// {
-		// 	if (AnimInstHuman->Montage_IsPlaying(GetCurWeapon()->ADSMontage_C))
-		// 	{
-		// 		AnimInstHuman->Montage_SetPlayRate(GetCurWeapon()->ADSMontage_C, 1.f);
-		//
-		// 		float TempFOVInterpTime = GetCurWeapon()->ADSMontage_C->GetPlayLength() - AnimInstHuman->Montage_GetPosition(GetCurWeapon()->ADSMontage_C);
-		// 		StartInterpFOV(DefaultFOV * GetCurWeapon()->AimingFOVMul, TempFOVInterpTime);
-		// 	}
-		// 	else
-		// 	{
-		// 		AnimInstHuman->Montage_Play(GetCurWeapon()->ADSMontage_C);
-		// 		
-		// 		StartInterpFOV(DefaultFOV * GetCurWeapon()->ADSMontage_C->GetPlayLength());
-		// 	}
-		// }
-		// else // 取消瞄准
-		// {
-		// 	if (AnimInstHuman->Montage_IsPlaying(GetCurWeapon()->ADSMontage_C))
-		// 	{
-		// 		AnimInstHuman->Montage_SetPlayRate(GetCurWeapon()->ADSMontage_C, -1.f);
-		//
-		// 		StartInterpFOV(DefaultFOV, AnimInstHuman->Montage_GetPosition(GetCurWeapon()->ADSMontage_C));
-		// 	}
-		// 	else
-		// 	{
-		// 		AnimInstHuman->Montage_Play(GetCurWeapon()->ADSMontage_C, -1.f);
-		// 		AnimInstHuman->Montage_SetPosition(GetCurWeapon()->ADSMontage_C, GetCurWeapon()->ADSMontage_C->GetPlayLength());
-		// 		
-		// 		StartInterpFOV(DefaultFOV, GetCurWeapon()->ADSMontage_C->GetPlayLength());
-		// 	}
-		// }
+		const float TargetAimFOV = TempBIsAiming ? (DefaultFOV * CurWeapon->FragWeapon->AimingFOVMul) : DefaultFOV;
+		StartInterpFOV(TargetAimFOV, CurWeapon->FragWeapon->ADSTime);
+	}
+	else if (!TempBIsAiming)
+	{
+		StartInterpFOV(DefaultFOV, 0.2f);
+	}
 
-		// 武器瞄准动画
-		// if (UAnimInstEquipment* EquipmentAnimInst = GetCurEquipment()->GetEquipmentAnimInst())
-		// {
-		// 	if (bIsAiming) // 瞄准
-		// 	{
-		// 		if (EquipmentAnimInst->Montage_IsPlaying(GetCurWeapon()->ADSMontage_E))
-		// 		{
-		// 			EquipmentAnimInst->Montage_SetPlayRate(GetCurWeapon()->ADSMontage_E, 1.f);
-		// 		}
-		// 		else
-		// 		{
-		// 			EquipmentAnimInst->Montage_Play(GetCurWeapon()->ADSMontage_E);
-		// 		}
-		// 	}
-		// 	else // 取消瞄准
-		// 	{
-		// 		if (EquipmentAnimInst->Montage_IsPlaying(GetCurWeapon()->ADSMontage_E))
-		// 		{
-		// 			EquipmentAnimInst->Montage_SetPlayRate(GetCurWeapon()->ADSMontage_E, -1.f);
-		// 		}
-		// 		else
-		// 		{
-		// 			EquipmentAnimInst->Montage_Play(GetCurWeapon()->ADSMontage_E, -1.f);
-		// 			EquipmentAnimInst->Montage_SetPosition(GetCurWeapon()->ADSMontage_E, GetCurWeapon()->ADSMontage_E->GetPlayLength());
-		// 		}
-		// 	}
-		// }
-		
-		if (BaseController == nullptr) BaseController = Cast<ABaseController>(HumanChar->GetController());
-		if (BaseController)
+	if (BaseController == nullptr) BaseController = Cast<ABaseController>(HumanChar->GetController());
+	if (BaseController)
+	{
+		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
 		{
-			if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
-			{
-				UISubsystem->OnCrosshairHidden.Broadcast(bIsAiming);
-			}
+			UISubsystem->OnCrosshairHidden.Broadcast(TempBIsAiming);
 		}
 	}
 }
@@ -567,6 +515,7 @@ void UCombatComponent::ServerDestroyEquipments_Implementation(bool bIsDestroySlo
 
 	CurEquipmentSlot = EEquipmentSlot::None;
 	LastEquipmentSlot = EEquipmentSlot::None;
+	bIsAiming = false;
 }
 
 void UCombatComponent::SetAttackCollisionEnabled(bool bIsEnabled)

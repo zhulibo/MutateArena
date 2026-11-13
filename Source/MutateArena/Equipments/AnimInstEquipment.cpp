@@ -20,11 +20,5 @@ void UAnimInstEquipment::NativeUpdateAnimation(float DeltaSeconds)
 	AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(Equipment->GetOwner());
 	if (HumanCharacter == nullptr || HumanCharacter->CombatComp == nullptr || HumanCharacter->CombatComp->GetCurWeapon() == nullptr) return;
 
-	if (HumanCharacter->IsLocallyControlled()) // TODO 非本地瞄准动画暂时禁用了
-	{
-		// if (!Montage_IsPlaying(HumanCharacter->CombatComp->GetCurWeapon()->ADSMontage_E))
-		{
-			bIsAiming = HumanCharacter->CombatComp->IsAiming();
-		}
-	}
+	bIsAiming = HumanCharacter->CombatComp->IsAiming();
 }

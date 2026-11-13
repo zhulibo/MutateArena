@@ -24,7 +24,7 @@ void UGA_Weapon_Reload_Shotgun::ActivateAbility(const FGameplayAbilitySpecHandle
 	AHumanCharacter* HumanChar = GetHumanCharacter();
 	AWeapon* CurWeapon = GetCurWeapon();
 
-	if (!ASC || !HumanChar || !CurWeapon)
+	if (!ASC || !HumanChar || !CurWeapon || !CurWeapon->FragWeapon)
 	{
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;
@@ -41,9 +41,9 @@ void UGA_Weapon_Reload_Shotgun::ActivateAbility(const FGameplayAbilitySpecHandle
 		// 播放角色换弹动画
 		UAbilityTask_PlayMontageAndWait* MontageTask = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(
 			this, NAME_None, CurWeapon->FragWeapon->ReloadMontage_C, 1.f, NAME_None, false);
-		MontageTask->OnCompleted.AddDynamic(this, &ThisClass::OnMontageFinished);
-		MontageTask->OnInterrupted.AddDynamic(this, &ThisClass::OnMontageFinished);
-		MontageTask->OnCancelled.AddDynamic(this, &ThisClass::OnMontageFinished);
+		MontageTask->OnCompleted.AddDynamic(this, &ThisClass::OnMontageCompleted);
+		MontageTask->OnInterrupted.AddDynamic(this, &ThisClass::OnMontageCancelled);
+		MontageTask->OnCancelled.AddDynamic(this, &ThisClass::OnMontageCancelled);
 		MontageTask->ReadyForActivation();
 		
 		// 播放武器换弹动画
@@ -54,7 +54,7 @@ void UGA_Weapon_Reload_Shotgun::ActivateAbility(const FGameplayAbilitySpecHandle
 	}
 	else
 	{
-		EndAbility(Handle, ActorInfo, ActivationInfo, true, false);
+		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 	}
 }
 
@@ -64,7 +64,7 @@ void UGA_Weapon_Reload_Shotgun::OnShellInsertEventReceived(FGameplayEventData Pa
 	AHumanCharacter* HumanChar = GetHumanCharacter();
 	AWeapon* CurWeapon = GetCurWeapon();
 
-	if (!ASC || !HumanChar || !CurWeapon)
+	if (!ASC || !HumanChar || !CurWeapon || !CurWeapon->FragWeapon)
 	{
 		return;
 	}
@@ -90,4 +90,9 @@ void UGA_Weapon_Reload_Shotgun::OnShellInsertEventReceived(FGameplayEventData Pa
 		CueParams.SourceObject = CurWeapon;
 		ASC->ExecuteGameplayCue(TAG_GC_WEAPON_RELOADEND, CueParams);
 	}
+}
+
+void UGA_Weapon_Reload_Shotgun::ReloadAmmo()
+{
+	// 霰弹枪在 OnShellInsertEventReceived 中逐发补充弹药，不走基类整匣装填
 }

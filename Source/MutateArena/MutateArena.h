@@ -38,6 +38,18 @@ namespace Sockets
 	inline const FName SuffixL(TEXT("_L"));
 }
 
+// 骨骼名称
+namespace Bones1P
+{
+	inline const FName WeaponRoot(TEXT("weapon_root"));
+}
+
+namespace Bones3P
+{
+	inline const FName VBRightHand(TEXT("VB spine_05_hand_r"));
+	inline const FName RightHand(TEXT("hand_r"));
+}
+
 // 蒙太奇片段
 namespace MontageSections
 {

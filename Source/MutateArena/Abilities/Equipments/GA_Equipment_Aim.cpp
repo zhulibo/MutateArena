@@ -46,9 +46,19 @@ void UGA_Equipment_Aim::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;
 	}
+
+	CombatComp->bIsAiming = true;
 }
 
 void UGA_Equipment_Aim::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
+	if (AHumanCharacter* HumanChar = GetHumanCharacter())
+	{
+		if (UCombatComponent* CombatComp = HumanChar->CombatComp)
+		{
+			CombatComp->bIsAiming = false;
+		}
+	}
+
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }

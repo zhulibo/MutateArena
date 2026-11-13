@@ -419,14 +419,17 @@ void AEquipment::DestroyEquipment()
 
 void AEquipment::GiveAbilities(UAbilitySystemComponent* ASC)
 {
-	if (!ASC || !HasAuthority()) return; 
+	if (!ASC || !HasAuthority()) return;
 
-	for (TSubclassOf<UGameplayAbility> AbilityClass : Abilities)
+	const UEquipmentAsset* Asset = EnsureEquipmentAsset();
+	if (!Asset) return;
+
+	for (const TSoftClassPtr<UGameplayAbility>& AbilitySoftClass : Asset->GetGrantedAbilities())
 	{
-		if (AbilityClass)
+		if (TSubclassOf<UGameplayAbility> AbilityClass = UDataAssetManager::Get().GetSubclass(AbilitySoftClass))
 		{
 			FGameplayAbilitySpec Spec(AbilityClass, 1, INDEX_NONE, this);
-			
+
 			FGameplayAbilitySpecHandle Handle = ASC->GiveAbility(Spec);
 			GrantedAbilityHandles.Add(Handle);
 		}

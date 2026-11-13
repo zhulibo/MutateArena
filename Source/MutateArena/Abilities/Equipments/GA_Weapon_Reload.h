@@ -24,10 +24,18 @@ protected:
 
 	// 监听蒙太奇播放完成或被打断
 	UFUNCTION()
-	void OnMontageFinished();
+	void OnMontageCompleted();
+
+	UFUNCTION()
+	void OnMontageCancelled();
 
 	// 监听来自 AnimNotify (UAN_SendGameplayEvent) 的事件
 	UFUNCTION()
 	void OnReloadEventReceived(FGameplayEventData Payload);
+
+	virtual void ReloadAmmo();
+
+private:
+	bool bHasReloaded = false;
 	
 };

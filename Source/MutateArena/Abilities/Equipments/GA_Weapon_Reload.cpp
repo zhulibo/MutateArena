@@ -20,7 +20,7 @@ bool UGA_Weapon_Reload::CanActivateAbility(const FGameplayAbilitySpecHandle Hand
 	}
 	
 	AHumanCharacter* HumanChar = GetHumanCharacter();
-	UCombatComponent* CombatComp = HumanChar->CombatComp;
+	UCombatComponent* CombatComp = HumanChar ? HumanChar->CombatComp : nullptr;
 	AWeapon* CurWeapon = GetCurWeapon();
 
 	if (!HumanChar || !CurWeapon || !CombatComp)
@@ -43,6 +43,8 @@ bool UGA_Weapon_Reload::CanActivateAbility(const FGameplayAbilitySpecHandle Hand
 
 void UGA_Weapon_Reload::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
 {
+	bHasReloaded = false;
+
 	if (!CommitAbility(Handle, ActorInfo, ActivationInfo))
 	{
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
@@ -71,9 +73,9 @@ void UGA_Weapon_Reload::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 		// 播放角色换弹动画 bStopWhenAbilityEnds = false 保证 OnReloadEventReceived 结束技能时动画依然播放到末尾
 		UAbilityTask_PlayMontageAndWait* MontageTask = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(
 			this, NAME_None, CurWeapon->FragWeapon->ReloadMontage_C, 1.f, NAME_None, false);
-		MontageTask->OnCompleted.AddDynamic(this, &ThisClass::OnMontageFinished);
-		MontageTask->OnInterrupted.AddDynamic(this, &ThisClass::OnMontageFinished);
-		MontageTask->OnCancelled.AddDynamic(this, &ThisClass::OnMontageFinished);
+		MontageTask->OnCompleted.AddDynamic(this, &ThisClass::OnMontageCompleted);
+		MontageTask->OnInterrupted.AddDynamic(this, &ThisClass::OnMontageCancelled);
+		MontageTask->OnCancelled.AddDynamic(this, &ThisClass::OnMontageCancelled);
 		MontageTask->ReadyForActivation();
 		
 		// 播放武器换弹动画
@@ -84,47 +86,75 @@ void UGA_Weapon_Reload::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 	}
 	else
 	{
-		EndAbility(Handle, ActorInfo, ActivationInfo, true, false);
+		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 	}
 }
 
 void UGA_Weapon_Reload::OnReloadEventReceived(FGameplayEventData Payload)
 {
+	ReloadAmmo();
+	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+}
+
+void UGA_Weapon_Reload::OnMontageCompleted()
+{
+	ReloadAmmo();
+	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+}
+
+void UGA_Weapon_Reload::OnMontageCancelled()
+{
+	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
+}
+
+void UGA_Weapon_Reload::ReloadAmmo()
+{
+	if (bHasReloaded)
+	{
+		return;
+	}
+
 	AHumanCharacter* HumanChar = GetHumanCharacter();
 	UCombatComponent* CombatComp = HumanChar ? HumanChar->CombatComp : nullptr;
 	AWeapon* CurWeapon = GetCurWeapon();
 
-	if (!HumanChar || !CombatComp || !CurWeapon)
+	if (!HumanChar || !CombatComp || !CurWeapon || !CurWeapon->FragWeapon)
 	{
-		EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 		return;
 	}
 
-	int32 Ammo = GetCurWeapon()->Ammo;
-	int32 MagCapacity = GetCurWeapon()->FragWeapon->MagCapacity;
-	int32 CarriedAmmo = GetCurWeapon()->CarriedAmmo;
-	int32 NeedAmmoNum = MagCapacity - Ammo;
+	bHasReloaded = true;
+
+	const int32 Ammo = CurWeapon->Ammo;
+	const int32 MagCapacity = CurWeapon->FragWeapon->MagCapacity;
+	const int32 CarriedAmmo = CurWeapon->CarriedAmmo;
+	const int32 NeedAmmoNum = MagCapacity - Ammo;
+
+	if (NeedAmmoNum <= 0 || CarriedAmmo <= 0)
+	{
+		return;
+	}
 
 	if (CarriedAmmo >= NeedAmmoNum)
 	{
-		GetCurWeapon()->SetAmmo(MagCapacity);
-		GetCurWeapon()->SetCarriedAmmo(CarriedAmmo - NeedAmmoNum);
+		CurWeapon->SetAmmo(MagCapacity);
+		CurWeapon->SetCarriedAmmo(CarriedAmmo - NeedAmmoNum);
 	}
 	else
 	{
-		GetCurWeapon()->SetAmmo(Ammo + CarriedAmmo);
-		GetCurWeapon()->SetCarriedAmmo(0);
+		CurWeapon->SetAmmo(Ammo + CarriedAmmo);
+		CurWeapon->SetCarriedAmmo(0);
 	}
-	
-	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
-}
-
-void UGA_Weapon_Reload::OnMontageFinished()
-{
-	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 }
 
 void UGA_Weapon_Reload::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
+	// 换弹完成通知（Event.Weapon.Reload.End）挂在 1P 手臂蒙太奇（ReloadMontage1P_C）上，仅在本地控制端播放并触发；
+	// 当非服务端的客户端收到通知并调用 EndAbility(bWasCancelled = false) 同步到服务端时，服务端在此处完成权威弹药补充。
+	if (!bWasCancelled && !bHasReloaded)
+	{
+		ReloadAmmo();
+	}
+
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }
