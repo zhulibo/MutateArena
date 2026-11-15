@@ -97,38 +97,47 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	float AimingFOVMul = 0.9f;
-	UPROPERTY(EditAnywhere)
-	float ScopeFOV = 90.f;
 	// 瞄准过渡耗时（同时驱动镜头 FOV 缩放与角色程序化瞄准姿态插值）
 	UPROPERTY(EditAnywhere)
-	float ADSTime = 0.2f;
+	float ADSTime = 0.3f;
 
-	// 程序化动画参数
+	// 1P 瞄准时，Sight 插槽距离摄像机镜头的理想前向距离 (单位: cm | X轴正前方距离)
+	UPROPERTY(EditAnywhere)
+	float ADSEyeReliefDistance = 10.f;
+	// 机瞄位置微调偏移 (单位: cm | X=前后, Y=左右, Z=上下；1P 在 Sight 插槽自动对齐基础上叠加，3P 在默认举枪偏移基础上叠加)
 	UPROPERTY(EditAnywhere)
 	FVector ADSOffsetLocation = FVector(0.f, 0.f, 0.f);
+	// 机瞄旋转微调偏移 (单位: 度 | X=Roll侧倾, Y=Pitch俯仰, Z=Yaw偏航)
 	UPROPERTY(EditAnywhere)
 	FRotator ADSOffsetRotation = FRotator::MakeFromEuler(FVector(0.f, 0.f, 0.f));
+	// 3P 瞄准时角色向右歪头贴腮的总旋转偏移 (单位: 度 | 标准坐标系: X=Roll向右歪头, Y=Pitch低头, Z=Yaw偏航)
+	UPROPERTY(EditAnywhere)
+	FRotator ADSHeadTiltRotation3P = FRotator::MakeFromEuler(FVector(14.f, -2.f, 4.f));
+	// 单发开火位置抖动 (单位: cm | X=负值向后撞肩, Y=左右, Z=上下)
 	UPROPERTY(EditAnywhere)
 	FVector RecoilKickLocation = FVector(0.f, 0.f, 0.f);
+	// 单发开火旋转抖动 (单位: 度 | X=枪身拧转, Y=枪口上跳, Z=枪口左右摆)
 	UPROPERTY(EditAnywhere)
 	FRotator RecoilKickRotation = FRotator::MakeFromEuler(FVector(0.f, 0.f, 0.f));
-	// 程序化后坐力最大累积上限（X 反向为 -X，正向复进过冲为 +0.5*X）
+	// 连发最大位置偏移上限 (单位: cm | 防止连续扫射时枪模移出屏幕)
 	UPROPERTY(EditAnywhere)
 	FVector RecoilMaxLocation = FVector(999.f, 999.f, 999.f);
+	// 连发最大旋转偏移上限 (单位: 度 | 防止连续扫射时枪口无限上扬)
 	UPROPERTY(EditAnywhere)
 	FRotator RecoilMaxRotation = FRotator::MakeFromEuler(FVector(90.f, 90.f, 90.f));
-	// 分段非对称弹簧频率倍率：远离原点爆发期 (Kick) 与靠近原点回正期 (Recovery)
+	// 开火爆发速度倍率 (越大枪身手后坐力后仰越快)
 	UPROPERTY(EditAnywhere)
 	float RecoilKickSpeedMul = 1.f;
+	// 后坐力回正速度倍率 (越大枪身归位越快)
 	UPROPERTY(EditAnywhere)
-	float RecoilRecoverySpeedMul = 1.f;
-	// 弹簧阻尼倍率（越小过冲余波越明显，越大越稳重收敛）
+	float RecoilRecoverySpeedMul = 0.7f;
+	// 后坐力回正阻尼倍率 (越大回正过冲越小)
 	UPROPERTY(EditAnywhere)
 	float RecoilDampingMul = 1.f;
-	// 连发横向柏林噪波与奇偶拧转强度倍率
+	// 连发随机晃动倍率 (越大扫射时枪身左右游走和拧动越剧烈；0=完全按固定方向跳动)
 	UPROPERTY(EditAnywhere)
 	float RecoilNoiseScale = 1.f;
-	// 机瞄状态下程序化后坐力幅度缩放比例
+	// 机瞄后坐力缩放比例 (0.5 = 开镜时枪模抖动幅度减半)
 	UPROPERTY(EditAnywhere)
 	float ADSRecoilScale = 0.5f;
 

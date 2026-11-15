@@ -91,10 +91,9 @@ public:
 	// 切换
 	void InstantSwap(EEquipmentSlot TargetType);
 
-	// 瞄准
+	// 瞄准（服务端通过 COND_SkipOwner 仅同步给远端模拟代理，主控端与服务端由 GA_Equipment_Aim 本地直接维护以防止延迟回弹）
 	UPROPERTY(Replicated)
 	bool bIsAiming = false;
-	bool IsAiming();
 	void LocalSetAiming(bool TempBIsAiming);
 
 	// 射击

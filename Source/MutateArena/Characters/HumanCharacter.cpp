@@ -153,9 +153,9 @@ void AHumanCharacter::OnASCInit()
 
 	if (ASC && AttributeSetBase)
 	{
-
 		ASC->RegisterGameplayTagEvent(TAG_STATE_COMBAT_SWAPPING, EGameplayTagEventType::NewOrRemoved).AddUObject(this, &ThisClass::OnSwappingTagChanged);
-		ASC->RegisterGameplayTagEvent(TAG_STATE_COMBAT_AIMING, EGameplayTagEventType::NewOrRemoved).AddUObject(this, &ThisClass::OnAimingTagChanged);
+		// 瞄准移速与镜头 FOV 已由 UGA_Equipment_Aim 在 ActivateAbility/EndAbility 中直接驱动，
+		// 不监听 TAG_STATE_COMBAT_AIMING，防止服务端延迟同步的 MinimalReplicatedTags 覆盖客户端本地取消瞄准状态。
 	}
 }
 
@@ -170,21 +170,11 @@ void AHumanCharacter::OnSwappingTagChanged(FGameplayTag GameplayTag, int NewCoun
 	}
 }
 
-void AHumanCharacter::OnAimingTagChanged(FGameplayTag GameplayTag, int NewCount)
-{
-	UpdateMaxWalkSpeed();
-
-	if (CombatComp)
-	{
-		CombatComp->LocalSetAiming(NewCount > 0);
-	}
-}
-
 void AHumanCharacter::UpdateMaxWalkSpeed()
 {
 	if (CombatComp && CombatComp->GetCurEquipment())
 	{
-		float TempMaxWalkSpeed = GetMaxWalkSpeed() * (CombatComp->IsAiming()
+		float TempMaxWalkSpeed = GetMaxWalkSpeed() * (CombatComp->bIsAiming
 			                                              ? CombatComp->GetCurEquipment()->EquipmentAsset->GetAimingWalkSpeedMul()
 			                                              : CombatComp->GetCurEquipment()->EquipmentAsset->GetWalkSpeedMul());
 		GetCharacterMovement()->MaxWalkSpeed = TempMaxWalkSpeed;
@@ -367,7 +357,7 @@ void AHumanCharacter::AimButtonReleased(const FInputActionValue& Value)
 	}
 #endif
 
-	if (!CombatComp) return;
+	if (!CombatComp || !ASC) return;
 
 	if (CombatComp->GetCurWeapon()) // 目前限制只有主副武器可瞄准
 	{

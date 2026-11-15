@@ -9,15 +9,15 @@
 
 namespace
 {
-	// 6 轴二阶弹簧频率(Hz)与阻尼比(<1.0 产生过冲回弹)
+	// 6 轴二阶弹簧基准固有频率 (Hz) 与基准阻尼比 (<1.0 为欠阻尼，产生过冲与余波回弹)
 	constexpr float FreqLocX  = 7.0f, DampLocX  = 0.50f; // 前后撞肩与复进过冲
-	constexpr float FreqLocY  = 4.5f, DampLocY  = 0.60f; // 左右平移
-	constexpr float FreqLocZ  = 5.2f, DampLocZ  = 0.55f; // 上下跳动
-	constexpr float FreqPitch = 4.2f, DampPitch = 0.55f; // 枪口上扬（略慢于 X 轴，形成先撞肩后抬头）
-	constexpr float FreqYaw   = 3.8f, DampYaw   = 0.60f; // 左右偏航
-	constexpr float FreqRoll  = 5.8f, DampRoll  = 0.35f; // 枪身拧转（低阻尼保留停火余波）
+	constexpr float FreqLocY  = 4.5f, DampLocY  = 0.60f; // 左右水平游走
+	constexpr float FreqLocZ  = 5.2f, DampLocZ  = 0.55f; // 上下垂直跳动
+	constexpr float FreqPitch = 4.2f, DampPitch = 0.55f; // 枪口上扬（频率略低于 X 轴，形成先撞肩后抬头的层次感）
+	constexpr float FreqYaw   = 3.8f, DampYaw   = 0.60f; // 枪口左右偏航
+	constexpr float FreqRoll  = 5.8f, DampRoll  = 0.35f; // 枪身轴向拧转（低阻尼以保留停火后的手腕震颤余波）
 
-	// 根据弹簧频率与阻尼比，精确计算使单发最大波峰达到 1.0 单位所需的初速度倍率（兼容欠阻尼、临界阻尼与过阻尼）
+	// 根据弹簧频率与阻尼比，精确计算使单发脉冲最大波峰达到 1.0 单位所需的初速度倍率（兼容欠阻尼、临界阻尼与过阻尼）
 	float CalcUnitPeakImpulseScale(float Frequency, float DampingRatio)
 	{
 		const float Omega = 2.f * PI * FMath::Max(0.1f, Frequency);
@@ -38,7 +38,7 @@ namespace
 		return Omega * FMath::Exp(ExpPower);
 	}
 
-	// 单自由度非对称二阶弹簧子步长积分求解器（爆发去程使用 KickSpeedMul，回正阶段使用 RecoverySpeedMul）
+	// 单自由度非对称二阶弹簧子步长积分求解器（远离平衡点的爆发去程使用 KickSpeedMul，回正阶段使用 RecoverySpeedMul）
 	void StepRecoilSpring(
 		double& Current,
 		double& Velocity,
@@ -66,10 +66,11 @@ namespace
 
 		for (int32 Step = 0; Step < SubSteps; ++Step)
 		{
-			// 从原点出发初冲时 (Current == 0, Velocity != 0) 也视为爆发去程
+			// 位移与速度同号（正远离平衡点）或从平衡点刚起步时，视为爆发去程
 			const bool bIsKicking = (Current * Velocity > 0.0) || (FMath::Abs(Current) < 1e-6 && FMath::Abs(Velocity) > 1e-6);
 			const double EffFreq = BaseFreq * (bIsKicking ? SafeKickMul : SafeRecovMul);
 			const double Omega = 2.0 * PI * EffFreq;
+
 			const double Accel = -(Omega * Omega) * Current - (2.0 * EffDamping * Omega) * Velocity;
 
 			Velocity += Accel * SubDT;
@@ -125,14 +126,14 @@ void UAnimInstHumanBase::NativeUpdateAnimation(float DeltaSeconds)
 	if (MovementComp == nullptr) MovementComp = HumanChar ? HumanChar->MovementComp : nullptr;
 	if (!HumanChar || !CombatComp) return;
 
-	// 在游戏主线程读取武器配置与蒙太奇状态，缓存供动画工作线程安全计算
+	// 在游戏主线程读取装备配置与蒙太奇状态，缓存供动画工作线程安全计算
 	AEquipment* CurEquipment = CombatComp->GetCurEquipment();
 	AWeapon* CurWeapon = CombatComp->GetCurWeapon();
 
 	const EEquipmentName NewEquipName = CurEquipment ? CurEquipment->EquipmentName : EEquipmentName::None;
 	if (EquipmentName != NewEquipName)
 	{
-		// 切换武器时清空残留的程序化后坐力状态
+		// 切换装备时清空残留的程序化后坐力状态
 		CurrentRecoilLocation = FVector::ZeroVector;
 		CurrentRecoilRotation = FRotator::ZeroRotator;
 		RecoilLocVelocity = FVector::ZeroVector;
@@ -144,7 +145,7 @@ void UAnimInstHumanBase::NativeUpdateAnimation(float DeltaSeconds)
 	bHasEquipment = (CurEquipment != nullptr && CurEquipment->EquipmentAsset != nullptr);
 	bHasWeapon = (CurWeapon != nullptr && CurWeapon->FragWeapon != nullptr);
 	bIsPlayingActionMontage = IsAnyMontagePlaying();
-	bRawIsAiming = bHasWeapon && CombatComp->IsAiming();
+	bRawIsAiming = bHasWeapon && CombatComp->bIsAiming;
 
 	if (bHasEquipment)
 	{
@@ -162,10 +163,14 @@ void UAnimInstHumanBase::NativeUpdateAnimation(float DeltaSeconds)
 		const UFragWeapon* FragWeapon = CurWeapon->FragWeapon;
 		const float ADSScale = GetADSOffsetScale();
 		CachedADSTime = FMath::Max(0.01f, FragWeapon->ADSTime);
-		CachedADSOffsetLoc = FragWeapon->ADSOffsetLocation * ADSScale;
+
+		// 默认（3P）计算：叠加在腰射右手基准骨骼 (VB spine_05_hand_r) 上的举枪增量偏移（1P 将在子类中按 Sight 插槽与摄像机中心轴精确覆写）。
+		// 标准坐标系下：向后抵肩(-X)、向左靠拢胸口中心(-Y)、向上抬起迎合右脸颊贴腮(+Z)，并叠加武器微调偏移后按 ADSScale 缩放。
+		const FVector Base3PRaiseOffset(-2.f, -6.f, 6.f);
+		CachedADSOffsetLoc = (Base3PRaiseOffset + FragWeapon->ADSOffsetLocation) * ADSScale;
 		CachedADSOffsetRot = FragWeapon->ADSOffsetRotation * ADSScale;
 
-		// 缓存武器程序化后坐力参数供工作线程安全读取
+		// 缓存武器程序化后坐力参数供动画工作线程安全读取
 		CachedRecoilMaxLoc = FVector(
 			FMath::Max(0.0, FragWeapon->RecoilMaxLocation.X),
 			FMath::Max(0.0, FragWeapon->RecoilMaxLocation.Y),
@@ -179,11 +184,10 @@ void UAnimInstHumanBase::NativeUpdateAnimation(float DeltaSeconds)
 		CachedRecoilKickSpeedMul = FMath::Max(0.1f, FragWeapon->RecoilKickSpeedMul);
 		CachedRecoilRecoverySpeedMul = FMath::Max(0.1f, FragWeapon->RecoilRecoverySpeedMul);
 		CachedRecoilDampingMul = FMath::Max(0.05f, FragWeapon->RecoilDampingMul);
-		CachedRecoilNoiseScale = FMath::Max(0.f, FragWeapon->RecoilNoiseScale);
 	}
 	else
 	{
-		// 未持枪时只需清空机瞄目标偏移，后坐力已在切枪时归零，无需重复重置缓存参数
+		// 未持枪时重置机瞄目标偏移（后坐力状态已在切换装备时归零）
 		CachedADSTime = 0.2f;
 		CachedADSOffsetLoc = FVector::ZeroVector;
 		CachedADSOffsetRot = FRotator::ZeroRotator;
@@ -212,12 +216,61 @@ void UAnimInstHumanBase::NativeThreadSafeUpdateAnimation(float DeltaSeconds)
 	// 2. 程序化瞄准偏移（播放动作蒙太奇时自动平滑退出瞄准偏移）
 	bIsAiming = bRawIsAiming && !bIsPlayingActionMontage;
 	const float TargetAimAlpha = bIsAiming ? 1.f : 0.f;
-	const float ADSInterpRate = CachedADSTime > KINDA_SMALL_NUMBER ? (1.f / CachedADSTime) : 5.f;
-	AimAlpha = FMath::FInterpConstantTo(AimAlpha, TargetAimAlpha, DeltaSeconds, ADSInterpRate);
 
-	const float SmoothAimAlpha = FMath::SmoothStep(0.f, 1.f, AimAlpha);
-	CurrentADSLocation = FMath::Lerp(FVector::ZeroVector, CachedADSOffsetLoc, SmoothAimAlpha);
-	CurrentADSRotation = FMath::Lerp(FRotator::ZeroRotator, CachedADSOffsetRot, SmoothAimAlpha);
+	// 瞄准状态反转时，锁定当前 SmoothAimAlpha 与 AimAlpha 作为新分段起点，并按 SmoothAimAlpha 的实际剩余视觉行程折算耗时，
+	// 防止在 EaseOut(开镜) 与 EaseInOut(收枪) 两条非对称缓动曲线间半途切换时产生单帧位置跳变或速度失真
+	if (bIsAiming != bPrevAiming)
+	{
+		bPrevAiming = bIsAiming;
+		AimSegmentStartSmooth = SmoothAimAlpha;
+		AimSegmentStartLinear = AimAlpha;
+		AimSegmentProgress = 0.f;
+		AimSegmentDuration = CachedADSTime * FMath::Abs(TargetAimAlpha - AimSegmentStartSmooth);
+	}
+
+	AimSegmentProgress = AimSegmentDuration > KINDA_SMALL_NUMBER
+		? FMath::Min(1.f, AimSegmentProgress + DeltaSeconds / AimSegmentDuration)
+		: 1.f;
+
+	AimAlpha = FMath::Lerp(AimSegmentStartLinear, TargetAimAlpha, AimSegmentProgress);
+
+	// 开镜采用急起缓停 (EaseOut 2.6) 提升按键瞬间跟手度，收枪采用平滑加减速 (EaseInOut 2.0)
+	const float CurveAlpha = bIsAiming
+		? FMath::InterpEaseOut(0.f, 1.f, AimSegmentProgress, 2.6f)
+		: FMath::InterpEaseInOut(0.f, 1.f, AimSegmentProgress, 2.0f);
+	SmoothAimAlpha = FMath::Lerp(AimSegmentStartSmooth, TargetAimAlpha, CurveAlpha);
+
+	const float ADSScale = GetADSOffsetScale();
+
+	// (a) 举枪半途包络 (0 -> 1 -> 0)：模拟人手举枪“先内收再上托”的下抄弧线与手腕内倾，腰射(0)与完全开镜(1)时严格为 0
+	const float MidArc = FMath::Sin(AimAlpha * PI) * (1.f - AimAlpha * 0.4f);
+	// 按实际垂直抬升高度的 10% 自适应计算下抄弧线深度 (上限 0.8cm)，避免高度差极小时起步反向下掉
+	const float ArcDipZ = FMath::Clamp(CachedADSOffsetLoc.Z * 0.1f, 0.f, 0.8f * ADSScale);
+	// 按实际横向提拉距离自适应缩放手腕内倾幅度 (以 6cm 为满额基准)
+	const float LateralRatio = FMath::Clamp(FMath::Abs(CachedADSOffsetLoc.Y) / FMath::Max(1.f, 6.f * ADSScale), 0.2f, 1.f);
+
+	// (b) 开镜到位微过冲包络：仅在开镜后半程 (AimAlpha 0.5 -> 1.0) 产生正值波峰模拟抵肩与回正缓冲，分段起步前 25% 进度内通过 SettleBlendIn 平滑淡入
+	const float SettleBlendIn = FMath::Clamp(AimSegmentProgress * 4.f, 0.f, 1.f);
+	const float SettleWave = bIsAiming
+		? (-FMath::Sin(AimAlpha * 2.f * PI) * FMath::Square(AimAlpha) * ADSScale * SettleBlendIn)
+		: 0.f;
+
+	// 合成附加动态位置：仅保留到位顺视线向后撞肩 (-X) 与半途托举下抄弧线 (-Z)，去除 Y/Z 末端过冲以确保准星到位瞬间稳固锁死
+	const FVector DynamicADSLoc(
+		-0.45f * SettleWave, // 到位瞬间枪托向后抵肩 (-X)，顺沿视线轴不改变屏幕中心准星位置
+		0.f,                 // 零左右过冲，防止准星水平晃动
+		-ArcDipZ * MidArc    // 举枪半途托举下抄弧线 (-Z)
+	);
+
+	// 合成附加动态旋转：仅保留 Roll 轴（半途手腕向左内倾 -3.2° + 到位瞬间向右微过冲回正 +0.65°），去除 Pitch/Yaw 防止长枪管放大准星跳动
+	const FRotator DynamicADSRot = FRotator::MakeFromEuler(FVector(
+		-3.2f * LateralRatio * MidArc + 0.65f * SettleWave, // X (Roll)
+		0.f,                                                // Y (Pitch)
+		0.f                                                 // Z (Yaw)
+	));
+
+	CurrentADSLocation = FMath::Lerp(FVector::ZeroVector, CachedADSOffsetLoc, SmoothAimAlpha) + DynamicADSLoc;
+	CurrentADSRotation = FMath::Lerp(FRotator::ZeroRotator, CachedADSOffsetRot, SmoothAimAlpha) + DynamicADSRot;
 
 	// 3. 程序化呼吸、步伐摆动与移动惯性偏移
 	if (bHasEquipment && !bIsPlayingActionMontage)
@@ -228,43 +281,44 @@ void UAnimInstHumanBase::NativeThreadSafeUpdateAnimation(float DeltaSeconds)
 		const float RightSpeed = FVector::DotProduct(Velocity, HumanChar->GetActorRightVector());
 		const float StrafeRatio = !bIsInAir ? FMath::Clamp(RightSpeed / MaxRefSpeed, -1.f, 1.f) : 0.f;
 
-		// 频率：静止时平稳呼吸 (1.6 rad/s)，移动时随步频加快 (7.2 rad/s)
-		const float SwayFreq = FMath::Lerp(1.6f, 7.2f, SpeedRatio);
+		// 角频率：静止时平稳呼吸 (1.8 rad/s)，移动时随步频加快 (8 rad/s)
+		const float SwayFreq = FMath::Lerp(1.8f, 8.f, SpeedRatio);
 		SwayPhase = FMath::Fmod(SwayPhase + DeltaSeconds * SwayFreq, 2.f * PI);
 
-		// 周期性“8字”摇摆幅度：瞄准时收紧至 15%
+		// 周期性横置“8字”摇摆单侧半径（单位: cm | 总峰峰值行程为单侧半径的 2 倍；完全机瞄时整体收紧至 15%）
 		const float MotionScale = GetProceduralMotionScale() * FMath::Lerp(1.f, 0.15f, SmoothAimAlpha);
-		const float LocFwdAmp  = FMath::Lerp(0.10f, 0.25f, SpeedRatio) * MotionScale;
-		const float LocHorAmp  = FMath::Lerp(0.25f, 0.75f, SpeedRatio) * MotionScale;
-		const float LocVertAmp = FMath::Lerp(0.30f, 0.65f, SpeedRatio) * MotionScale;
+		const float LocFwdAmp  = FMath::Lerp(0.10f, 0.2f, SpeedRatio) * MotionScale; // 前后单侧摆幅 (X)
+		const float LocHorAmp  = FMath::Lerp(0.15f, 0.3f, SpeedRatio) * MotionScale; // 左右单侧摆幅 (Y，8字半宽)
+		const float LocVertAmp = FMath::Lerp(0.20f, 0.4f, SpeedRatio) * MotionScale; // 上下单侧摆幅 (Z，8字半高)
 
-		// 跑动后缩下沉与左右横移牵引
-		const float MovePullbackX = -0.9f * SpeedRatio * MotionScale;
-		const float MovePullbackZ = -0.25f * SpeedRatio * MotionScale;
-		const float StrafeOffsetY = 0.65f * StrafeRatio * MotionScale;
-		const float StrafeRoll    = 0.85f * StrafeRatio * MotionScale;
+		// 移动时的持续惯性偏移（只要处于跑动或横移状态就会保持的基础位移与倾斜）
+		const float MovePullbackX = -1.25f * SpeedRatio * MotionScale;  // 跑动时枪身整体向后收 (-X，单位: cm)
+		const float MovePullbackZ = -0.25f * SpeedRatio * MotionScale; // 跑动时枪身整体向下沉 (-Z，单位: cm)
+		const float StrafeOffsetY = 0.65f * StrafeRatio * MotionScale; // A/D 左右横移时，枪向同侧平移 (Y，单位: cm)
+		const float StrafeRoll    = 2.00f * StrafeRatio * MotionScale; // A/D 左右横移时，枪身向同侧倾斜 (Roll，单位: 度)
 
+		// 合成目标摇摆位置：左右使用 1 倍频 (Sin)，前后/上下使用 2 倍频 (2*SwayPhase)，走出横躺的“∞”字李萨如步伐轨迹
 		const FVector TargetSwayLoc(
 			MovePullbackX + FMath::Cos(SwayPhase * 2.f) * LocFwdAmp,
 			StrafeOffsetY + FMath::Sin(SwayPhase) * LocHorAmp,
 			MovePullbackZ + FMath::Sin(SwayPhase * 2.f) * LocVertAmp
 		);
 
-		// 顺应小臂摆动的微旋转 (X=Roll, Y=Pitch, Z=Yaw)
+		// 随位置摆动附带的枪口微旋转（单位: 度 | Pitch/Yaw 随位移每 cm 顺势微转 0.6°，Roll 随横向位移每 cm 微倾 0.2° 并叠加横移侧倾）
 		constexpr float ArmSwingAnglePerCm = 0.6f;
 		const FRotator TargetSwayRot = FRotator::MakeFromEuler(FVector(
-			TargetSwayLoc.Y * 0.2f + StrafeRoll,
-			TargetSwayLoc.Z * ArmSwingAnglePerCm,
-			TargetSwayLoc.Y * ArmSwingAnglePerCm
+			TargetSwayLoc.Y * 0.2f + StrafeRoll,  // X (Roll 侧倾)：随左右位移微倾 + 横移侧倾角
+			TargetSwayLoc.Z * ArmSwingAnglePerCm, // Y (Pitch 俯仰)：随上下颠簸微幅点头
+			TargetSwayLoc.Y * ArmSwingAnglePerCm  // Z (Yaw 偏航)：随左右摆动微幅摆头
 		));
 
-		CurrentSwayLocation = FMath::VInterpTo(CurrentSwayLocation, TargetSwayLoc, DeltaSeconds, 8.f);
-		CurrentSwayRotation = FMath::RInterpTo(CurrentSwayRotation, TargetSwayRot, DeltaSeconds, 8.f);
+		CurrentSwayLocation = FMath::VInterpTo(CurrentSwayLocation, TargetSwayLoc, DeltaSeconds, 12.f);
+		CurrentSwayRotation = FMath::RInterpTo(CurrentSwayRotation, TargetSwayRot, DeltaSeconds, 12.f);
 	}
 	else
 	{
-		CurrentSwayLocation = FMath::VInterpTo(CurrentSwayLocation, FVector::ZeroVector, DeltaSeconds, 12.f);
-		CurrentSwayRotation = FMath::RInterpTo(CurrentSwayRotation, FRotator::ZeroRotator, DeltaSeconds, 12.f);
+		CurrentSwayLocation = FMath::VInterpTo(CurrentSwayLocation, FVector::ZeroVector, DeltaSeconds, 16.f);
+		CurrentSwayRotation = FMath::RInterpTo(CurrentSwayRotation, FRotator::ZeroRotator, DeltaSeconds, 16.f);
 	}
 
 	// 4. 程序化开火后坐力：6 自由度非对称二阶弹簧步进求解 + 安全上限截断
@@ -275,7 +329,7 @@ void UAnimInstHumanBase::NativeThreadSafeUpdateAnimation(float DeltaSeconds)
 	StepRecoilSpring(CurrentRecoilRotation.Yaw, RecoilRotVelocity.Yaw, DeltaSeconds, FreqYaw, DampYaw, CachedRecoilKickSpeedMul, CachedRecoilRecoverySpeedMul, CachedRecoilDampingMul);
 	StepRecoilSpring(CurrentRecoilRotation.Roll, RecoilRotVelocity.Roll, DeltaSeconds, FreqRoll, DampRoll, CachedRecoilKickSpeedMul, CachedRecoilRecoverySpeedMul, CachedRecoilDampingMul);
 
-	// 限制最大累积边界，并在触界外冲时清零对应速度防止粘滞（X 正向复进过冲上限为反向的一半）
+	// 限制最大累积边界，并在触界外冲时清零对应速度防止粘滞（X 轴向前复进过冲上限限制为向后撞肩上限的一半）
 	ClampRecoilAxis(CurrentRecoilLocation.X, RecoilLocVelocity.X, -CachedRecoilMaxLoc.X, CachedRecoilMaxLoc.X * 0.5);
 	ClampRecoilAxis(CurrentRecoilLocation.Y, RecoilLocVelocity.Y, -CachedRecoilMaxLoc.Y, CachedRecoilMaxLoc.Y);
 	ClampRecoilAxis(CurrentRecoilLocation.Z, RecoilLocVelocity.Z, -CachedRecoilMaxLoc.Z, CachedRecoilMaxLoc.Z);
@@ -300,7 +354,7 @@ void UAnimInstHumanBase::AddRecoilImpulse(const UFragWeapon* FragWeapon)
 	FVector KickLoc = FragWeapon->RecoilKickLocation * AimScale;
 	FRotator KickRot = FragWeapon->RecoilKickRotation * AimScale;
 
-	// 推进连续一维柏林噪波游标，结合奇偶交替符号形成连发 S 形游走与轴向拧动
+	// 推进连续一维柏林噪波游标，结合奇偶发交替符号形成连发 S 形水平游走与枪身轴向拧动
 	RecoilNoiseTime += 0.37f;
 	++RecoilShotCounter;
 	const float NoiseA = FMath::PerlinNoise1D(RecoilNoiseTime);
@@ -311,7 +365,7 @@ void UAnimInstHumanBase::AddRecoilImpulse(const UFragWeapon* FragWeapon)
 	KickRot.Yaw += (NoiseB * 0.32f + AltSign * 0.12f + FMath::FRandRange(-0.06f, 0.06f)) * NoiseScale;
 	KickRot.Roll += (AltSign * 0.45f + NoiseA * 0.25f + FMath::FRandRange(-0.08f, 0.08f)) * NoiseScale;
 
-	// 按武器实际生效的爆发频率与阻尼比转化为初速度冲量，保证单发波峰 1:1 匹配 RecoilKick 配置
+	// 按武器实际生效的爆发频率与阻尼比转化为初速度冲量，保证单发最大波峰 1:1 精确匹配 RecoilKick 配置
 	const float KickSpeedMul = FMath::Max(0.1f, FragWeapon->RecoilKickSpeedMul);
 	const float DampingMul = FMath::Max(0.05f, FragWeapon->RecoilDampingMul);
 

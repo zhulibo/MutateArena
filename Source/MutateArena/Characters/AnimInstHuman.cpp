@@ -1,13 +1,29 @@
 #include "AnimInstHuman.h"
 
 #include "HumanCharacter.h"
+#include "Components/CombatComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "MutateArena/MutateArena.h"
+#include "MutateArena/Equipments/Weapon.h"
+#include "MutateArena/Equipments/Data/EquipmentAsset.h"
 
 void UAnimInstHuman::NativeUpdateAnimation(float DeltaSeconds)
 {
 	Super::NativeUpdateAnimation(DeltaSeconds);
+
+	// 缓存当前武器的 3P 歪头贴腮角度供工作线程安全读取
+	if (CombatComp)
+	{
+		if (AWeapon* CurWeapon = CombatComp->GetCurWeapon(); CurWeapon && CurWeapon->FragWeapon)
+		{
+			CachedADSHeadTiltRot = CurWeapon->FragWeapon->ADSHeadTiltRotation3P;
+		}
+		else
+		{
+			CachedADSHeadTiltRot = FRotator::ZeroRotator;
+		}
+	}
 
 	// 读取 CR_Human 中 Ctrl_WeaponPivot 对齐的基准骨骼 VB spine_05_hand_r 的组件空间旋转
 	// （CR_Human 仅通过 FABRIK 修改手部骨骼，不修改虚拟骨骼 VB spine_05_hand_r 本身，因此直接读取即为纯动画朝向）
@@ -38,6 +54,17 @@ void UAnimInstHuman::NativeThreadSafeUpdateAnimation(float DeltaSeconds)
 	}
 
 	Super::NativeThreadSafeUpdateAnimation(DeltaSeconds);
+
+	// 计算 3P 瞄准歪头贴腮旋转（直接复用基类 SmoothAimAlpha，播放换弹/切枪蒙太奇时自动回正）
+	const FRotator CurrentStdTilt = FMath::Lerp(FRotator::ZeroRotator, CachedADSHeadTiltRot, SmoothAimAlpha);
+
+	// 转换到 MetaHuman BodyMesh 组件空间（绕 Z 轴 -90 度，且随 AimPitch 俯仰），确保无论角色抬头还是低头，歪头方向始终沿着视线轴向右侧倾
+	const FQuat StdToComp = FRotator(0.f, 90.f, 0.f).Quaternion() * FRotator(AimPitch, 0.f, 0.f).Quaternion();
+	const FQuat CompSpaceTiltQuat = StdToComp * CurrentStdTilt.Quaternion() * StdToComp.Inverse();
+
+	// 按四元数球面插值拆分为 neck_01 (40%) 与 neck_02 (60%)，避免大俯仰角下欧拉角万向锁畸变
+	Neck01ADSRotation = FQuat::Slerp(FQuat::Identity, CompSpaceTiltQuat, 0.4f).Rotator();
+	Neck02ADSRotation = FQuat::Slerp(FQuat::Identity, CompSpaceTiltQuat, 0.6f).Rotator();
 }
 
 FTransform UAnimInstHuman::BuildWeaponPivotOffsetTransform(const FVector& StdLocation, const FRotator& StdRotation)

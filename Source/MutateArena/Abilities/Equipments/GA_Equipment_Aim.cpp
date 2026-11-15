@@ -1,5 +1,4 @@
 #include "GA_Equipment_Aim.h"
-#include "Abilities/Tasks/AbilityTask_WaitInputRelease.h"
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "MutateArena/Characters/Components/CombatComponent.h"
 
@@ -16,7 +15,7 @@ bool UGA_Equipment_Aim::CanActivateAbility(const FGameplayAbilitySpecHandle Hand
 	}
 	
 	AHumanCharacter* HumanChar = GetHumanCharacter();
-	UCombatComponent* CombatComp = HumanChar->CombatComp;
+	UCombatComponent* CombatComp = HumanChar ? HumanChar->CombatComp : nullptr;
 	AWeapon* CurWeapon = GetCurWeapon();
 
 	// 目前限制只有主副武器可瞄准
@@ -39,7 +38,7 @@ void UGA_Equipment_Aim::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 	UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
 	AHumanCharacter* HumanChar = GetHumanCharacter();
 	AEquipment* CurEquipment = GetCurEquipment();
-	UCombatComponent* CombatComp = HumanChar->CombatComp;
+	UCombatComponent* CombatComp = HumanChar ? HumanChar->CombatComp : nullptr;
 	
 	if (!ASC || !HumanChar || !CurEquipment || !CombatComp)
 	{
@@ -48,6 +47,8 @@ void UGA_Equipment_Aim::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 	}
 
 	CombatComp->bIsAiming = true;
+	HumanChar->UpdateMaxWalkSpeed();
+	CombatComp->LocalSetAiming(true);
 }
 
 void UGA_Equipment_Aim::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
@@ -57,7 +58,9 @@ void UGA_Equipment_Aim::EndAbility(const FGameplayAbilitySpecHandle Handle, cons
 		if (UCombatComponent* CombatComp = HumanChar->CombatComp)
 		{
 			CombatComp->bIsAiming = false;
+			CombatComp->LocalSetAiming(false);
 		}
+		HumanChar->UpdateMaxWalkSpeed();
 	}
 
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);

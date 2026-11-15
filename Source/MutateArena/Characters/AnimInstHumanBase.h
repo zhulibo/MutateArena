@@ -12,8 +12,8 @@ class UFragWeapon;
 
 /**
  * 人类动画实例基类（1P 与 3P 共用）
- * 在标准坐标系 (X=前后, Y=左右, Z=上下) 下计算【机瞄 + 呼吸步伐摆动 + 开火后坐力】，
- * 汇总后交由子类转换到骨骼局部空间，输出给 Control Rig 的 Ctrl_WeaponPivot。
+ * 在标准坐标系 (X=前后, Y=左右, Z=上下) 下统一计算【机瞄过渡 + 呼吸步伐摆动 + 开火后坐力】，
+ * 汇总后交由子类转换到各自基准骨骼局部空间，最终输出给 Control Rig 的 Ctrl_WeaponPivot。
  */
 UCLASS(Abstract)
 class MUTATEARENA_API UAnimInstHumanBase : public UAnimInstance
@@ -27,7 +27,7 @@ public:
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 	virtual void NativeThreadSafeUpdateAnimation(float DeltaSeconds) override;
 
-	// 开火时由 GC_Weapon_Fire 触发，向 Control Rig 施加单发后坐力冲量
+	// 开火时由 GC_Weapon_Fire 触发，向 6 自由度后坐力弹簧注入单发初速度冲量
 	void AddRecoilImpulse(const UFragWeapon* FragWeapon);
 
 protected:
@@ -37,10 +37,10 @@ protected:
 		return FTransform(StdRotation, StdLocation, FVector::OneVector);
 	}
 
-	// 瞄准偏移缩放比例（1P 为 1.0 精确对齐准星；3P 按需缩小避免穿模）
+	// 瞄准偏移缩放比例（1P 为 1.0 精确对齐摄像机准星；3P 按需缩小避免贴脸穿模）
 	virtual float GetADSOffsetScale() const { return 1.f; }
 
-	// 呼吸晃动与后坐力的整体幅度缩放比例（1P 为 1.0；3P 远观幅度略大）
+	// 呼吸步伐晃动与后坐力的整体幅度缩放比例（1P 为 1.0；3P 远观适当放大以增强表现力）
 	virtual float GetProceduralMotionScale() const { return 1.f; }
 
 	UPROPERTY()
@@ -67,37 +67,47 @@ protected:
 	UPROPERTY(BlueprintReadOnly)
 	EEquipmentName EquipmentName = EEquipmentName::None;
 
-	// 作用于 Control Rig 父控制器 Ctrl_WeaponPivot 的汇总变换偏移（瞄准 + 呼吸/移动晃动 + 开火后坐力）
+	// 作用于 Control Rig 父控制器 Ctrl_WeaponPivot 的汇总变换偏移（机瞄 + 呼吸/移动晃动 + 开火后坐力）
 	UPROPERTY(BlueprintReadOnly)
 	FTransform WeaponPivotOffsetTransform = FTransform::Identity;
 
-	// 瞄准平滑过渡权重 (0 = 腰射, 1 = 完全瞄准)
+	// 瞄准线性过渡权重 (0 = 腰射, 1 = 完全瞄准 | 用于驱动包络线相位与后坐力收紧插值)
 	UPROPERTY(BlueprintReadOnly)
 	float AimAlpha = 0.f;
 
-	// 武器双臂 IK / Control Rig 整体权重 (持握武器时为 1，空手时平滑过渡到 0)
+	// 经过非线性缓动 (EaseOut / EaseInOut) 后的瞄准平滑权重 (0 = 腰射, 1 = 完全瞄准 | 用于驱动空间位置与旋转插值)
+	UPROPERTY(BlueprintReadOnly)
+	float SmoothAimAlpha = 0.f;
+
+	// 双臂 IK / Control Rig 整体权重 (持握装备时为 1，无装备时平滑过渡到 0)
 	UPROPERTY(BlueprintReadOnly)
 	float WeaponIKAlpha = 1.f;
 
+	// 主线程缓存的当前武器 ADS 目标偏移（3P 由基类按预设举枪偏移与武器微调量缩放计算；1P 由子类根据 Sight 插槽与摄像机中心轴精确覆写）
+	FVector CachedADSOffsetLoc = FVector::ZeroVector;
+	FRotator CachedADSOffsetRot = FRotator::ZeroRotator;
+
 private:
-	// 主线程缓存的当前武器状态（供动画工作线程安全读取）
+	// 主线程缓存的角色装备与动作状态（供动画工作线程安全读取）
 	bool bHasEquipment = false;
 	bool bHasWeapon = false;
 	bool bRawIsAiming = false;
 	bool bIsPlayingActionMontage = false;
 	float CachedADSTime = 0.2f;
-	FVector CachedADSOffsetLoc = FVector::ZeroVector;
-	FRotator CachedADSOffsetRot = FRotator::ZeroRotator;
 
-	// 主线程缓存的武器程序化后坐力配置参数（实际值在持枪时直接从 UFragWeapon 同步）
+	// 主线程缓存的武器程序化后坐力配置参数（供动画工作线程步进求解弹簧时安全读取）
 	FVector CachedRecoilMaxLoc = FVector::ZeroVector;
 	FRotator CachedRecoilMaxRot = FRotator::ZeroRotator;
 	float CachedRecoilKickSpeedMul = 1.f;
 	float CachedRecoilRecoverySpeedMul = 1.f;
 	float CachedRecoilDampingMul = 1.f;
-	float CachedRecoilNoiseScale = 1.f;
 
-	// 程序化瞄准状态
+	// 程序化瞄准过渡状态（记录分段插值起点与进度，避免中途打断反向时发生曲线跳变或速度失真）
+	bool bPrevAiming = false;
+	float AimSegmentStartSmooth = 0.f;
+	float AimSegmentStartLinear = 0.f;
+	float AimSegmentProgress = 1.f;
+	float AimSegmentDuration = 0.f;
 	FVector CurrentADSLocation = FVector::ZeroVector;
 	FRotator CurrentADSRotation = FRotator::ZeroRotator;
 
@@ -106,7 +116,7 @@ private:
 	FVector CurrentSwayLocation = FVector::ZeroVector;
 	FRotator CurrentSwayRotation = FRotator::ZeroRotator;
 
-	// 程序化开火后坐力（6自由度独立二阶欠阻尼弹簧状态）
+	// 程序化开火后坐力（6 自由度非对称二阶弹簧状态）
 	FVector CurrentRecoilLocation = FVector::ZeroVector;
 	FRotator CurrentRecoilRotation = FRotator::ZeroRotator;
 	FVector RecoilLocVelocity = FVector::ZeroVector;

@@ -24,6 +24,9 @@
 
 ABasePlayerState::ABasePlayerState()
 {
+	// ASC 挂载在 PlayerState 上，必须提高网络更新频率（默认 APlayerState 仅为 1Hz），避免技能与标签同步产生最高 1s 的延迟
+	NetUpdateFrequency = 100.f;
+
 	AbilitySystemComponent = CreateDefaultSubobject<UMAAbilitySystemComponent>(TEXT("BaseAbilitySystemComponent"));
 	AbilitySystemComponent->SetIsReplicated(true);
 	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Mixed);

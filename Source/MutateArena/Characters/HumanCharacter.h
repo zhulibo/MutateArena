@@ -41,7 +41,6 @@ protected:
 	virtual void OnASCInit() override;
 public:
 	void OnSwappingTagChanged(FGameplayTag GameplayTag, int NewCount);
-	void OnAimingTagChanged(FGameplayTag GameplayTag, int NewCount);
 	void UpdateMaxWalkSpeed();
 	
 protected:

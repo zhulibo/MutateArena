@@ -45,7 +45,7 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(UCombatComponent, Slot4Equipment);
 	DOREPLIFETIME(UCombatComponent, CurEquipmentSlot);
 	DOREPLIFETIME(UCombatComponent, LastEquipmentSlot);
-	DOREPLIFETIME(UCombatComponent, bIsAiming);
+	DOREPLIFETIME_CONDITION(UCombatComponent, bIsAiming, COND_SkipOwner);
 }
 
 void UCombatComponent::BeginPlay()
@@ -341,7 +341,7 @@ void UCombatComponent::RefreshCurEquipmentState()
 		{
 			UISubsystem->OnAmmoChange.Broadcast(GetCurWeapon() ? GetCurWeapon()->Ammo : 0);
 			UISubsystem->OnCarriedAmmoChange.Broadcast(GetCurWeapon() ? GetCurWeapon()->CarriedAmmo : 0);
-			UISubsystem->OnCrosshairHidden.Broadcast(IsAiming());
+			UISubsystem->OnCrosshairHidden.Broadcast(bIsAiming);
 		}
 	}
 
@@ -403,18 +403,6 @@ void UCombatComponent::InstantSwap(EEquipmentSlot TargetSlot)
 	RefreshCurEquipmentState();
 }
 
-bool UCombatComponent::IsAiming()
-{
-	if (HumanChar && (HumanChar->IsLocallyControlled() || HumanChar->HasAuthority()))
-	{
-		if (UAbilitySystemComponent* ASC = HumanChar->GetAbilitySystemComponent())
-		{
-			return ASC->HasMatchingGameplayTag(TAG_STATE_COMBAT_AIMING);
-		}
-	}
-	return bIsAiming;
-}
-
 void UCombatComponent::LocalSetAiming(bool TempBIsAiming)
 {
 	if (HumanChar == nullptr) HumanChar = Cast<AHumanCharacter>(GetOwner());
@@ -422,8 +410,15 @@ void UCombatComponent::LocalSetAiming(bool TempBIsAiming)
 
 	if (AWeapon* CurWeapon = GetCurWeapon(); CurWeapon && CurWeapon->FragWeapon)
 	{
-		const float TargetAimFOV = TempBIsAiming ? (DefaultFOV * CurWeapon->FragWeapon->AimingFOVMul) : DefaultFOV;
-		StartInterpFOV(TargetAimFOV, CurWeapon->FragWeapon->ADSTime);
+		const float AimedFOV = DefaultFOV * CurWeapon->FragWeapon->AimingFOVMul;
+		const float TargetAimFOV = TempBIsAiming ? AimedFOV : DefaultFOV;
+		const float FullFOVDelta = FMath::Abs(DefaultFOV - AimedFOV);
+		const float CurFOV = HumanChar->Camera ? HumanChar->Camera->FieldOfView : TargetAimFOV;
+		// 按剩余 FOV 跨度等比例缩放耗时，与动画 SmoothAimAlpha 分段时长保持同步
+		const float RemainingRatio = FullFOVDelta > KINDA_SMALL_NUMBER
+			? FMath::Clamp(FMath::Abs(TargetAimFOV - CurFOV) / FullFOVDelta, 0.f, 1.f)
+			: 1.f;
+		StartInterpFOV(TargetAimFOV, CurWeapon->FragWeapon->ADSTime * RemainingRatio);
 	}
 	else if (!TempBIsAiming)
 	{
@@ -458,13 +453,18 @@ void UCombatComponent::InterpFOV(float DeltaSeconds)
 	
 	CurrentFOVInterpElapsed += DeltaSeconds;
 
-	float Alpha = 0.0f;
-	if (FOVInterpTime > 0.0f)
+	float Alpha = 1.0f;
+	if (FOVInterpTime > KINDA_SMALL_NUMBER)
 	{
 		Alpha = FMath::Clamp(CurrentFOVInterpElapsed / FOVInterpTime, 0.0f, 1.0f);
 	}
 
-	HumanChar->Camera->FieldOfView = FMath::Lerp(StartFOV, TargetFOV, Alpha);
+	const bool bZoomingIn = TargetFOV < StartFOV;
+	const float SmoothFOVAlpha = bZoomingIn
+		? FMath::InterpEaseOut(0.f, 1.f, Alpha, 2.6f)
+		: FMath::InterpEaseInOut(0.f, 1.f, Alpha, 2.0f);
+
+	HumanChar->Camera->FieldOfView = FMath::Lerp(StartFOV, TargetFOV, SmoothFOVAlpha);
 
 	// HACK 计算瞄准进度，子弹偏移受瞄准进度影响，完全进入瞄准状态子弹偏移为0
 	if (AWeapon* CurWeapon = GetCurWeapon(); CurWeapon && CurWeapon->FragWeapon)

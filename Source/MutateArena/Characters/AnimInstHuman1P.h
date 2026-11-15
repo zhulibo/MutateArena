@@ -26,6 +26,7 @@ protected:
 private:
 	// 主线程缓存的 weapon_root 纯动画组件空间旋转（已剥离上一帧 Control Rig 写回的旋转）
 	FQuat CachedWeaponRootCompRot = FQuat::Identity;
-	// 上一帧 Control Rig 写回给 weapon_root 的组件空间旋转，用于下一帧还原纯动画朝向
+	// 上一帧 Control Rig 写回给 weapon_root 的组件空间旋转与位移，用于下一帧还原纯动画基准姿态
 	FQuat LastAppliedCompRot = FQuat::Identity;
+	FVector LastAppliedCompLoc = FVector::ZeroVector;
 };

@@ -20,5 +20,5 @@ void UAnimInstEquipment::NativeUpdateAnimation(float DeltaSeconds)
 	AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(Equipment->GetOwner());
 	if (HumanCharacter == nullptr || HumanCharacter->CombatComp == nullptr || HumanCharacter->CombatComp->GetCurWeapon() == nullptr) return;
 
-	bIsAiming = HumanCharacter->CombatComp->IsAiming();
+	bIsAiming = HumanCharacter->CombatComp->bIsAiming;
 }

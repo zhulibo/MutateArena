@@ -30,12 +30,16 @@ namespace Colors
 // Socket
 namespace Sockets
 {
+	// 3P
 	inline const FName Camera(TEXT("Camera"));
-	inline const FName Muzzle(TEXT("Muzzle"));
-	inline const FName ShellEject(TEXT("ShellEject"));
-	inline const FName WeaponRoot(TEXT("WeaponRoot"));
 	inline const FName SuffixR(TEXT("_R"));
 	inline const FName SuffixL(TEXT("_L"));
+	// 1P
+	inline const FName WeaponRoot(TEXT("WeaponRoot"));
+	// Weapon
+	inline const FName Muzzle(TEXT("Muzzle"));
+	inline const FName Sight(TEXT("Sight"));
+	inline const FName ShellEject(TEXT("ShellEject"));
 }
 
 // 骨骼名称
