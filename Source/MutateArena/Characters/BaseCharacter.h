@@ -192,7 +192,7 @@ protected:
 	void UpdateEyeHeightTarget(float NewTargetEyeHeight, float AdditionalCapsuleOffset = 0.f);
 	// 每帧平滑插值消除眼高偏移补偿
 	void UpdateEyeHeightOffset(float DeltaSeconds);
-	// 将最终计算出的眼高同步应用到 Camera 和 Mesh1P
+	// 将最终计算出的眼高同步应用到 Camera、Mesh1P 和 OverheadWidget
 	void ApplyEyeHeightToComponents();
 	// 当前目标眼高（站立/空中下蹲为 75.f，地面下蹲为 45.f）
 	float TargetEyeHeight = 75.f;
@@ -201,6 +201,9 @@ protected:
 	// 下蹲/站起时第一人称视角的平滑插值速度
 	UPROPERTY()
 	float CrouchEyeOffsetInterpSpeed = 12.f;
+	// 头顶 UI 相对当前眼高（FinalEyeZ）的额外 Z 轴偏移，可在蓝图中按角色体型调整
+	UPROPERTY(EditAnywhere)
+	float OverheadWidgetZOffset = 60.f;
 	
 	// 连跳 测试结果 跳1.1m 跳蹲1.2m 连跳1.3m 跳跳蹲1.5m
 	// 记录在空中按下跳跃键的时间戳

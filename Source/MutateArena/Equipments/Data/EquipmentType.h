@@ -85,3 +85,17 @@ enum class EEquipmentState : uint8
 	Thrown
 };
 
+// 武器开火程序化运动可驱动的机械骨骼通道（与通用武器动画蓝图节点一一对应）
+UENUM(BlueprintType)
+enum class EWeaponMechBone : uint8
+{
+	Barrel,
+	Trigger,
+	ChargingHandle,
+	Bolt,
+	Pump,
+	DustCover,
+	Slide,
+	
+	None
+};

@@ -71,12 +71,47 @@ class MUTATEARENA_API UEquipmentFragment : public UObject
 	GENERATED_BODY()
 };
 
+// 武器开火时单个机械构件的程序化往复运动配置
+USTRUCT(BlueprintType)
+struct FWeaponFirePartMotion
+{
+	GENERATED_BODY()
+
+	// 对应机械骨骼通道
+	UPROPERTY(EditAnywhere)
+	EWeaponMechBone TargetBone = EWeaponMechBone::Bolt;
+
+	// 最大局部位置偏移
+	UPROPERTY(EditAnywhere)
+	FVector MaxLocationOffset = FVector(0.f, 0.f, 0.f);
+
+	// 最大局部旋转偏移
+	UPROPERTY(EditAnywhere)
+	FRotator MaxRotationOffset = FRotator::ZeroRotator;
+
+	// 单次往复总耗时（秒）
+	UPROPERTY(EditAnywhere)
+	float CycleDuration = 0.0f;
+
+	// 后退到位时间占比
+	UPROPERTY(EditAnywhere)
+	float KickTimeRatio = 0.0f;
+
+	// 后死点驻留时间占比
+	UPROPERTY(EditAnywhere)
+	float HoldTimeRatio = 0.0f;
+};
+
 UCLASS(BlueprintType)
 class MUTATEARENA_API UFragWeapon : public UEquipmentFragment
 {
 	GENERATED_BODY()
 
 public:
+	// 开火时机械构件程序化往复运动配置（按 TargetBone 映射至对应骨骼通道）
+	UPROPERTY(EditAnywhere)
+	TArray<FWeaponFirePartMotion> FirePartMotions;
+
 	UPROPERTY(EditAnywhere)
 	int32 MagCapacity = 0;
 	UPROPERTY(EditAnywhere)

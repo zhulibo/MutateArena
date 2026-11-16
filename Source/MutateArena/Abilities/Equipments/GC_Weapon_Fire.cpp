@@ -39,6 +39,16 @@ bool UGC_Weapon_Fire::OnExecute_Implementation(AActor* MyTarget, const FGameplay
         }
     }
 
+    // 同步触发 1P 与 3P 武器网格体的程序化机械构件往复运动
+    if (UAnimInstEquipment* EquipAnimInst1P = CurWeapon->GetEquipmentAnimInst1P())
+    {
+        EquipAnimInst1P->TriggerFireMotion();
+    }
+    if (UAnimInstEquipment* EquipAnimInst = CurWeapon->GetEquipmentAnimInst())
+    {
+        EquipAnimInst->TriggerFireMotion();
+    }
+
 	if (USceneComponent* WeaponMesh = CurWeapon->GetVisibleEquipmentMesh())
     {
         if (CurWeapon->FragWeapon->MuzzleFlashEffect)

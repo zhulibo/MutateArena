@@ -103,9 +103,10 @@ ABaseCharacter::ABaseCharacter(const FObjectInitializer& ObjectInitializer)
 	SceneCapture->bCaptureOnMovement = false;
 
 	OverheadWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("OverheadWidget"));
-	// 构造函数中先挂载到胶囊体上，待 BodyMesh 赋值后二次挂载
+	// 挂载到胶囊体上，避免受第三人称骨骼动画（弯腰、歪头、AimOffset等）影响导致血条乱晃
 	OverheadWidget->SetupAttachment(GetCapsuleComponent());
-	OverheadWidget->SetDrawSize(FVector2D(120.f, 30.f));
+	OverheadWidget->SetRelativeLocation(FVector(0.f, 0.f, BaseEyeHeight + OverheadWidgetZOffset));
+	OverheadWidget->SetDrawSize(FVector2D(120.f, 28.f));
 
 	InteractorComp = CreateDefaultSubobject<UInteractorComponent>(TEXT("InteractorComponent"));
 
@@ -225,9 +226,12 @@ void ABaseCharacter::BeginPlay()
 	
 	check(BodyMesh); check(FaceMesh); check(BeardComp); check(EyebrowsComp); check(EyelashesComp); check(FuzzComp); check(HairComp); check(MustacheComp);
 	
-	// 找到 BodyMesh 后，动态将 OverheadWidget 挂载到对应的骨骼插槽并保持相对偏移
-	OverheadWidget->AttachToComponent(BodyMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, Sockets::Camera);
-	OverheadWidget->SetRelativeLocation(FVector(0.f, 0.f, 60.f));
+	// 同步蓝图可能覆盖的 BaseEyeHeight 与 OverheadWidgetZOffset 到胶囊体子组件
+	if (!bIsCrouched)
+	{
+		TargetEyeHeight = BaseEyeHeight;
+	}
+	ApplyEyeHeightToComponents();
 	
 	BodyMesh->bCastHiddenShadow = true;
 	BodyMesh->SetGenerateOverlapEvents(true);
@@ -513,8 +517,11 @@ void ABaseCharacter::SetFirstPersonViewMode(bool bFirstPerson)
 	// 切换第一人称手臂显隐
 	Mesh1P->SetVisibility(bFirstPerson);
 
-	// 立即切换可见性 UOverheadWidget::TraceOverheadWidget 有延迟
-	OverheadWidget->SetVisibility(!bFirstPerson);
+	// 立即切换可见性 UOverheadWidget::TraceOverheadWidget 有延迟（死亡后保持隐藏）
+	if (OverheadWidget)
+	{
+		OverheadWidget->SetVisibility(!bFirstPerson && !bIsDead);
+	}
 
 	// 切换 MetaHuman 身体、面部与毛发组件显隐
 	BodyMesh->SetVisibility(!bFirstPerson);
@@ -852,6 +859,12 @@ void ABaseCharacter::OnRep_bIsDead()
 
 void ABaseCharacter::OnDead()
 {
+	// 角色死亡开启布娃娃后胶囊体会停留在死亡原点，隐藏头顶 UI 避免其悬空残留
+	if (OverheadWidget)
+	{
+		OverheadWidget->SetVisibility(false);
+	}
+
 	if (HasAuthority())
 	{
 		if (ABaseGameState* GS = GetWorld()->GetGameState<ABaseGameState>())
@@ -1021,6 +1034,10 @@ void ABaseCharacter::ApplyEyeHeightToComponents()
 	if (Mesh1P)
 	{
 		Mesh1P->SetRelativeLocation(FVector(0.f, 0.f, FinalEyeZ));
+	}
+	if (OverheadWidget)
+	{
+		OverheadWidget->SetRelativeLocation(FVector(0.f, 0.f, FinalEyeZ + OverheadWidgetZOffset));
 	}
 }
 

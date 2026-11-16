@@ -126,8 +126,8 @@ void UOverheadWidget::TraceOverheadWidget()
 {
 	if (!bIsAllowShow || !BaseCharacter.IsValid()) return;
 
-	// 如果该角色当前正处于本地玩家的第一人称视角（自己操控或第一人称观战），直接隐藏并跳过检测
-	if (BaseCharacter->bIsCurrentViewTarget)
+	// 如果该角色已死亡或当前正处于本地玩家的第一人称视角（自己操控或第一人称观战），直接隐藏并跳过检测
+	if (BaseCharacter->bIsDead || BaseCharacter->bIsCurrentViewTarget)
 	{
 		SetVisibility(ESlateVisibility::Hidden);
 		return;
