@@ -9,16 +9,32 @@
 
 namespace
 {
-	// 6 轴二阶弹簧基准固有频率 (Hz) 与基准阻尼比 (<1.0 为欠阻尼，产生过冲与余波回弹)
-	constexpr float FreqLocX  = 7.0f, DampLocX  = 0.50f; // 前后撞肩与复进过冲
-	constexpr float FreqLocY  = 4.5f, DampLocY  = 0.60f; // 左右水平游走
-	constexpr float FreqLocZ  = 5.2f, DampLocZ  = 0.55f; // 上下垂直跳动
-	constexpr float FreqPitch = 4.2f, DampPitch = 0.55f; // 枪口上扬（频率略低于 X 轴，形成先撞肩后抬头的层次感）
-	constexpr float FreqYaw   = 3.8f, DampYaw   = 0.60f; // 枪口左右偏航
-	constexpr float FreqRoll  = 5.8f, DampRoll  = 0.35f; // 枪身轴向拧转（低阻尼以保留停火后的手腕震颤余波）
+	// 6 轴二阶弹簧基准参数：
+	// - Freq (Hz): 固有频率（决定达峰与回正快慢）
+	// - Damp: 阻尼比（<1.0 为欠阻尼，产生过冲与余波回弹）
+	// - Lag (秒): 冲量传导滞后时间常数（0 = 膛压瞬发；>0 = 抵肩/肌肉传导滞后，形成“先向后撞肩 -> 再枪口上扬 -> 最后横向游走”的物理鞭打层次）
+	constexpr float FreqLocX  = 8.5f, DampLocX  = 0.50f, LagLocX  = 0.000f; // 1. 瞬发：膛压向后直线撞肩（最高频、零滞后）
+	constexpr float FreqRoll  = 6.5f, DampRoll  = 0.35f, LagRoll  = 0.004f; // 1. 瞬发：弹头啮合膛线产生的轴向反扭矩（低阻尼保留停火后手腕余颤）
+	constexpr float FreqLocZ  = 5.0f, DampLocZ  = 0.55f, LagLocZ  = 0.015f; // 2. 次级滞后 (15ms)：抵肩支点反作用力带动枪身垂直上跳
+	constexpr float FreqPitch = 4.5f, DampPitch = 0.62f, LagPitch = 0.018f; // 2. 次级滞后 (18ms)：撞肩到位后力矩转化为枪口猛烈上扬
+	constexpr float FreqLocY  = 3.8f, DampLocY  = 0.65f, LagLocY  = 0.025f; // 3. 末级滞后 (25ms)：双臂受激后的水平横向游走
+	constexpr float FreqYaw   = 4.0f, DampYaw   = 0.70f, LagYaw   = 0.028f; // 3. 末级滞后 (28ms)：手腕卸力产生的枪口左右偏摆
 
-	// 根据弹簧频率与阻尼比，精确计算使单发脉冲最大波峰达到 1.0 单位所需的初速度倍率（兼容欠阻尼、临界阻尼与过阻尼）
-	float CalcUnitPeakImpulseScale(float Frequency, float DampingRatio)
+	// 根据武器射速 FireRate (RPM) 自适应计算弹簧频率缩放因子（以 600 RPM / 10 RPS 为 1.0x 基准）
+	float CalcFireRateFreqScale(float FireRateRPM)
+	{
+		if (FireRateRPM <= 0.f)
+		{
+			return 1.f;
+		}
+
+		// 项目内 FireRate 统一为 RPM（见 AWeapon::GetFireDelay），直接使用 /60 避免低射速狙击枪误判
+		const float ShotsPerSec = FireRateRPM / 60.f;
+		return FMath::Clamp(FMath::Pow(ShotsPerSec / 10.f, 0.35f), 0.70f, 1.35f);
+	}
+
+	// 根据弹簧频率、阻尼比与冲量滞后时间，精确计算使单发脉冲最大波峰达到 1.0 单位所需的冲量倍率
+	float CalcUnitPeakImpulseScale(float Frequency, float DampingRatio, float ImpulseLag)
 	{
 		const float Omega = 2.f * PI * FMath::Max(0.1f, Frequency);
 		const float Zeta = FMath::Clamp(DampingRatio, 0.1f, 2.0f);
@@ -35,26 +51,32 @@ namespace
 			ExpPower = (Zeta / SqrtTerm) * FMath::Loge(Zeta + SqrtTerm);
 		}
 
-		return Omega * FMath::Exp(ExpPower);
+		// 补偿一阶滞后滤波 (Lag) 带来的波峰衰减，确保无论滞后多大，单发最大位移严格 1:1 匹配配置值
+		const float OmegaLag = Omega * FMath::Max(0.f, ImpulseLag);
+		const float LagAttenuationComp = FMath::Sqrt(1.f + OmegaLag * OmegaLag);
+
+		return Omega * FMath::Exp(ExpPower) * LagAttenuationComp;
 	}
 
-	// 单自由度非对称二阶弹簧子步长积分求解器（远离平衡点的爆发去程使用 KickSpeedMul，回正阶段使用 RecoverySpeedMul）
+	// 单自由度非对称二阶弹簧子步长积分求解器（支持 PendingImpulse 一阶滞后释放，去程使用 KickSpeedMul，回正使用 RecoverySpeedMul）
 	void StepRecoilSpring(
 		double& Current,
 		double& Velocity,
+		double& PendingImpulse,
 		float DeltaTime,
 		float Frequency,
 		float DampingRatio,
+		float ImpulseLag,
 		float KickSpeedMul,
 		float RecoverySpeedMul,
 		float DampingMul)
 	{
-		if (DeltaTime <= KINDA_SMALL_NUMBER)
+		if (DeltaTime <= KINDA_SMALL_NUMBER || (Current == 0.0 && Velocity == 0.0 && PendingImpulse == 0.0))
 		{
 			return;
 		}
 
-		constexpr float MaxSubStep = 0.01f;
+		constexpr float MaxSubStep = 0.008f;
 		const float ClampedDT = FMath::Min(DeltaTime, 0.033f);
 		const int32 SubSteps = FMath::Max(1, FMath::CeilToInt(ClampedDT / MaxSubStep));
 		const double SubDT = static_cast<double>(ClampedDT) / SubSteps;
@@ -63,11 +85,32 @@ namespace
 		const double SafeKickMul = static_cast<double>(FMath::Max(0.1f, KickSpeedMul));
 		const double SafeRecovMul = static_cast<double>(FMath::Max(0.1f, RecoverySpeedMul));
 		const double EffDamping = static_cast<double>(FMath::Clamp(DampingRatio * DampingMul, 0.1f, 2.0f));
+		const double EffLag = static_cast<double>(ImpulseLag) / SafeKickMul;
 
 		for (int32 Step = 0; Step < SubSteps; ++Step)
 		{
-			// 位移与速度同号（正远离平衡点）或从平衡点刚起步时，视为爆发去程
-			const bool bIsKicking = (Current * Velocity > 0.0) || (FMath::Abs(Current) < 1e-6 && FMath::Abs(Velocity) > 1e-6);
+			// 1. 从滞后缓冲池向弹簧速度平滑释放冲量
+			if (FMath::Abs(PendingImpulse) > 1e-6)
+			{
+				if (EffLag <= 1e-4)
+				{
+					Velocity += PendingImpulse;
+					PendingImpulse = 0.0;
+				}
+				else
+				{
+					const double ReleaseAlpha = 1.0 - FMath::Exp(-SubDT / EffLag);
+					const double Released = PendingImpulse * ReleaseAlpha;
+					Velocity += Released;
+					PendingImpulse -= Released;
+				}
+			}
+
+			// 2. 位移与速度同号（正远离平衡点）、从平衡点刚起步、或缓冲池仍在剧烈注入冲量时，视为爆发去程
+			const bool bIsKicking = (Current * Velocity > 0.0)
+				|| (FMath::Abs(Current) < 1e-4 && FMath::Abs(Velocity) > 1e-4)
+				|| (FMath::Abs(PendingImpulse) > FMath::Abs(Velocity) * 0.25);
+
 			const double EffFreq = BaseFreq * (bIsKicking ? SafeKickMul : SafeRecovMul);
 			const double Omega = 2.0 * PI * EffFreq;
 
@@ -78,10 +121,11 @@ namespace
 		}
 
 		// 极小残余震荡直接归零，防止衰减末期浮点微震
-		if (FMath::Abs(Current) < 1e-3 && FMath::Abs(Velocity) < 1e-2)
+		if (FMath::Abs(Current) < 1e-3 && FMath::Abs(Velocity) < 1e-2 && FMath::Abs(PendingImpulse) < 1e-3)
 		{
 			Current = 0.0;
 			Velocity = 0.0;
+			PendingImpulse = 0.0;
 		}
 	}
 
@@ -133,11 +177,25 @@ void UAnimInstHumanBase::NativeUpdateAnimation(float DeltaSeconds)
 	const EEquipmentName NewEquipName = CurEquipment ? CurEquipment->EquipmentName : EEquipmentName::None;
 	if (EquipmentName != NewEquipName)
 	{
-		// 切换装备时清空残留的程序化后坐力状态
+		// 切换装备时清空残留的程序化瞄准与后坐力状态，防止上一把枪的过渡权重带入新武器的切入动画
+		bPrevAiming = false;
+		AimAlpha = 0.f;
+		SmoothAimAlpha = 0.f;
+		AimSegmentStartSmooth = 0.f;
+		AimSegmentStartLinear = 0.f;
+		AimSegmentProgress = 1.f;
+		AimSegmentDuration = 0.f;
+		CurrentADSLocation = FVector::ZeroVector;
+		CurrentADSRotation = FRotator::ZeroRotator;
+		CachedADSOffsetLoc = FVector::ZeroVector;
+		CachedADSOffsetRot = FRotator::ZeroRotator;
+
 		CurrentRecoilLocation = FVector::ZeroVector;
 		CurrentRecoilRotation = FRotator::ZeroRotator;
 		RecoilLocVelocity = FVector::ZeroVector;
 		RecoilRotVelocity = FRotator::ZeroRotator;
+		PendingRecoilLocImpulse = FVector::ZeroVector;
+		PendingRecoilRotImpulse = FRotator::ZeroRotator;
 		RecoilShotCounter = 0;
 		EquipmentName = NewEquipName;
 	}
@@ -161,14 +219,7 @@ void UAnimInstHumanBase::NativeUpdateAnimation(float DeltaSeconds)
 	if (bHasWeapon)
 	{
 		const UFragWeapon* FragWeapon = CurWeapon->FragWeapon;
-		const float ADSScale = GetADSOffsetScale();
 		CachedADSTime = FMath::Max(0.01f, FragWeapon->ADSTime);
-
-		// 默认（3P）计算：叠加在腰射右手基准骨骼 (VB spine_05_hand_r) 上的举枪增量偏移（1P 将在子类中按 Sight 插槽与摄像机中心轴精确覆写）。
-		// 标准坐标系下：向后抵肩(-X)、向左靠拢胸口中心(-Y)、向上抬起迎合右脸颊贴腮(+Z)，并叠加武器微调偏移后按 ADSScale 缩放。
-		const FVector Base3PRaiseOffset(-2.f, -6.f, 6.f);
-		CachedADSOffsetLoc = (Base3PRaiseOffset + FragWeapon->ADSOffsetLocation) * ADSScale;
-		CachedADSOffsetRot = FragWeapon->ADSOffsetRotation * ADSScale;
 
 		// 缓存武器程序化后坐力参数供动画工作线程安全读取
 		CachedRecoilMaxLoc = FVector(
@@ -181,9 +232,11 @@ void UAnimInstHumanBase::NativeUpdateAnimation(float DeltaSeconds)
 			FMath::Max(0.0, FragWeapon->RecoilMaxRotation.Yaw),
 			FMath::Max(0.0, FragWeapon->RecoilMaxRotation.Roll)
 		);
-		CachedRecoilKickSpeedMul = FMath::Max(0.1f, FragWeapon->RecoilKickSpeedMul);
-		CachedRecoilRecoverySpeedMul = FMath::Max(0.1f, FragWeapon->RecoilRecoverySpeedMul);
+		const float FireRateScale = CalcFireRateFreqScale(FragWeapon->FireRate);
+		CachedRecoilKickSpeedMul = FMath::Max(0.1f, FragWeapon->RecoilKickSpeedMul) * FireRateScale;
+		CachedRecoilRecoverySpeedMul = FMath::Max(0.1f, FragWeapon->RecoilRecoverySpeedMul) * FireRateScale;
 		CachedRecoilDampingMul = FMath::Max(0.05f, FragWeapon->RecoilDampingMul);
+		CachedADSRecoilScale = FMath::Max(0.f, FragWeapon->ADSRecoilScale);
 	}
 	else
 	{
@@ -322,20 +375,23 @@ void UAnimInstHumanBase::NativeThreadSafeUpdateAnimation(float DeltaSeconds)
 	}
 
 	// 4. 程序化开火后坐力：6 自由度非对称二阶弹簧步进求解 + 安全上限截断
-	StepRecoilSpring(CurrentRecoilLocation.X, RecoilLocVelocity.X, DeltaSeconds, FreqLocX, DampLocX, CachedRecoilKickSpeedMul, CachedRecoilRecoverySpeedMul, CachedRecoilDampingMul);
-	StepRecoilSpring(CurrentRecoilLocation.Y, RecoilLocVelocity.Y, DeltaSeconds, FreqLocY, DampLocY, CachedRecoilKickSpeedMul, CachedRecoilRecoverySpeedMul, CachedRecoilDampingMul);
-	StepRecoilSpring(CurrentRecoilLocation.Z, RecoilLocVelocity.Z, DeltaSeconds, FreqLocZ, DampLocZ, CachedRecoilKickSpeedMul, CachedRecoilRecoverySpeedMul, CachedRecoilDampingMul);
-	StepRecoilSpring(CurrentRecoilRotation.Pitch, RecoilRotVelocity.Pitch, DeltaSeconds, FreqPitch, DampPitch, CachedRecoilKickSpeedMul, CachedRecoilRecoverySpeedMul, CachedRecoilDampingMul);
-	StepRecoilSpring(CurrentRecoilRotation.Yaw, RecoilRotVelocity.Yaw, DeltaSeconds, FreqYaw, DampYaw, CachedRecoilKickSpeedMul, CachedRecoilRecoverySpeedMul, CachedRecoilDampingMul);
-	StepRecoilSpring(CurrentRecoilRotation.Roll, RecoilRotVelocity.Roll, DeltaSeconds, FreqRoll, DampRoll, CachedRecoilKickSpeedMul, CachedRecoilRecoverySpeedMul, CachedRecoilDampingMul);
+	StepRecoilSpring(CurrentRecoilLocation.X, RecoilLocVelocity.X, PendingRecoilLocImpulse.X, DeltaSeconds, FreqLocX, DampLocX, LagLocX, CachedRecoilKickSpeedMul, CachedRecoilRecoverySpeedMul, CachedRecoilDampingMul);
+	StepRecoilSpring(CurrentRecoilLocation.Y, RecoilLocVelocity.Y, PendingRecoilLocImpulse.Y, DeltaSeconds, FreqLocY, DampLocY, LagLocY, CachedRecoilKickSpeedMul, CachedRecoilRecoverySpeedMul, CachedRecoilDampingMul);
+	StepRecoilSpring(CurrentRecoilLocation.Z, RecoilLocVelocity.Z, PendingRecoilLocImpulse.Z, DeltaSeconds, FreqLocZ, DampLocZ, LagLocZ, CachedRecoilKickSpeedMul, CachedRecoilRecoverySpeedMul, CachedRecoilDampingMul);
+	StepRecoilSpring(CurrentRecoilRotation.Pitch, RecoilRotVelocity.Pitch, PendingRecoilRotImpulse.Pitch, DeltaSeconds, FreqPitch, DampPitch, LagPitch, CachedRecoilKickSpeedMul, CachedRecoilRecoverySpeedMul, CachedRecoilDampingMul);
+	StepRecoilSpring(CurrentRecoilRotation.Yaw, RecoilRotVelocity.Yaw, PendingRecoilRotImpulse.Yaw, DeltaSeconds, FreqYaw, DampYaw, LagYaw, CachedRecoilKickSpeedMul, CachedRecoilRecoverySpeedMul, CachedRecoilDampingMul);
+	StepRecoilSpring(CurrentRecoilRotation.Roll, RecoilRotVelocity.Roll, PendingRecoilRotImpulse.Roll, DeltaSeconds, FreqRoll, DampRoll, LagRoll, CachedRecoilKickSpeedMul, CachedRecoilRecoverySpeedMul, CachedRecoilDampingMul);
 
-	// 限制最大累积边界，并在触界外冲时清零对应速度防止粘滞（X 轴向前复进过冲上限限制为向后撞肩上限的一半）
-	ClampRecoilAxis(CurrentRecoilLocation.X, RecoilLocVelocity.X, -CachedRecoilMaxLoc.X, CachedRecoilMaxLoc.X * 0.5);
-	ClampRecoilAxis(CurrentRecoilLocation.Y, RecoilLocVelocity.Y, -CachedRecoilMaxLoc.Y, CachedRecoilMaxLoc.Y);
-	ClampRecoilAxis(CurrentRecoilLocation.Z, RecoilLocVelocity.Z, -CachedRecoilMaxLoc.Z, CachedRecoilMaxLoc.Z);
-	ClampRecoilAxis(CurrentRecoilRotation.Pitch, RecoilRotVelocity.Pitch, -CachedRecoilMaxRot.Pitch, CachedRecoilMaxRot.Pitch);
-	ClampRecoilAxis(CurrentRecoilRotation.Yaw, RecoilRotVelocity.Yaw, -CachedRecoilMaxRot.Yaw, CachedRecoilMaxRot.Yaw);
-	ClampRecoilAxis(CurrentRecoilRotation.Roll, RecoilRotVelocity.Roll, -CachedRecoilMaxRot.Roll, CachedRecoilMaxRot.Roll);
+	// 限制最大累积边界（随一/三人称幅度系数与机瞄收紧倍率同步缩放），并在触界外冲时清零对应速度防止粘滞（X 轴向前复进过冲上限限制为向后撞肩上限的一半）
+	const double RecoilBoundScale = static_cast<double>(GetProceduralMotionScale() * FMath::Lerp(1.f, CachedADSRecoilScale, AimAlpha));
+	const FVector ScaledMaxLoc = CachedRecoilMaxLoc * RecoilBoundScale;
+	const FRotator ScaledMaxRot = CachedRecoilMaxRot * RecoilBoundScale;
+	ClampRecoilAxis(CurrentRecoilLocation.X, RecoilLocVelocity.X, -ScaledMaxLoc.X, ScaledMaxLoc.X * 0.5);
+	ClampRecoilAxis(CurrentRecoilLocation.Y, RecoilLocVelocity.Y, -ScaledMaxLoc.Y, ScaledMaxLoc.Y);
+	ClampRecoilAxis(CurrentRecoilLocation.Z, RecoilLocVelocity.Z, -ScaledMaxLoc.Z, ScaledMaxLoc.Z);
+	ClampRecoilAxis(CurrentRecoilRotation.Pitch, RecoilRotVelocity.Pitch, -ScaledMaxRot.Pitch, ScaledMaxRot.Pitch);
+	ClampRecoilAxis(CurrentRecoilRotation.Yaw, RecoilRotVelocity.Yaw, -ScaledMaxRot.Yaw, ScaledMaxRot.Yaw);
+	ClampRecoilAxis(CurrentRecoilRotation.Roll, RecoilRotVelocity.Roll, -ScaledMaxRot.Roll, ScaledMaxRot.Roll);
 
 	// 5. 汇总标准坐标系偏移，交由子类转换到各自基准骨骼局部空间输出给 Ctrl_WeaponPivot
 	const FVector TotalOffsetLocation = CurrentADSLocation + CurrentSwayLocation + CurrentRecoilLocation;
@@ -365,15 +421,16 @@ void UAnimInstHumanBase::AddRecoilImpulse(const UFragWeapon* FragWeapon)
 	KickRot.Yaw += (NoiseB * 0.32f + AltSign * 0.12f + FMath::FRandRange(-0.06f, 0.06f)) * NoiseScale;
 	KickRot.Roll += (AltSign * 0.45f + NoiseA * 0.25f + FMath::FRandRange(-0.08f, 0.08f)) * NoiseScale;
 
-	// 按武器实际生效的爆发频率与阻尼比转化为初速度冲量，保证单发最大波峰 1:1 精确匹配 RecoilKick 配置
-	const float KickSpeedMul = FMath::Max(0.1f, FragWeapon->RecoilKickSpeedMul);
+	// 按武器实际生效的爆发频率（含射速自适应缩放）、阻尼比与轴向滞后时间转化为缓冲冲量，保证单发最大波峰 1:1 精确匹配 RecoilKick 配置
+	const float FireRateScale = CalcFireRateFreqScale(FragWeapon->FireRate);
+	const float KickSpeedMul = FMath::Max(0.1f, FragWeapon->RecoilKickSpeedMul) * FireRateScale;
 	const float DampingMul = FMath::Max(0.05f, FragWeapon->RecoilDampingMul);
 
-	RecoilLocVelocity.X += KickLoc.X * CalcUnitPeakImpulseScale(FreqLocX * KickSpeedMul, FMath::Clamp(DampLocX * DampingMul, 0.1f, 2.0f));
-	RecoilLocVelocity.Y += KickLoc.Y * CalcUnitPeakImpulseScale(FreqLocY * KickSpeedMul, FMath::Clamp(DampLocY * DampingMul, 0.1f, 2.0f));
-	RecoilLocVelocity.Z += KickLoc.Z * CalcUnitPeakImpulseScale(FreqLocZ * KickSpeedMul, FMath::Clamp(DampLocZ * DampingMul, 0.1f, 2.0f));
+	PendingRecoilLocImpulse.X += KickLoc.X * CalcUnitPeakImpulseScale(FreqLocX * KickSpeedMul, FMath::Clamp(DampLocX * DampingMul, 0.1f, 2.0f), LagLocX / KickSpeedMul);
+	PendingRecoilLocImpulse.Y += KickLoc.Y * CalcUnitPeakImpulseScale(FreqLocY * KickSpeedMul, FMath::Clamp(DampLocY * DampingMul, 0.1f, 2.0f), LagLocY / KickSpeedMul);
+	PendingRecoilLocImpulse.Z += KickLoc.Z * CalcUnitPeakImpulseScale(FreqLocZ * KickSpeedMul, FMath::Clamp(DampLocZ * DampingMul, 0.1f, 2.0f), LagLocZ / KickSpeedMul);
 
-	RecoilRotVelocity.Pitch += KickRot.Pitch * CalcUnitPeakImpulseScale(FreqPitch * KickSpeedMul, FMath::Clamp(DampPitch * DampingMul, 0.1f, 2.0f));
-	RecoilRotVelocity.Yaw   += KickRot.Yaw   * CalcUnitPeakImpulseScale(FreqYaw   * KickSpeedMul, FMath::Clamp(DampYaw   * DampingMul, 0.1f, 2.0f));
-	RecoilRotVelocity.Roll  += KickRot.Roll  * CalcUnitPeakImpulseScale(FreqRoll  * KickSpeedMul, FMath::Clamp(DampRoll  * DampingMul, 0.1f, 2.0f));
+	PendingRecoilRotImpulse.Pitch += KickRot.Pitch * CalcUnitPeakImpulseScale(FreqPitch * KickSpeedMul, FMath::Clamp(DampPitch * DampingMul, 0.1f, 2.0f), LagPitch / KickSpeedMul);
+	PendingRecoilRotImpulse.Yaw   += KickRot.Yaw   * CalcUnitPeakImpulseScale(FreqYaw   * KickSpeedMul, FMath::Clamp(DampYaw   * DampingMul, 0.1f, 2.0f), LagYaw   / KickSpeedMul);
+	PendingRecoilRotImpulse.Roll  += KickRot.Roll  * CalcUnitPeakImpulseScale(FreqRoll  * KickSpeedMul, FMath::Clamp(DampRoll  * DampingMul, 0.1f, 2.0f), LagRoll  / KickSpeedMul);
 }

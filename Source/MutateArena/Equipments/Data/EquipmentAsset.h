@@ -139,12 +139,6 @@ public:
 	// 1P 瞄准时，Sight 插槽距离摄像机镜头的理想前向距离 (单位: cm | X轴正前方距离)
 	UPROPERTY(EditAnywhere)
 	float ADSEyeReliefDistance = 10.f;
-	// 机瞄位置微调偏移 (单位: cm | X=前后, Y=左右, Z=上下；1P 在 Sight 插槽自动对齐基础上叠加，3P 在默认举枪偏移基础上叠加)
-	UPROPERTY(EditAnywhere)
-	FVector ADSOffsetLocation = FVector(0.f, 0.f, 0.f);
-	// 机瞄旋转微调偏移 (单位: 度 | X=Roll侧倾, Y=Pitch俯仰, Z=Yaw偏航)
-	UPROPERTY(EditAnywhere)
-	FRotator ADSOffsetRotation = FRotator::MakeFromEuler(FVector(0.f, 0.f, 0.f));
 	// 3P 瞄准时角色向右歪头贴腮的总旋转偏移 (单位: 度 | 标准坐标系: X=Roll向右歪头, Y=Pitch低头, Z=Yaw偏航)
 	UPROPERTY(EditAnywhere)
 	FRotator ADSHeadTiltRotation3P = FRotator::MakeFromEuler(FVector(14.f, -2.f, 4.f));
@@ -165,7 +159,7 @@ public:
 	float RecoilKickSpeedMul = 1.f;
 	// 后坐力回正速度倍率 (越大枪身归位越快)
 	UPROPERTY(EditAnywhere)
-	float RecoilRecoverySpeedMul = 0.7f;
+	float RecoilRecoverySpeedMul = 0.6f;
 	// 后坐力回正阻尼倍率 (越大回正过冲越小)
 	UPROPERTY(EditAnywhere)
 	float RecoilDampingMul = 1.f;

@@ -12,11 +12,16 @@ void UAnimInstHuman::NativeUpdateAnimation(float DeltaSeconds)
 {
 	Super::NativeUpdateAnimation(DeltaSeconds);
 
-	// 缓存当前武器的 3P 歪头贴腮角度供工作线程安全读取
+	// 缓存当前武器的 3P 机瞄举枪偏移与歪头贴腮角度供工作线程安全读取
 	if (CombatComp)
 	{
 		if (AWeapon* CurWeapon = CombatComp->GetCurWeapon(); CurWeapon && CurWeapon->FragWeapon)
 		{
+			// 3P 机瞄偏移：叠加在腰射右手基准骨骼 (VB spine_05_hand_r) 上的举枪增量偏移。
+			// 标准坐标系下：向后抵肩(-X)、向左靠拢胸口中心(-Y)、向上抬起迎合右脸颊贴腮(+Z)，按 ADSScale 缩放。
+			const FVector Base3PRaiseOffset(-2.f, -6.f, 6.f);
+			CachedADSOffsetLoc = Base3PRaiseOffset * GetADSOffsetScale();
+			CachedADSOffsetRot = FRotator::ZeroRotator;
 			CachedADSHeadTiltRot = CurWeapon->FragWeapon->ADSHeadTiltRotation3P;
 		}
 		else

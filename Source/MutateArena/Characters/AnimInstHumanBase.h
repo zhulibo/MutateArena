@@ -83,16 +83,18 @@ protected:
 	UPROPERTY(BlueprintReadOnly)
 	float WeaponIKAlpha = 1.f;
 
-	// 主线程缓存的当前武器 ADS 目标偏移（3P 由基类按预设举枪偏移与武器微调量缩放计算；1P 由子类根据 Sight 插槽与摄像机中心轴精确覆写）
+	// 主线程缓存的当前武器 ADS 目标偏移（由 1P/3P 子类各自计算写入）
 	FVector CachedADSOffsetLoc = FVector::ZeroVector;
 	FRotator CachedADSOffsetRot = FRotator::ZeroRotator;
 
+	// 主线程缓存的当前动作蒙太奇播放状态（供子类与动画工作线程安全读取）
+	bool bIsPlayingActionMontage = false;
+
 private:
-	// 主线程缓存的角色装备与动作状态（供动画工作线程安全读取）
+	// 主线程缓存的角色装备状态（供动画工作线程安全读取）
 	bool bHasEquipment = false;
 	bool bHasWeapon = false;
 	bool bRawIsAiming = false;
-	bool bIsPlayingActionMontage = false;
 	float CachedADSTime = 0.2f;
 
 	// 主线程缓存的武器程序化后坐力配置参数（供动画工作线程步进求解弹簧时安全读取）
@@ -101,6 +103,7 @@ private:
 	float CachedRecoilKickSpeedMul = 1.f;
 	float CachedRecoilRecoverySpeedMul = 1.f;
 	float CachedRecoilDampingMul = 1.f;
+	float CachedADSRecoilScale = 0.5f;
 
 	// 程序化瞄准过渡状态（记录分段插值起点与进度，避免中途打断反向时发生曲线跳变或速度失真）
 	bool bPrevAiming = false;
@@ -116,11 +119,13 @@ private:
 	FVector CurrentSwayLocation = FVector::ZeroVector;
 	FRotator CurrentSwayRotation = FRotator::ZeroRotator;
 
-	// 程序化开火后坐力（6 自由度非对称二阶弹簧状态）
+	// 程序化开火后坐力（6 自由度非对称二阶弹簧状态 + 轴向滞后冲量缓冲池）
 	FVector CurrentRecoilLocation = FVector::ZeroVector;
 	FRotator CurrentRecoilRotation = FRotator::ZeroRotator;
 	FVector RecoilLocVelocity = FVector::ZeroVector;
 	FRotator RecoilRotVelocity = FRotator::ZeroRotator;
+	FVector PendingRecoilLocImpulse = FVector::ZeroVector;
+	FRotator PendingRecoilRotImpulse = FRotator::ZeroRotator;
 	float RecoilNoiseTime = 0.f;
 	int32 RecoilShotCounter = 0;
 };
