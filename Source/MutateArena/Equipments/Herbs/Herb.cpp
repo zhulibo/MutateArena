@@ -25,7 +25,7 @@ AHerb::AHerb()
 	HerbMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HerbMesh->SetCollisionObjectType(ECC::MeshHerb);
 	
-	Tags.Add(Tags::Herb);
+	Tags.Add(ActorTags::Herb);
 }
 
 void AHerb::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

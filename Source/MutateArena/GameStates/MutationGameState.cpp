@@ -14,7 +14,7 @@ AMutationGameState::AMutationGameState()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	Tags.Add(Tags::GameStateMutation);
+	Tags.Add(ActorTags::GameStateMutation);
 }
 
 void AMutationGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

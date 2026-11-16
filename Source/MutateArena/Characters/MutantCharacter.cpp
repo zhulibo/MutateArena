@@ -41,7 +41,7 @@ AMutantCharacter::AMutantCharacter(const FObjectInitializer& ObjectInitializer)
 
 	BloodColor = Colors::Green;
 
-	Tags.Add(Tags::MutantCharacter);
+	Tags.Add(ActorTags::MutantCharacter);
 }
 
 void AMutantCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -458,7 +458,7 @@ void AMutantCharacter::ProcessMutantHit(const FHitResult& HitResult, const FVect
 
 	float Damage = bIsLightAttack ? MutantAsset->LightAttackDamage : MutantAsset->HeavyAttackDamage;
 
-	if (OtherActor->ActorHasTag(Tags::HumanCharacter))
+	if (OtherActor->ActorHasTag(ActorTags::HumanCharacter))
 	{
 		DropBlood(GetMesh(), OtherActor, OtherComp, Damage, HitResult);
 	}

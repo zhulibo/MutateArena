@@ -60,7 +60,7 @@ AEquipment::AEquipment()
 
 	OwnerTeam = ETeam::NoTeam;
 
-	Tags.Add(Tags::Equipment);
+	Tags.Add(ActorTags::Equipment);
 }
 
 void AEquipment::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -342,6 +342,7 @@ void AEquipment::UpdateViewMode()
 		{
 			EquipmentMesh->SetVisibility(false);
 			EquipmentMesh->bCastHiddenShadow = false;
+			EquipmentMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 			EquipmentMesh->MarkRenderStateDirty();
 		}
 		if (EquipmentMesh1P)
@@ -359,6 +360,7 @@ void AEquipment::UpdateViewMode()
 		{
 			EquipmentMesh->SetVisibility(true);
 			EquipmentMesh->bCastHiddenShadow = false;
+			EquipmentMesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 			EquipmentMesh->MarkRenderStateDirty();
 		}
 		if (EquipmentMesh1P)
@@ -376,6 +378,7 @@ void AEquipment::UpdateViewMode()
 		// 1P 视角下隐藏 3P 武器，但开启 bCastHiddenShadow 让地面 MetaHuman 阴影手里有枪
 		EquipmentMesh->SetVisibility(!bFirstPerson);
 		EquipmentMesh->bCastHiddenShadow = bFirstPerson;
+		EquipmentMesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 		EquipmentMesh->MarkRenderStateDirty();
 	}
 

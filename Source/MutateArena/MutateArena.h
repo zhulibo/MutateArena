@@ -7,10 +7,8 @@
 namespace GameConstants
 {
 	inline constexpr float TraceLength = 100000.f;
-
 	// 小地图正交宽度
 	inline constexpr float MinimapOrthoWidth = 4000.f;
-
 	// 地图最高的物体高度
 	inline constexpr float MapMaxHeight = 10000.f;
 }
@@ -31,7 +29,6 @@ namespace Colors
 namespace Sockets
 {
 	// 3P
-	inline const FName Camera(TEXT("Camera"));
 	inline const FName SuffixR(TEXT("_R"));
 	inline const FName SuffixL(TEXT("_L"));
 	// 1P
@@ -43,15 +40,13 @@ namespace Sockets
 }
 
 // 骨骼名称
-namespace Bones1P
+namespace Bones
 {
-	inline const FName WeaponRoot(TEXT("weapon_root"));
-}
-
-namespace Bones3P
-{
+	// 3P
 	inline const FName VBRightHand(TEXT("VB spine_05_hand_r"));
 	inline const FName RightHand(TEXT("hand_r"));
+	// 1P
+	inline const FName WeaponRoot(TEXT("weapon_root"));
 }
 
 // 蒙太奇片段
@@ -74,8 +69,7 @@ namespace DataAsset
 	inline const FName Environment(TEXT("Environment"));
 }
 
-// tag
-namespace Tags
+namespace ActorTags
 {
 	inline const FName BaseCharacter(TEXT("BaseCharacter"));
 	inline const FName HumanCharacter(TEXT("HumanCharacter"));

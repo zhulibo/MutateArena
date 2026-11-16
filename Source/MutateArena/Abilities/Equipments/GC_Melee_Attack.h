@@ -14,7 +14,6 @@ class MUTATEARENA_API UGC_Melee_Attack : public UGameplayCueNotify_Static
 public:
 	UGC_Melee_Attack();
 
-	virtual bool OnActive_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters) const override;
-	virtual bool OnRemove_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters) const override;
+	virtual bool OnExecute_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters) const override;
 	
 };

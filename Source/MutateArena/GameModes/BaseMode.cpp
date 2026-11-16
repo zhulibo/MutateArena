@@ -325,7 +325,7 @@ void ABaseMode::AddKillLog(ABasePlayerState* AttackerState, AActor* DamageCauser
 	{
 		BaseGameState->MulticastAddKillLog(AttackerState, CauserName, DamagedState);
 
-		if (bIsMelee && BaseGameState->ActorHasTag(Tags::GameStateMutation))
+		if (bIsMelee && BaseGameState->ActorHasTag(ActorTags::GameStateMutation))
 		{
 			FText AttackerName = AttackerState ? FText::FromString(ULibraryCommon::ObfuscateName(AttackerState->GetPlayerName(), this)) : FText::GetEmpty();
 			FText DamagedName = DamagedState ? FText::FromString(ULibraryCommon::ObfuscateName(DamagedState->GetPlayerName(), this)) : FText::GetEmpty();

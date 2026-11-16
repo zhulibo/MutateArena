@@ -60,7 +60,7 @@ ABaseCharacter::ABaseCharacter(const FObjectInitializer& ObjectInitializer)
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	Tags.Add(Tags::BaseCharacter);
+	Tags.Add(ActorTags::BaseCharacter);
 
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 	GetCapsuleComponent()->InitCapsuleSize(34.0f, 90.f);
@@ -917,7 +917,7 @@ void ABaseCharacter::OnHealthChanged(const FOnAttributeChangeData& Data)
 		}
 
 		// HACK 对局结束由突变体变为人类时会触发ApplyHurtEffect，拦截
-		if (ActorHasTag(Tags::HumanCharacter) && Data.NewValue == 500.f)
+		if (ActorHasTag(ActorTags::HumanCharacter) && Data.NewValue == 500.f)
 		{
 			return;
 		}
@@ -1604,7 +1604,7 @@ void ABaseCharacter::ClearFlashbangEffect()
 void ABaseCharacter::OnLadderBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
                                           bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (OtherActor && OtherActor->ActorHasTag(Tags::Ladder))
+	if (OtherActor && OtherActor->ActorHasTag(ActorTags::Ladder))
 	{
 		// 如果在冷却期内（刚跳下梯子），拒绝吸附
 		if (GetWorld()->GetTimeSeconds() < LadderGrabCooldown)
@@ -1630,7 +1630,7 @@ void ABaseCharacter::OnLadderBeginOverlap(UPrimitiveComponent* OverlappedCompone
 
 void ABaseCharacter::OnLadderEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	if (OtherActor && OtherActor->ActorHasTag(Tags::Ladder))
+	if (OtherActor && OtherActor->ActorHasTag(ActorTags::Ladder))
 	{
 		if (OtherActor == CurrentLadder)
 		{

@@ -49,7 +49,7 @@ AHumanCharacter::AHumanCharacter(const FObjectInitializer& ObjectInitializer)
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	Tags.Add(Tags::HumanCharacter);
+	Tags.Add(ActorTags::HumanCharacter);
 
 	BloodColor = Colors::Red;
 

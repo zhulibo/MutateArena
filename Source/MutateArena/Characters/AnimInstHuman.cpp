@@ -34,10 +34,10 @@ void UAnimInstHuman::NativeUpdateAnimation(float DeltaSeconds)
 	// （CR_Human 仅通过 FABRIK 修改手部骨骼，不修改虚拟骨骼 VB spine_05_hand_r 本身，因此直接读取即为纯动画朝向）
 	if (USkeletalMeshComponent* SkelMesh = GetSkelMeshComponent())
 	{
-		int32 BoneIdx = SkelMesh->GetBoneIndex(Bones3P::VBRightHand);
+		int32 BoneIdx = SkelMesh->GetBoneIndex(Bones::VBRightHand);
 		if (BoneIdx == INDEX_NONE)
 		{
-			BoneIdx = SkelMesh->GetBoneIndex(Bones3P::RightHand);
+			BoneIdx = SkelMesh->GetBoneIndex(Bones::RightHand);
 		}
 		if (BoneIdx != INDEX_NONE)
 		{

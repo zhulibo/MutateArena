@@ -219,15 +219,15 @@ void ABaseController::AddGameLayout()
 
 		FocusGame();
 
-		if (GetWorld()->GetGameState()->ActorHasTag(Tags::GameStateMutation))
+		if (GetWorld()->GetGameState()->ActorHasTag(ActorTags::GameStateMutation))
 		{
 			GameLayout->GameStack->AddWidget(GameLayout->MutationContainerClass);
 		}
-		else if (GetWorld()->GetGameState()->ActorHasTag(Tags::GameStateMelee))
+		else if (GetWorld()->GetGameState()->ActorHasTag(ActorTags::GameStateMelee))
 		{
 			GameLayout->GameStack->AddWidget(GameLayout->MeleeContainerClass);
 		}
-		else if (GetWorld()->GetGameState()->ActorHasTag(Tags::GameStateTDM))
+		else if (GetWorld()->GetGameState()->ActorHasTag(ActorTags::GameStateTDM))
 		{
 			GameLayout->GameStack->AddWidget(GameLayout->TeamDeadMatchContainerClass);
 		}

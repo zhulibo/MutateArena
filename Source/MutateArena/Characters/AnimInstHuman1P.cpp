@@ -13,7 +13,7 @@ void UAnimInstHuman1P::NativeUpdateAnimation(float DeltaSeconds)
 	Super::NativeUpdateAnimation(DeltaSeconds);
 
 	USkeletalMeshComponent* SkelMesh = GetSkelMeshComponent();
-	const int32 WeaponRootBoneIdx = SkelMesh ? SkelMesh->GetBoneIndex(Bones1P::WeaponRoot) : INDEX_NONE;
+	const int32 WeaponRootBoneIdx = SkelMesh ? SkelMesh->GetBoneIndex(Bones::WeaponRoot) : INDEX_NONE;
 	if (WeaponRootBoneIdx == INDEX_NONE)
 	{
 		return;
@@ -45,7 +45,7 @@ void UAnimInstHuman1P::NativeUpdateAnimation(float DeltaSeconds)
 		// 获取 Sight 插槽相对于旋转支点骨骼 weapon_root 的局部变换（若 WeaponRoot 插槽相对骨骼存在局部偏移则一并计入旋转力臂）
 		FTransform SightLocalToBone = CurWeapon->EquipmentMesh1P->GetSocketTransform(Sockets::Sight, RTS_Component);
 		if (const USkeletalMeshSocket* WeaponRootSocket = SkelMesh->GetSocketByName(Sockets::WeaponRoot);
-			WeaponRootSocket && WeaponRootSocket->BoneName == Bones1P::WeaponRoot)
+			WeaponRootSocket && WeaponRootSocket->BoneName == Bones::WeaponRoot)
 		{
 			SightLocalToBone = SightLocalToBone * WeaponRootSocket->GetSocketLocalTransform();
 		}

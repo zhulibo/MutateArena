@@ -152,11 +152,11 @@ void UScoreboard::RefreshScoreBoard()
 				ScoreBoardLineButton->Damage->SetText(FText::FromString(FString::FromInt(PlayerStates[i]->Damage)));
 				ScoreBoardLineButton->Damage->SetColorAndOpacity(TargetColor);
 
-				if (BaseGameState->ActorHasTag(Tags::GameStateMelee) || BaseGameState->ActorHasTag(Tags::GameStateTDM))
+				if (BaseGameState->ActorHasTag(ActorTags::GameStateMelee) || BaseGameState->ActorHasTag(ActorTags::GameStateTDM))
 				{
 					ScoreBoardLineButton->Death->SetText(FText::FromString(FString::FromInt(PlayerStates[i]->Death)));
 				}
-				if (BaseGameState->ActorHasTag(Tags::GameStateMutation))
+				if (BaseGameState->ActorHasTag(ActorTags::GameStateMutation))
 				{
 					ScoreBoardLineButton->Survive->SetText(FText::FromString(FString::FromInt(PlayerStates[i]->Survive)));
 					ScoreBoardLineButton->Infect->SetText(FText::FromString(FString::FromInt(PlayerStates[i]->Infect)));

@@ -46,12 +46,20 @@ void AMelee::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (bIsAttacking && EquipmentMesh)
+	// 根据当前视角选择可见的刀网格体（1P 为 EquipmentMesh1P，3P 为 EquipmentMesh）进行刀刃轨迹扫掠
+	USkeletalMeshComponent* TraceMesh = GetVisibleEquipmentMesh();
+	if (bIsAttacking && TraceMesh && FragMelee)
 	{
+		if (LastTraceMesh != TraceMesh)
+		{
+			PreviousSocketLocations.Empty();
+			LastTraceMesh = TraceMesh;
+		}
+
 		// 对每个插槽进行上一帧位置到当前帧位置的球体扫掠检测
 		for (const FName& SocketName : FragMelee->TraceSockets)
 		{
-			FVector CurrentLocation = EquipmentMesh->GetSocketLocation(SocketName);
+			FVector CurrentLocation = TraceMesh->GetSocketLocation(SocketName);
 
 			if (PreviousSocketLocations.Contains(SocketName))
 			{
@@ -63,7 +71,14 @@ void AMelee::Tick(float DeltaTime)
 				FHitResult HitResult;
 				FCollisionQueryParams QueryParams;
 				QueryParams.AddIgnoredActor(this);
-				QueryParams.AddIgnoredActor(GetOwner());
+				if (AActor* OwnerActor = GetOwner())
+				{
+					QueryParams.AddIgnoredActor(OwnerActor);
+					// 忽略持有者身上挂载的其他装备（避免挥刀扫掠到自己身上的其他武器）
+					TArray<AActor*> AttachedActors;
+					OwnerActor->GetAttachedActors(AttachedActors);
+					QueryParams.AddIgnoredActors(AttachedActors);
+				}
 				QueryParams.bTraceComplex = true;
 				// 必须开启此项，否则下方 GetSurfaceType 将始终返回默认材质
 				QueryParams.bReturnPhysicalMaterial = true;
@@ -152,12 +167,14 @@ void AMelee::SetAttackCollisionEnabled(bool bIsEnabled)
 
 		bHasHitWall = false;
 		
-		// 攻击开始时记录第一帧位置，防止从原点(0,0,0)发出射线
-		if (EquipmentMesh)
+		// 攻击开始时记录当前可见刀网格体的第一帧插槽位置，防止从原点(0,0,0)发出射线
+		USkeletalMeshComponent* TraceMesh = GetVisibleEquipmentMesh();
+		LastTraceMesh = TraceMesh;
+		if (TraceMesh && FragMelee)
 		{
 			for (const FName& SocketName : FragMelee->TraceSockets)
 			{
-				PreviousSocketLocations.Add(SocketName, EquipmentMesh->GetSocketLocation(SocketName));
+				PreviousSocketLocations.Add(SocketName, TraceMesh->GetSocketLocation(SocketName));
 			}
 		}
 	}
@@ -169,24 +186,24 @@ void AMelee::ProcessMeleeHit(const FHitResult& HitResult, const FVector& TraceDi
 	UPrimitiveComponent* OtherComp = HitResult.GetComponent();
 
 	AHumanCharacter* InstigatorCharacter = Cast<AHumanCharacter>(GetOwner());
-	if (InstigatorCharacter && OtherActor && !HitEnemies.Contains(OtherActor))
+	if (InstigatorCharacter && OtherActor && FragMelee && !HitEnemies.Contains(OtherActor))
 	{
 		HitEnemies.Add(OtherActor);
 
 		float Damage = bIsLightAttack ? FragMelee->LightAttackDamage : FragMelee->HeavyAttackDamage;
 
-		if (OtherActor->ActorHasTag(Tags::BaseCharacter))
+		if (OtherActor->ActorHasTag(ActorTags::BaseCharacter))
 		{
-			DropBlood(EquipmentMesh, OtherActor, OtherComp, Damage, HitResult);
+			DropBlood(GetVisibleEquipmentMesh(), OtherActor, OtherComp, Damage, HitResult);
 		}
-		else if (OtherActor->ActorHasTag(Tags::Herb))
+		else if (OtherActor->ActorHasTag(ActorTags::Herb))
 		{
 			if (AHerb* Herb = Cast<AHerb>(OtherActor))
 			{
 				Herb->ServerDestroy();
 			}
 		}
-		else if (OtherComp && (OtherComp->GetCollisionObjectType() == ECC_WorldStatic || OtherComp->GetCollisionObjectType() == ECC_WorldDynamic))
+		else if (OtherComp && !OtherActor->ActorHasTag(ActorTags::Equipment) && (OtherComp->GetCollisionObjectType() == ECC_WorldStatic || OtherComp->GetCollisionObjectType() == ECC_WorldDynamic))
 		{
 			// 处理击中墙体/静态网格体的贴花与音效，传入挥刀方向
 			if (!bHasHitWall)
@@ -283,6 +300,7 @@ void AMelee::ServerApplyDamage_Implementation(AActor* OtherActor, AHumanCharacte
 void AMelee::ClearHitEnemies()
 {
 	HitEnemies.Empty();
+	bHasHitWall = false;
 }
 
 void AMelee::DropBlood(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, float Damage,

@@ -55,6 +55,10 @@ protected:
 	UPROPERTY()
 	bool bIsAttacking = false;
 
+	// 记录上一帧扫掠使用的网格体（区分 1P EquipmentMesh1P 与 3P EquipmentMesh）
+	UPROPERTY()
+	TObjectPtr<USkeletalMeshComponent> LastTraceMesh = nullptr;
+
 	// 记录上一帧插槽位置，用于帧间连线扫掠
 	TMap<FName, FVector> PreviousSocketLocations;
 
