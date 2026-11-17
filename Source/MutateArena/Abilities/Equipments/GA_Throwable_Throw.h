@@ -4,6 +4,7 @@
 #include "MutateArena/Abilities/Equipments/GA_Equipment.h"
 #include "GA_Throwable_Throw.generated.h"
 
+// TAG_EVENT_THROWABLE_THROWOUT 挂在 3P 蒙太奇上，第三人称 BodyMesh 在本地虽隐藏但仍在 Tick
 UCLASS(Abstract)
 class MUTATEARENA_API UGA_Throwable_Throw : public UGA_Equipment
 {

@@ -15,6 +15,8 @@ public:
 	AThrowable();
 
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaTime) override;
+	virtual void PostNetReceiveLocationAndRotation() override;
 
 	UPROPERTY(VisibleAnywhere)
 	class UProjectileMovementComponent* ProjectileMovement;
@@ -27,6 +29,7 @@ public:
 	virtual void OnRep_EquipmentState(EEquipmentState OldState) override;
 
 protected:
+	bool bHasThrownOut = false;
 	bool bHasBounced = false;
 	UFUNCTION()
 	virtual void OnProjectileBounce(const FHitResult& ImpactResult, const FVector& ImpactVelocity);

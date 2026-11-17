@@ -45,7 +45,7 @@ void UGA_Melee_Attack::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
 		WaitReleaseTask->EventReceived.AddDynamic(this, &UGA_Melee_Attack::OnAttackButtonReleased);
 		WaitReleaseTask->ReadyForActivation();
 
-		// 2. 监听蒙太奇第一段挥刀结束通知（由动画 Notify 触发）
+		// 2. 监听蒙太奇第一段挥刀结束通知
 		UAbilityTask_WaitGameplayEvent* WaitEndTask = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(this, TAG_EVENT_MELEE_FIRSTSECTIONEND);
 		WaitEndTask->EventReceived.AddDynamic(this, &UGA_Melee_Attack::OnFirstSectionEnd);
 		WaitEndTask->ReadyForActivation();

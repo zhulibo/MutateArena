@@ -352,9 +352,9 @@ void AEquipment::UpdateViewMode()
 		return;
 	}
 
-	// 2. 武器掉落在地面（或尚未被拾取）状态：显示 3P 模型，关闭隐藏阴影，隐藏 1P 模型
+	// 2. 武器掉落在地面、投掷物飞行中（或尚未被拾取）状态：显示 3P 模型，关闭隐藏阴影，隐藏 1P 模型
 	ABaseCharacter* OwnerChar = Cast<ABaseCharacter>(GetOwner());
-	if (EquipmentState == EEquipmentState::Dropped || !OwnerChar)
+	if (EquipmentState == EEquipmentState::Dropped || EquipmentState == EEquipmentState::Thrown || !OwnerChar)
 	{
 		if (EquipmentMesh)
 		{

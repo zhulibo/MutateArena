@@ -28,7 +28,7 @@ void AStun::ThrowOut()
 	if (HasAuthority())
 	{
 		FTimerHandle TimerHandle;
-		GetWorldTimerManager().SetTimer(TimerHandle, this, &ThisClass::ServerExplode, 2.f);
+		GetWorldTimerManager().SetTimer(TimerHandle, this, &ThisClass::ServerExplode, 3.f);
 	}
 }
 

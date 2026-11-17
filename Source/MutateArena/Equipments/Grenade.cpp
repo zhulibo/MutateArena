@@ -69,6 +69,7 @@ void AGrenade::ServerExplode()
 
 	MulticastExplodeEffects();
 
+	// 延迟销毁，保证多播RPC顺利到达且特效播放完毕
 	SetLifeSpan(2.0f);
 }
 

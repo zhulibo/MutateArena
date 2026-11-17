@@ -32,7 +32,7 @@ void UGA_Weapon_Reload_Shotgun::ActivateAbility(const FGameplayAbilitySpecHandle
 
 	if (CurWeapon->FragWeapon->ReloadMontage_C)
 	{
-		// 监听换弹通知
+		// 监听逐发装弹通知（仅由 3P ReloadMontage_C 触发，保证服务端与本地端一致装弹；1P 需对齐装弹帧）
 		UAbilityTask_WaitGameplayEvent* WaitEventTask = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(
 			this, TAG_EVENT_WEAPON_RELOAD_INSERT);
 		WaitEventTask->EventReceived.AddDynamic(this, &ThisClass::OnShellInsertEventReceived);

@@ -64,7 +64,7 @@ void UGA_Weapon_Reload::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 	
 	if (CurWeapon->FragWeapon->ReloadMontage_C)
 	{
-		// 监听换弹完成通知 希望尽早开火 可能换单动画未完成
+		// 监听换弹完成通知（仅由 3P 蒙太奇触发，允许在收尾动作播完前提前开火；1P 需对齐该关键帧）
 		UAbilityTask_WaitGameplayEvent* WaitEventTask = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(
 			this, TAG_EVENT_WEAPON_RELOAD_END);
 		WaitEventTask->EventReceived.AddDynamic(this, &ThisClass::OnReloadEventReceived);
@@ -149,8 +149,8 @@ void UGA_Weapon_Reload::ReloadAmmo()
 
 void UGA_Weapon_Reload::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
-	// 换弹完成通知（Event.Weapon.Reload.End）挂在 1P 手臂蒙太奇（ReloadMontage1P_C）上，仅在本地控制端播放并触发；
-	// 当非服务端的客户端收到通知并调用 EndAbility(bWasCancelled = false) 同步到服务端时，服务端在此处完成权威弹药补充。
+	// 兜底补弹：正常由双端 3P 蒙太奇的 OnReloadEventReceived / OnMontageCompleted 触发 ReloadAmmo()；
+	// 若因网络时序导致某端先收到非取消的 EndAbility 同步，在此处保底补齐弹药。
 	if (!bWasCancelled && !bHasReloaded)
 	{
 		ReloadAmmo();

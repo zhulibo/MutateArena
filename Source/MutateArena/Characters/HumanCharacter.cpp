@@ -337,6 +337,7 @@ void AHumanCharacter::AimButtonPressed(const FInputActionValue& Value)
 	}
 	else if (CombatComp->CurEquipmentSlot == EEquipmentSlot::Slot3)
 	{
+		// 需传参用 HandleGameplayEvent， GA 中需配置 AbilityTriggers Tag
 		FGameplayEventData Payload;
 		Payload.EventMagnitude = 2.f; // 重击
 		if (BasePlayerState == nullptr) BasePlayerState = GetPlayerState<ABasePlayerState>();
@@ -391,6 +392,7 @@ void AHumanCharacter::FireButtonPressed(const FInputActionValue& Value)
 		break;
 	case EEquipmentSlot::Slot3:
 		{
+			// 需传参用 HandleGameplayEvent， GA 中需配置 AbilityTriggers Tag
 			FGameplayEventData Payload;
 			Payload.EventMagnitude = 1.f; // 轻击
 			if (BasePlayerState == nullptr) BasePlayerState = GetPlayerState<ABasePlayerState>();

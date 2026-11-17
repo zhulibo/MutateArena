@@ -4,6 +4,7 @@
 #include "MutateArena/Abilities/Equipments/GA_Equipment.h"
 #include "GA_Weapon_Reload.generated.h"
 
+// TAG_EVENT_WEAPON_RELOAD_END 仅挂在 3P 蒙太奇，各端都能看到，第三人称 BodyMesh 在本地虽隐藏但仍在 Tick
 UCLASS(Abstract)
 class MUTATEARENA_API UGA_Weapon_Reload : public UGA_Equipment
 {
@@ -29,7 +30,7 @@ protected:
 	UFUNCTION()
 	void OnMontageCancelled();
 
-	// 监听来自 AnimNotify (UAN_SendGameplayEvent) 的事件
+	// 监听来自 AnimNotify (TAG_EVENT_WEAPON_RELOAD_END) 的事件
 	UFUNCTION()
 	void OnReloadEventReceived(FGameplayEventData Payload);
 
