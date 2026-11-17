@@ -119,9 +119,8 @@ namespace ECC
 {
 	inline constexpr ECollisionChannel MeshTeam1 = ECC_GameTraceChannel1;
 	inline constexpr ECollisionChannel MeshTeam2 = ECC_GameTraceChannel2;
-	inline constexpr ECollisionChannel MeshHerb = ECC_GameTraceChannel3;
-	inline constexpr ECollisionChannel Trace = ECC_GameTraceChannel4;
-	inline constexpr ECollisionChannel Projectile = ECC_GameTraceChannel5;
+	inline constexpr ECollisionChannel Projectile = ECC_GameTraceChannel3;
+	inline constexpr ECollisionChannel MeshHerb = ECC_GameTraceChannel4;
 }
 
 // EOS大厅属性

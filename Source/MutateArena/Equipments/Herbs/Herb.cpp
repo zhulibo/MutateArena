@@ -24,6 +24,7 @@ AHerb::AHerb()
 	HerbMesh->SetupAttachment(RootComponent);
 	HerbMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HerbMesh->SetCollisionObjectType(ECC::MeshHerb);
+	HerbMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	
 	Tags.Add(ActorTags::Herb);
 }

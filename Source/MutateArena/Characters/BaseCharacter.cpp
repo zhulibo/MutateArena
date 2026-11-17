@@ -63,6 +63,7 @@ ABaseCharacter::ABaseCharacter(const FObjectInitializer& ObjectInitializer)
 	Tags.Add(ActorTags::BaseCharacter);
 
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC::Projectile, ECR_Ignore);
 	GetCapsuleComponent()->InitCapsuleSize(34.0f, 90.f);
 	GetMesh()->SetRelativeLocation(FVector(0.f, 0.f, -90.f));
 	GetCharacterMovement()->SetCrouchedHalfHeight(60.f);
@@ -235,11 +236,12 @@ void ABaseCharacter::BeginPlay()
 	
 	BodyMesh->bCastHiddenShadow = true;
 	BodyMesh->SetGenerateOverlapEvents(true);
+	BodyMesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	BodyMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
+	BodyMesh->SetCollisionResponseToChannel(ECC::Projectile, ECollisionResponse::ECR_Overlap);
 
+	// BodyMesh 的物理资产已包含头部，FaceMesh 不用设置碰撞
 	FaceMesh->bCastHiddenShadow = true;
-	FaceMesh->SetGenerateOverlapEvents(true);
-	FaceMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 
 	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnLadderBeginOverlap);
 	GetCapsuleComponent()->OnComponentEndOverlap.AddDynamic(this, &ThisClass::OnLadderEndOverlap);
@@ -863,6 +865,13 @@ void ABaseCharacter::OnDead()
 	if (OverheadWidget)
 	{
 		OverheadWidget->SetVisibility(false);
+	}
+
+	// 死亡后关闭子弹重叠，防止尸体阻挡或消耗子弹穿透力
+	if (BodyMesh)
+	{
+		BodyMesh->SetCollisionResponseToChannel(ECC::Projectile, ECollisionResponse::ECR_Ignore);
+		BodyMesh->SetGenerateOverlapEvents(false);
 	}
 
 	if (HasAuthority())

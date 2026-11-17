@@ -51,7 +51,7 @@ void AWeaponGeneric::SpawnProjectile(const FVector& FinalTarget, int32, int32)
 		Projectile->MuzzleLocation = MuzzleLocation;
 		Projectile->BlendDistance = BlendDistance;
 		
-		// 设置队伍碰撞通道
+		// 开启与对方队伍的重叠（角色伤害使用的是重叠）
 		switch (OwnerTeam)
 		{
 		case ETeam::Team1:

@@ -103,7 +103,7 @@ float AWeapon::CalcVisualBlendDistance(const FVector& SpawnLocation, const FVect
 	Params.AddIgnoredActor(GetOwner());
 
 	const FVector TraceEnd = SpawnLocation + ShotDirection * MaxBlendDistance;
-	if (World->LineTraceSingleByChannel(HitResult, SpawnLocation, TraceEnd, ECC::Trace, Params))
+	if (World->LineTraceSingleByChannel(HitResult, SpawnLocation, TraceEnd, ECC_Visibility, Params))
 	{
 		return FMath::Clamp(HitResult.Distance, 50.f, MaxBlendDistance);
 	}

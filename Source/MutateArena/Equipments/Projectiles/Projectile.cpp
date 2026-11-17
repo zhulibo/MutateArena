@@ -14,11 +14,10 @@ AProjectile::AProjectile()
 	CollisionBox = CreateDefaultSubobject<UBoxComponent>(TEXT("CollisionBox"));
 	SetRootComponent(CollisionBox);
 	CollisionBox->SetCollisionObjectType(ECC::Projectile);
-	CollisionBox->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	CollisionBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly); // 开启重叠
 	CollisionBox->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	CollisionBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldStatic, ECollisionResponse::ECR_Block);
 	CollisionBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldDynamic, ECollisionResponse::ECR_Block);
-	CollisionBox->SetUseCCD(true);
 
 	VisualRootComp = CreateDefaultSubobject<USceneComponent>(TEXT("VisualRootComp"));
 	VisualRootComp->SetupAttachment(RootComponent);

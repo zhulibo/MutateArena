@@ -86,7 +86,8 @@ void AMelee::Tick(float DeltaTime)
 				// 创建球体检测形状
 				FCollisionShape SphereShape = FCollisionShape::MakeSphere(FragMelee->TraceRadius);
 
-				// 使用 SweepSingleByObjectType 进行球体连线扫掠
+				// 使用 SweepSingleByObjectType 进行球体连线扫掠，SweepSingleByObjectType 只看两点
+				// 目标组件的 Collision Enabled 包含 Query。目标组件的 ObjectType 在你传入的 FCollisionObjectQueryParams 里。
 				bool bHit = GetWorld()->SweepSingleByObjectType(
 					HitResult,
 					PreviousLocation,
@@ -203,7 +204,8 @@ void AMelee::ProcessMeleeHit(const FHitResult& HitResult, const FVector& TraceDi
 				Herb->ServerDestroy();
 			}
 		}
-		else if (OtherComp && !OtherActor->ActorHasTag(ActorTags::Equipment) && (OtherComp->GetCollisionObjectType() == ECC_WorldStatic || OtherComp->GetCollisionObjectType() == ECC_WorldDynamic))
+		else if (OtherComp && !OtherActor->ActorHasTag(ActorTags::Equipment) && 
+			(OtherComp->GetCollisionObjectType() == ECC_WorldStatic || OtherComp->GetCollisionObjectType() == ECC_WorldDynamic))
 		{
 			// 处理击中墙体/静态网格体的贴花与音效，传入挥刀方向
 			if (!bHasHitWall)
