@@ -2,6 +2,7 @@
 #include "MutateArena/Characters/BaseCharacter.h"
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "Camera/CameraComponent.h"
+#include "Data/EquipmentAsset.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "MetaSoundSource.h"
@@ -24,11 +25,6 @@ AFireBottle::AFireBottle()
 	FireSphere = CreateDefaultSubobject<USphereComponent>(TEXT("FireSphere")); // 修改了这里的名字以防跟SmokeSphere混淆
 	FireSphere->SetupAttachment(RootComponent);
 	FireSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	FireSphere->SetSphereRadius(FireRadius);
-	
-	// ProjectileMovement->bShouldBounce = false;
-	ProjectileMovement->Bounciness = 0.1f;
-	ProjectileMovement->Friction = 0.9f;
 }
 
 void AFireBottle::ThrowOut()
@@ -39,6 +35,14 @@ void AFireBottle::ThrowOut()
 void AFireBottle::BeginPlay()
 {
 	Super::BeginPlay();
+
+	FragFireBottle = EquipmentAsset->FindFragmentByClass<UFragFireBottle>();
+	check(FragFireBottle);
+
+	if (FireSphere)
+	{
+		FireSphere->SetSphereRadius(FragFireBottle->FireRadius);
+	}
 
 	// 只有服务器需要关心碰撞逻辑来触发爆炸
 	if (HasAuthority())
@@ -60,7 +64,7 @@ void AFireBottle::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimi
 		// 开启服务器伤害循环定时器
 		GetWorldTimerManager().SetTimer(DetectTimerHandle, this, &ThisClass::ServerDetectActors, 1.f, true);
 
-		SetLifeSpan(Time);
+		SetLifeSpan(FragFireBottle->Duration);
 	}
 }
 
@@ -71,30 +75,36 @@ void AFireBottle::MulticastExplodeEffects_Implementation()
 		ProjectileMovement->StopMovementImmediately();
 	}
 
-	if (ExplodeSound)
+	if (FragThrowable->ExplodeSound)
 	{
-		UGameplayStatics::PlaySoundAtLocation(this, ExplodeSound, GetActorLocation());
+		UGameplayStatics::PlaySoundAtLocation(this, FragThrowable->ExplodeSound, GetActorLocation());
 	}
 
-	SpawnedFireEffect = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
-		GetWorld(),
-		ExplodeEffect,
-		GetActorLocation(),
-		FRotator::ZeroRotator
-	);
-	if (SpawnedFireEffect)
+	if (FragThrowable->ExplodeEffect)
 	{
-		SpawnedFireEffect->SetVariableFloat(TEXT("FireRadius"), FireRadius);
-		SpawnedFireEffect->SetVariableFloat(TEXT("Time"), Time);
+		SpawnedFireEffect = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+			GetWorld(),
+			FragThrowable->ExplodeEffect,
+			GetActorLocation(),
+			FRotator::ZeroRotator
+		);
+		if (SpawnedFireEffect)
+		{
+			SpawnedFireEffect->SetVariableFloat(TEXT("FireRadius"), FragFireBottle->FireRadius);
+			SpawnedFireEffect->SetVariableFloat(TEXT("Time"), FragFireBottle->Duration);
+		}
 	}
 
-	SpawnedFireSound = UGameplayStatics::SpawnSoundAttached(
-		BurnSound,
-		GetRootComponent(),
-		NAME_None,
-		GetActorLocation(),
-		EAttachLocation::KeepWorldPosition
-	);
+	if (FragFireBottle->BurnSound)
+	{
+		SpawnedFireSound = UGameplayStatics::SpawnSoundAttached(
+			FragFireBottle->BurnSound,
+			GetRootComponent(),
+			NAME_None,
+			GetActorLocation(),
+			EAttachLocation::KeepWorldPosition
+		);
+	}
 }
 
 void AFireBottle::ServerDetectActors()
@@ -184,9 +194,9 @@ void AFireBottle::ServerDetectActors()
 
 void AFireBottle::MulticastExtinguishEffects_Implementation()
 {
-	if (ExtinguishSound)
+	if (FragFireBottle->ExtinguishSound)
 	{
-		UGameplayStatics::PlaySoundAtLocation(this, ExtinguishSound, GetActorLocation());
+		UGameplayStatics::PlaySoundAtLocation(this, FragFireBottle->ExtinguishSound, GetActorLocation());
 	}
 }
 

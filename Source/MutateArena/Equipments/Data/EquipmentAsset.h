@@ -22,6 +22,7 @@ class UNiagaraSystem;
 class UMetaSoundSource;
 class AEquipment;
 class AShell;
+class UCameraShakeBase;
 
 // 通用装备数据资产
 UCLASS()
@@ -256,6 +257,18 @@ class MUTATEARENA_API UFragThrowable : public UEquipmentFragment
 public:
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UMetaSoundSource> HitSound;
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UNiagaraSystem> ExplodeEffect;
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UMetaSoundSource> ExplodeSound;
+
+	// 引信时间（秒）；碰撞引爆类投掷物（如燃烧瓶）无需使用
+	UPROPERTY(EditAnywhere)
+	float FuseTime = 3.f;
+	UPROPERTY(EditAnywhere)
+	float Bounciness = 0.3f;
+	UPROPERTY(EditAnywhere)
+	float Friction = 0.6f;
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UAnimMontage> ThrowMontage1P_C;
@@ -265,6 +278,79 @@ public:
 	TObjectPtr<UAnimMontage> ThrowMontage_C;
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UAnimMontage> ThrowMontage_E;
+};
+
+UCLASS(BlueprintType)
+class MUTATEARENA_API UFragGrenade : public UEquipmentFragment
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere)
+	float Damage = 500.f;
+	UPROPERTY(EditAnywhere)
+	float DamageInnerRadius = 100.f;
+	UPROPERTY(EditAnywhere)
+	float DamageOuterRadius = 400.f;
+};
+
+UCLASS(BlueprintType)
+class MUTATEARENA_API UFragFlashbang : public UEquipmentFragment
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere)
+	float Radius = 1200.f;
+	// 闪光留存时间
+	UPROPERTY(EditAnywhere)
+	float MaxFlashTime = 6.f;
+	// 残影留存时间
+	UPROPERTY(EditAnywhere)
+	float MaxCapTime = 10.f;
+	// 起音较慢，在引爆前提前多少秒播放音效
+	UPROPERTY(EditAnywhere)
+	float SoundLeadTime = 0.5f;
+};
+
+UCLASS(BlueprintType)
+class MUTATEARENA_API UFragSmoke : public UEquipmentFragment
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere)
+	float Duration = 12.f;
+};
+
+UCLASS(BlueprintType)
+class MUTATEARENA_API UFragStun : public UEquipmentFragment
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere)
+	float Radius = 800.f;
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<UCameraShakeBase> CameraShakeClass;
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<UGameplayEffect> StunEffectClass;
+};
+
+UCLASS(BlueprintType)
+class MUTATEARENA_API UFragFireBottle : public UEquipmentFragment
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere)
+	float FireRadius = 200.f;
+	UPROPERTY(EditAnywhere)
+	float Duration = 10.f;
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UMetaSoundSource> BurnSound;
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UMetaSoundSource> ExtinguishSound;
 };
 
 UCLASS(BlueprintType, Const)

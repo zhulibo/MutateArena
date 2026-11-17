@@ -5,6 +5,7 @@
 #include "FireBottle.generated.h"
 
 class UAudioComponent;
+class UFragFireBottle;
 
 UCLASS()
 class MUTATEARENA_API AFireBottle : public AThrowable
@@ -19,19 +20,11 @@ public:
 	virtual void BeginPlay() override;
 	virtual void Destroyed() override;
 
+	UPROPERTY(Transient)
+	TObjectPtr<const UFragFireBottle> FragFireBottle = nullptr;
+
 	UPROPERTY(VisibleAnywhere)
 	class USphereComponent* FireSphere;
-	UPROPERTY()
-	float FireRadius = 200.f;
-
-	UPROPERTY(EditAnywhere)
-	class UNiagaraSystem* ExplodeEffect;
-	UPROPERTY(EditAnywhere)
-	class UMetaSoundSource* ExplodeSound;
-	UPROPERTY(EditAnywhere)
-	class UMetaSoundSource* BurnSound;
-	UPROPERTY(EditAnywhere)
-	UMetaSoundSource* ExtinguishSound;
 	
 	UPROPERTY()
 	class UNiagaraComponent* SpawnedFireEffect;
@@ -42,7 +35,6 @@ public:
 	UFUNCTION()
 	void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
-	float Time = 10.f;
 	// 多播爆炸表现
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastExplodeEffects();

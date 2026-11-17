@@ -6,6 +6,7 @@
 #include "MutateArena/PlayerStates/BasePlayerState.h"
 #include "MutateArena/PlayerStates/TeamType.h"
 #include "Camera/CameraComponent.h"
+#include "Data/EquipmentAsset.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "MetaSoundSource.h"
@@ -15,8 +16,14 @@
 
 AGrenade::AGrenade()
 {
-	ProjectileMovement->Bounciness = 0.3f;
-	ProjectileMovement->Friction = 0.6f;
+}
+
+void AGrenade::BeginPlay()
+{
+	Super::BeginPlay();
+
+	FragGrenade = EquipmentAsset->FindFragmentByClass<UFragGrenade>();
+	check(FragGrenade);
 }
 
 void AGrenade::ThrowOut()
@@ -25,8 +32,15 @@ void AGrenade::ThrowOut()
 
 	if (HasAuthority())
 	{
-		FTimerHandle TimerHandle;
-		GetWorldTimerManager().SetTimer(TimerHandle, this, &ThisClass::ServerExplode, 4.f);
+		if (FragThrowable->FuseTime > 0.f)
+		{
+			FTimerHandle TimerHandle;
+			GetWorldTimerManager().SetTimer(TimerHandle, this, &ThisClass::ServerExplode, FragThrowable->FuseTime);
+		}
+		else
+		{
+			ServerExplode();
+		}
 	}
 }
 
@@ -54,11 +68,11 @@ void AGrenade::ServerExplode()
 
 		UGameplayStatics::ApplyRadialDamageWithFalloff(
 			this,
-			Damage,
+			FragGrenade->Damage,
 			100.f,
 			GetActorLocation(),
-			DamageInnerRadius,
-			DamageOuterRadius,
+			FragGrenade->DamageInnerRadius,
+			FragGrenade->DamageOuterRadius,
 			1.f,
 			UDamageType::StaticClass(),
 			IgnoreActors,
@@ -69,7 +83,6 @@ void AGrenade::ServerExplode()
 
 	MulticastExplodeEffects();
 
-	// 延迟销毁，保证多播RPC顺利到达且特效播放完毕
 	SetLifeSpan(2.0f);
 }
 
@@ -79,19 +92,19 @@ void AGrenade::MulticastExplodeEffects_Implementation()
 	{
 		ProjectileMovement->StopMovementImmediately();
 	}
-	
-	if (ExplodeEffect)
+
+	if (FragThrowable->ExplodeEffect)
 	{
 		ExplodeEffectComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
 			GetWorld(),
-			ExplodeEffect,
+			FragThrowable->ExplodeEffect,
 			GetActorLocation(),
 			GetActorRotation()
 		);
 	}
 
-	if (ExplodeSound)
+	if (FragThrowable->ExplodeSound)
 	{
-		UGameplayStatics::PlaySoundAtLocation(this, ExplodeSound, GetActorLocation());
+		UGameplayStatics::PlaySoundAtLocation(this, FragThrowable->ExplodeSound, GetActorLocation());
 	}
 }

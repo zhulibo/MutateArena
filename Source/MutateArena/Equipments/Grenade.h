@@ -4,6 +4,8 @@
 #include "Throwable.h"
 #include "Grenade.generated.h"
 
+class UFragGrenade;
+
 UCLASS()
 class MUTATEARENA_API AGrenade : public AThrowable
 {
@@ -12,22 +14,15 @@ class MUTATEARENA_API AGrenade : public AThrowable
 public:
 	AGrenade();
 
+	virtual void BeginPlay() override;
 	virtual void ThrowOut() override;
 
+	UPROPERTY(Transient)
+	TObjectPtr<const UFragGrenade> FragGrenade = nullptr;
+
 protected:
-	UPROPERTY(EditAnywhere)
-	class UNiagaraSystem* ExplodeEffect;
 	UPROPERTY()
 	class UNiagaraComponent* ExplodeEffectComponent;
-	UPROPERTY(EditAnywhere)
-	class UMetaSoundSource* ExplodeSound;
-
-	UPROPERTY()
-	float Damage = 500.f;
-	UPROPERTY()
-	float DamageInnerRadius = 100.f;
-	UPROPERTY()
-	float DamageOuterRadius = 400.f;
 
 	UFUNCTION()
 	void ServerExplode();

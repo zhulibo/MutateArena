@@ -6,6 +6,7 @@
 #include "MutateArena/GameStates/BaseGameState.h"
 #include "MutateArena/PlayerStates/BasePlayerState.h"
 #include "MutateArena/PlayerStates/TeamType.h"
+#include "Data/EquipmentAsset.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
@@ -17,8 +18,14 @@
 
 AStun::AStun()
 {
-	ProjectileMovement->Bounciness = 0.3f;
-	ProjectileMovement->Friction = 0.6f;
+}
+
+void AStun::BeginPlay()
+{
+	Super::BeginPlay();
+
+	FragStun = EquipmentAsset->FindFragmentByClass<UFragStun>();
+	check(FragStun);
 }
 
 void AStun::ThrowOut()
@@ -27,8 +34,15 @@ void AStun::ThrowOut()
 
 	if (HasAuthority())
 	{
-		FTimerHandle TimerHandle;
-		GetWorldTimerManager().SetTimer(TimerHandle, this, &ThisClass::ServerExplode, 3.f);
+		if (FragThrowable->FuseTime > 0.f)
+		{
+			FTimerHandle TimerHandle;
+			GetWorldTimerManager().SetTimer(TimerHandle, this, &ThisClass::ServerExplode, FragThrowable->FuseTime);
+		}
+		else
+		{
+			ServerExplode();
+		}
 	}
 }
 
@@ -63,7 +77,7 @@ void AStun::ServerExplode()
 	UKismetSystemLibrary::SphereOverlapActors(
 		this,
 		GetActorLocation(),
-		Radius,
+		FragStun->Radius,
 		ObjectTypes,
 		ABaseCharacter::StaticClass(),
 		ActorsToIgnore,
@@ -111,11 +125,11 @@ void AStun::ServerExplode()
 			// 视线无阻挡，应用震撼弹 GE
 			if (UAbilitySystemComponent* TargetASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(TargetChar))
 			{
-				if (StunEffectClass)
+				if (FragStun->StunEffectClass)
 				{
 					FGameplayEffectContextHandle ContextHandle = TargetASC->MakeEffectContext();
 					ContextHandle.AddInstigator(HumanCharacter, this);
-					TargetASC->ApplyGameplayEffectToSelf(StunEffectClass->GetDefaultObject<UGameplayEffect>(), 1.0f, ContextHandle);
+					TargetASC->ApplyGameplayEffectToSelf(FragStun->StunEffectClass->GetDefaultObject<UGameplayEffect>(), 1.0f, ContextHandle);
 				}
 			}
 		}
@@ -133,31 +147,31 @@ void AStun::MulticastExplodeEffects_Implementation()
 	{
 		ProjectileMovement->StopMovementImmediately();
 	}
-	
-	if (ExplodeEffect)
+
+	if (FragThrowable->ExplodeEffect)
 	{
 		ExplodeEffectComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
 			GetWorld(),
-			ExplodeEffect,
+			FragThrowable->ExplodeEffect,
 			GetActorLocation(),
 			GetActorRotation()
 		);
 	}
 
-	if (ExplodeSound)
+	if (FragThrowable->ExplodeSound)
 	{
-		UGameplayStatics::PlaySoundAtLocation(this, ExplodeSound, GetActorLocation());
+		UGameplayStatics::PlaySoundAtLocation(this, FragThrowable->ExplodeSound, GetActorLocation());
 	}
 
 	// 播放世界范围的屏幕晃动，引擎会根据距离自动衰减
-	if (CameraShakeClass)
+	if (FragStun->CameraShakeClass)
 	{
 		UGameplayStatics::PlayWorldCameraShake(
 			GetWorld(),
-			CameraShakeClass,
+			FragStun->CameraShakeClass,
 			GetActorLocation(),
 			0.f,
-			Radius,
+			FragStun->Radius,
 			1.f
 		);
 	}

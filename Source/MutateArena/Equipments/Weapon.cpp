@@ -31,7 +31,7 @@ void AWeapon::BeginPlay()
 	check(AssetSubsystem);
 
 	FragWeapon = EquipmentAsset->FindFragmentByClass<UFragWeapon>();
-	check(FragWeapon);
+	check(FragWeapon); // 强制判空，后续不再校验是否为空
 
 	Ammo = FragWeapon->MagCapacity;
 	CarriedAmmo = FragWeapon->MaxCarriedAmmo;

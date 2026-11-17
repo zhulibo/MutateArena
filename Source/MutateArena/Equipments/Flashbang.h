@@ -4,6 +4,8 @@
 #include "MutateArena/Equipments/Throwable.h"
 #include "Flashbang.generated.h"
 
+class UFragFlashbang;
+
 UCLASS()
 class MUTATEARENA_API AFlashbang : public AThrowable
 {
@@ -12,24 +14,16 @@ class MUTATEARENA_API AFlashbang : public AThrowable
 public:
 	AFlashbang();
 
+	virtual void BeginPlay() override;
+
+	UPROPERTY(Transient)
+	TObjectPtr<const UFragFlashbang> FragFlashbang = nullptr;
+
 protected:
 	virtual void ThrowOut() override;
 
-	UPROPERTY(EditAnywhere)
-	class UNiagaraSystem* ExplodeEffect;
 	UPROPERTY()
 	class UNiagaraComponent* ExplodeEffectComponent;
-	UPROPERTY(EditAnywhere)
-	class UMetaSoundSource* ExplodeSound;
-
-	UPROPERTY()
-	float Radius = 1200.f;
-	// 闪光留存时间
-	UPROPERTY()
-	float MaxFlashTime = 6.f;
-	// 残影留存时间
-	UPROPERTY()
-	float MaxCapTime = 10.f;
 
 	UFUNCTION()
 	void ServerExplode();

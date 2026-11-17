@@ -90,7 +90,7 @@ void AEquipment::BeginPlay()
 	check(AssetSubsystem);
 	
 	EquipmentAsset = AssetSubsystem->GetEquipmentAssetByName(EquipmentName);
-	check(EquipmentAsset);
+	check(EquipmentAsset); // 强制判空，后续不再校验是否为空
 
 	// 应用皮肤材质覆盖
 	for (int32 i = 0; i < EquipmentAsset->OverrideMaterials.Num(); ++i)

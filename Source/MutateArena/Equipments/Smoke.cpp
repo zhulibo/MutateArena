@@ -1,4 +1,5 @@
 #include "Smoke.h"
+#include "Data/EquipmentAsset.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "MetaSoundSource.h"
@@ -11,8 +12,14 @@
 
 ASmoke::ASmoke()
 {
-	ProjectileMovement->Bounciness = 0.3f;
-	ProjectileMovement->Friction = 0.6f;
+}
+
+void ASmoke::BeginPlay()
+{
+	Super::BeginPlay();
+
+	FragSmoke = EquipmentAsset->FindFragmentByClass<UFragSmoke>();
+	check(FragSmoke);
 }
 
 void ASmoke::ThrowOut()
@@ -21,16 +28,23 @@ void ASmoke::ThrowOut()
 
 	if (HasAuthority())
 	{
-		FTimerHandle TimerHandle;
-		GetWorldTimerManager().SetTimer(TimerHandle, this, &ThisClass::ServerExplode, 3.f);
+		if (FragThrowable->FuseTime > 0.f)
+		{
+			FTimerHandle TimerHandle;
+			GetWorldTimerManager().SetTimer(TimerHandle, this, &ThisClass::ServerExplode, FragThrowable->FuseTime);
+		}
+		else
+		{
+			ServerExplode();
+		}
 	}
 }
 
 void ASmoke::ServerExplode()
 {
 	MulticastExplodeEffects();
-	
-	SetLifeSpan(Time);
+
+	SetLifeSpan(FragSmoke->Duration);
 }
 
 void ASmoke::MulticastExplodeEffects_Implementation()
@@ -41,23 +55,29 @@ void ASmoke::MulticastExplodeEffects_Implementation()
 	}
 
 	// 播放特效和声音
-	SpawnedSmokeEffect= UNiagaraFunctionLibrary::SpawnSystemAtLocation(
-		GetWorld(),
-		ExplodeEffect,
-		GetActorLocation(),
-		GetActorRotation()
-	);
-
-	if (SpawnedSmokeEffect)
+	if (FragThrowable->ExplodeEffect)
 	{
-		SpawnedSmokeEffect->SetVariableFloat(TEXT("Time"), Time);
+		SpawnedSmokeEffect = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+			GetWorld(),
+			FragThrowable->ExplodeEffect,
+			GetActorLocation(),
+			GetActorRotation()
+		);
+
+		if (SpawnedSmokeEffect)
+		{
+			SpawnedSmokeEffect->SetVariableFloat(TEXT("Time"), FragSmoke->Duration);
+		}
 	}
 
-	SpawnedSmokeSound = UGameplayStatics::SpawnSoundAtLocation(
-		this, 
-		ExplodeSound, 
-		GetActorLocation()
-	);
+	if (FragThrowable->ExplodeSound)
+	{
+		SpawnedSmokeSound = UGameplayStatics::SpawnSoundAtLocation(
+			this,
+			FragThrowable->ExplodeSound,
+			GetActorLocation()
+		);
+	}
 	
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
@@ -69,7 +89,7 @@ void ASmoke::MulticastExplodeEffects_Implementation()
 	);
 	if (SpawnedSmokeBlocker)
 	{
-		SpawnedSmokeBlocker->SetLifeSpan(Time);
+		SpawnedSmokeBlocker->SetLifeSpan(FragSmoke->Duration);
 	}
 }
 

@@ -37,7 +37,7 @@ void AMelee::BeginPlay()
 	check(AssetSubsystem);
 
 	FragMelee = EquipmentAsset->FindFragmentByClass<UFragMelee>();
-	check(FragMelee);
+	check(FragMelee); // 强制判空，后续不再校验是否为空
 
 	SetMeleeTraceObjectTypes();
 }

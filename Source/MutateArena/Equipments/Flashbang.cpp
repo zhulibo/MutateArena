@@ -6,6 +6,7 @@
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "MutateArena/PlayerControllers/BaseController.h"
 #include "Camera/CameraComponent.h"
+#include "Data/EquipmentAsset.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "MetaSoundSource.h"
@@ -24,8 +25,14 @@
 
 AFlashbang::AFlashbang()
 {
-	ProjectileMovement->Bounciness = 0.3f;
-	ProjectileMovement->Friction = 0.6f;
+}
+
+void AFlashbang::BeginPlay()
+{
+	Super::BeginPlay();
+
+	FragFlashbang = EquipmentAsset->FindFragmentByClass<UFragFlashbang>();
+	check(FragFlashbang);
 }
 
 void AFlashbang::ThrowOut()
@@ -34,11 +41,26 @@ void AFlashbang::ThrowOut()
 
 	if (HasAuthority())
 	{
-		FTimerHandle TimerHandleSound;
-		GetWorldTimerManager().SetTimer(TimerHandleSound, this, &ThisClass::ServerPlaySound, 2.5f); // 起音较慢，提前播放
+		const float SoundDelay = FragThrowable->FuseTime - FragFlashbang->SoundLeadTime;
+		if (SoundDelay > 0.f)
+		{
+			FTimerHandle TimerHandleSound;
+			GetWorldTimerManager().SetTimer(TimerHandleSound, this, &ThisClass::ServerPlaySound, SoundDelay);
+		}
+		else
+		{
+			ServerPlaySound();
+		}
 
-		FTimerHandle TimerHandleExplode;
-		GetWorldTimerManager().SetTimer(TimerHandleExplode, this, &ThisClass::ServerExplode, 3.0f);
+		if (FragThrowable->FuseTime > 0.f)
+		{
+			FTimerHandle TimerHandleExplode;
+			GetWorldTimerManager().SetTimer(TimerHandleExplode, this, &ThisClass::ServerExplode, FragThrowable->FuseTime);
+		}
+		else
+		{
+			ServerExplode();
+		}
 	}
 }
 
@@ -49,9 +71,9 @@ void AFlashbang::ServerPlaySound()
 
 void AFlashbang::MulticastPlaySound_Implementation()
 {
-	if (ExplodeSound)
+	if (FragThrowable->ExplodeSound)
 	{
-		UGameplayStatics::PlaySoundAtLocation(this, ExplodeSound, GetActorLocation());
+		UGameplayStatics::PlaySoundAtLocation(this, FragThrowable->ExplodeSound, GetActorLocation());
 	}
 }
 
@@ -71,11 +93,11 @@ void AFlashbang::ServerExplode()
 void AFlashbang::MulticastExplode_Implementation()
 {
 	// 播放闪光特效
-	if (ExplodeEffect)
+	if (FragThrowable->ExplodeEffect)
 	{
 		ExplodeEffectComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
 			GetWorld(),
-			ExplodeEffect,
+			FragThrowable->ExplodeEffect,
 			GetActorLocation(),
 			GetActorRotation()
 		);
@@ -86,21 +108,21 @@ void AFlashbang::MulticastExplode_Implementation()
 	if (APlayerController* LocalPC = GetWorld()->GetFirstPlayerController())
 	{
 		ABaseCharacter* LocalCharacter = Cast<ABaseCharacter>(LocalPC->GetPawn());
-		if (!LocalCharacter || !LocalCharacter->Camera) return;;
+		if (!LocalCharacter || !LocalCharacter->Camera) return;
 
 		// 仅当该本地玩家在爆炸半径内时，才进行检测和应用
 		float Distance = LocalCharacter->GetDistanceTo(this);
 				
-		float FinalRadius = Radius;
-		float FinalMaxFlashTime = MaxFlashTime;
-		float FinalMaxCapTime = MaxCapTime;
+		float FinalRadius = FragFlashbang->Radius;
+		float FinalMaxFlashTime = FragFlashbang->MaxFlashTime;
+		float FinalMaxCapTime = FragFlashbang->MaxCapTime;
 		if (UAbilitySystemComponent* ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(LocalCharacter))
 		{
 			if (ASC->HasMatchingGameplayTag(TAG_STATE_DNA_EnhancedVision))
 			{
 				FinalRadius *= 1.1f; 
 				FinalMaxFlashTime *= 1.1f; 
-				FinalMaxCapTime *= 1.1f;
+				FinalMaxCapTime *= 1.1f; 
 			}
 		}
 		
@@ -123,7 +145,10 @@ void AFlashbang::MulticastExplode_Implementation()
 				}
 			}
 			QueryParams.AddIgnoredActors(AllPlayers);
-			QueryParams.AddIgnoredActors(BaseGameState->AllEquipments);
+			if (BaseGameState)
+			{
+				QueryParams.AddIgnoredActors(BaseGameState->AllEquipments);
+			}
 
 			bool bHit = GetWorld()->LineTraceSingleByChannel(
 				HitResult,

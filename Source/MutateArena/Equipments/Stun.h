@@ -4,8 +4,7 @@
 #include "MutateArena/Equipments/Throwable.h"
 #include "Stun.generated.h"
 
-class UGameplayEffect;
-class UCameraShakeBase;
+class UFragStun;
 
 UCLASS()
 class MUTATEARENA_API AStun : public AThrowable
@@ -15,27 +14,15 @@ class MUTATEARENA_API AStun : public AThrowable
 public:
 	AStun();
 
+	virtual void BeginPlay() override;
 	virtual void ThrowOut() override;
 
-protected:
-	// 爆炸特效
-	UPROPERTY(EditAnywhere)
-	class UNiagaraSystem* ExplodeEffect;
+	UPROPERTY(Transient)
+	TObjectPtr<const UFragStun> FragStun = nullptr;
 
+protected:
 	UPROPERTY()
 	class UNiagaraComponent* ExplodeEffectComponent;
-
-	UPROPERTY(EditAnywhere)
-	class UMetaSoundSource* ExplodeSound;
-
-	UPROPERTY(EditAnywhere)
-	TSubclassOf<UCameraShakeBase> CameraShakeClass;
-
-	UPROPERTY()
-	float Radius = 800.f;
-
-	UPROPERTY(EditAnywhere)
-	TSubclassOf<UGameplayEffect> StunEffectClass;
 
 	UFUNCTION()
 	void ServerExplode();

@@ -31,10 +31,12 @@ void AThrowable::BeginPlay()
 	check(AssetSubsystem);
 
 	FragThrowable = EquipmentAsset->FindFragmentByClass<UFragThrowable>();
-	check(FragThrowable);
+	check(FragThrowable); // 强制判空，后续不再校验是否为空
 	
 	if (ProjectileMovement)
 	{
+		ProjectileMovement->Bounciness = FragThrowable->Bounciness;
+		ProjectileMovement->Friction = FragThrowable->Friction;
 		ProjectileMovement->OnProjectileBounce.AddDynamic(this, &AThrowable::OnProjectileBounce);
 	}
 }

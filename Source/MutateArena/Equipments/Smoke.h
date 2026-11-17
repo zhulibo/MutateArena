@@ -4,6 +4,8 @@
 #include "MutateArena/Equipments/Throwable.h"
 #include "Smoke.generated.h"
 
+class UFragSmoke;
+
 UCLASS()
 class MUTATEARENA_API ASmoke : public AThrowable
 {
@@ -12,15 +14,15 @@ class MUTATEARENA_API ASmoke : public AThrowable
 public:
 	ASmoke();
 
+	virtual void BeginPlay() override;
 	virtual void ThrowOut() override;
+
+	UPROPERTY(Transient)
+	TObjectPtr<const UFragSmoke> FragSmoke = nullptr;
 
 protected:
 	virtual void Destroyed() override;
 
-	UPROPERTY(EditAnywhere)
-	class UNiagaraSystem* ExplodeEffect;
-	UPROPERTY(EditAnywhere)
-	class UMetaSoundSource* ExplodeSound;
 	UPROPERTY()
 	class UNiagaraComponent* SpawnedSmokeEffect;
 	UPROPERTY()
@@ -30,7 +32,6 @@ protected:
 	
 	UFUNCTION()
 	void ServerExplode();
-	float Time = 12.f;
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastExplodeEffects();
 	
