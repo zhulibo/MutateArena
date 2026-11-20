@@ -63,7 +63,6 @@ void UMutantSelect::NativeOnInitialized()
 
              // 开发中的变异体，禁用按钮
              if (Asset->CharacterName == EMutantName::Caller
-                || Asset->CharacterName == EMutantName::Cook
                 || Asset->CharacterName == EMutantName::Clicker
                 || Asset->CharacterName == EMutantName::Generator)
              {

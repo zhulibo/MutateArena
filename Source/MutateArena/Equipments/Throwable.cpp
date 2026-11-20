@@ -115,18 +115,18 @@ void AThrowable::ThrowOut()
 	{
 		if (HumanCharacter->HasAuthority() || HumanCharacter->IsLocallyControlled())
 		{
-			float ThrowSpeed = 1500.f;
+			float ThrowSpeed = FragThrowable->ThrowSpeed;
 			if (const UCharacterMovementComponent* MoveComp = HumanCharacter->GetCharacterMovement())
 			{
 				if (MoveComp->IsFalling() && !HumanCharacter->bIsCrouched)
 				{
-					// 跳跃/滞空且未按蹲：加大投掷力度（跳投）
-					ThrowSpeed = 2000.f;
+					// 跳跃/滞空且未按蹲：跳投 1.4 倍力度
+					ThrowSpeed *= 1.4f;
 				}
 				else if (MoveComp->IsMovingOnGround() && HumanCharacter->bIsCrouched)
 				{
-					// 地面蹲伏：减小投掷力度（近点轻抛）
-					ThrowSpeed = 1000.f;
+					// 地面蹲伏：蹲投 0.6 倍力度
+					ThrowSpeed *= 0.6f;
 				}
 			}
 

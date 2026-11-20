@@ -15,17 +15,16 @@ enum class EHumanName : uint8
 UENUM(BlueprintType)
 enum class EMutantName : uint8
 {
-	Tank,
-	Ghost,
-	Smoker,
-	Reaper,
-	Boomer,
+	Tank, // 坦克
+	Ghost, // 幽灵
+	Smoker, // 烟鬼
+	Terminator, // 终结者
+	Boomer, // 肉弹
 
 	// 未实现
-	Cook,
-	Caller,
-	Clicker,
-	Generator,
+	Caller, // 召唤者
+	Clicker, // 循声者
+	Generator, // 发电机 
 
 	None
 };

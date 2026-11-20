@@ -265,6 +265,9 @@ public:
 	// 引信时间（秒）；碰撞引爆类投掷物（如燃烧瓶）无需使用
 	UPROPERTY(EditAnywhere)
 	float FuseTime = 3.f;
+	// 基础投掷初速度（cm/s）
+	UPROPERTY(EditAnywhere)
+	float ThrowSpeed = 1500.f;
 	UPROPERTY(EditAnywhere)
 	float Bounciness = 0.3f;
 	UPROPERTY(EditAnywhere)
