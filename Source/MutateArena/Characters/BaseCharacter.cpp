@@ -30,7 +30,6 @@
 #include "Data/InputAsset.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include "Components/SkeletalMeshComponent.h"
-#include "Animation/AnimInstance.h"
 #include "Components/StateTreeComponent.h"
 #include "Data/DNAAsset2.h"
 #include "Engine/GameInstance.h"
@@ -49,8 +48,6 @@
 #include "Perception/AIPerceptionStimuliSourceComponent.h"
 #include "Perception/AISenseConfig_Sight.h"
 #include "Perception/AISense_Sight.h"
-#include "GroomComponent.h"
-#include "MutateArena/Equipments/Equipment.h"
 #include "MutateArena/System/DataAssetManager.h"
 
 #define LOCTEXT_NAMESPACE "ABaseCharacter"
@@ -170,62 +167,11 @@ void ABaseCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 void ABaseCharacter::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
-	
-	// 组件是直接从 MetaHuman 中复制过来的，未在构造函数中创建，通过名字查找到对应组件
-	TArray<USkeletalMeshComponent*> SkeletalMeshes;
-	GetComponents<USkeletalMeshComponent>(SkeletalMeshes);
-	for (USkeletalMeshComponent* SkelMesh : SkeletalMeshes)
-	{
-		if (SkelMesh->GetName().Equals(TEXT("Body")))
-		{
-			BodyMesh = SkelMesh;
-		}
-		else if (SkelMesh->GetName().Equals(TEXT("Face")))
-		{
-			FaceMesh = SkelMesh;
-		}
-	}
-	
-	TArray<UGroomComponent*> AllGrooms;
-	GetComponents<UGroomComponent>(AllGrooms);
-	for (UGroomComponent* Groom : AllGrooms)
-	{
-		Groom->bCastHiddenShadow = true;
-		Groom->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
-		
-		const FString GroomName = Groom->GetName();
-		if (GroomName.Equals(TEXT("Beard")))
-		{
-			BeardComp = Groom;
-		}
-		else if (GroomName.Equals(TEXT("Eyebrows")))
-		{
-			EyebrowsComp = Groom;
-		}
-		else if (GroomName.Equals(TEXT("Eyelashes")))
-		{
-			EyelashesComp = Groom;
-		}
-		else if (GroomName.Equals(TEXT("Fuzz")))
-		{
-			FuzzComp = Groom;
-		}
-		else if (GroomName.Equals(TEXT("Hair")))
-		{
-			HairComp = Groom;
-		}
-		else if (GroomName.Equals(TEXT("Mustache")))
-		{
-			MustacheComp = Groom;
-		}
-	}
 }
 
 void ABaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	check(BodyMesh); check(FaceMesh); check(BeardComp); check(EyebrowsComp); check(EyelashesComp); check(FuzzComp); check(HairComp); check(MustacheComp);
 	
 	// 同步蓝图可能覆盖的 BaseEyeHeight 与 OverheadWidgetZOffset 到胶囊体子组件
 	if (!bIsCrouched)
@@ -234,14 +180,14 @@ void ABaseCharacter::BeginPlay()
 	}
 	ApplyEyeHeightToComponents();
 	
-	BodyMesh->bCastHiddenShadow = true;
-	BodyMesh->SetGenerateOverlapEvents(true);
-	BodyMesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-	BodyMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
-	BodyMesh->SetCollisionResponseToChannel(ECC::Projectile, ECollisionResponse::ECR_Overlap);
-
-	// BodyMesh 的物理资产已包含头部，FaceMesh 不用设置碰撞
-	FaceMesh->bCastHiddenShadow = true;
+	if (USkeletalMeshComponent* Mesh3P = GetMesh3P())
+	{
+		Mesh3P->bCastHiddenShadow = true;
+		Mesh3P->SetGenerateOverlapEvents(true);
+		Mesh3P->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+		Mesh3P->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
+		Mesh3P->SetCollisionResponseToChannel(ECC::Projectile, ECollisionResponse::ECR_Overlap);
+	}
 
 	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnLadderBeginOverlap);
 	GetCapsuleComponent()->OnComponentEndOverlap.AddDynamic(this, &ThisClass::OnLadderEndOverlap);
@@ -350,14 +296,17 @@ void ABaseCharacter::PollInit_PlayerStateTeam()
 		{
 			bIsPlayerStateTeamReady = true;
 
-			switch (BasePlayerState->Team)
+			if (USkeletalMeshComponent* Mesh3P = GetMesh3P())
 			{
-			case ETeam::Team1:
-				BodyMesh->SetCollisionObjectType(ECC::MeshTeam1);
-				break;
-			case ETeam::Team2:
-				BodyMesh->SetCollisionObjectType(ECC::MeshTeam2);
-				break;
+				switch (BasePlayerState->Team)
+				{
+				case ETeam::Team1:
+					Mesh3P->SetCollisionObjectType(ECC::MeshTeam1);
+					break;
+				case ETeam::Team2:
+					Mesh3P->SetCollisionObjectType(ECC::MeshTeam2);
+					break;
+				}
 			}
 		}
 	}
@@ -517,7 +466,10 @@ void ABaseCharacter::UpdateFirstPersonPitch(float DeltaTime)
 void ABaseCharacter::SetFirstPersonViewMode(bool bFirstPerson)
 {
 	// 切换第一人称手臂显隐
-	Mesh1P->SetVisibility(bFirstPerson);
+	if (Mesh1P)
+	{
+		Mesh1P->SetVisibility(bFirstPerson);
+	}
 
 	// 立即切换可见性 UOverheadWidget::TraceOverheadWidget 有延迟（死亡后保持隐藏）
 	if (OverheadWidget)
@@ -525,25 +477,10 @@ void ABaseCharacter::SetFirstPersonViewMode(bool bFirstPerson)
 		OverheadWidget->SetVisibility(!bFirstPerson && !bIsDead);
 	}
 
-	// 切换 MetaHuman 身体、面部与毛发组件显隐
-	BodyMesh->SetVisibility(!bFirstPerson);
-	FaceMesh->SetVisibility(!bFirstPerson);
-	BeardComp->SetVisibility(!bFirstPerson);
-	EyebrowsComp->SetVisibility(!bFirstPerson);
-	EyelashesComp->SetVisibility(!bFirstPerson);
-	FuzzComp->SetVisibility(!bFirstPerson);
-	HairComp->SetVisibility(!bFirstPerson);
-	MustacheComp->SetVisibility(!bFirstPerson);
-
-	// 自动刷新当前角色身上挂载的所有武器（AEquipment）的 1P/3P 显隐与阴影状态
-	TArray<AActor*> AttachedActors;
-	GetAttachedActors(AttachedActors);
-	for (AActor* Actor : AttachedActors)
+	// 切换第三人称主骨骼网格体显隐
+	if (USkeletalMeshComponent* Mesh3P = GetMesh3P())
 	{
-		if (AEquipment* Equipment = Cast<AEquipment>(Actor))
-		{
-			Equipment->UpdateViewMode();
-		}
+		Mesh3P->SetVisibility(!bFirstPerson);
 	}
 }
 
@@ -634,14 +571,6 @@ void ABaseCharacter::InitAbilityActorInfo()
 		if (ASC)
 		{
 			ASC->InitAbilityActorInfo(BasePlayerState, this);
-
-			// GAS 的 InitAbilityActorInfo 默认会绑定 ACharacter::GetMesh()，而本项目的第三人称 MetaHuman 身体网格体和动画蓝图挂在子组件 BodyMesh 上，
-			// 因此需要手动将 AbilityActorInfo 的骨骼网格体与动画实例重定向到 BodyMesh，确保 PlayMontageAndWait 等任务能找到正确的 AnimInstance。
-			if (BodyMesh && ASC->AbilityActorInfo.IsValid())
-			{
-				ASC->AbilityActorInfo->SkeletalMeshComponent = BodyMesh;
-				ASC->AbilityActorInfo->AnimInstance = BodyMesh->GetAnimInstance();
-			}
 		}
 		AttributeSetBase = BasePlayerState->GetAttributeSetBase();
 	}
@@ -868,10 +797,10 @@ void ABaseCharacter::OnDead()
 	}
 
 	// 死亡后关闭子弹重叠，防止尸体阻挡或消耗子弹穿透力
-	if (BodyMesh)
+	if (USkeletalMeshComponent* Mesh3P = GetMesh3P())
 	{
-		BodyMesh->SetCollisionResponseToChannel(ECC::Projectile, ECollisionResponse::ECR_Ignore);
-		BodyMesh->SetGenerateOverlapEvents(false);
+		Mesh3P->SetCollisionResponseToChannel(ECC::Projectile, ECollisionResponse::ECR_Ignore);
+		Mesh3P->SetGenerateOverlapEvents(false);
 	}
 
 	if (HasAuthority())

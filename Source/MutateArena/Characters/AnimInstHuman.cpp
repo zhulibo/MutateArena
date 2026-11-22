@@ -88,3 +88,8 @@ FTransform UAnimInstHuman::BuildWeaponPivotOffsetTransform(const FVector& StdLoc
 
 	return FTransform(BoneSpaceRot, BoneSpaceLoc, FVector::OneVector);
 }
+
+USkeletalMeshComponent* UAnimInstHuman::GetTargetWeaponMesh(const AWeapon* Weapon) const
+{
+	return Weapon ? Weapon->EquipmentMesh : nullptr;
+}

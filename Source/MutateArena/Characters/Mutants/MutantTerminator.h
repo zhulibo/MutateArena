@@ -2,15 +2,15 @@
 
 #include "CoreMinimal.h"
 #include "MutateArena/Characters/MutantCharacter.h"
-#include "MutantCaller.generated.h"
+#include "MutantTerminator.generated.h"
 
 UCLASS()
-class MUTATEARENA_API AMutantCaller : public AMutantCharacter
+class MUTATEARENA_API AMutantTerminator : public AMutantCharacter
 {
 	GENERATED_BODY()
 
 public:
-	AMutantCaller(const FObjectInitializer& ObjectInitializer);
+	AMutantTerminator(const FObjectInitializer& ObjectInitializer);
 
 	virtual void BeginPlay() override;
 
@@ -19,4 +19,11 @@ public:
 	virtual void HeavyAttackButtonPressed(const FInputActionValue& Value) override;
 	virtual void HeavyAttackButtonReleased(const FInputActionValue& Value) override;
 
+protected:
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<UGameplayEffect> BleedEffectClass;
+
+public:
+	virtual void ServerApplyDamage_Implementation(AActor* OtherActor, float Damage) override;
+	
 };

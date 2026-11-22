@@ -22,6 +22,7 @@ public:
 
 protected:
 	virtual FTransform BuildWeaponPivotOffsetTransform(const FVector& StdLocation, const FRotator& StdRotation) override;
+	virtual USkeletalMeshComponent* GetTargetWeaponMesh(const AWeapon* Weapon) const override;
 
 private:
 	// 主线程缓存的 weapon_root 纯动画组件空间旋转（已剥离上一帧 Control Rig 写回的旋转）

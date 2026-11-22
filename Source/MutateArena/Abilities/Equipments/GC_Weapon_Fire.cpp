@@ -65,10 +65,9 @@ bool UGC_Weapon_Fire::OnExecute_Implementation(AActor* MyTarget, const FGameplay
         }
 
         UGameplayStatics::SpawnSoundAttached(CurWeapon->FragWeapon->FireSound, WeaponMesh, Sockets::Muzzle);
-        UGameplayStatics::SpawnSoundAttached(CurWeapon->FragWeapon->MechSound, WeaponMesh, Sockets::Muzzle);
     }
 
-	CurWeapon->EjectShell();
+	CurWeapon->TriggerFireMechEffects();
 
 	if (!HumanChar->IsLocallyControlled() && !HumanChar->HasAuthority())
 	{

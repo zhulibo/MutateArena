@@ -6,7 +6,6 @@
 #include "ModularCharacter.h"
 #include "BaseCharacter.generated.h"
 
-class UGroomComponent;
 class USceneCaptureComponent2D;
 enum class ECommonInputType : uint8;
 
@@ -18,28 +17,11 @@ class MUTATEARENA_API ABaseCharacter : public AModularCharacter, public IAbility
 public:
 	ABaseCharacter(const FObjectInitializer& ObjectInitializer);
 	
-	// MetaHuman
-	UPROPERTY()
-	TObjectPtr<USkeletalMeshComponent> BodyMesh;
-	UPROPERTY()
-	TObjectPtr<USkeletalMeshComponent> FaceMesh;
-	UPROPERTY()
-	TObjectPtr<UGroomComponent> BeardComp;
-	UPROPERTY()
-	TObjectPtr<UGroomComponent> EyebrowsComp;
-	UPROPERTY()
-	TObjectPtr<UGroomComponent> EyelashesComp;
-	UPROPERTY()
-	TObjectPtr<UGroomComponent> FuzzComp;
-	UPROPERTY()
-	TObjectPtr<UGroomComponent> HairComp;
-	UPROPERTY()
-	TObjectPtr<UGroomComponent> MustacheComp;
-	
 	UPROPERTY(VisibleAnywhere)
 	class UCameraComponent* Camera;
 	UPROPERTY(VisibleAnywhere)
 	USkeletalMeshComponent* Mesh1P;
+	virtual USkeletalMeshComponent* GetMesh3P() const { return GetMesh(); }
 	UPROPERTY()
 	class UMAMovementComponent* MovementComp;
 	
@@ -126,7 +108,7 @@ public:
 	virtual void EndViewTarget(APlayerController* PC) override;
 protected:
 	void UpdateFirstPersonPitch(float DeltaTime);
-	void SetFirstPersonViewMode(bool bFirstPerson);
+	virtual void SetFirstPersonViewMode(bool bFirstPerson);
 
 	// GAS
 	UPROPERTY()
@@ -135,7 +117,7 @@ protected:
 	class UAttributeSetBase* AttributeSetBase;
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UGameplayEffect> DefaultAttrEffect;
-	void InitAbilityActorInfo();
+	virtual void InitAbilityActorInfo();
 	virtual void OnASCInit();
 	void OnEnhancedVisionTagChanged(FGameplayTag GameplayTag, int NewCount);
 	

@@ -2,13 +2,17 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
+#include "MutateArena/Equipments/Data/EquipmentAsset.h"
 #include "MutateArena/Equipments/Data/EquipmentType.h"
 #include "AnimInstHumanBase.generated.h"
 
 class AHumanCharacter;
+class AWeapon;
 class UCombatComponent;
 class UMAMovementComponent;
 class UFragWeapon;
+class USkeletalMeshComponent;
+class UAnimMontage;
 
 /**
  * 人类动画实例基类（1P 与 3P 共用）
@@ -43,6 +47,9 @@ protected:
 	// 呼吸步伐晃动与后坐力的整体幅度缩放比例（1P 为 1.0；3P 远观适当放大以增强表现力）
 	virtual float GetProceduralMotionScale() const { return 1.f; }
 
+	// 获取当前动画实例对应的武器网格体（1P 为 EquipmentMesh1P，3P 为 EquipmentMesh），供挂点坐标映射使用
+	virtual USkeletalMeshComponent* GetTargetWeaponMesh(const AWeapon* Weapon) const { return nullptr; }
+
 	UPROPERTY()
 	TObjectPtr<AHumanCharacter> HumanChar;
 	UPROPERTY()
@@ -70,6 +77,10 @@ protected:
 	// 作用于 Control Rig 父控制器 Ctrl_WeaponPivot 的汇总变换偏移（机瞄 + 呼吸/移动晃动 + 开火后坐力）
 	UPROPERTY(BlueprintReadOnly)
 	FTransform WeaponPivotOffsetTransform = FTransform::Identity;
+
+	// 泵动武器（如 M870）拉护木时左手在 Ctrl_WeaponPivot 局部空间下的附加平移偏移（单位: cm）
+	UPROPERTY(BlueprintReadOnly)
+	FVector LeftHandOffsetLocation = FVector::ZeroVector;
 
 	// 瞄准线性过渡权重 (0 = 腰射, 1 = 完全瞄准 | 用于驱动包络线相位与后坐力收紧插值)
 	UPROPERTY(BlueprintReadOnly)
@@ -128,4 +139,15 @@ private:
 	FRotator PendingRecoilRotImpulse = FRotator::ZeroRotator;
 	float RecoilNoiseTime = 0.f;
 	int32 RecoilShotCounter = 0;
+
+	// 主线程缓存的拉泵运动配置与护木满行程向量（Ctrl_WeaponPivot 局部空间，供动画工作线程无锁读取）
+	bool bHasPumpMotion = false;
+	FWeaponFirePartMotion CachedPumpMotion;
+	FVector CachedPumpPivotOffset = FVector::ZeroVector;
+	TWeakObjectPtr<const UAnimMontage> PrevActiveMontage;
+
+	// 程序化拉泵运行态（单一计时器驱动左手偏移与枪身拉扯/推膛次级后坐力）
+	float PumpElapsedTime = -1.f;
+	float PumpImpulseScale = 1.f;
+	uint8 PumpImpulseStage = 0; // 0=待后拉顿挫, 1=待前推顿挫, 2=本轮冲量已完成
 };

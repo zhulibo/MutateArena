@@ -40,6 +40,9 @@
 #include "Net/UnrealNetwork.h"
 #include "MutateArena/Abilities/GameplayAbilityBase.h"
 #include "MutateArena/Equipments/Data/EquipmentAsset.h"
+#include "Animation/AnimInstance.h"
+#include "GroomComponent.h"
+#include "MutateArena/Equipments/Equipment.h"
 #include "MutateArena/PlayerStates/BasePlayerState.h"
 
 #define LOCTEXT_NAMESPACE "AHumanCharacter"
@@ -68,10 +71,64 @@ void AHumanCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 void AHumanCharacter::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
+
+	// 组件是直接从 MetaHuman 中复制过来的，未在构造函数中创建，通过名字查找到对应组件
+	TArray<USkeletalMeshComponent*> SkeletalMeshes;
+	GetComponents<USkeletalMeshComponent>(SkeletalMeshes);
+	for (USkeletalMeshComponent* SkelMesh : SkeletalMeshes)
+	{
+		if (SkelMesh->GetName().Equals(TEXT("Body")))
+		{
+			BodyMesh = SkelMesh;
+		}
+		else if (SkelMesh->GetName().Equals(TEXT("Face")))
+		{
+			FaceMesh = SkelMesh;
+		}
+	}
+
+	TArray<UGroomComponent*> AllGrooms;
+	GetComponents<UGroomComponent>(AllGrooms);
+	for (UGroomComponent* Groom : AllGrooms)
+	{
+		Groom->bCastHiddenShadow = true;
+		Groom->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
+
+		const FString GroomName = Groom->GetName();
+		if (GroomName.Equals(TEXT("Beard")))
+		{
+			BeardComp = Groom;
+		}
+		else if (GroomName.Equals(TEXT("Eyebrows")))
+		{
+			EyebrowsComp = Groom;
+		}
+		else if (GroomName.Equals(TEXT("Eyelashes")))
+		{
+			EyelashesComp = Groom;
+		}
+		else if (GroomName.Equals(TEXT("Fuzz")))
+		{
+			FuzzComp = Groom;
+		}
+		else if (GroomName.Equals(TEXT("Hair")))
+		{
+			HairComp = Groom;
+		}
+		else if (GroomName.Equals(TEXT("Mustache")))
+		{
+			MustacheComp = Groom;
+		}
+	}
 }
 
 void AHumanCharacter::BeginPlay()
 {
+	check(BodyMesh); check(FaceMesh); check(BeardComp); check(EyebrowsComp); check(EyelashesComp); check(FuzzComp); check(HairComp); check(MustacheComp);
+
+	// BodyMesh 的物理资产已包含头部，FaceMesh 不用设置碰撞
+	FaceMesh->bCastHiddenShadow = true;
+
 	Super::BeginPlay();
 	
 	if (!AssetSubsystem) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
@@ -144,6 +201,44 @@ void AHumanCharacter::PossessedBy(AController* NewController)
 			FGameplayAbilitySpec AbilitySpec(AbilityClass, 1, INDEX_NONE, this);
 			ASC->GiveAbility(AbilitySpec);
 		}
+	}
+}
+
+void AHumanCharacter::SetFirstPersonViewMode(bool bFirstPerson)
+{
+	Super::SetFirstPersonViewMode(bFirstPerson);
+
+	// 切换 MetaHuman 面部与毛发组件显隐（BodyMesh 已由基类通过 GetMesh3P() 处理）
+	FaceMesh->SetVisibility(!bFirstPerson);
+	BeardComp->SetVisibility(!bFirstPerson);
+	EyebrowsComp->SetVisibility(!bFirstPerson);
+	EyelashesComp->SetVisibility(!bFirstPerson);
+	FuzzComp->SetVisibility(!bFirstPerson);
+	HairComp->SetVisibility(!bFirstPerson);
+	MustacheComp->SetVisibility(!bFirstPerson);
+
+	// 自动刷新当前角色身上挂载的所有武器（AEquipment）的 1P/3P 显隐与阴影状态
+	TArray<AActor*> AttachedActors;
+	GetAttachedActors(AttachedActors);
+	for (AActor* Actor : AttachedActors)
+	{
+		if (AEquipment* Equipment = Cast<AEquipment>(Actor))
+		{
+			Equipment->UpdateViewMode();
+		}
+	}
+}
+
+void AHumanCharacter::InitAbilityActorInfo()
+{
+	Super::InitAbilityActorInfo();
+
+	// GAS 的 InitAbilityActorInfo 默认会绑定 ACharacter::GetMesh()，而人类第三人称 MetaHuman 身体网格体和动画蓝图挂在子组件 BodyMesh 上，
+	// 因此需要手动将 AbilityActorInfo 的骨骼网格体与动画实例重定向到 BodyMesh，确保 PlayMontageAndWait 等任务能找到正确的 AnimInstance。
+	if (ASC && BodyMesh && ASC->AbilityActorInfo.IsValid())
+	{
+		ASC->AbilityActorInfo->SkeletalMeshComponent = BodyMesh;
+		ASC->AbilityActorInfo->AnimInstance = BodyMesh->GetAnimInstance();
 	}
 }
 

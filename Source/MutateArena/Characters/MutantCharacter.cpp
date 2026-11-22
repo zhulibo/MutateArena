@@ -644,9 +644,11 @@ void AMutantCharacter::OnDead()
 	if (BaseController) DisableInput(BaseController);
 
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	BodyMesh->SetSimulatePhysics(true);
-	BodyMesh->SetEnableGravity(true);
-	BodyMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	GetMesh()->SetSimulatePhysics(true);
+	GetMesh()->SetEnableGravity(true);
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+
+	SetFirstPersonViewMode(false);
 		
 	FTimerHandle TimerHandle;
 	FTimerDelegate TimerDelegate;

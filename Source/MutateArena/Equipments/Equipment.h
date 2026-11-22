@@ -80,12 +80,12 @@ protected:
 public:
 	UPROPERTY(ReplicatedUsing = OnRep_EquipmentState)
 	EEquipmentState EquipmentState = EEquipmentState::Dropped;
-	void SetState(EEquipmentState NewState);
+	virtual void SetState(EEquipmentState NewState);
 	UFUNCTION()
 	virtual void OnRep_EquipmentState(EEquipmentState OldState);
 
 	virtual void OnGiven(class AHumanCharacter* HumanChar);
-	void HandleDrop();
+	virtual void HandleDrop();
 	virtual void Drop();
 	UPROPERTY(ReplicatedUsing = OnRep_DropInfo)
 	FEquipmentDropInfo DropInfo;

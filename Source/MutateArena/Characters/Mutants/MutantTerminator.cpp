@@ -1,41 +1,41 @@
-#include "MutantReaper.h"
+#include "MutantTerminator.h"
 
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemGlobals.h"
 #include "MutateArena/Characters/Data/CharacterType.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
-AMutantReaper::AMutantReaper(const FObjectInitializer& ObjectInitializer)
+AMutantTerminator::AMutantTerminator(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 }
 
-void AMutantReaper::BeginPlay()
+void AMutantTerminator::BeginPlay()
 {
 	Super::BeginPlay();
 }
 
-void AMutantReaper::LightAttackButtonPressed(const FInputActionValue& Value)
+void AMutantTerminator::LightAttackButtonPressed(const FInputActionValue& Value)
 {
 	Super::LightAttackButtonPressed(Value);
 }
 
-void AMutantReaper::LightAttackButtonReleased(const FInputActionValue& Value)
+void AMutantTerminator::LightAttackButtonReleased(const FInputActionValue& Value)
 {
 	Super::LightAttackButtonReleased(Value);
 }
 
-void AMutantReaper::HeavyAttackButtonPressed(const FInputActionValue& Value)
+void AMutantTerminator::HeavyAttackButtonPressed(const FInputActionValue& Value)
 {
 	Super::HeavyAttackButtonPressed(Value);
 }
 
-void AMutantReaper::HeavyAttackButtonReleased(const FInputActionValue& Value)
+void AMutantTerminator::HeavyAttackButtonReleased(const FInputActionValue& Value)
 {
 	Super::HeavyAttackButtonReleased(Value);
 }
 
-void AMutantReaper::ServerApplyDamage_Implementation(AActor* OtherActor, float Damage)
+void AMutantTerminator::ServerApplyDamage_Implementation(AActor* OtherActor, float Damage)
 {
 	Super::ServerApplyDamage_Implementation(OtherActor, Damage);
 	
@@ -50,7 +50,7 @@ void AMutantReaper::ServerApplyDamage_Implementation(AActor* OtherActor, float D
 			// 创建 GE 上下文
 			FGameplayEffectContextHandle ContextHandle = InstigatorASC->MakeEffectContext();
 			
-			// 【非常重要】将 Reaper (this) 注册为伤害的 Instigator 和 Causer
+			// 【非常重要】将 Terminator (this) 注册为伤害的 Instigator 和 Causer
 			// 这是后续在 AttributeSet 里面能拿到 InstigatorController 的关键
 			ContextHandle.AddInstigator(this, this);
 

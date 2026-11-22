@@ -1,5 +1,8 @@
 #include "AnimInstHumanBase.h"
 
+#include "Animation/AnimMontage.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Engine/SkeletalMeshSocket.h"
 #include "HumanCharacter.h"
 #include "Components/CombatComponent.h"
 #include "Components/MAMovementComponent.h"
@@ -197,6 +200,10 @@ void UAnimInstHumanBase::NativeUpdateAnimation(float DeltaSeconds)
 		PendingRecoilLocImpulse = FVector::ZeroVector;
 		PendingRecoilRotImpulse = FRotator::ZeroRotator;
 		RecoilShotCounter = 0;
+
+		PumpElapsedTime = -1.f;
+		PumpImpulseStage = 0;
+		LeftHandOffsetLocation = FVector::ZeroVector;
 		EquipmentName = NewEquipName;
 	}
 
@@ -204,6 +211,15 @@ void UAnimInstHumanBase::NativeUpdateAnimation(float DeltaSeconds)
 	bHasWeapon = (CurWeapon != nullptr && CurWeapon->FragWeapon != nullptr);
 	bIsPlayingActionMontage = IsAnyMontagePlaying();
 	bRawIsAiming = bHasWeapon && CombatComp->bIsAiming;
+
+	const UAnimMontage* CurActiveMontage = GetCurrentActiveMontage();
+	// 仅在新动作蒙太奇启动（如中途换弹或切枪）时打断拉泵，避免切枪/换弹尾段提前开火误杀第一枪拉泵
+	if (CurActiveMontage != nullptr && CurActiveMontage != PrevActiveMontage.Get())
+	{
+		PumpElapsedTime = -1.f;
+		PumpImpulseStage = 0;
+	}
+	PrevActiveMontage = CurActiveMontage;
 
 	if (bHasEquipment)
 	{
@@ -215,6 +231,9 @@ void UAnimInstHumanBase::NativeUpdateAnimation(float DeltaSeconds)
 	{
 		WalkPlayRate = 1.f;
 	}
+
+	bHasPumpMotion = false;
+	CachedPumpPivotOffset = FVector::ZeroVector;
 
 	if (bHasWeapon)
 	{
@@ -237,6 +256,26 @@ void UAnimInstHumanBase::NativeUpdateAnimation(float DeltaSeconds)
 		CachedRecoilRecoverySpeedMul = FMath::Max(0.1f, FragWeapon->RecoilRecoverySpeedMul) * FireRateScale;
 		CachedRecoilDampingMul = FMath::Max(0.05f, FragWeapon->RecoilDampingMul);
 		CachedADSRecoilScale = FMath::Max(0.f, FragWeapon->ADSRecoilScale);
+
+		// 缓存泵动武器拉泵运动配置，并将武器局部空间护木向后行程 (+Y) 直接映射至 Ctrl_WeaponPivot 局部空间
+		if (const FWeaponFirePartMotion* PumpMotion = FragWeapon->FindFirePartMotion(EWeaponMechBone::Pump);
+			PumpMotion && PumpMotion->CycleDuration > 0.f)
+		{
+			bHasPumpMotion = true;
+			CachedPumpMotion = *PumpMotion;
+
+			const float PumpTravelDist = PumpMotion->MaxLocationOffset.Size();
+			const USkeletalMeshComponent* CharSkelMesh = GetSkelMeshComponent();
+			const USkeletalMeshComponent* TargetWeaponMesh = GetTargetWeaponMesh(CurWeapon);
+			if (CharSkelMesh && TargetWeaponMesh && PumpTravelDist > KINDA_SMALL_NUMBER)
+			{
+				const USkeletalMeshSocket* AttachSocket = CharSkelMesh->GetSocketByName(TargetWeaponMesh->GetAttachSocketName());
+				const FQuat SocketRot = AttachSocket ? AttachSocket->GetSocketLocalTransform().GetRotation() : FQuat::Identity;
+				// 武器网格体约定 -Y=前, +Y=后；直接按护木行程距离沿武器 +Y 方向映射，避免骨骼局部轴向差异及污染 1P 状态
+				const FVector WeaponLocalDelta = TargetWeaponMesh->GetRelativeScale3D() * FVector(0.f, PumpTravelDist, 0.f);
+				CachedPumpPivotOffset = SocketRot.RotateVector(WeaponLocalDelta);
+			}
+		}
 	}
 	else
 	{
@@ -374,6 +413,59 @@ void UAnimInstHumanBase::NativeThreadSafeUpdateAnimation(float DeltaSeconds)
 		CurrentSwayRotation = FMath::RInterpTo(CurrentSwayRotation, FRotator::ZeroRotator, DeltaSeconds, 16.f);
 	}
 
+	// 3.5 程序化拉泵：同步驱动左手护木偏移与枪身后拉/前推次级后坐力顿挫
+	if (bHasPumpMotion && PumpElapsedTime >= 0.f)
+	{
+		PumpElapsedTime += DeltaSeconds;
+		if (PumpElapsedTime <= CachedPumpMotion.GetTotalDuration())
+		{
+			const float Delay = CachedPumpMotion.GetSafeStartDelay();
+			const float Duration = CachedPumpMotion.GetSafeDuration();
+			const float PushStartTime = Delay + Duration * CachedPumpMotion.GetHoldEndRatio();
+
+			const float PumpLocScale = CalcUnitPeakImpulseScale(
+				FreqLocX * CachedRecoilKickSpeedMul,
+				FMath::Clamp(DampLocX * CachedRecoilDampingMul, 0.1f, 2.0f),
+				LagLocX / CachedRecoilKickSpeedMul);
+			const float PumpRotScale = CalcUnitPeakImpulseScale(
+				FreqRoll * CachedRecoilKickSpeedMul,
+				FMath::Clamp(DampRoll * CachedRecoilDampingMul, 0.1f, 2.0f),
+				LagRoll / CachedRecoilKickSpeedMul);
+
+			if (PumpImpulseStage == 0 && PumpElapsedTime >= Delay)
+			{
+				// 后拉开始：枪身轻微后坐与侧倾
+				PendingRecoilLocImpulse.X += (-1.2f * PumpImpulseScale) * PumpLocScale;
+				PendingRecoilRotImpulse.Roll += (2.0f * PumpImpulseScale) * PumpRotScale;
+				PumpImpulseStage = 1;
+			}
+			if (PumpImpulseStage == 1 && PumpElapsedTime >= PushStartTime)
+			{
+				// 前推上膛：枪身轻微前顿与反向回正
+				PendingRecoilLocImpulse.X += (0.9f * PumpImpulseScale) * PumpLocScale;
+				PendingRecoilRotImpulse.Roll += (-1.5f * PumpImpulseScale) * PumpRotScale;
+				PumpImpulseStage = 2;
+			}
+
+			LeftHandOffsetLocation = CachedPumpPivotOffset * CachedPumpMotion.EvaluatePhase(PumpElapsedTime);
+		}
+		else
+		{
+			PumpElapsedTime = -1.f;
+			PumpImpulseStage = 0;
+			LeftHandOffsetLocation = FVector::ZeroVector;
+		}
+	}
+	else if (!LeftHandOffsetLocation.IsNearlyZero(1e-3f))
+	{
+		// 被换弹等动作蒙太奇中途打断时平滑归零，避免左手瞬间弹回
+		LeftHandOffsetLocation = FMath::VInterpTo(LeftHandOffsetLocation, FVector::ZeroVector, DeltaSeconds, 25.f);
+	}
+	else
+	{
+		LeftHandOffsetLocation = FVector::ZeroVector;
+	}
+
 	// 4. 程序化开火后坐力：6 自由度非对称二阶弹簧步进求解 + 安全上限截断
 	StepRecoilSpring(CurrentRecoilLocation.X, RecoilLocVelocity.X, PendingRecoilLocImpulse.X, DeltaSeconds, FreqLocX, DampLocX, LagLocX, CachedRecoilKickSpeedMul, CachedRecoilRecoverySpeedMul, CachedRecoilDampingMul);
 	StepRecoilSpring(CurrentRecoilLocation.Y, RecoilLocVelocity.Y, PendingRecoilLocImpulse.Y, DeltaSeconds, FreqLocY, DampLocY, LagLocY, CachedRecoilKickSpeedMul, CachedRecoilRecoverySpeedMul, CachedRecoilDampingMul);
@@ -433,4 +525,15 @@ void UAnimInstHumanBase::AddRecoilImpulse(const UFragWeapon* FragWeapon)
 	PendingRecoilRotImpulse.Pitch += KickRot.Pitch * CalcUnitPeakImpulseScale(FreqPitch * KickSpeedMul, FMath::Clamp(DampPitch * DampingMul, 0.1f, 2.0f), LagPitch / KickSpeedMul);
 	PendingRecoilRotImpulse.Yaw   += KickRot.Yaw   * CalcUnitPeakImpulseScale(FreqYaw   * KickSpeedMul, FMath::Clamp(DampYaw   * DampingMul, 0.1f, 2.0f), LagYaw   / KickSpeedMul);
 	PendingRecoilRotImpulse.Roll  += KickRot.Roll  * CalcUnitPeakImpulseScale(FreqRoll  * KickSpeedMul, FMath::Clamp(DampRoll  * DampingMul, 0.1f, 2.0f), LagRoll  / KickSpeedMul);
+
+	// 若当前武器配置了有效的 Pump 往复运动，同步启动程序化拉泵计时器与次级顿挫冲量缩放
+	if (const FWeaponFirePartMotion* PumpMotion = FragWeapon->FindFirePartMotion(EWeaponMechBone::Pump);
+		PumpMotion && PumpMotion->CycleDuration > 0.f)
+	{
+		CachedPumpMotion = *PumpMotion;
+		bHasPumpMotion = true;
+		PumpElapsedTime = 0.f;
+		PumpImpulseStage = 0;
+		PumpImpulseScale = AimScale;
+	}
 }

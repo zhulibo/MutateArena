@@ -18,6 +18,11 @@ public:
 	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	virtual void SetState(EEquipmentState NewState) override;
+	virtual void OnRep_EquipmentState(EEquipmentState OldState) override;
+	virtual void HandleDrop() override;
+	virtual void OnStartSwapOut() override;
 	
 	UPROPERTY(Transient)
 	TObjectPtr<const UFragWeapon> FragWeapon = nullptr;
@@ -44,10 +49,15 @@ public:
 	float CalcVisualBlendDistance(const FVector& SpawnLocation, const FVector& ShotDirection, float MaxBlendDistance = 1000.f) const;
 	virtual void Fire(const FVector& FinalTarget, int32 SpreadSeed);
 	virtual void SpawnProjectile(const FVector& FinalTarget, int32 ShotCount, int32 SpreadSeed) {}
+	void TriggerFireMechEffects();
+	void CancelDelayedFireEffects();
 	void EjectShell();
 	virtual void SetAmmo(int32 AmmoNum);
 	virtual void SetCarriedAmmo(int32 AmmoNum);
 protected:
+	FTimerHandle DelayedMechSoundTimerHandle;
+	FTimerHandle DelayedShellEjectTimerHandle;
+	void PlayMechSound();
 	void SpendRound();
 	void SetHUDAmmo();
 	void SetHUDCarriedAmmo();

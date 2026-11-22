@@ -302,7 +302,7 @@ void UCombatComponent::AttachToHand(AEquipment* Equipment, FName SocketNameSuffi
 	if (HumanChar == nullptr) HumanChar = Cast<AHumanCharacter>(GetOwner());
 	if (HumanChar == nullptr || Equipment == nullptr || Equipment->EnsureEquipmentAsset() == nullptr) return;
 	
-	// 先让武器Actor自身附着到角色身上，确保在 BaseCharacter::SetFirstPersonViewMode 中调用 GetAttachedActors 能找到当前手持的武器！
+	// 先让武器Actor自身附着到角色身上，确保在 AHumanCharacter::SetFirstPersonViewMode 中调用 GetAttachedActors 能找到当前手持的武器！
 	Equipment->AttachToActor(HumanChar, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 
 	if (HumanChar->BodyMesh && Equipment->EquipmentMesh)

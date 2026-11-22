@@ -6,6 +6,7 @@
 #include "Data/CharacterType.h"
 #include "HumanCharacter.generated.h"
 
+class UGroomComponent;
 class UHumanAsset;
 enum class EEquipmentName : uint8;
 enum class EEquipmentSlot : uint8;
@@ -17,6 +18,26 @@ class MUTATEARENA_API AHumanCharacter : public ABaseCharacter, public IInteracta
 
 public:
 	AHumanCharacter(const FObjectInitializer& ObjectInitializer);
+
+	// MetaHuman 组件（在人类角色蓝图中从 MetaHuman 复制而来，在 PostInitializeComponents 中按名称绑定）
+	UPROPERTY()
+	TObjectPtr<USkeletalMeshComponent> BodyMesh;
+	UPROPERTY()
+	TObjectPtr<USkeletalMeshComponent> FaceMesh;
+	UPROPERTY()
+	TObjectPtr<UGroomComponent> BeardComp;
+	UPROPERTY()
+	TObjectPtr<UGroomComponent> EyebrowsComp;
+	UPROPERTY()
+	TObjectPtr<UGroomComponent> EyelashesComp;
+	UPROPERTY()
+	TObjectPtr<UGroomComponent> FuzzComp;
+	UPROPERTY()
+	TObjectPtr<UGroomComponent> HairComp;
+	UPROPERTY()
+	TObjectPtr<UGroomComponent> MustacheComp;
+
+	virtual USkeletalMeshComponent* GetMesh3P() const override { return BodyMesh; }
 	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void PostInitializeComponents() override;
@@ -38,6 +59,8 @@ public:
 	TObjectPtr<const UHumanAsset> HumanAsset = nullptr;
 
 protected:
+	virtual void SetFirstPersonViewMode(bool bFirstPerson) override;
+	virtual void InitAbilityActorInfo() override;
 	virtual void OnASCInit() override;
 public:
 	void OnSwappingTagChanged(FGameplayTag GameplayTag, int NewCount);

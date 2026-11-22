@@ -2,15 +2,15 @@
 
 #include "CoreMinimal.h"
 #include "MutateArena/Characters/AnimInstMutant.h"
-#include "AnimInstCaller.generated.h"
+#include "AnimInstTerminator.generated.h"
 
 UCLASS(Abstract)
-class MUTATEARENA_API UAnimInstCaller : public UAnimInstMutant
+class MUTATEARENA_API UAnimInstTerminator : public UAnimInstMutant
 {
 	GENERATED_BODY()
 
 public:
-	UAnimInstCaller();
+	UAnimInstTerminator();
 
 	virtual void NativeInitializeAnimation() override;
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;

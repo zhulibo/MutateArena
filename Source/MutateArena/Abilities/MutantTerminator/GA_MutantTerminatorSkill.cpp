@@ -1,12 +1,12 @@
-#include "GA_MutantReaperSkill.h"
+#include "GA_MutantTerminatorSkill.h"
 #include "AbilitySystemComponent.h"
-#include "MutateArena/Characters/Mutants/MutantReaper.h"
+#include "MutateArena/Characters/Mutants/MutantTerminator.h"
 
-UGA_MutantReaperSkill::UGA_MutantReaperSkill()
+UGA_MutantTerminatorSkill::UGA_MutantTerminatorSkill()
 {
 }
 
-void UGA_MutantReaperSkill::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
+void UGA_MutantTerminatorSkill::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
 	const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
 {
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
@@ -18,14 +18,14 @@ void UGA_MutantReaperSkill::ActivateAbility(const FGameplayAbilitySpecHandle Han
 	}
 
 	UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
-	AMutantReaper* MutantReaper = Cast<AMutantReaper>(GetAvatarActorFromActorInfo());
-	if (!ASC || !MutantReaper || !SkillEffectClass)
+	AMutantTerminator* MutantTerminator = Cast<AMutantTerminator>(GetAvatarActorFromActorInfo());
+	if (!ASC || !MutantTerminator || !SkillEffectClass)
 	{
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;
 	}
 	
-	FGameplayEffectSpecHandle SpecHandle = MakeOutgoingGameplayEffectSpec(SkillEffectClass, MutantReaper->GetCharacterLevel());
+	FGameplayEffectSpecHandle SpecHandle = MakeOutgoingGameplayEffectSpec(SkillEffectClass, MutantTerminator->GetCharacterLevel());
 	if (SpecHandle.IsValid())
 	{
 		ActiveEffectHandle = ApplyGameplayEffectSpecToOwner(Handle, ActorInfo, ActivationInfo, SpecHandle);
@@ -34,7 +34,7 @@ void UGA_MutantReaperSkill::ActivateAbility(const FGameplayAbilitySpecHandle Han
 	EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 }
 
-void UGA_MutantReaperSkill::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
+void UGA_MutantTerminatorSkill::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
 	const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);

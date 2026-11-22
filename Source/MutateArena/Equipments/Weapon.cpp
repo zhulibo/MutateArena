@@ -1,6 +1,9 @@
 #include "Weapon.h"
 
 #include "Camera/CameraComponent.h"
+#include "Engine/World.h"
+#include "Kismet/GameplayStatics.h"
+#include "MetaSoundSource.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "MutateArena/Characters/Components/CombatComponent.h"
@@ -15,6 +18,7 @@
 #include "MutateArena/System/ObjectPoolSubsystem.h"
 #include "MutateArena/System/UISubsystem.h"
 #include "Net/UnrealNetwork.h"
+#include "TimerManager.h"
 
 AWeapon::AWeapon()
 {
@@ -44,6 +48,47 @@ void AWeapon::BeginPlay()
 			PoolSubsystem->PrewarmPool(FragWeapon->ShellClass, 20, 50);
 		}
 	}
+}
+
+void AWeapon::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	CancelDelayedFireEffects();
+
+	Super::EndPlay(EndPlayReason);
+}
+
+void AWeapon::SetState(EEquipmentState NewState)
+{
+	Super::SetState(NewState);
+
+	if (NewState != EEquipmentState::Equipped)
+	{
+		CancelDelayedFireEffects();
+	}
+}
+
+void AWeapon::OnRep_EquipmentState(EEquipmentState OldState)
+{
+	Super::OnRep_EquipmentState(OldState);
+
+	if (EquipmentState != EEquipmentState::Equipped)
+	{
+		CancelDelayedFireEffects();
+	}
+}
+
+void AWeapon::HandleDrop()
+{
+	CancelDelayedFireEffects();
+
+	Super::HandleDrop();
+}
+
+void AWeapon::OnStartSwapOut()
+{
+	CancelDelayedFireEffects();
+
+	Super::OnStartSwapOut();
 }
 
 void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -119,6 +164,63 @@ void AWeapon::Fire(const FVector& FinalTarget, int32 SpreadSeed)
 		: 1;
 	SpawnProjectile(FinalTarget, ShotCount, SpreadSeed);
 	SpendRound();
+}
+
+void AWeapon::TriggerFireMechEffects()
+{
+	if (!FragWeapon) return;
+
+	CancelDelayedFireEffects();
+
+	// 优先检查 Bolt（如栓动狙击枪），若未配置延迟则检查 Pump（如泵动霰弹枪）
+	const FWeaponFirePartMotion* DelayedMotion = FragWeapon->FindFirePartMotion(EWeaponMechBone::Bolt);
+	if (!DelayedMotion || DelayedMotion->StartDelay <= KINDA_SMALL_NUMBER)
+	{
+		DelayedMotion = FragWeapon->FindFirePartMotion(EWeaponMechBone::Pump);
+	}
+
+	if (DelayedMotion && DelayedMotion->StartDelay > KINDA_SMALL_NUMBER)
+	{
+		if (UWorld* World = GetWorld())
+		{
+			const float MechSoundDelay = DelayedMotion->GetSafeStartDelay();
+			// 护木/枪机拉到后死点时抛壳
+			const float ShellEjectDelay = MechSoundDelay + DelayedMotion->GetSafeDuration() * DelayedMotion->GetEffectiveKickRatio();
+
+			if (FragWeapon->MechSound)
+			{
+				World->GetTimerManager().SetTimer(DelayedMechSoundTimerHandle, this, &ThisClass::PlayMechSound, MechSoundDelay, false);
+			}
+			if (FragWeapon->ShellClass)
+			{
+				World->GetTimerManager().SetTimer(DelayedShellEjectTimerHandle, this, &ThisClass::EjectShell, ShellEjectDelay, false);
+			}
+			return;
+		}
+	}
+
+	PlayMechSound();
+	EjectShell();
+}
+
+void AWeapon::CancelDelayedFireEffects()
+{
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().ClearTimer(DelayedMechSoundTimerHandle);
+		World->GetTimerManager().ClearTimer(DelayedShellEjectTimerHandle);
+	}
+}
+
+void AWeapon::PlayMechSound()
+{
+	if (!FragWeapon || !FragWeapon->MechSound) return;
+
+	// 延迟触发时重新查询当前可见网格体，避免期间观战视角切换导致音效挂错网格体
+	if (USkeletalMeshComponent* WeaponMesh = GetVisibleEquipmentMesh())
+	{
+		UGameplayStatics::SpawnSoundAttached(FragWeapon->MechSound, WeaponMesh, Sockets::Muzzle);
+	}
 }
 
 void AWeapon::EjectShell()
