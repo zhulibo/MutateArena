@@ -86,9 +86,6 @@ protected:
 	float SlideAlpha = 0.f;
 
 private:
-	// 主线程缓存的各机械骨骼运动配置、启用标志与蒙太奇状态，供动画工作线程安全读取
-	FWeaponFirePartMotion CachedMotions[MechBoneCount];
-	bool bBoneConfigured[MechBoneCount] = {};
 	bool bIsPlayingWeaponMontage = false;
 
 	// 播放换弹等武器蒙太奇时的平滑抑制权重（1=正常驱动，0=交还控制权给蒙太奇）
@@ -96,10 +93,4 @@ private:
 
 	// 各骨骼通道往复运动计时器（>= 0 表示运动中，-1 表示静止）
 	float ElapsedTime[MechBoneCount] = { -1.f, -1.f, -1.f, -1.f, -1.f, -1.f, -1.f };
-
-	// 各骨骼通道当前帧的实际无衰减相位 (0.0 ~ 1.0)，用于连发中途再次触发时无缝接续起点
-	float CurrentPhase[MechBoneCount] = {};
-
-	// 各骨骼通道本次开火去程的起始相位（若在半途如 0.33 处再次开火，则直接从 0.33 插值向 1.0）
-	float KickStartPhase[MechBoneCount] = {};
 };

@@ -6,14 +6,10 @@
 #include "MutateArena/Equipments/AnimInstEquipment.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Kismet/GameplayStatics.h"
-#include "AudioModulationStatics.h"
 #include "MetaSoundSource.h"
 #include "Components/SkeletalMeshComponent.h"
-#include "Engine/GameInstance.h"
 #include "MutateArena/MutateArena.h"
-#include "MutateArena/Assets/Data/CommonAsset.h"
 #include "MutateArena/Equipments/Data/EquipmentAsset.h"
-#include "MutateArena/System/AssetSubsystem.h"
 
 UGC_Weapon_Fire::UGC_Weapon_Fire()
 {
@@ -67,7 +63,8 @@ bool UGC_Weapon_Fire::OnExecute_Implementation(AActor* MyTarget, const FGameplay
         UGameplayStatics::SpawnSoundAttached(CurWeapon->FragWeapon->FireSound, WeaponMesh, Sockets::Muzzle);
     }
 
-	CurWeapon->TriggerFireMechEffects();
+	CurWeapon->TriggerShellEject();
+	CurWeapon->TriggerBoltAction();
 
 	if (!HumanChar->IsLocallyControlled() && !HumanChar->HasAuthority())
 	{
@@ -78,29 +75,6 @@ bool UGC_Weapon_Fire::OnExecute_Implementation(AActor* MyTarget, const FGameplay
 			: ShotCount;
 		CurWeapon->SpawnProjectile(Parameters.Location, ShotCount, SpreadSeed);
 	}
-
-    if (HumanChar->IsLocallyControlled())
-    {
-        float Volume = 0.6f;
-        float LastTime = CurWeapon->FragWeapon->bIsAutomatic ? 1.2f : 0.5f;
-
-        // 判断是否到达低弹量阈值
-        if (CurWeapon->Ammo <= (CurWeapon->FragWeapon->FireRate / 60.f) * LastTime)
-        {
-            Volume = 2.f;
-        }
-
-        UAssetSubsystem* AssetSubsystem = HumanChar->GetGameInstance()->GetSubsystem<UAssetSubsystem>();
-        if (AssetSubsystem && AssetSubsystem->CommonAsset && AssetSubsystem->CommonAsset->CB_EquipmentMech)
-        {
-            UAudioModulationStatics::SetGlobalBusMixValue(
-                MyTarget,
-                AssetSubsystem->CommonAsset->CB_EquipmentMech,
-                Volume,
-                0.f
-            );
-        }
-    }
 
     return Super::OnExecute_Implementation(MyTarget, Parameters);
 }

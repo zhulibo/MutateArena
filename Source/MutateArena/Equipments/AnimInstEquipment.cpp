@@ -17,22 +17,7 @@ void UAnimInstEquipment::NativeUpdateAnimation(float DeltaSeconds)
 	if (Equipment == nullptr) Equipment = Cast<AEquipment>(GetOwningActor());
 	if (OwningWeapon == nullptr) OwningWeapon = Cast<AWeapon>(GetOwningActor());
 
-	// 主线程按 EWeaponMechBone 枚举索引缓存构件运动配置与蒙太奇播放状态，供工作线程无锁安全求解
 	bIsPlayingWeaponMontage = IsAnyMontagePlaying();
-	FMemory::Memzero(bBoneConfigured, sizeof(bBoneConfigured));
-	if (OwningWeapon && OwningWeapon->FragWeapon)
-	{
-		for (const FWeaponFirePartMotion& Motion : OwningWeapon->FragWeapon->FirePartMotions)
-		{
-			const int32 BoneIdx = static_cast<int32>(Motion.TargetBone);
-			if (BoneIdx >= 0 && BoneIdx < MechBoneCount)
-			{
-				CachedMotions[BoneIdx] = Motion;
-				bBoneConfigured[BoneIdx] = true;
-			}
-		}
-	}
-
 	if (Equipment == nullptr) return;
 
 	AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(Equipment->GetOwner());
@@ -43,34 +28,15 @@ void UAnimInstEquipment::NativeUpdateAnimation(float DeltaSeconds)
 
 void UAnimInstEquipment::TriggerFireMotion()
 {
-	bool bAnyCached = false;
-	for (int32 i = 0; i < MechBoneCount; ++i)
-	{
-		if (bBoneConfigured[i])
-		{
-			KickStartPhase[i] = CurrentPhase[i];
-			ElapsedTime[i] = 0.f;
-			bAnyCached = true;
-		}
-	}
+	if (OwningWeapon == nullptr) OwningWeapon = Cast<AWeapon>(GetOwningActor());
+	if (!OwningWeapon || !OwningWeapon->FragWeapon) return;
 
-	// 首帧尚未执行 NativeUpdateAnimation 时回退读取 OwningWeapon，避免首枪漏触发
-	if (!bAnyCached)
+	for (const FWeaponFirePartMotion& Motion : OwningWeapon->FragWeapon->FirePartMotions)
 	{
-		if (const AWeapon* Weapon = OwningWeapon ? OwningWeapon.Get() : Cast<AWeapon>(GetOwningActor()))
+		const int32 BoneIdx = static_cast<int32>(Motion.TargetBone);
+		if (BoneIdx >= 0 && BoneIdx < MechBoneCount && Motion.CycleDuration > 0.f)
 		{
-			if (Weapon->FragWeapon)
-			{
-				for (const FWeaponFirePartMotion& Motion : Weapon->FragWeapon->FirePartMotions)
-				{
-					const int32 BoneIdx = static_cast<int32>(Motion.TargetBone);
-					if (BoneIdx >= 0 && BoneIdx < MechBoneCount)
-					{
-						KickStartPhase[BoneIdx] = 0.f;
-						ElapsedTime[BoneIdx] = 0.f;
-					}
-				}
-			}
+			ElapsedTime[BoneIdx] = 0.f;
 		}
 	}
 }
@@ -83,7 +49,6 @@ void UAnimInstEquipment::NativeThreadSafeUpdateAnimation(float DeltaSeconds)
 	const float TargetSuppress = bIsPlayingWeaponMontage ? 0.f : 1.f;
 	MontageSuppressAlpha = FMath::FInterpTo(MontageSuppressAlpha, TargetSuppress, DeltaSeconds, 25.f);
 
-	// 按 EWeaponMechBone 枚举顺序映射输出通道
 	static_assert(MechBoneCount == 7, "Update bone channel pointer tables when EWeaponMechBone changes.");
 	FVector* PartLocations[MechBoneCount] = {
 		&BarrelLocation, &TriggerLocation, &ChargingHandleLocation,
@@ -100,30 +65,32 @@ void UAnimInstEquipment::NativeThreadSafeUpdateAnimation(float DeltaSeconds)
 
 	for (int32 i = 0; i < MechBoneCount; ++i)
 	{
-		if (bBoneConfigured[i] && ElapsedTime[i] >= 0.f)
-		{
-			const FWeaponFirePartMotion& Motion = CachedMotions[i];
-
-			ElapsedTime[i] += DeltaSeconds;
-			if (ElapsedTime[i] <= Motion.GetTotalDuration())
-			{
-				const float Phase = Motion.EvaluatePhase(ElapsedTime[i], KickStartPhase[i]);
-				CurrentPhase[i] = Phase;
-
-				const float EffectivePhase = Phase * MontageSuppressAlpha;
-				*PartLocations[i] = Motion.MaxLocationOffset * EffectivePhase;
-				*PartRotations[i] = Motion.MaxRotationOffset * EffectivePhase;
-				*PartAlphas[i] = (EffectivePhase > KINDA_SMALL_NUMBER) ? 1.f : 0.f;
-				continue;
-			}
-		}
-
-		// 未配置、静止或单周期结束时复位状态与输出
-		ElapsedTime[i] = -1.f;
-		CurrentPhase[i] = 0.f;
-		KickStartPhase[i] = 0.f;
 		*PartLocations[i] = FVector::ZeroVector;
 		*PartRotations[i] = FRotator::ZeroRotator;
 		*PartAlphas[i] = 0.f;
+	}
+
+	if (!OwningWeapon || !OwningWeapon->FragWeapon) return;
+
+	for (const FWeaponFirePartMotion& Motion : OwningWeapon->FragWeapon->FirePartMotions)
+	{
+		const int32 BoneIdx = static_cast<int32>(Motion.TargetBone);
+		if (BoneIdx < 0 || BoneIdx >= MechBoneCount || ElapsedTime[BoneIdx] < 0.f)
+		{
+			continue;
+		}
+
+		ElapsedTime[BoneIdx] += DeltaSeconds;
+		if (ElapsedTime[BoneIdx] <= Motion.GetTotalDuration())
+		{
+			const float EffectivePhase = Motion.EvaluatePhase(ElapsedTime[BoneIdx]) * MontageSuppressAlpha;
+			*PartLocations[BoneIdx] = Motion.MaxLocationOffset * EffectivePhase;
+			*PartRotations[BoneIdx] = Motion.MaxRotationOffset * EffectivePhase;
+			*PartAlphas[BoneIdx] = (EffectivePhase > KINDA_SMALL_NUMBER) ? 1.f : 0.f;
+		}
+		else
+		{
+			ElapsedTime[BoneIdx] = -1.f;
+		}
 	}
 }

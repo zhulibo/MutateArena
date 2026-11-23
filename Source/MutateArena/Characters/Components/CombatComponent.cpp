@@ -69,7 +69,7 @@ void UCombatComponent::TickComponent(float DeltaSeconds, ELevelTick TickType, FA
 
 	if (HumanChar && HumanChar->IsLocallyControlled())
 	{
-		InterpFOV(DeltaSeconds);
+		UpdateLocalAiming(DeltaSeconds);
 	}
 }
 
@@ -339,9 +339,10 @@ void UCombatComponent::RefreshCurEquipmentState()
 	{
 		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
 		{
-			UISubsystem->OnAmmoChange.Broadcast(GetCurWeapon() ? GetCurWeapon()->Ammo : 0);
-			UISubsystem->OnCarriedAmmoChange.Broadcast(GetCurWeapon() ? GetCurWeapon()->CarriedAmmo : 0);
-			UISubsystem->OnCrosshairHidden.Broadcast(bIsAiming);
+			const AWeapon* CurWeapon = GetCurWeapon();
+			UISubsystem->OnAmmoChange.Broadcast(CurWeapon ? CurWeapon->Ammo : 0);
+			UISubsystem->OnCarriedAmmoChange.Broadcast(CurWeapon ? CurWeapon->CarriedAmmo : 0);
+			UISubsystem->OnCrosshairHidden.Broadcast(bIsAiming && CurWeapon != nullptr);
 		}
 	}
 
@@ -391,6 +392,7 @@ void UCombatComponent::InstantSwap(EEquipmentSlot TargetSlot)
 
 	CurEquipmentSlot = TargetSlot;
 	bIsAiming = false;
+	bPrevEffectiveAiming = false;
 
 	AttachToHand(TargetEquipment, Sockets::SuffixR);
 
@@ -403,89 +405,48 @@ void UCombatComponent::InstantSwap(EEquipmentSlot TargetSlot)
 	RefreshCurEquipmentState();
 }
 
-void UCombatComponent::LocalSetAiming(bool TempBIsAiming)
+void UCombatComponent::UpdateLocalAiming(float DeltaSeconds)
 {
-	if (HumanChar == nullptr) HumanChar = Cast<AHumanCharacter>(GetOwner());
-	if (HumanChar == nullptr || !HumanChar->IsLocallyControlled()) return;
+	if (!HumanChar || !HumanChar->IsLocallyControlled()) return;
 
-	if (AWeapon* CurWeapon = GetCurWeapon(); CurWeapon && CurWeapon->FragWeapon)
-	{
-		const float AimedFOV = DefaultFOV * CurWeapon->FragWeapon->AimingFOVMul;
-		const float TargetAimFOV = TempBIsAiming ? AimedFOV : DefaultFOV;
-		const float FullFOVDelta = FMath::Abs(DefaultFOV - AimedFOV);
-		const float CurFOV = HumanChar->Camera ? HumanChar->Camera->FieldOfView : TargetAimFOV;
-		// 按剩余 FOV 跨度等比例缩放耗时，与动画 SmoothAimAlpha 分段时长保持同步
-		const float RemainingRatio = FullFOVDelta > KINDA_SMALL_NUMBER
-			? FMath::Clamp(FMath::Abs(TargetAimFOV - CurFOV) / FullFOVDelta, 0.f, 1.f)
-			: 1.f;
-		StartInterpFOV(TargetAimFOV, CurWeapon->FragWeapon->ADSTime * RemainingRatio);
-	}
-	else if (!TempBIsAiming)
-	{
-		StartInterpFOV(DefaultFOV, 0.2f);
-	}
+	const AWeapon* CurWeapon = GetCurWeapon();
+	const UAnimInstance* CharAnimInst = (HumanChar->bIsCurrentViewTarget && HumanChar->Mesh1P)
+		? HumanChar->Mesh1P->GetAnimInstance()
+		: (HumanChar->BodyMesh ? HumanChar->BodyMesh->GetAnimInstance() : nullptr);
+	const bool bIsPlayingActionMontage = CharAnimInst && CharAnimInst->IsAnyMontagePlaying();
 
-	if (BaseController == nullptr) BaseController = Cast<ABaseController>(HumanChar->GetController());
-	if (BaseController)
+	// 播放换弹、切枪、拉栓等动作蒙太奇期间自动暂退镜头缩放与准星隐藏，与 UAnimInstHumanBase 严格同源
+	const bool bEffectiveAiming = bIsAiming && CurWeapon && CurWeapon->FragWeapon && !bIsPlayingActionMontage;
+	if (bEffectiveAiming != bPrevEffectiveAiming)
 	{
-		if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
+		bPrevEffectiveAiming = bEffectiveAiming;
+		if (BaseController == nullptr) BaseController = Cast<ABaseController>(HumanChar->GetController());
+		if (BaseController)
 		{
-			UISubsystem->OnCrosshairHidden.Broadcast(TempBIsAiming);
-		}
-	}
-}
-
-void UCombatComponent::StartInterpFOV(float TempTargetFOV, float TempFOVInterpTime)
-{
-	if (!HumanChar || !HumanChar->Camera || !HumanChar->IsLocallyControlled()) return;
-
-	StartFOV = HumanChar->Camera->FieldOfView;
-	TargetFOV = TempTargetFOV;
-	FOVInterpTime = TempFOVInterpTime;
-	CurrentFOVInterpElapsed = 0.f;
-	bNeedInterpFOV = true;
-}
-
-void UCombatComponent::InterpFOV(float DeltaSeconds)
-{
-	if (!bNeedInterpFOV) return;
-	if (!HumanChar || !HumanChar->Camera || !HumanChar->IsLocallyControlled()) return;
-	
-	CurrentFOVInterpElapsed += DeltaSeconds;
-
-	float Alpha = 1.0f;
-	if (FOVInterpTime > KINDA_SMALL_NUMBER)
-	{
-		Alpha = FMath::Clamp(CurrentFOVInterpElapsed / FOVInterpTime, 0.0f, 1.0f);
-	}
-
-	const bool bZoomingIn = TargetFOV < StartFOV;
-	const float SmoothFOVAlpha = bZoomingIn
-		? FMath::InterpEaseOut(0.f, 1.f, Alpha, 2.6f)
-		: FMath::InterpEaseInOut(0.f, 1.f, Alpha, 2.0f);
-
-	HumanChar->Camera->FieldOfView = FMath::Lerp(StartFOV, TargetFOV, SmoothFOVAlpha);
-
-	// HACK 计算瞄准进度，子弹偏移受瞄准进度影响，完全进入瞄准状态子弹偏移为0
-	if (AWeapon* CurWeapon = GetCurWeapon(); CurWeapon && CurWeapon->FragWeapon)
-	{
-		float DiffFOV = DefaultFOV - CurWeapon->FragWeapon->AimingFOVMul * DefaultFOV;
-		if (DiffFOV != 0.f)
-		{
-			AimingProgress = FMath::Abs(DefaultFOV - HumanChar->Camera->FieldOfView) / DiffFOV;
-
-			// 强制校准末尾值
-			if (AimingProgress < 0.1f) AimingProgress = 0.f;
-			if (AimingProgress > 0.9f) AimingProgress = 1.f;
-			// UE_LOG(LogTemp, Warning, TEXT("AimingProgress %f"), AimingProgress);
+			if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
+			{
+				UISubsystem->OnCrosshairHidden.Broadcast(bEffectiveAiming);
+			}
 		}
 	}
 
-	if (FMath::IsNearlyEqual(HumanChar->Camera->FieldOfView, TargetFOV))
+	if (bEffectiveAiming)
 	{
-		HumanChar->Camera->FieldOfView = TargetFOV;
-		
-		bNeedInterpFOV = false; 
+		CachedAimFOVMul = CurWeapon->FragWeapon->AimingFOVMul;
+		CachedADSTime = FMath::Max(0.01f, CurWeapon->FragWeapon->ADSTime);
+	}
+
+	const float TargetProgress = bEffectiveAiming ? 1.f : 0.f;
+	if (AimingProgress != TargetProgress)
+	{
+		const float AimStep = DeltaSeconds / FMath::Max(0.01f, CachedADSTime);
+		AimingProgress = FMath::Clamp(AimingProgress + (bEffectiveAiming ? AimStep : -AimStep), 0.f, 1.f);
+
+		if (HumanChar->Camera)
+		{
+			const float SmoothAlpha = FMath::InterpEaseInOut(0.f, 1.f, AimingProgress, 2.f);
+			HumanChar->Camera->FieldOfView = FMath::Lerp(DefaultFOV, DefaultFOV * CachedAimFOVMul, SmoothAlpha);
+		}
 	}
 }
 
@@ -516,6 +477,7 @@ void UCombatComponent::ServerDestroyEquipments_Implementation(bool bIsDestroySlo
 	CurEquipmentSlot = EEquipmentSlot::None;
 	LastEquipmentSlot = EEquipmentSlot::None;
 	bIsAiming = false;
+	bPrevEffectiveAiming = false;
 }
 
 void UCombatComponent::SetAttackCollisionEnabled(bool bIsEnabled)

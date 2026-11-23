@@ -48,7 +48,6 @@ void UGA_Equipment_Aim::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 
 	CombatComp->bIsAiming = true;
 	HumanChar->UpdateMaxWalkSpeed();
-	CombatComp->LocalSetAiming(true);
 }
 
 void UGA_Equipment_Aim::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
@@ -58,7 +57,6 @@ void UGA_Equipment_Aim::EndAbility(const FGameplayAbilitySpecHandle Handle, cons
 		if (UCombatComponent* CombatComp = HumanChar->CombatComp)
 		{
 			CombatComp->bIsAiming = false;
-			CombatComp->LocalSetAiming(false);
 		}
 		HumanChar->UpdateMaxWalkSpeed();
 	}

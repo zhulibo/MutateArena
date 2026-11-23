@@ -32,18 +32,15 @@ protected:
 	class UAssetSubsystem* AssetSubsystem;
 
 public:
-	float DefaultFOV;
-	float TargetFOV;
-protected:
-	bool bNeedInterpFOV = false;
-	float FOVInterpTime = 0.2f;
-	float CurrentFOVInterpElapsed = 0.f;
-	float StartFOV;
-	void StartInterpFOV(float TempTargetFOV, float TempFOVInterpTime);
-	void InterpFOV(float DeltaSeconds);
-public:
-	// 瞄准程度
+	float DefaultFOV = 90.f;
+	// 瞄准进度 (0 = 腰射, 1 = 完全瞄准 | 同时驱动镜头 FOV 缩放与后坐力子弹偏移衰减)
 	float AimingProgress = 0.f;
+protected:
+	float CachedAimFOVMul = 1.f;
+	float CachedADSTime = 0.2f;
+	bool bPrevEffectiveAiming = false;
+	void UpdateLocalAiming(float DeltaSeconds);
+public:
 
 	class AEquipment* GetCurEquipment();
 	AEquipment* GetLastEquipment();
@@ -94,7 +91,6 @@ public:
 	// 瞄准（服务端通过 COND_SkipOwner 仅同步给远端模拟代理，主控端与服务端由 GA_Equipment_Aim 本地直接维护以防止延迟回弹）
 	UPROPERTY(Replicated)
 	bool bIsAiming = false;
-	void LocalSetAiming(bool TempBIsAiming);
 
 	// 射击
 	int32 CurShotCount = 1;

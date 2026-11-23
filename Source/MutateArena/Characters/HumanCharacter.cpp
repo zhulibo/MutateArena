@@ -257,12 +257,6 @@ void AHumanCharacter::OnASCInit()
 void AHumanCharacter::OnSwappingTagChanged(FGameplayTag GameplayTag, int NewCount)
 {
 	UpdateMaxWalkSpeed();
-
-	if (IsLocallyControlled() && NewCount > 0 && CombatComp)
-	{
-		CombatComp->StartInterpFOV(CombatComp->DefaultFOV, 0.2f);
-		CombatComp->AimingProgress = 0.f;
-	}
 }
 
 void AHumanCharacter::UpdateMaxWalkSpeed()

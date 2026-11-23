@@ -18,6 +18,7 @@ class UAnimMontage;
  * 人类动画实例基类（1P 与 3P 共用）
  * 在标准坐标系 (X=前后, Y=左右, Z=上下) 下统一计算【机瞄过渡 + 呼吸步伐摆动 + 开火后坐力】，
  * 汇总后交由子类转换到各自基准骨骼局部空间，最终输出给 Control Rig 的 Ctrl_WeaponPivot。
+ * TODO 以后可能会改为手 K 叠加动画 + 程序化弹簧，因为某些武器如沙鹰动作非常有特色，动画负责主主要动作（大幅抬枪），程序化参数都调小只增加随机化。
  */
 UCLASS(Abstract)
 class MUTATEARENA_API UAnimInstHumanBase : public UAnimInstance
@@ -116,28 +117,16 @@ private:
 	float CachedRecoilDampingMul = 1.f;
 	float CachedADSRecoilScale = 0.5f;
 
-	// 程序化瞄准过渡状态（记录分段插值起点与进度，避免中途打断反向时发生曲线跳变或速度失真）
-	bool bPrevAiming = false;
-	float AimSegmentStartSmooth = 0.f;
-	float AimSegmentStartLinear = 0.f;
-	float AimSegmentProgress = 1.f;
-	float AimSegmentDuration = 0.f;
-	FVector CurrentADSLocation = FVector::ZeroVector;
-	FRotator CurrentADSRotation = FRotator::ZeroRotator;
-
 	// 程序化呼吸与移动晃动状态
 	float SwayPhase = 0.f;
 	FVector CurrentSwayLocation = FVector::ZeroVector;
 	FRotator CurrentSwayRotation = FRotator::ZeroRotator;
 
-	// 程序化开火后坐力（6 自由度非对称二阶弹簧状态 + 轴向滞后冲量缓冲池）
+	// 程序化开火后坐力（6 自由度非对称二阶弹簧状态）
 	FVector CurrentRecoilLocation = FVector::ZeroVector;
 	FRotator CurrentRecoilRotation = FRotator::ZeroRotator;
 	FVector RecoilLocVelocity = FVector::ZeroVector;
 	FRotator RecoilRotVelocity = FRotator::ZeroRotator;
-	FVector PendingRecoilLocImpulse = FVector::ZeroVector;
-	FRotator PendingRecoilRotImpulse = FRotator::ZeroRotator;
-	float RecoilNoiseTime = 0.f;
 	int32 RecoilShotCounter = 0;
 
 	// 主线程缓存的拉泵运动配置与护木满行程向量（Ctrl_WeaponPivot 局部空间，供动画工作线程无锁读取）

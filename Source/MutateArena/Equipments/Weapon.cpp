@@ -1,9 +1,9 @@
 #include "Weapon.h"
 
+#include "AnimInstEquipment.h"
+#include "Animation/AnimInstance.h"
 #include "Camera/CameraComponent.h"
 #include "Engine/World.h"
-#include "Kismet/GameplayStatics.h"
-#include "MetaSoundSource.h"
 #include "MutateArena/MutateArena.h"
 #include "MutateArena/Characters/HumanCharacter.h"
 #include "MutateArena/Characters/Components/CombatComponent.h"
@@ -52,7 +52,7 @@ void AWeapon::BeginPlay()
 
 void AWeapon::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	CancelDelayedFireEffects();
+	CancelDelayedFireActions();
 
 	Super::EndPlay(EndPlayReason);
 }
@@ -63,7 +63,7 @@ void AWeapon::SetState(EEquipmentState NewState)
 
 	if (NewState != EEquipmentState::Equipped)
 	{
-		CancelDelayedFireEffects();
+		CancelDelayedFireActions();
 	}
 }
 
@@ -73,22 +73,15 @@ void AWeapon::OnRep_EquipmentState(EEquipmentState OldState)
 
 	if (EquipmentState != EEquipmentState::Equipped)
 	{
-		CancelDelayedFireEffects();
+		CancelDelayedFireActions();
 	}
 }
 
 void AWeapon::HandleDrop()
 {
-	CancelDelayedFireEffects();
+	CancelDelayedFireActions();
 
 	Super::HandleDrop();
-}
-
-void AWeapon::OnStartSwapOut()
-{
-	CancelDelayedFireEffects();
-
-	Super::OnStartSwapOut();
 }
 
 void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -166,60 +159,134 @@ void AWeapon::Fire(const FVector& FinalTarget, int32 SpreadSeed)
 	SpendRound();
 }
 
-void AWeapon::TriggerFireMechEffects()
+bool AWeapon::HasBoltAction() const
 {
-	if (!FragWeapon) return;
+	return FragWeapon && (FragWeapon->BoltActionMontage1P_C || FragWeapon->BoltActionMontage1P_E
+		|| FragWeapon->BoltActionMontage_C || FragWeapon->BoltActionMontage_E);
+}
 
-	CancelDelayedFireEffects();
+void AWeapon::TriggerShellEject()
+{
+	if (!FragWeapon || !FragWeapon->ShellClass) return;
 
-	// 优先检查 Bolt（如栓动狙击枪），若未配置延迟则检查 Pump（如泵动霰弹枪）
-	const FWeaponFirePartMotion* DelayedMotion = FragWeapon->FindFirePartMotion(EWeaponMechBone::Bolt);
-	if (!DelayedMotion || DelayedMotion->StartDelay <= KINDA_SMALL_NUMBER)
+	GetWorldTimerManager().ClearTimer(DelayedShellEjectTimerHandle);
+
+	float ShellEjectDelay = 0.f;
+	if (HasBoltAction() && FragWeapon->BoltActionShellEjectDelay > KINDA_SMALL_NUMBER)
 	{
-		DelayedMotion = FragWeapon->FindFirePartMotion(EWeaponMechBone::Pump);
+		// 栓动武器：开火后等待拉栓开始 + 蒙太奇拉栓至后死点时间
+		ShellEjectDelay = FMath::Max(0.f, FragWeapon->BoltActionDelay) + FragWeapon->BoltActionShellEjectDelay;
 	}
-
-	if (DelayedMotion && DelayedMotion->StartDelay > KINDA_SMALL_NUMBER)
+	else
 	{
-		if (UWorld* World = GetWorld())
+		// 泵动霰弹枪等程序化延迟退壳武器：优先检查 Pump，其次检查 Bolt
+		const FWeaponFirePartMotion* DelayedMotion = FragWeapon->FindFirePartMotion(EWeaponMechBone::Pump);
+		if (!DelayedMotion || DelayedMotion->StartDelay <= KINDA_SMALL_NUMBER)
 		{
-			const float MechSoundDelay = DelayedMotion->GetSafeStartDelay();
+			DelayedMotion = FragWeapon->FindFirePartMotion(EWeaponMechBone::Bolt);
+		}
+		if (DelayedMotion && DelayedMotion->StartDelay > KINDA_SMALL_NUMBER)
+		{
 			// 护木/枪机拉到后死点时抛壳
-			const float ShellEjectDelay = MechSoundDelay + DelayedMotion->GetSafeDuration() * DelayedMotion->GetEffectiveKickRatio();
-
-			if (FragWeapon->MechSound)
-			{
-				World->GetTimerManager().SetTimer(DelayedMechSoundTimerHandle, this, &ThisClass::PlayMechSound, MechSoundDelay, false);
-			}
-			if (FragWeapon->ShellClass)
-			{
-				World->GetTimerManager().SetTimer(DelayedShellEjectTimerHandle, this, &ThisClass::EjectShell, ShellEjectDelay, false);
-			}
-			return;
+			ShellEjectDelay = DelayedMotion->GetSafeStartDelay()
+				+ DelayedMotion->GetSafeDuration() * DelayedMotion->GetClampedKickRatio();
 		}
 	}
 
-	PlayMechSound();
+	if (ShellEjectDelay > KINDA_SMALL_NUMBER)
+	{
+		GetWorldTimerManager().SetTimer(DelayedShellEjectTimerHandle, this, &ThisClass::EjectShell, ShellEjectDelay, false);
+		return;
+	}
+
 	EjectShell();
 }
 
-void AWeapon::CancelDelayedFireEffects()
+void AWeapon::TriggerBoltAction()
 {
-	if (UWorld* World = GetWorld())
+	if (!HasBoltAction()) return;
+
+	CancelBoltAction();
+
+	const float Delay = FMath::Max(0.f, FragWeapon->BoltActionDelay);
+	if (Delay > KINDA_SMALL_NUMBER)
 	{
-		World->GetTimerManager().ClearTimer(DelayedMechSoundTimerHandle);
-		World->GetTimerManager().ClearTimer(DelayedShellEjectTimerHandle);
+		GetWorldTimerManager().SetTimer(DelayedBoltActionTimerHandle, this, &ThisClass::PlayBoltActionMontage, Delay, false);
+		return;
+	}
+
+	PlayBoltActionMontage();
+}
+
+void AWeapon::PlayBoltActionMontage()
+{
+	if (EquipmentState != EEquipmentState::Equipped || !FragWeapon) return;
+
+	AHumanCharacter* HumanChar = Cast<AHumanCharacter>(GetOwner());
+	if (!HumanChar) return;
+
+	// 3P 角色与 3P 武器拉栓动画（所有端均播放）
+	if (UAnimInstance* AnimInst3P = HumanChar->BodyMesh ? HumanChar->BodyMesh->GetAnimInstance() : nullptr; AnimInst3P && FragWeapon->BoltActionMontage_C)
+	{
+		AnimInst3P->Montage_Play(FragWeapon->BoltActionMontage_C);
+	}
+	if (UAnimInstEquipment* EquipAnimInst = GetEquipmentAnimInst(); EquipAnimInst && FragWeapon->BoltActionMontage_E)
+	{
+		EquipAnimInst->Montage_Play(FragWeapon->BoltActionMontage_E);
+	}
+
+	// 1P 手臂与 1P 武器拉栓动画（仅当前视角目标播放）
+	if (HumanChar->bIsCurrentViewTarget)
+	{
+		if (UAnimInstance* AnimInst1P = HumanChar->Mesh1P ? HumanChar->Mesh1P->GetAnimInstance() : nullptr; AnimInst1P && FragWeapon->BoltActionMontage1P_C)
+		{
+			AnimInst1P->Montage_Play(FragWeapon->BoltActionMontage1P_C);
+		}
+		if (UAnimInstEquipment* EquipAnimInst1P = GetEquipmentAnimInst1P(); EquipAnimInst1P && FragWeapon->BoltActionMontage1P_E)
+		{
+			EquipAnimInst1P->Montage_Play(FragWeapon->BoltActionMontage1P_E);
+		}
 	}
 }
 
-void AWeapon::PlayMechSound()
+void AWeapon::CancelDelayedFireActions()
 {
-	if (!FragWeapon || !FragWeapon->MechSound) return;
+	GetWorldTimerManager().ClearTimer(DelayedShellEjectTimerHandle);
+	CancelBoltAction();
+}
 
-	// 延迟触发时重新查询当前可见网格体，避免期间观战视角切换导致音效挂错网格体
-	if (USkeletalMeshComponent* WeaponMesh = GetVisibleEquipmentMesh())
+void AWeapon::CancelBoltAction()
+{
+	GetWorldTimerManager().ClearTimer(DelayedBoltActionTimerHandle);
+	if (!FragWeapon) return;
+
+	// Montage_Stop 传入具体蒙太奇指针时仅停止该拉栓蒙太奇，不会误停换弹或切入动画
+	if (UAnimInstEquipment* EquipAnimInst = GetEquipmentAnimInst(); EquipAnimInst && FragWeapon->BoltActionMontage_E)
 	{
-		UGameplayStatics::SpawnSoundAttached(FragWeapon->MechSound, WeaponMesh, Sockets::Muzzle);
+		EquipAnimInst->Montage_Stop(0.1f, FragWeapon->BoltActionMontage_E);
+	}
+	if (UAnimInstEquipment* EquipAnimInst1P = GetEquipmentAnimInst1P(); EquipAnimInst1P && FragWeapon->BoltActionMontage1P_E)
+	{
+		EquipAnimInst1P->Montage_Stop(0.1f, FragWeapon->BoltActionMontage1P_E);
+	}
+
+	if (AHumanCharacter* HumanChar = Cast<AHumanCharacter>(GetOwner()))
+	{
+		if (UAnimInstance* AnimInst3P = HumanChar->BodyMesh ? HumanChar->BodyMesh->GetAnimInstance() : nullptr; AnimInst3P && FragWeapon->BoltActionMontage_C)
+		{
+			AnimInst3P->Montage_Stop(0.1f, FragWeapon->BoltActionMontage_C);
+		}
+		if (UAnimInstance* AnimInst1P = HumanChar->Mesh1P ? HumanChar->Mesh1P->GetAnimInstance() : nullptr; AnimInst1P && FragWeapon->BoltActionMontage1P_C)
+		{
+			AnimInst1P->Montage_Stop(0.1f, FragWeapon->BoltActionMontage1P_C);
+		}
+
+		// 若拉栓中途被打断且 3P 武器仍临时挂在左手 _L 插槽，归位回右手 _R 插槽
+		if (EquipmentState == EEquipmentState::Equipped && EquipmentMesh && HumanChar->CombatComp
+			&& EquipmentMesh->GetAttachSocketName().ToString().EndsWith(Sockets::SuffixL.ToString()))
+		{
+			HumanChar->CombatComp->AttachToHand(this, Sockets::SuffixR);
+		}
 	}
 }
 

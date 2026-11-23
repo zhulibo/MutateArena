@@ -22,7 +22,6 @@ public:
 	virtual void SetState(EEquipmentState NewState) override;
 	virtual void OnRep_EquipmentState(EEquipmentState OldState) override;
 	virtual void HandleDrop() override;
-	virtual void OnStartSwapOut() override;
 	
 	UPROPERTY(Transient)
 	TObjectPtr<const UFragWeapon> FragWeapon = nullptr;
@@ -49,15 +48,18 @@ public:
 	float CalcVisualBlendDistance(const FVector& SpawnLocation, const FVector& ShotDirection, float MaxBlendDistance = 1000.f) const;
 	virtual void Fire(const FVector& FinalTarget, int32 SpreadSeed);
 	virtual void SpawnProjectile(const FVector& FinalTarget, int32 ShotCount, int32 SpreadSeed) {}
-	void TriggerFireMechEffects();
-	void CancelDelayedFireEffects();
+	bool HasBoltAction() const;
+	void TriggerShellEject();
+	void TriggerBoltAction();
+	void CancelDelayedFireActions();
 	void EjectShell();
 	virtual void SetAmmo(int32 AmmoNum);
 	virtual void SetCarriedAmmo(int32 AmmoNum);
 protected:
-	FTimerHandle DelayedMechSoundTimerHandle;
 	FTimerHandle DelayedShellEjectTimerHandle;
-	void PlayMechSound();
+	FTimerHandle DelayedBoltActionTimerHandle;
+	void PlayBoltActionMontage();
+	void CancelBoltAction();
 	void SpendRound();
 	void SetHUDAmmo();
 	void SetHUDCarriedAmmo();

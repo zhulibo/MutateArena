@@ -102,31 +102,18 @@ struct FWeaponFirePartMotion
 	UPROPERTY(EditAnywhere)
 	float HoldTimeRatio = 0.0f;
 
-	// 开火后延迟起动秒数（步枪等击发同步构件填 0；泵动霰弹枪 Pump/Bolt 或栓动狙 Bolt 填拉栓前等待时间，如 0.20f）
+	// 开火后延迟起动秒数（步枪等击发同步构件填 0；泵动霰弹枪 Pump/Bolt 填拉泵前等待时间，如 0.20f）
 	UPROPERTY(EditAnywhere)
 	float StartDelay = 0.0f;
 
 	float GetSafeStartDelay() const { return FMath::Max(0.f, StartDelay); }
 	float GetSafeDuration() const { return FMath::Max(0.01f, CycleDuration); }
 	float GetTotalDuration() const { return GetSafeStartDelay() + GetSafeDuration(); }
-
-	float GetEffectiveKickRatio(float KickStartPhase = 0.f) const
-	{
-		const float BaseKickRatio = FMath::Clamp(KickTimeRatio, 0.05f, 0.85f);
-		// 按剩余行程比例折算去程耗时，确保半途接续顶回最大行程时保持干脆的速度感
-		const float RemainingTravel = FMath::Clamp(1.f - KickStartPhase, 0.2f, 1.f);
-		return BaseKickRatio * RemainingTravel;
-	}
-
-	float GetHoldEndRatio(float KickStartPhase = 0.f) const
-	{
-		const float KickRatio = GetEffectiveKickRatio(KickStartPhase);
-		const float HoldRatio = FMath::Clamp(HoldTimeRatio, 0.f, 0.6f);
-		return FMath::Min(KickRatio + HoldRatio, 0.99f);
-	}
+	float GetClampedKickRatio() const { return FMath::Clamp(KickTimeRatio, 0.05f, 0.85f); }
+	float GetHoldEndRatio() const { return FMath::Min(GetClampedKickRatio() + FMath::Clamp(HoldTimeRatio, 0.f, 0.6f), 0.99f); }
 
 	// 单一数据源求值：武器骨骼与角色左手 IK 共用此相位曲线 (0 -> 1 -> 0)，确保严格同步
-	float EvaluatePhase(float ElapsedTime, float KickStartPhase = 0.f) const
+	float EvaluatePhase(float ElapsedTime) const
 	{
 		const float ActiveElapsed = ElapsedTime - GetSafeStartDelay();
 		const float Duration = GetSafeDuration();
@@ -135,25 +122,20 @@ struct FWeaponFirePartMotion
 			return 0.f;
 		}
 
-		const float NormalizedTime = FMath::Clamp(ActiveElapsed / Duration, 0.f, 1.f);
-		const float KickRatio = GetEffectiveKickRatio(KickStartPhase);
-		const float HoldEnd = GetHoldEndRatio(KickStartPhase);
-
+		const float NormalizedTime = ActiveElapsed / Duration;
+		const float KickRatio = GetClampedKickRatio();
 		if (NormalizedTime < KickRatio)
 		{
-			// 1. 去程：从 KickStartPhase 无缝急起推至 1.0
-			const float Alpha = NormalizedTime / KickRatio;
-			return FMath::Lerp(KickStartPhase, 1.f, FMath::InterpEaseOut(0.f, 1.f, Alpha, 2.5f));
+			return FMath::InterpEaseOut(0.f, 1.f, NormalizedTime / KickRatio, 2.5f);
 		}
+
+		const float HoldEnd = GetHoldEndRatio();
 		if (NormalizedTime < HoldEnd)
 		{
-			// 2. 驻留：后死点保持（如 GM6 管退滞留）
 			return 1.f;
 		}
 
-		// 3. 复进：平滑回弹归位
-		const float ReturnDuration = FMath::Max(KINDA_SMALL_NUMBER, 1.f - HoldEnd);
-		const float ReturnAlpha = FMath::Clamp((NormalizedTime - HoldEnd) / ReturnDuration, 0.f, 1.f);
+		const float ReturnAlpha = (NormalizedTime - HoldEnd) / FMath::Max(KINDA_SMALL_NUMBER, 1.f - HoldEnd);
 		return 1.f - FMath::InterpEaseInOut(0.f, 1.f, ReturnAlpha, 1.8f);
 	}
 };
@@ -269,8 +251,6 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UMetaSoundSource> FireSound;
-	UPROPERTY(EditAnywhere)
-	TObjectPtr<UMetaSoundSource> MechSound;
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UAnimMontage> ReloadMontage1P_C;
@@ -280,6 +260,23 @@ public:
 	TObjectPtr<UAnimMontage> ReloadMontage_C;
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UAnimMontage> ReloadMontage_E;
+
+	// 栓动武器开火后延迟播放拉栓蒙太奇的等待秒数（<= 0 表示开火后立即拉栓或无拉栓）
+	UPROPERTY(EditAnywhere)
+	float BoltActionDelay = 0.f;
+
+	// 拉栓蒙太奇开始播放后经过多少秒抛壳（直接对齐蒙太奇时间轴上枪机拉到后死点的秒数；<= 0 则走常规抛壳逻辑）
+	UPROPERTY(EditAnywhere)
+	float BoltActionShellEjectDelay = 0.f;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UAnimMontage> BoltActionMontage1P_C;
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UAnimMontage> BoltActionMontage1P_E;
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UAnimMontage> BoltActionMontage_C;
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UAnimMontage> BoltActionMontage_E;
 };
 
 UCLASS(BlueprintType)

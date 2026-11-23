@@ -40,9 +40,7 @@ public:
 	USoundClass* MusicSound;
 	UPROPERTY(EditAnywhere, Category = "Audio")
 	USoundClass* DialogueSound;
-	UPROPERTY(EditAnywhere, Category = "Audio")
-	class USoundControlBus* CB_EquipmentMech;
-	
+
 	// UI
 	UPROPERTY(EditAnywhere, Category = "UI")
 	class UMetaSoundSource* TabSwitchSound;

@@ -14,7 +14,7 @@ bool UGC_Weapon_Reload::OnExecute_Implementation(AActor* MyTarget, const FGamepl
 	AWeapon* CurWeapon = Cast<AWeapon>(const_cast<UObject*>(Parameters.SourceObject.Get()));
 	if (!CurWeapon || !CurWeapon->FragWeapon) return Super::OnExecute_Implementation(MyTarget, Parameters);
 
-	CurWeapon->CancelDelayedFireEffects();
+	CurWeapon->CancelDelayedFireActions();
 
 	// 3P 武器换弹动画（3P 角色换弹蒙太奇由 GA 的 PlayMontageAndWait 播放，并由 GAS 同步给其他端）
 	if (UAnimInstEquipment* EquipmentAnimInst = CurWeapon->GetEquipmentAnimInst())
