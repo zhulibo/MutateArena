@@ -52,7 +52,7 @@ void AWeapon::BeginPlay()
 
 void AWeapon::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	CancelDelayedFireActions();
+	CancelDelayedFireActions(true);
 
 	Super::EndPlay(EndPlayReason);
 }
@@ -63,7 +63,7 @@ void AWeapon::SetState(EEquipmentState NewState)
 
 	if (NewState != EEquipmentState::Equipped)
 	{
-		CancelDelayedFireActions();
+		CancelDelayedFireActions(true);
 	}
 }
 
@@ -73,13 +73,13 @@ void AWeapon::OnRep_EquipmentState(EEquipmentState OldState)
 
 	if (EquipmentState != EEquipmentState::Equipped)
 	{
-		CancelDelayedFireActions();
+		CancelDelayedFireActions(true);
 	}
 }
 
 void AWeapon::HandleDrop()
 {
-	CancelDelayedFireActions();
+	CancelDelayedFireActions(true);
 
 	Super::HandleDrop();
 }
@@ -149,13 +149,9 @@ float AWeapon::CalcVisualBlendDistance(const FVector& SpawnLocation, const FVect
 	return MaxBlendDistance;
 }
 
-void AWeapon::Fire(const FVector& FinalTarget, int32 SpreadSeed)
+void AWeapon::Fire(const FVector& FinalTarget, int32 ShotCount, int32 SpreadSeed)
 {
-	AHumanCharacter* HumanCharacter = Cast<AHumanCharacter>(GetOwner());
-	const int32 ShotCount = HumanCharacter && HumanCharacter->CombatComp
-		? HumanCharacter->CombatComp->CurShotCount
-		: 1;
-	SpawnProjectile(FinalTarget, ShotCount, SpreadSeed);
+	SpawnProjectile(FinalTarget, FMath::Max(1, ShotCount), SpreadSeed);
 	SpendRound();
 }
 
@@ -249,10 +245,19 @@ void AWeapon::PlayBoltActionMontage()
 	}
 }
 
-void AWeapon::CancelDelayedFireActions()
+void AWeapon::CancelDelayedFireActions(bool bImmediate)
 {
 	GetWorldTimerManager().ClearTimer(DelayedShellEjectTimerHandle);
 	CancelBoltAction();
+
+	if (UAnimInstEquipment* EquipAnimInst = GetEquipmentAnimInst())
+	{
+		EquipAnimInst->StopFireMotion(bImmediate);
+	}
+	if (UAnimInstEquipment* EquipAnimInst1P = GetEquipmentAnimInst1P())
+	{
+		EquipAnimInst1P->StopFireMotion(bImmediate);
+	}
 }
 
 void AWeapon::CancelBoltAction()

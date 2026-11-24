@@ -7,6 +7,7 @@
 #include "AnimInstHumanBase.generated.h"
 
 class AHumanCharacter;
+class AEquipment;
 class AWeapon;
 class UCombatComponent;
 class UMAMovementComponent;
@@ -36,8 +37,8 @@ public:
 	void AddRecoilImpulse(const UFragWeapon* FragWeapon);
 
 protected:
-	// 将标准坐标系偏移转换到基准骨骼局部空间（由 1P/3P 子类重写）
-	virtual FTransform BuildWeaponPivotOffsetTransform(const FVector& StdLocation, const FRotator& StdRotation)
+	// 将标准坐标系偏移转换到基准骨骼局部空间（由 1P/3P 子类重写，纯无状态数学转换）
+	virtual FTransform BuildWeaponPivotOffsetTransform(const FVector& StdLocation, const FQuat& StdRotation) const
 	{
 		return FTransform(StdRotation, StdLocation, FVector::OneVector);
 	}
@@ -95,14 +96,16 @@ protected:
 	UPROPERTY(BlueprintReadOnly)
 	float WeaponIKAlpha = 1.f;
 
-	// 主线程缓存的当前武器 ADS 目标偏移（由 1P/3P 子类各自计算写入）
+	// 主线程缓存的当前武器 ADS 目标偏移与机瞄旋转支点力臂（由 1P/3P 子类各自计算写入）
 	FVector CachedADSOffsetLoc = FVector::ZeroVector;
-	FRotator CachedADSOffsetRot = FRotator::ZeroRotator;
+	FQuat CachedADSOffsetQuat = FQuat::Identity;
+	FVector CachedADSPivotOffset = FVector::ZeroVector;
 
 	// 主线程缓存的当前动作蒙太奇播放状态（供子类与动画工作线程安全读取）
 	bool bIsPlayingActionMontage = false;
 
 private:
+	TWeakObjectPtr<const AEquipment> PrevEquipment;
 	// 主线程缓存的角色装备状态（供动画工作线程安全读取）
 	bool bHasEquipment = false;
 	bool bHasWeapon = false;
@@ -117,8 +120,11 @@ private:
 	float CachedRecoilDampingMul = 1.f;
 	float CachedADSRecoilScale = 0.5f;
 
-	// 程序化呼吸与移动晃动状态
+	// 程序化呼吸与移动晃动状态（仅对输入速率包络做平滑，避免高频步伐正弦波被输出端低通滤波衰减）
 	float SwayPhase = 0.f;
+	float SmoothedSpeedRatio = 0.f;
+	float SmoothedStrafeRatio = 0.f;
+	float SwaySuppressAlpha = 0.f;
 	FVector CurrentSwayLocation = FVector::ZeroVector;
 	FRotator CurrentSwayRotation = FRotator::ZeroRotator;
 

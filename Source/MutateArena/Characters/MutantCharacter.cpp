@@ -244,6 +244,16 @@ void AMutantCharacter::Destroyed()
 	Super::Destroyed();
 }
 
+USkeletalMeshComponent* AMutantCharacter::GetVisibleMesh() const
+{
+	// 1P 视角下若 Mesh1P 已配置骨骼网格体，优先使用 1P 网格体（兼容逐步迁移期间尚未配置 1P 网格体的角色退回 3P）
+	if (bIsCurrentViewTarget && Mesh1P && Mesh1P->GetSkeletalMeshAsset())
+	{
+		return Mesh1P;
+	}
+	return GetMesh();
+}
+
 void AMutantCharacter::OnLocallyControllerReady()
 {
 	Super::OnLocallyControllerReady();
@@ -347,11 +357,11 @@ void AMutantCharacter::RightHandAttackBegin()
 	RightHandPreviousSocketLocations.Empty();
 	bRightHandHasHitWall = false;
 	
-	if (GetMesh())
+	if (USkeletalMeshComponent* TraceMesh = GetVisibleMesh())
 	{
 		for (const FName& SocketName : MutantAsset->TraceSockets_R)
 		{
-			RightHandPreviousSocketLocations.Add(SocketName, GetMesh()->GetSocketLocation(SocketName));
+			RightHandPreviousSocketLocations.Add(SocketName, TraceMesh->GetSocketLocation(SocketName));
 		}
 	}
 }
@@ -368,11 +378,11 @@ void AMutantCharacter::LeftHandAttackBegin()
 	LeftHandPreviousSocketLocations.Empty();
 	bLeftHandHasHitWall = false;
 	
-	if (GetMesh())
+	if (USkeletalMeshComponent* TraceMesh = GetVisibleMesh())
 	{
 		for (const FName& SocketName : MutantAsset->TraceSockets_L)
 		{
-			LeftHandPreviousSocketLocations.Add(SocketName, GetMesh()->GetSocketLocation(SocketName));
+			LeftHandPreviousSocketLocations.Add(SocketName, TraceMesh->GetSocketLocation(SocketName));
 		}
 	}
 }
@@ -380,6 +390,14 @@ void AMutantCharacter::LeftHandAttackBegin()
 void AMutantCharacter::LeftHandAttackEnd()
 {
 	bIsLeftHandAttacking = false;
+}
+
+void AMutantCharacter::ClearHitEnemies()
+{
+	RightHandHitEnemies.Empty();
+	LeftHandHitEnemies.Empty();
+	bRightHandHasHitWall = false;
+	bLeftHandHasHitWall = false;
 }
 
 void AMutantCharacter::SetMutantTraceObjectTypes()
@@ -393,11 +411,12 @@ void AMutantCharacter::SetMutantTraceObjectTypes()
 
 void AMutantCharacter::PerformHandTrace(const TArray<FName>& TraceSockets, TMap<FName, FVector>& PreviousSocketLocations, bool bIsRightHand)
 {
-	if (!GetMesh()) return;
+	USkeletalMeshComponent* TraceMesh = GetVisibleMesh();
+	if (!TraceMesh) return;
 
 	for (const FName& SocketName : TraceSockets)
 	{
-		FVector CurrentLocation = GetMesh()->GetSocketLocation(SocketName);
+		FVector CurrentLocation = TraceMesh->GetSocketLocation(SocketName);
 		
 		if (PreviousSocketLocations.Contains(SocketName))
 		{
@@ -460,7 +479,7 @@ void AMutantCharacter::ProcessMutantHit(const FHitResult& HitResult, const FVect
 
 	if (OtherActor->ActorHasTag(ActorTags::HumanCharacter))
 	{
-		DropBlood(GetMesh(), OtherActor, OtherComp, Damage, HitResult);
+		DropBlood(GetVisibleMesh(), OtherActor, OtherComp, Damage, HitResult);
 	}
 	else if (OtherComp && (OtherComp->GetCollisionObjectType() == ECC_WorldStatic || OtherComp->GetCollisionObjectType() == ECC_WorldDynamic))
 	{
@@ -825,7 +844,14 @@ void AMutantCharacter::SetDeadMaterial()
 	if (AssetSubsystem == nullptr) AssetSubsystem = GetGameInstance()->GetSubsystem<UAssetSubsystem>();
 	if (AssetSubsystem && AssetSubsystem->CharacterCommonAsset)
 	{
-		GetMesh()->SetOverlayMaterial(AssetSubsystem->CharacterCommonAsset->MI_Overlay_Dead);
+		if (GetMesh())
+		{
+			GetMesh()->SetOverlayMaterial(AssetSubsystem->CharacterCommonAsset->MI_Overlay_Dead);
+		}
+		if (Mesh1P)
+		{
+			Mesh1P->SetOverlayMaterial(AssetSubsystem->CharacterCommonAsset->MI_Overlay_Dead);
+		}
 	}
 }
 

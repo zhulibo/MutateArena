@@ -21,7 +21,7 @@ public:
 	virtual void NativeThreadSafeUpdateAnimation(float DeltaSeconds) override;
 
 protected:
-	virtual FTransform BuildWeaponPivotOffsetTransform(const FVector& StdLocation, const FRotator& StdRotation) override;
+	virtual FTransform BuildWeaponPivotOffsetTransform(const FVector& StdLocation, const FQuat& StdRotation) const override;
 	virtual USkeletalMeshComponent* GetTargetWeaponMesh(const AWeapon* Weapon) const override;
 
 	// 第三人称已有瞄准偏移 AO，机瞄位移与动态弧线按 50% 缩放即可自然表现举枪贴腮，避免动作幅度过大或枪托穿插胸口

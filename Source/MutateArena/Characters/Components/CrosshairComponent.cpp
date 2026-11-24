@@ -76,7 +76,8 @@ void UCrosshairComponent::SetHUDCrosshair(float DeltaSeconds)
 	// 射击
 	if (URecoilComponent* RecoilComponent = HumanCharacter->RecoilComp)
 	{
-		ShootFactor = FMath::Clamp(RecoilComponent->RecoilVertTotal / Weapon->FragWeapon->RecoilVertRef_Crosshair, 0.f, 1.f);
+		const float SafeCrosshairRef = Weapon->FragWeapon ? FMath::Max(0.001f, Weapon->FragWeapon->RecoilVertRef_Crosshair) : 1.f;
+		ShootFactor = FMath::Clamp(FMath::Abs(RecoilComponent->RecoilVertTotal) / SafeCrosshairRef, 0.f, 1.f);
 	}
 
 	float TotalFactor = 3.f + VelocityFactor * 1.f + JumpFactor * 2.f + ShootFactor * 3.f;

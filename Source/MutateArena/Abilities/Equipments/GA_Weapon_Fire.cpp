@@ -31,8 +31,12 @@ bool UGA_Weapon_Fire::CanActivateAbility(const FGameplayAbilitySpecHandle Handle
 		return false;
 	}
 	
-	float CurrentTime = GetWorld()->GetTimeSeconds();
-	if (CurrentTime - CurWeapon->LastFireTime < CurWeapon->GetFireDelay())
+	const float CurrentTime = GetWorld()->GetTimeSeconds();
+	// 服务端校验远端客户端开火请求时预留微小网络抖动容差，防止合法极限速点因包到达抖动被回滚
+	const float MinInterval = (HumanChar->HasAuthority() && !HumanChar->IsLocallyControlled())
+		? FMath::Max(0.f, CurWeapon->GetFireDelay() - 0.025f)
+		: CurWeapon->GetFireDelay();
+	if (CurrentTime - CurWeapon->LastFireTime < MinInterval)
 	{
 		return false;
 	}
@@ -51,7 +55,7 @@ void UGA_Weapon_Fire::ActivateAbility(const FGameplayAbilitySpecHandle Handle, c
 	UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
 	AHumanCharacter* HumanChar = GetHumanCharacter();
 	AWeapon* CurWeapon = GetCurWeapon();
-	UCombatComponent* CombatComp = HumanChar->CombatComp;
+	UCombatComponent* CombatComp = HumanChar ? HumanChar->CombatComp : nullptr;
 	
 	if (!ASC || !HumanChar || !CurWeapon || !CombatComp)
 	{
@@ -79,11 +83,10 @@ void UGA_Weapon_Fire::ActivateAbility(const FGameplayAbilitySpecHandle Handle, c
 		ASC->AbilityTargetDataSetDelegate(CurrentSpecHandle, CurrentActivationInfo.GetActivationPredictionKey()).AddUObject(this, &UGA_Weapon_Fire::OnTargetDataReceived);
 	}
 	
-	CombatComp->CurShotCount = 1;
-	
 	// 只允许本地控制的角色开启循环定时器，服务端只等开火信息发过来
 	if (HumanChar->IsLocallyControlled())
 	{
+		NextFireTime = GetWorld()->GetTimeSeconds();
 		StartFireLoop();
 	}
 }
@@ -91,11 +94,18 @@ void UGA_Weapon_Fire::ActivateAbility(const FGameplayAbilitySpecHandle Handle, c
 void UGA_Weapon_Fire::StartFireLoop()
 {
     AWeapon* CurWeapon = GetCurWeapon();
-    if (!CurWeapon) return;
+	UWorld* World = GetWorld();
+    if (!CurWeapon || !World) return;
 
 	LocalFireOnce();
 
-    UAbilityTask_WaitDelay* DelayTask = UAbilityTask_WaitDelay::WaitDelay(this, CurWeapon->GetFireDelay());
+	const double FireDelay = FMath::Max(0.01, static_cast<double>(CurWeapon->GetFireDelay()));
+	const double Now = World->GetTimeSeconds();
+	// 累加理想开火时间戳以抵消帧间隔余数误差；若卡顿落后过多则钳制，防止卡顿恢复瞬间连喷多发
+	NextFireTime = FMath::Max(Now - FireDelay * 0.5, NextFireTime + FireDelay);
+	const float WaitTime = static_cast<float>(FMath::Max(0.001, NextFireTime - Now));
+
+    UAbilityTask_WaitDelay* DelayTask = UAbilityTask_WaitDelay::WaitDelay(this, WaitTime);
     DelayTask->OnFinish.AddDynamic(this, &ThisClass::OnFireIntervalFinished);
     DelayTask->ReadyForActivation();
 }
@@ -117,10 +127,8 @@ void UGA_Weapon_Fire::OnFireIntervalFinished()
 		return;
 	}
 	
-    if (CurWeapon->FragWeapon->bIsAutomatic) 
+    if (CurWeapon->FragWeapon && CurWeapon->FragWeapon->bIsAutomatic) 
     {
-		CombatComp->CurShotCount++;
-    	
         StartFireLoop(); 
     }
     else
@@ -142,13 +150,10 @@ void UGA_Weapon_Fire::LocalFireOnce()
 	if (HumanChar->IsLocallyControlled())
 	{
 		CurWeapon->LastFireTime = GetWorld()->GetTimeSeconds();
-		
-		if (HumanChar->RecoilComp)
-		{
-			HumanChar->RecoilComp->IncRecoil();
-		}
-		
-		// 构造开火信息
+
+		// 1. 先读取当前已累积的后坐力与本发散布计算弹道落点（确保静止首发指哪打哪，不受本发即将产生的后坐力污染）
+		const int32 ShotCount = RecoilComp->GetCurrentShotCount();
+		CombatComp->CurShotCount = ShotCount;
 		const float RecoilVert = RecoilComp->GetCurRecoilVert();
 		const float RecoilHor = RecoilComp->GetCurRecoilHor();
 		const FVector2D Spread = RecoilComp->GetCurSpreadVector();
@@ -160,9 +165,13 @@ void UGA_Weapon_Fire::LocalFireOnce()
 		);
 		const int32 SpreadSeed = CombatComp->GenerateSpreadSeed();
 
+		// 2. 子弹出膛后再叠加本发后坐力与发数推进
+		RecoilComp->IncRecoil(ShotCount);
+
 		FGameplayAbilityTargetData_FireInfo* FireData = new FGameplayAbilityTargetData_FireInfo();
 		FireData->FinalTarget = FinalTarget;
 		FireData->SpreadSeed = SpreadSeed;
+		FireData->ShotCount = static_cast<uint8>(FMath::Clamp(ShotCount, 1, 255));
 
 		FGameplayAbilityTargetDataHandle TargetDataHandle;
 		TargetDataHandle.Add(FireData);
@@ -189,11 +198,11 @@ void UGA_Weapon_Fire::LocalFireOnce()
 		CueParams.Instigator = HumanChar;
 		CueParams.SourceObject = CurWeapon;
 		CueParams.Location = FinalTarget;
-		CueParams.RawMagnitude = static_cast<float>(FMath::Max(1, CombatComp->CurShotCount));
+		CueParams.RawMagnitude = static_cast<float>(ShotCount);
 		CueParams.AbilityLevel = FMath::Clamp(SpreadSeed, 1, 31); // 种子通过 AbilityLevel 传递（GC 网络序列化上限 31）
 		ASC->ExecuteGameplayCue(TAG_GC_WEAPON_FIRE, CueParams);
 
-		CurWeapon->Fire(FinalTarget, SpreadSeed);
+		CurWeapon->Fire(FinalTarget, ShotCount, SpreadSeed);
 	}
 }
 
@@ -215,18 +224,15 @@ void UGA_Weapon_Fire::OnTargetDataReceived(const FGameplayAbilityTargetDataHandl
 		if (const FGameplayAbilityTargetData_FireInfo* FireData = static_cast<const FGameplayAbilityTargetData_FireInfo*>(Data.Get(0)))
 		{
 			UCombatComponent* CombatComp = HumanChar->CombatComp;
-			const int32 ShotCount = CombatComp ? FMath::Max(1, CombatComp->CurShotCount) : 1;
+			const int32 ShotCount = FMath::Max(1, static_cast<int32>(FireData->ShotCount));
+			if (CombatComp)
+			{
+				CombatComp->CurShotCount = ShotCount;
+			}
 			if (!HumanChar->IsLocallyControlled())
 			{
-				CurWeapon->Fire(FireData->FinalTarget, FireData->SpreadSeed);
-
-				if (CurWeapon->FragWeapon && CurWeapon->FragWeapon->bIsAutomatic)
-				{
-					if (CombatComp)
-					{
-						CombatComp->CurShotCount++;
-					}
-				}
+				CurWeapon->LastFireTime = GetWorld()->GetTimeSeconds();
+				CurWeapon->Fire(FireData->FinalTarget, ShotCount, FireData->SpreadSeed);
 			}
 
 			FGameplayCueParameters CueParams;

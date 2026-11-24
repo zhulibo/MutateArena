@@ -17,7 +17,8 @@ bool AGC_MutantTerminatorSkill::WhileActive_Implementation(AActor* MyTarget, con
 	if (AMutantTerminator* MutantTerminator = Cast<AMutantTerminator>(MyTarget))
 	{
 		// 更改皮肤颜色
-		MutantTerminator->GetMesh()->SetOverlayMaterial(MI_Overlay_Skill);
+		if (MutantTerminator->GetMesh()) MutantTerminator->GetMesh()->SetOverlayMaterial(MI_Overlay_Skill);
+		if (MutantTerminator->Mesh1P) MutantTerminator->Mesh1P->SetOverlayMaterial(MI_Overlay_Skill);
 		
 		if (MutantTerminator->IsLocallyControlled())
 		{
@@ -35,9 +36,13 @@ bool AGC_MutantTerminatorSkill::OnRemove_Implementation(AActor* MyTarget, const 
 {
 	if (AMutantTerminator* MutantTerminator = Cast<AMutantTerminator>(MyTarget))
 	{
-		if (MutantTerminator->GetMesh()->GetOverlayMaterial() == MI_Overlay_Skill)
+		if (MutantTerminator->GetMesh() && MutantTerminator->GetMesh()->GetOverlayMaterial() == MI_Overlay_Skill)
 		{
 			MutantTerminator->GetMesh()->SetOverlayMaterial(nullptr);
+		}
+		if (MutantTerminator->Mesh1P && MutantTerminator->Mesh1P->GetOverlayMaterial() == MI_Overlay_Skill)
+		{
+			MutantTerminator->Mesh1P->SetOverlayMaterial(nullptr);
 		}
 	}
 

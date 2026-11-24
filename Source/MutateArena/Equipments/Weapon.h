@@ -33,7 +33,7 @@ public:
 
 	FORCEINLINE bool IsEmpty() const { return Ammo <= 0; }
 	FORCEINLINE bool IsFull() const { return Ammo == FragWeapon->MagCapacity; }
-	FORCEINLINE float GetFireDelay() const { return 60 / FragWeapon->FireRate; }
+	FORCEINLINE float GetFireDelay() const { return (FragWeapon && FragWeapon->FireRate > 0.f) ? (60.f / FragWeapon->FireRate) : 0.1f; }
 
 protected:
 	UFUNCTION()
@@ -46,12 +46,12 @@ public:
 	virtual FVector CalcFinalTarget(float RecoilVert, float RecoilHor, float SpreadPitch, float SpreadYaw) const;
 	bool GetFireLocations(FVector& OutSpawnLocation, FVector& OutMuzzleLocation) const;
 	float CalcVisualBlendDistance(const FVector& SpawnLocation, const FVector& ShotDirection, float MaxBlendDistance = 1000.f) const;
-	virtual void Fire(const FVector& FinalTarget, int32 SpreadSeed);
+	virtual void Fire(const FVector& FinalTarget, int32 ShotCount, int32 SpreadSeed);
 	virtual void SpawnProjectile(const FVector& FinalTarget, int32 ShotCount, int32 SpreadSeed) {}
 	bool HasBoltAction() const;
 	void TriggerShellEject();
 	void TriggerBoltAction();
-	void CancelDelayedFireActions();
+	void CancelDelayedFireActions(bool bImmediate = false);
 	void EjectShell();
 	virtual void SetAmmo(int32 AmmoNum);
 	virtual void SetCarriedAmmo(int32 AmmoNum);

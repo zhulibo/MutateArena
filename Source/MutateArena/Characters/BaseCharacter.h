@@ -146,6 +146,7 @@ protected:
 	virtual void MoveCompleted(const FInputActionValue& Value) {}
 	void LookMouse(const FInputActionValue& Value);
 	void LookStick(const FInputActionValue& Value);
+	virtual void OnLookInput(float YawInput, float PitchInput) {}
 	void JumpButtonPressed(const FInputActionValue& Value);
 	void JumpButtonReleased(const FInputActionValue& Value);
 	void CrouchButtonPressed(const FInputActionValue& Value);

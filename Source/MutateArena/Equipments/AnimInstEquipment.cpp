@@ -31,6 +31,12 @@ void UAnimInstEquipment::TriggerFireMotion()
 	if (OwningWeapon == nullptr) OwningWeapon = Cast<AWeapon>(GetOwningActor());
 	if (!OwningWeapon || !OwningWeapon->FragWeapon) return;
 
+	bSuppressFireMotion = false;
+	if (!bIsPlayingWeaponMontage)
+	{
+		MontageSuppressAlpha = 1.f;
+	}
+
 	for (const FWeaponFirePartMotion& Motion : OwningWeapon->FragWeapon->FirePartMotions)
 	{
 		const int32 BoneIdx = static_cast<int32>(Motion.TargetBone);
@@ -41,13 +47,53 @@ void UAnimInstEquipment::TriggerFireMotion()
 	}
 }
 
+void UAnimInstEquipment::StopFireMotion(bool bImmediate)
+{
+	if (OwningWeapon == nullptr) OwningWeapon = Cast<AWeapon>(GetOwningActor());
+	if (bImmediate || !OwningWeapon || !OwningWeapon->FragWeapon)
+	{
+		bSuppressFireMotion = false;
+		for (int32 i = 0; i < MechBoneCount; ++i)
+		{
+			ElapsedTime[i] = -1.f;
+		}
+		return;
+	}
+
+	bool bHasActiveMotion = false;
+	for (const FWeaponFirePartMotion& Motion : OwningWeapon->FragWeapon->FirePartMotions)
+	{
+		const int32 BoneIdx = static_cast<int32>(Motion.TargetBone);
+		if (BoneIdx >= 0 && BoneIdx < MechBoneCount && ElapsedTime[BoneIdx] >= 0.f)
+		{
+			if (ElapsedTime[BoneIdx] <= Motion.GetSafeStartDelay())
+			{
+				ElapsedTime[BoneIdx] = -1.f;
+			}
+			else
+			{
+				bHasActiveMotion = true;
+			}
+		}
+	}
+	bSuppressFireMotion = bHasActiveMotion;
+}
+
 void UAnimInstEquipment::NativeThreadSafeUpdateAnimation(float DeltaSeconds)
 {
 	Super::NativeThreadSafeUpdateAnimation(DeltaSeconds);
 
-	// 换弹蒙太奇播放期间平滑衰减驱动权重，避免中途打断往复运动时产生跳变
-	const float TargetSuppress = bIsPlayingWeaponMontage ? 0.f : 1.f;
+	// 换弹蒙太奇播放或外部打断期间平滑衰减驱动权重，避免中途打断往复运动时产生跳变
+	const float TargetSuppress = (bIsPlayingWeaponMontage || bSuppressFireMotion) ? 0.f : 1.f;
 	MontageSuppressAlpha = FMath::FInterpTo(MontageSuppressAlpha, TargetSuppress, DeltaSeconds, 25.f);
+	if (bSuppressFireMotion && MontageSuppressAlpha <= 0.01f)
+	{
+		bSuppressFireMotion = false;
+		for (int32 i = 0; i < MechBoneCount; ++i)
+		{
+			ElapsedTime[i] = -1.f;
+		}
+	}
 
 	static_assert(MechBoneCount == 7, "Update bone channel pointer tables when EWeaponMechBone changes.");
 	FVector* PartLocations[MechBoneCount] = {

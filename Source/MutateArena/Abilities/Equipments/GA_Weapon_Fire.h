@@ -15,6 +15,9 @@ struct FGameplayAbilityTargetData_FireInfo : public FGameplayAbilityTargetData
 	UPROPERTY()
 	int32 SpreadSeed = 0;
 
+	UPROPERTY()
+	uint8 ShotCount = 1;
+
 	// 返回静态结构体信息
 	virtual UScriptStruct* GetScriptStruct() const override
 	{
@@ -26,6 +29,7 @@ struct FGameplayAbilityTargetData_FireInfo : public FGameplayAbilityTargetData
 	{
 		const bool bTargetSuccess = FinalTarget.NetSerialize(Ar, Map, bOutSuccess);
 		Ar << SpreadSeed;
+		Ar << ShotCount;
 		bOutSuccess = bTargetSuccess && !Ar.IsError();
 		return bOutSuccess;
 	}
@@ -67,5 +71,8 @@ protected:
 
 	UFUNCTION()
 	void OnFireIntervalFinished();
-	
+
+private:
+	// 本地连发理想下一次击发时间戳（补偿每帧余数，消除高低帧率下的实际射速偏差）
+	double NextFireTime = 0.0;
 };

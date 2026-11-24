@@ -36,17 +36,21 @@ bool AGC_MutantGhostSkill::WhileActive_Implementation(AActor* MyTarget, const FG
 			}
 		}
 
-		TArray<UMaterialInterface*> MaterialInterfaces = MutantGhost->GetMesh()->GetMaterials();
-		for (int32 i = 0; i < MaterialInterfaces.Num(); ++i)
+		for (USkeletalMeshComponent* MeshComp : { MutantGhost->GetMesh(), MutantGhost->Mesh1P })
 		{
-			UMaterialInstanceDynamic* DynamicMaterial = Cast<UMaterialInstanceDynamic>(MaterialInterfaces[i]);
-			if (DynamicMaterial == nullptr)
+			if (!MeshComp) continue;
+			TArray<UMaterialInterface*> MaterialInterfaces = MeshComp->GetMaterials();
+			for (int32 i = 0; i < MaterialInterfaces.Num(); ++i)
 			{
-				DynamicMaterial = MutantGhost->GetMesh()->CreateAndSetMaterialInstanceDynamic(i);
-			}
-			if (DynamicMaterial)
-			{
-				DynamicMaterial->SetScalarParameterValue(FName("Opacity"), TargetOpacity);
+				UMaterialInstanceDynamic* DynamicMaterial = Cast<UMaterialInstanceDynamic>(MaterialInterfaces[i]);
+				if (DynamicMaterial == nullptr)
+				{
+					DynamicMaterial = MeshComp->CreateAndSetMaterialInstanceDynamic(i);
+				}
+				if (DynamicMaterial)
+				{
+					DynamicMaterial->SetScalarParameterValue(FName("Opacity"), TargetOpacity);
+				}
 			}
 		}
 		
@@ -68,17 +72,21 @@ bool AGC_MutantGhostSkill::OnRemove_Implementation(AActor* MyTarget, const FGame
 {
 	if (AMutantGhost* MutantGhost = Cast<AMutantGhost>(MyTarget))
 	{
-		TArray<UMaterialInterface*> MaterialInterfaces = MutantGhost->GetMesh()->GetMaterials();
-		for (int32 i = 0; i < MaterialInterfaces.Num(); ++i)
+		for (USkeletalMeshComponent* MeshComp : { MutantGhost->GetMesh(), MutantGhost->Mesh1P })
 		{
-			UMaterialInstanceDynamic* MID = Cast<UMaterialInstanceDynamic>(MaterialInterfaces[i]);
-			if (MID == nullptr)
+			if (!MeshComp) continue;
+			TArray<UMaterialInterface*> MaterialInterfaces = MeshComp->GetMaterials();
+			for (int32 i = 0; i < MaterialInterfaces.Num(); ++i)
 			{
-				MID = MutantGhost->GetMesh()->CreateAndSetMaterialInstanceDynamic(i);
-			}
-			if (MID)
-			{
-				MID->SetScalarParameterValue(FName("Opacity"), .8f);
+				UMaterialInstanceDynamic* MID = Cast<UMaterialInstanceDynamic>(MaterialInterfaces[i]);
+				if (MID == nullptr)
+				{
+					MID = MeshComp->CreateAndSetMaterialInstanceDynamic(i);
+				}
+				if (MID)
+				{
+					MID->SetScalarParameterValue(FName("Opacity"), .8f);
+				}
 			}
 		}
 		

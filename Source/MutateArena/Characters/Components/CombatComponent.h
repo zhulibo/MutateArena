@@ -32,9 +32,13 @@ protected:
 	class UAssetSubsystem* AssetSubsystem;
 
 public:
-	float DefaultFOV = 90.f;
-	// 瞄准进度 (0 = 腰射, 1 = 完全瞄准 | 同时驱动镜头 FOV 缩放与后坐力子弹偏移衰减)
+	float DefaultFOV = 0.f;
+	// 瞄准进度 (0 = 腰射, 1 = 完全瞄准 | 仅在本地主控或第一人称观战目标上实时更新，驱动镜头 FOV 与弹道后坐力衰减；远端 3P 代理在动画工作线程按可见性惰性计算 AimAlpha)
 	float AimingProgress = 0.f;
+	// 当前是否应生效瞄准减速（持枪瞄准中，且未处于换弹/切枪动作期间）
+	bool IsAimingMoveSlowActive() const;
+	// 退出第一人称视角（如观战切走或死亡）时复位镜头 FOV 与准星显隐
+	void OnEndFirstPersonView();
 protected:
 	float CachedAimFOVMul = 1.f;
 	float CachedADSTime = 0.2f;
@@ -42,15 +46,15 @@ protected:
 	void UpdateLocalAiming(float DeltaSeconds);
 public:
 
-	class AEquipment* GetCurEquipment();
-	AEquipment* GetLastEquipment();
+	class AEquipment* GetCurEquipment() const;
+	AEquipment* GetLastEquipment() const;
 	// 如果正在使用主副武器，返回主副武器，否则返空。
-	class AWeapon* GetCurWeapon();
+	class AWeapon* GetCurWeapon() const;
 	// 如果正在使用近战武器，返回近战武器，否则返空。
-	class AMelee* GetCurMelee();
-	AEquipment* GetEquipmentBySlot(EEquipmentSlot EquipmentSlot);
+	class AMelee* GetCurMelee() const;
+	AEquipment* GetEquipmentBySlot(EEquipmentSlot EquipmentSlot) const;
 protected:
-	bool HasEquipmentInSlot(EEquipmentSlot EquipmentSlot);
+	bool HasEquipmentInSlot(EEquipmentSlot EquipmentSlot) const;
 public:
 	UPROPERTY(ReplicatedUsing = OnRep_Slot1Equipment)
 	class AWeapon* Slot1Equipment;

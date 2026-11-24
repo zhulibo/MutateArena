@@ -17,7 +17,8 @@ bool AGC_MutantTankSkill::WhileActive_Implementation(AActor* MyTarget, const FGa
 	if (AMutantTank* MutantTank = Cast<AMutantTank>(MyTarget))
 	{
 		// 更改皮肤颜色
-		MutantTank->GetMesh()->SetOverlayMaterial(MI_Overlay_Skill);
+		if (MutantTank->GetMesh()) MutantTank->GetMesh()->SetOverlayMaterial(MI_Overlay_Skill);
+		if (MutantTank->Mesh1P) MutantTank->Mesh1P->SetOverlayMaterial(MI_Overlay_Skill);
 		
 		if (MutantTank->IsLocallyControlled())
 		{
@@ -35,9 +36,13 @@ bool AGC_MutantTankSkill::OnRemove_Implementation(AActor* MyTarget, const FGamep
 {
 	if (AMutantTank* MutantTank = Cast<AMutantTank>(MyTarget))
 	{
-		if (MutantTank->GetMesh()->GetOverlayMaterial() == MI_Overlay_Skill)
+		if (MutantTank->GetMesh() && MutantTank->GetMesh()->GetOverlayMaterial() == MI_Overlay_Skill)
 		{
 			MutantTank->GetMesh()->SetOverlayMaterial(nullptr);
+		}
+		if (MutantTank->Mesh1P && MutantTank->Mesh1P->GetOverlayMaterial() == MI_Overlay_Skill)
+		{
+			MutantTank->Mesh1P->SetOverlayMaterial(nullptr);
 		}
 	}
 

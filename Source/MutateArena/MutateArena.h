@@ -46,6 +46,7 @@ namespace Bones
 	inline const FName VBRightHand(TEXT("VB spine_05_hand_r"));
 	inline const FName RightHand(TEXT("hand_r"));
 	// 1P
+	inline const FName VBWeaponRoot(TEXT("VB root_weapon_root"));
 	inline const FName WeaponRoot(TEXT("weapon_root"));
 }
 

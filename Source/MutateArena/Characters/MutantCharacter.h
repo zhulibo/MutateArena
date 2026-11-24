@@ -47,7 +47,14 @@ protected:
 	class AMutationController* MutationController;
 	UPROPERTY()
 	class UAnimInstMutant* AnimInstMutant;
-	
+	UPROPERTY()
+	class UAnimInstMutant1P* AnimInstMutant1P;
+
+public:
+	// 获取当前视角下用于攻击检测的可见网格体（1P 视角优先使用 Mesh1P，3P 视角使用 GetMesh()）
+	USkeletalMeshComponent* GetVisibleMesh() const;
+
+protected:
 	virtual void OnLocallyControllerReady() override;
 	
 public:
@@ -84,6 +91,7 @@ public:
 	virtual void RightHandAttackEnd();
 	virtual void LeftHandAttackBegin();
 	virtual void LeftHandAttackEnd();
+	void ClearHitEnemies();
 protected:
 	bool bIsRightHandAttacking = false;
 	bool bIsLeftHandAttacking = false;

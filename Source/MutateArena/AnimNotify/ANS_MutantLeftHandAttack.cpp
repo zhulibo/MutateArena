@@ -10,7 +10,10 @@ void UANS_MutantLeftHandAttack::NotifyBegin(USkeletalMeshComponent* MeshComp, UA
 
 	if (AMutantCharacter* MutantCharacter = Cast<AMutantCharacter>(MeshComp->GetOwner()))
 	{
-		MutantCharacter->LeftHandAttackBegin();
+		if (MeshComp == MutantCharacter->GetVisibleMesh())
+		{
+			MutantCharacter->LeftHandAttackBegin();
+		}
 	}
 }
 
@@ -27,6 +30,9 @@ void UANS_MutantLeftHandAttack::NotifyEnd(USkeletalMeshComponent* MeshComp, UAni
 
 	if (AMutantCharacter* MutantCharacter = Cast<AMutantCharacter>(MeshComp->GetOwner()))
 	{
-		MutantCharacter->LeftHandAttackEnd();
+		if (MeshComp == MutantCharacter->GetVisibleMesh())
+		{
+			MutantCharacter->LeftHandAttackEnd();
+		}
 	}
 }

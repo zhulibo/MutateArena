@@ -227,6 +227,19 @@ void AHumanCharacter::SetFirstPersonViewMode(bool bFirstPerson)
 			Equipment->UpdateViewMode();
 		}
 	}
+
+	if (!bFirstPerson && CombatComp)
+	{
+		CombatComp->OnEndFirstPersonView();
+	}
+}
+
+void AHumanCharacter::OnLookInput(float YawInput, float PitchInput)
+{
+	if (RecoilComp)
+	{
+		RecoilComp->OnControllerLookInput(YawInput, PitchInput);
+	}
 }
 
 void AHumanCharacter::InitAbilityActorInfo()
@@ -248,22 +261,34 @@ void AHumanCharacter::OnASCInit()
 
 	if (ASC && AttributeSetBase)
 	{
-		ASC->RegisterGameplayTagEvent(TAG_STATE_COMBAT_SWAPPING, EGameplayTagEventType::NewOrRemoved).AddUObject(this, &ThisClass::OnSwappingTagChanged);
+		ASC->RegisterGameplayTagEvent(TAG_STATE_COMBAT_SWAPPING, EGameplayTagEventType::NewOrRemoved).AddUObject(this, &ThisClass::OnCombatStateTagChanged);
+		ASC->RegisterGameplayTagEvent(TAG_STATE_COMBAT_RELOADING, EGameplayTagEventType::NewOrRemoved).AddUObject(this, &ThisClass::OnCombatStateTagChanged);
 		// 瞄准移速与镜头 FOV 已由 UGA_Equipment_Aim 在 ActivateAbility/EndAbility 中直接驱动，
 		// 不监听 TAG_STATE_COMBAT_AIMING，防止服务端延迟同步的 MinimalReplicatedTags 覆盖客户端本地取消瞄准状态。
 	}
 }
 
-void AHumanCharacter::OnSwappingTagChanged(FGameplayTag GameplayTag, int NewCount)
+void AHumanCharacter::OnCombatStateTagChanged(FGameplayTag GameplayTag, int32 NewCount)
 {
 	UpdateMaxWalkSpeed();
+
+	// 换弹或切枪动作结束时，若本地玩家仍按住瞄准键且手持主副武器，自动激活瞄准（支持预瞄与切枪持续按住右键开镜）
+	if (NewCount == 0 && IsLocallyControlled() && bIsAimButtonDown && !bIsDead && CombatComp && CombatComp->GetCurWeapon() && !CombatComp->bIsAiming && ASC)
+	{
+		if (!ASC->HasMatchingGameplayTag(TAG_STATE_COMBAT_SWAPPING) && !ASC->HasMatchingGameplayTag(TAG_STATE_COMBAT_RELOADING))
+		{
+			FScopedPredictionWindow PredictionWindow(ASC, !HasAuthority());
+			ASC->TryActivateAbilitiesByTag(FGameplayTagContainer(TAG_ABILITY_EQUIPMENT_AIM));
+		}
+	}
 }
 
 void AHumanCharacter::UpdateMaxWalkSpeed()
 {
 	if (CombatComp && CombatComp->GetCurEquipment())
 	{
-		float TempMaxWalkSpeed = GetMaxWalkSpeed() * (CombatComp->bIsAiming
+		const bool bAimingSlow = CombatComp->IsAimingMoveSlowActive();
+		float TempMaxWalkSpeed = GetMaxWalkSpeed() * (bAimingSlow
 			                                              ? CombatComp->GetCurEquipment()->EquipmentAsset->GetAimingWalkSpeedMul()
 			                                              : CombatComp->GetCurEquipment()->EquipmentAsset->GetWalkSpeedMul());
 		GetCharacterMovement()->MaxWalkSpeed = TempMaxWalkSpeed;
@@ -418,6 +443,8 @@ void AHumanCharacter::AimButtonPressed(const FInputActionValue& Value)
 {
 	if (CombatComp == nullptr || !ASC) return;
 
+	bIsAimButtonDown = true;
+
 	FScopedPredictionWindow PredictionWindow(ASC, IsLocallyControlled() && !HasAuthority());
 
 	if (CombatComp->GetCurWeapon())
@@ -447,19 +474,18 @@ void AHumanCharacter::AimButtonReleased(const FInputActionValue& Value)
 	}
 #endif
 
+	bIsAimButtonDown = false;
+
 	if (!CombatComp || !ASC) return;
 
-	if (CombatComp->GetCurWeapon()) // 目前限制只有主副武器可瞄准
-	{
-		FScopedPredictionWindow PredictionWindow(ASC, IsLocallyControlled() && !HasAuthority());
-		FGameplayTagContainer CancelTags;
-		CancelTags.AddTag(TAG_ABILITY_EQUIPMENT_AIM);
-		ASC->CancelAbilities(&CancelTags);
-	}
+	FScopedPredictionWindow PredictionWindow(ASC, IsLocallyControlled() && !HasAuthority());
+
+	// 无条件取消瞄准 GA，防止按住右键期间切刀/切雷/丢枪再松键导致 UGA_Equipment_Aim 悬空残留
+	FGameplayTagContainer CancelTags(TAG_ABILITY_EQUIPMENT_AIM);
+	ASC->CancelAbilities(&CancelTags);
 
 	if (CombatComp->GetCurMelee())
 	{
-		FScopedPredictionWindow PredictionWindow(ASC, IsLocallyControlled() && !HasAuthority());
 		FGameplayEventData Payload;
 		ASC->HandleGameplayEvent(TAG_EVENT_MELEE_RELEASED, &Payload);
 	}
@@ -767,6 +793,12 @@ void AHumanCharacter::TeamDeadMatchDead()
 void AHumanCharacter::OnDead()
 {
 	Super::OnDead();
+
+	bIsAimButtonDown = false;
+	if (RecoilComp)
+	{
+		RecoilComp->ResetRecoil();
+	}
 
 	if (CombatComp)
 	{

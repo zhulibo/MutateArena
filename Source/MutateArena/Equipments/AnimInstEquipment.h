@@ -23,6 +23,10 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void TriggerFireMotion();
 
+	// 换弹、切枪或丢弃时中止未完成的程序化构件运动（bImmediate=false 时仅立即取消尚未起动的延迟拉泵，已运动构件平滑衰减归位）
+	UFUNCTION(BlueprintCallable)
+	void StopFireMotion(bool bImmediate = false);
+
 protected:
 	static constexpr int32 MechBoneCount = static_cast<int32>(EWeaponMechBone::None);
 
@@ -87,8 +91,9 @@ protected:
 
 private:
 	bool bIsPlayingWeaponMontage = false;
+	bool bSuppressFireMotion = false;
 
-	// 播放换弹等武器蒙太奇时的平滑抑制权重（1=正常驱动，0=交还控制权给蒙太奇）
+	// 播放换弹等武器蒙太奇或被打断时的平滑抑制权重（1=正常驱动，0=交还控制权给蒙太奇/归位）
 	float MontageSuppressAlpha = 1.f;
 
 	// 各骨骼通道往复运动计时器（>= 0 表示运动中，-1 表示静止）

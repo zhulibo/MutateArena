@@ -111,13 +111,14 @@ void UAnimInstHumanBase::NativeUpdateAnimation(float DeltaSeconds)
 	AWeapon* CurWeapon = CombatComp->GetCurWeapon();
 
 	const EEquipmentName NewEquipName = CurEquipment ? CurEquipment->EquipmentName : EEquipmentName::None;
-	if (EquipmentName != NewEquipName)
+	if (PrevEquipment.Get() != CurEquipment || EquipmentName != NewEquipName)
 	{
-		// 切换装备时清空残留的程序化瞄准与后坐力状态，防止上一把枪的过渡权重带入新武器的切入动画
+		// 切换装备实例或更换武器时清空残留的程序化瞄准与后坐力状态，防止上一把枪的过渡权重带入新武器的切入动画
 		AimAlpha = 0.f;
 		SmoothAimAlpha = 0.f;
 		CachedADSOffsetLoc = FVector::ZeroVector;
-		CachedADSOffsetRot = FRotator::ZeroRotator;
+		CachedADSOffsetQuat = FQuat::Identity;
+		CachedADSPivotOffset = FVector::ZeroVector;
 
 		CurrentRecoilLocation = FVector::ZeroVector;
 		CurrentRecoilRotation = FRotator::ZeroRotator;
@@ -125,10 +126,17 @@ void UAnimInstHumanBase::NativeUpdateAnimation(float DeltaSeconds)
 		RecoilRotVelocity = FRotator::ZeroRotator;
 		RecoilShotCounter = 0;
 
+		SmoothedSpeedRatio = 0.f;
+		SmoothedStrafeRatio = 0.f;
+		SwaySuppressAlpha = 0.f;
+		CurrentSwayLocation = FVector::ZeroVector;
+		CurrentSwayRotation = FRotator::ZeroRotator;
+
 		PumpElapsedTime = -1.f;
 		PumpImpulseStage = 0;
 		LeftHandOffsetLocation = FVector::ZeroVector;
 		EquipmentName = NewEquipName;
+		PrevEquipment = CurEquipment;
 	}
 
 	bHasEquipment = (CurEquipment != nullptr && CurEquipment->EquipmentAsset != nullptr);
@@ -148,8 +156,9 @@ void UAnimInstHumanBase::NativeUpdateAnimation(float DeltaSeconds)
 	if (bHasEquipment)
 	{
 		const UEquipmentAsset* EquipAsset = CurEquipment->EquipmentAsset;
+		const bool bEffectiveAiming = bRawIsAiming && !bIsPlayingActionMontage;
 		WalkPlayRate = HumanChar->GetMaxWalkSpeed() / FMath::Max(1.f, HumanChar->Level1MaxWalkSpeed);
-		WalkPlayRate *= bRawIsAiming ? EquipAsset->GetAimingWalkSpeedMul() : EquipAsset->GetWalkSpeedMul();
+		WalkPlayRate *= bEffectiveAiming ? EquipAsset->GetAimingWalkSpeedMul() : EquipAsset->GetWalkSpeedMul();
 	}
 	else
 	{
@@ -204,7 +213,8 @@ void UAnimInstHumanBase::NativeUpdateAnimation(float DeltaSeconds)
 	{
 		CachedADSTime = 0.2f;
 		CachedADSOffsetLoc = FVector::ZeroVector;
-		CachedADSOffsetRot = FRotator::ZeroRotator;
+		CachedADSOffsetQuat = FQuat::Identity;
+		CachedADSPivotOffset = FVector::ZeroVector;
 	}
 }
 
@@ -236,53 +246,58 @@ void UAnimInstHumanBase::NativeThreadSafeUpdateAnimation(float DeltaSeconds)
 	// 举枪半途包络 (0 -> 1 -> 0)：模拟举枪下抄弧线与手腕微内倾，腰射(0)与完全开镜(1)时严格为 0
 	const float MidArc = FMath::Sin(AimAlpha * PI) * GetADSOffsetScale();
 	const FVector CurrentADSLocation = CachedADSOffsetLoc * SmoothAimAlpha + FVector(0.f, 0.f, -0.5f * MidArc);
-	const FRotator CurrentADSRotation = CachedADSOffsetRot * SmoothAimAlpha + FRotator(0.f, 0.f, -3.f * MidArc);
+	const FQuat BaseADSQuat = FQuat::Slerp(FQuat::Identity, CachedADSOffsetQuat, SmoothAimAlpha);
+	const FQuat MidArcQuat = FRotator(0.f, 0.f, -3.f * MidArc).Quaternion();
+	const FQuat CurrentADSQuat = MidArcQuat * BaseADSQuat;
 
 	// 3. 程序化呼吸、步伐摆动与移动惯性偏移
-	if (bHasEquipment && !bIsPlayingActionMontage)
+	//    仅对输入侧的速度比与蒙太奇抑制包络做平滑，直接驱动正弦波形，避免高频步伐振幅被输出端 VInterpTo 低通滤波吞掉
+	//    （注：1P CR_Human1P 的基础 FABRIK 精确度需设为 0.001，防止微幅呼吸跨过默认 0.1cm 死区导致小臂跳变）
+	const float MaxRefSpeed = FMath::Max(1.f, HumanChar->Level1MaxWalkSpeed);
+	const bool bSwayActive = bHasEquipment && !bIsPlayingActionMontage;
+	const float RawSpeedRatio = (bSwayActive && !bIsInAir) ? FMath::Clamp(Speed / MaxRefSpeed, 0.f, 1.f) : 0.f;
+	const float RightSpeed = bSwayActive ? FVector::DotProduct(Velocity, HumanChar->GetActorRightVector()) : 0.f;
+	const float RawStrafeRatio = (bSwayActive && !bIsInAir) ? FMath::Clamp(RightSpeed / MaxRefSpeed, -1.f, 1.f) : 0.f;
+
+	SmoothedSpeedRatio = FMath::FInterpTo(SmoothedSpeedRatio, RawSpeedRatio, DeltaSeconds, 10.f);
+	SmoothedStrafeRatio = FMath::FInterpTo(SmoothedStrafeRatio, RawStrafeRatio, DeltaSeconds, 10.f);
+	SwaySuppressAlpha = FMath::FInterpTo(SwaySuppressAlpha, bSwayActive ? 1.f : 0.f, DeltaSeconds, 14.f);
+
+	if (SwaySuppressAlpha > KINDA_SMALL_NUMBER)
 	{
-		const float MaxRefSpeed = FMath::Max(1.f, HumanChar->Level1MaxWalkSpeed);
-		const float SpeedRatio = !bIsInAir ? FMath::Clamp(Speed / MaxRefSpeed, 0.f, 1.f) : 0.f;
-
-		const float RightSpeed = FVector::DotProduct(Velocity, HumanChar->GetActorRightVector());
-		const float StrafeRatio = !bIsInAir ? FMath::Clamp(RightSpeed / MaxRefSpeed, -1.f, 1.f) : 0.f;
-
-		// 角频率：静止时平稳呼吸 (1.8 rad/s)，移动时随步频加快 (8 rad/s)
-		const float SwayFreq = FMath::Lerp(1.8f, 8.f, SpeedRatio);
+		// 角频率：静止时悠长深呼吸 (1.2 rad/s)，满速移动时沉稳步频 (7.6 rad/s)
+		const float SwayFreq = FMath::Lerp(1.2f, 7.6f, SmoothedSpeedRatio);
 		SwayPhase = FMath::Fmod(SwayPhase + DeltaSeconds * SwayFreq, 2.f * PI);
 
-		// 周期性横置“8字”摇摆单侧半径（单位: cm | 完全机瞄时整体收紧至 15%）
-		const float MotionScale = GetProceduralMotionScale() * FMath::Lerp(1.f, 0.15f, SmoothAimAlpha);
-		const float LocFwdAmp  = FMath::Lerp(0.10f, 0.2f, SpeedRatio) * MotionScale;
-		const float LocHorAmp  = FMath::Lerp(0.15f, 0.3f, SpeedRatio) * MotionScale;
-		const float LocVertAmp = FMath::Lerp(0.20f, 0.4f, SpeedRatio) * MotionScale;
+		// 周期性横置“8字”摇摆单侧半径（单位: cm | 完全机瞄收紧至 15%）
+		const float MotionScale = GetProceduralMotionScale() * FMath::Lerp(1.f, 0.15f, SmoothAimAlpha) * SwaySuppressAlpha;
+		const float LocFwdAmp  = FMath::Lerp(0.08f, 0.15f, SmoothedSpeedRatio) * MotionScale;
+		const float LocHorAmp  = FMath::Lerp(0.14f, 0.26f, SmoothedSpeedRatio) * MotionScale;
+		const float LocVertAmp = FMath::Lerp(0.18f, 0.30f, SmoothedSpeedRatio) * MotionScale;
 
-		// 移动时的持续惯性偏移
-		const float MovePullbackX = -1.25f * SpeedRatio * MotionScale;
-		const float MovePullbackZ = -0.25f * SpeedRatio * MotionScale;
-		const float StrafeOffsetY = 0.65f * StrafeRatio * MotionScale;
-		const float StrafeRoll    = 2.00f * StrafeRatio * MotionScale;
+		// 移动时的持续惯性后缩与横移侧倾
+		const float MovePullbackX = -1.25f * SmoothedSpeedRatio * MotionScale;
+		const float MovePullbackZ = -0.25f * SmoothedSpeedRatio * MotionScale;
+		const float StrafeOffsetY = 0.65f * SmoothedStrafeRatio * MotionScale;
+		const float StrafeRoll    = 2.00f * SmoothedStrafeRatio * MotionScale;
 
-		const FVector TargetSwayLoc(
+		CurrentSwayLocation = FVector(
 			MovePullbackX + FMath::Cos(SwayPhase * 2.f) * LocFwdAmp,
 			StrafeOffsetY + FMath::Sin(SwayPhase) * LocHorAmp,
 			MovePullbackZ + FMath::Sin(SwayPhase * 2.f) * LocVertAmp
 		);
 
 		constexpr float ArmSwingAnglePerCm = 0.6f;
-		const FRotator TargetSwayRot = FRotator::MakeFromEuler(FVector(
-			TargetSwayLoc.Y * 0.2f + StrafeRoll,
-			TargetSwayLoc.Z * ArmSwingAnglePerCm,
-			TargetSwayLoc.Y * ArmSwingAnglePerCm
+		CurrentSwayRotation = FRotator::MakeFromEuler(FVector(
+			CurrentSwayLocation.Y * 0.2f + StrafeRoll,
+			CurrentSwayLocation.Z * ArmSwingAnglePerCm,
+			CurrentSwayLocation.Y * ArmSwingAnglePerCm
 		));
-
-		CurrentSwayLocation = FMath::VInterpTo(CurrentSwayLocation, TargetSwayLoc, DeltaSeconds, 12.f);
-		CurrentSwayRotation = FMath::RInterpTo(CurrentSwayRotation, TargetSwayRot, DeltaSeconds, 12.f);
 	}
 	else
 	{
-		CurrentSwayLocation = FMath::VInterpTo(CurrentSwayLocation, FVector::ZeroVector, DeltaSeconds, 16.f);
-		CurrentSwayRotation = FMath::RInterpTo(CurrentSwayRotation, FRotator::ZeroRotator, DeltaSeconds, 16.f);
+		CurrentSwayLocation = FVector::ZeroVector;
+		CurrentSwayRotation = FRotator::ZeroRotator;
 	}
 
 	// 3.5 程序化拉泵：同步驱动左手护木偏移与枪身后拉/前推顿挫
@@ -344,10 +359,13 @@ void UAnimInstHumanBase::NativeThreadSafeUpdateAnimation(float DeltaSeconds)
 	ClampRecoilAxis(CurrentRecoilRotation.Yaw, RecoilRotVelocity.Yaw, -ScaledMaxRot.Yaw, ScaledMaxRot.Yaw);
 	ClampRecoilAxis(CurrentRecoilRotation.Roll, RecoilRotVelocity.Roll, -ScaledMaxRot.Roll, ScaledMaxRot.Roll);
 
-	// 5. 汇总标准坐标系偏移，交由子类转换到各自基准骨骼局部空间输出给 Ctrl_WeaponPivot
-	const FVector TotalOffsetLocation = CurrentADSLocation + CurrentSwayLocation + CurrentRecoilLocation;
-	const FRotator TotalOffsetRotation = CurrentADSRotation + CurrentSwayRotation + CurrentRecoilRotation;
-	WeaponPivotOffsetTransform = BuildWeaponPivotOffsetTransform(TotalOffsetLocation, TotalOffsetRotation);
+	// 5. 在标准空间按四元数右乘合成旋转（避免腰射基准姿态带偏航/翻滚时欧拉角直接相加引发机瞄后坐力轴向串扰），
+	//    并随 SmoothAimAlpha 将旋转支点从枪根过渡到 Sight 准星点，消除开镜连发时准星受旋转力臂影响脱离弹道中心的视差
+	const FQuat ProceduralMotionQuat = (CurrentRecoilRotation.Quaternion() * CurrentSwayRotation.Quaternion()).GetNormalized();
+	const FQuat TotalOffsetQuat = (ProceduralMotionQuat * CurrentADSQuat).GetNormalized();
+	const FVector ADSPivotCompLoc = (CachedADSPivotOffset - ProceduralMotionQuat.RotateVector(CachedADSPivotOffset)) * SmoothAimAlpha;
+	const FVector TotalOffsetLocation = CurrentADSLocation + CurrentSwayLocation + CurrentRecoilLocation + ADSPivotCompLoc;
+	WeaponPivotOffsetTransform = BuildWeaponPivotOffsetTransform(TotalOffsetLocation, TotalOffsetQuat);
 }
 
 void UAnimInstHumanBase::AddRecoilImpulse(const UFragWeapon* FragWeapon)

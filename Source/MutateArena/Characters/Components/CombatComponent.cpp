@@ -1,7 +1,9 @@
 #include "CombatComponent.h"
 
 #include "AbilitySystemComponent.h"
+#include "RecoilComponent.h"
 #include "MutateArena/Characters/HumanCharacter.h"
+#include "Engine/LocalPlayer.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "Kismet/GameplayStatics.h"
 #include "MutateArena/PlayerControllers/BaseController.h"
@@ -56,7 +58,7 @@ void UCombatComponent::BeginPlay()
 	
 	if (HumanChar)
 	{
-		if (HumanChar->Camera)
+		if (HumanChar->Camera && DefaultFOV <= 0.f)
 		{
 			DefaultFOV = HumanChar->Camera->FieldOfView;
 		}
@@ -67,23 +69,23 @@ void UCombatComponent::TickComponent(float DeltaSeconds, ELevelTick TickType, FA
 {
 	Super::TickComponent(DeltaSeconds, TickType, ThisTickFunction);
 
-	if (HumanChar && HumanChar->IsLocallyControlled())
+	if (HumanChar && (HumanChar->IsLocallyControlled() || HumanChar->bIsCurrentViewTarget))
 	{
 		UpdateLocalAiming(DeltaSeconds);
 	}
 }
 
-AEquipment* UCombatComponent::GetCurEquipment()
+AEquipment* UCombatComponent::GetCurEquipment() const
 {
 	return GetEquipmentBySlot(CurEquipmentSlot);
 }
 
-AEquipment* UCombatComponent::GetLastEquipment()
+AEquipment* UCombatComponent::GetLastEquipment() const
 {
 	return GetEquipmentBySlot(LastEquipmentSlot);
 }
 
-AWeapon* UCombatComponent::GetCurWeapon()
+AWeapon* UCombatComponent::GetCurWeapon() const
 {
 	switch (CurEquipmentSlot)
 	{
@@ -96,7 +98,7 @@ AWeapon* UCombatComponent::GetCurWeapon()
 	}
 }
 
-AMelee* UCombatComponent::GetCurMelee()
+AMelee* UCombatComponent::GetCurMelee() const
 {
 	switch (CurEquipmentSlot)
 	{
@@ -107,7 +109,7 @@ AMelee* UCombatComponent::GetCurMelee()
 	}
 }
 
-AEquipment* UCombatComponent::GetEquipmentBySlot(EEquipmentSlot EquipmentSlot)
+AEquipment* UCombatComponent::GetEquipmentBySlot(EEquipmentSlot EquipmentSlot) const
 {
 	switch (EquipmentSlot)
 	{
@@ -124,9 +126,52 @@ AEquipment* UCombatComponent::GetEquipmentBySlot(EEquipmentSlot EquipmentSlot)
 	}
 }
 
-bool UCombatComponent::HasEquipmentInSlot(EEquipmentSlot EquipmentSlot)
+bool UCombatComponent::HasEquipmentInSlot(EEquipmentSlot EquipmentSlot) const
 {
 	return GetEquipmentBySlot(EquipmentSlot) != nullptr;
+}
+
+bool UCombatComponent::IsAimingMoveSlowActive() const
+{
+	if (!bIsAiming || GetCurWeapon() == nullptr)
+	{
+		return false;
+	}
+
+	// 换弹与切枪期间已退出机瞄姿态，双端同步通过预测 Tag 恢复常规移速，避免 CMC 移速预测失步
+	if (const UAbilitySystemComponent* ASC = HumanChar ? HumanChar->GetAbilitySystemComponent() : nullptr)
+	{
+		if (ASC->HasMatchingGameplayTag(TAG_STATE_COMBAT_RELOADING) || ASC->HasMatchingGameplayTag(TAG_STATE_COMBAT_SWAPPING))
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
+void UCombatComponent::OnEndFirstPersonView()
+{
+	AimingProgress = 0.f;
+	if (HumanChar && HumanChar->Camera && DefaultFOV > 0.f)
+	{
+		HumanChar->Camera->FieldOfView = DefaultFOV;
+	}
+
+	if (bPrevEffectiveAiming)
+	{
+		bPrevEffectiveAiming = false;
+		if (UWorld* World = GetWorld())
+		{
+			if (ULocalPlayer* LocalPlayer = World->GetFirstLocalPlayerFromController())
+			{
+				if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(LocalPlayer))
+				{
+					UISubsystem->OnCrosshairHidden.Broadcast(false);
+				}
+			}
+		}
+	}
 }
 
 void UCombatComponent::OnRep_Slot1Equipment(AWeapon* OldEquipment)
@@ -390,6 +435,17 @@ void UCombatComponent::InstantSwap(EEquipmentSlot TargetSlot)
 		LastEquipmentSlot = EEquipmentSlot::Slot3;
 	}
 
+	// 切枪时同步取消瞄准 GA 并清空残留后坐力，避免 UGA_Equipment_Aim 悬空激活及跨武器残留压枪拉扯
+	if (UAbilitySystemComponent* ASC = HumanChar->GetAbilitySystemComponent())
+	{
+		FGameplayTagContainer CancelTags(TAG_ABILITY_EQUIPMENT_AIM);
+		ASC->CancelAbilities(&CancelTags);
+	}
+	if (HumanChar->RecoilComp)
+	{
+		HumanChar->RecoilComp->ResetRecoil();
+	}
+
 	CurEquipmentSlot = TargetSlot;
 	bIsAiming = false;
 	bPrevEffectiveAiming = false;
@@ -407,7 +463,12 @@ void UCombatComponent::InstantSwap(EEquipmentSlot TargetSlot)
 
 void UCombatComponent::UpdateLocalAiming(float DeltaSeconds)
 {
-	if (!HumanChar || !HumanChar->IsLocallyControlled()) return;
+	if (!HumanChar || (!HumanChar->IsLocallyControlled() && !HumanChar->bIsCurrentViewTarget)) return;
+
+	if (HumanChar->Camera && DefaultFOV <= 0.f)
+	{
+		DefaultFOV = HumanChar->Camera->FieldOfView;
+	}
 
 	const AWeapon* CurWeapon = GetCurWeapon();
 	const UAnimInstance* CharAnimInst = (HumanChar->bIsCurrentViewTarget && HumanChar->Mesh1P)
@@ -421,9 +482,12 @@ void UCombatComponent::UpdateLocalAiming(float DeltaSeconds)
 	{
 		bPrevEffectiveAiming = bEffectiveAiming;
 		if (BaseController == nullptr) BaseController = Cast<ABaseController>(HumanChar->GetController());
-		if (BaseController)
+		ULocalPlayer* LocalPlayer = BaseController
+			? BaseController->GetLocalPlayer()
+			: (GetWorld() ? GetWorld()->GetFirstLocalPlayerFromController() : nullptr);
+		if (LocalPlayer)
 		{
-			if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(BaseController->GetLocalPlayer()))
+			if (UUISubsystem* UISubsystem = ULocalPlayer::GetSubsystem<UUISubsystem>(LocalPlayer))
 			{
 				UISubsystem->OnCrosshairHidden.Broadcast(bEffectiveAiming);
 			}
@@ -442,7 +506,7 @@ void UCombatComponent::UpdateLocalAiming(float DeltaSeconds)
 		const float AimStep = DeltaSeconds / FMath::Max(0.01f, CachedADSTime);
 		AimingProgress = FMath::Clamp(AimingProgress + (bEffectiveAiming ? AimStep : -AimStep), 0.f, 1.f);
 
-		if (HumanChar->Camera)
+		if (HumanChar->Camera && DefaultFOV > 0.f)
 		{
 			const float SmoothAlpha = FMath::InterpEaseInOut(0.f, 1.f, AimingProgress, 2.f);
 			HumanChar->Camera->FieldOfView = FMath::Lerp(DefaultFOV, DefaultFOV * CachedAimFOVMul, SmoothAlpha);
@@ -473,6 +537,11 @@ void UCombatComponent::ServerDestroyEquipments_Implementation(bool bIsDestroySlo
 	DestroySlot(Slot2Equipment);
 	DestroySlot(Slot3Equipment);
 	DestroySlot(Slot4Equipment);
+
+	if (HumanChar->RecoilComp)
+	{
+		HumanChar->RecoilComp->ResetRecoil();
+	}
 
 	CurEquipmentSlot = EEquipmentSlot::None;
 	LastEquipmentSlot = EEquipmentSlot::None;

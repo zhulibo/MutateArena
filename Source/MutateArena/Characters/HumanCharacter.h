@@ -60,13 +60,16 @@ public:
 
 protected:
 	virtual void SetFirstPersonViewMode(bool bFirstPerson) override;
+	virtual void OnLookInput(float YawInput, float PitchInput) override;
 	virtual void InitAbilityActorInfo() override;
 	virtual void OnASCInit() override;
 public:
-	void OnSwappingTagChanged(FGameplayTag GameplayTag, int NewCount);
+	void OnCombatStateTagChanged(FGameplayTag GameplayTag, int32 NewCount);
 	void UpdateMaxWalkSpeed();
 	
 protected:
+	// 记录玩家物理按住瞄准键的输入意图，支持换弹/切枪期间预按右键并在动作结束时自动开镜
+	bool bIsAimButtonDown = false;
 	void AimButtonPressed(const FInputActionValue& Value);
 	void AimButtonReleased(const FInputActionValue& Value);
 public:

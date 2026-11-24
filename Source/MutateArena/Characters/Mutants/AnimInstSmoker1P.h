@@ -1,11 +1,11 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "MutateArena/Characters/AnimInstMutant.h"
+#include "MutateArena/Characters/AnimInstMutant1P.h"
 #include "AnimInstSmoker1P.generated.h"
 
 UCLASS(Abstract)
-class MUTATEARENA_API UAnimInstSmoker1P : public UAnimInstMutant
+class MUTATEARENA_API UAnimInstSmoker1P : public UAnimInstMutant1P
 {
 	GENERATED_BODY()
 

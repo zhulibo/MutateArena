@@ -726,18 +726,24 @@ void ABaseCharacter::LookMouse(const FInputActionValue& Value)
 {
 	if (StorageSubsystem == nullptr) StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
 	if (!StorageSubsystem || !StorageSubsystem->CacheSetting) return;
-	FVector2D AxisVector = Value.Get<FVector2D>();
-	AddControllerYawInput(AxisVector.X * StorageSubsystem->CacheSetting->MouseSensitivity);
-	AddControllerPitchInput(AxisVector.Y * StorageSubsystem->CacheSetting->MouseSensitivity);
+	const FVector2D AxisVector = Value.Get<FVector2D>();
+	const float YawInput = AxisVector.X * StorageSubsystem->CacheSetting->MouseSensitivity;
+	const float PitchInput = AxisVector.Y * StorageSubsystem->CacheSetting->MouseSensitivity;
+	AddControllerYawInput(YawInput);
+	AddControllerPitchInput(PitchInput);
+	OnLookInput(YawInput, PitchInput);
 }
 
 void ABaseCharacter::LookStick(const FInputActionValue& Value)
 {
 	if (StorageSubsystem == nullptr) StorageSubsystem = GetGameInstance()->GetSubsystem<UStorageSubsystem>();
 	if (!StorageSubsystem || !StorageSubsystem->CacheSetting) return;
-	FVector2D AxisVector = Value.Get<FVector2D>();
-	AddControllerYawInput(AxisVector.X * StorageSubsystem->CacheSetting->ControllerSensitivity);
-	AddControllerPitchInput(AxisVector.Y * StorageSubsystem->CacheSetting->ControllerSensitivity);
+	const FVector2D AxisVector = Value.Get<FVector2D>();
+	const float YawInput = AxisVector.X * StorageSubsystem->CacheSetting->ControllerSensitivity;
+	const float PitchInput = AxisVector.Y * StorageSubsystem->CacheSetting->ControllerSensitivity;
+	AddControllerYawInput(YawInput);
+	AddControllerPitchInput(PitchInput);
+	OnLookInput(YawInput, PitchInput);
 }
 
 void ABaseCharacter::JumpButtonPressed(const FInputActionValue& Value)
