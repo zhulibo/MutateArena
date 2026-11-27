@@ -99,7 +99,7 @@ void UGA_Weapon_Fire::StartFireLoop()
 
 	LocalFireOnce();
 
-	const double FireDelay = FMath::Max(0.01, static_cast<double>(CurWeapon->GetFireDelay()));
+	const double FireDelay = static_cast<double>(CurWeapon->GetFireDelay());
 	const double Now = World->GetTimeSeconds();
 	// 累加理想开火时间戳以抵消帧间隔余数误差；若卡顿落后过多则钳制，防止卡顿恢复瞬间连喷多发
 	NextFireTime = FMath::Max(Now - FireDelay * 0.5, NextFireTime + FireDelay);

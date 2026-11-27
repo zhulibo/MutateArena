@@ -184,8 +184,8 @@ void AWeapon::TriggerShellEject()
 		if (DelayedMotion && DelayedMotion->StartDelay > KINDA_SMALL_NUMBER)
 		{
 			// 护木/枪机拉到后死点时抛壳
-			ShellEjectDelay = DelayedMotion->GetSafeStartDelay()
-				+ DelayedMotion->GetSafeDuration() * DelayedMotion->GetClampedKickRatio();
+			ShellEjectDelay = DelayedMotion->StartDelay
+				+ DelayedMotion->CycleDuration * DelayedMotion->KickTimeRatio;
 		}
 	}
 

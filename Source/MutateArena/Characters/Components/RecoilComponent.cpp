@@ -187,11 +187,11 @@ void URecoilComponent::PollApplyRecoil(float DeltaSeconds)
 		return;
 	}
 
-	const float SafeIncTime = FMath::Max(0.001f, Weapon->FragWeapon->RecoilIncTime);
-	RecoilIncCostTime = FMath::Min(RecoilIncCostTime + DeltaSeconds, SafeIncTime);
+	const float IncTime = Weapon->FragWeapon->RecoilIncTime;
+	RecoilIncCostTime = FMath::Min(RecoilIncCostTime + DeltaSeconds, IncTime);
 
 	// 当前帧需要达到的后坐力
-	const float Alpha = RecoilIncCostTime / SafeIncTime;
+	const float Alpha = RecoilIncCostTime / IncTime;
 	const float RecoilVertCurTick = FMath::InterpEaseOut(0.f, RecoilVertCurFire, Alpha, 2.f);
 	const float RecoilHorCurTick  = FMath::InterpEaseOut(0.f, RecoilHorCurFire, Alpha, 2.f);
 
@@ -207,7 +207,7 @@ void URecoilComponent::PollApplyRecoil(float DeltaSeconds)
 	RecoilVertLastTick = RecoilVertCurTick;
 	RecoilHorLastTick  = RecoilHorCurTick;
 
-	if (RecoilIncCostTime >= SafeIncTime)
+	if (RecoilIncCostTime >= IncTime)
 	{
 		bIsApplyingRecoil = false;
 		bIsWaitingRecover = true;
@@ -234,10 +234,11 @@ void URecoilComponent::TryStartRecoverRecoil()
 
 	bIsWaitingRecover = false;
 
-	const float SafeVertRef = FMath::Max(0.001f, Weapon->FragWeapon->RecoilVertRef_DecTime);
-	const float MinDec = FMath::Max(0.f, Weapon->FragWeapon->RecoilMinDecTime);
-	const float MaxDec = FMath::Max(MinDec, Weapon->FragWeapon->RecoilMaxDecTime);
-	RecoilDecTime = FMath::Clamp(FMath::Abs(RecoilVertTotal) / SafeVertRef, MinDec, MaxDec);
+	RecoilDecTime = FMath::Clamp(
+		FMath::Abs(RecoilVertTotal) / Weapon->FragWeapon->RecoilVertRef_DecTime,
+		Weapon->FragWeapon->RecoilMinDecTime,
+		Weapon->FragWeapon->RecoilMaxDecTime
+	);
 
 	const bool bHasBulletRecoil = !FMath::IsNearlyZero(RecoilVertTotal) || !FMath::IsNearlyZero(RecoilHorTotal);
 	const bool bHasCameraRecoil = !FMath::IsNearlyZero(CameraRecoilVertTotal) || !FMath::IsNearlyZero(CameraRecoilHorTotal);
@@ -279,9 +280,8 @@ void URecoilComponent::PollRecoverRecoil(float DeltaSeconds)
 		return;
 	}
 
-	const float SafeDecTime = FMath::Max(0.001f, RecoilDecTime);
-	RecoilDecCostTime = FMath::Min(RecoilDecCostTime + DeltaSeconds, SafeDecTime);
-	const float Alpha = RecoilDecCostTime / SafeDecTime;
+	RecoilDecCostTime = FMath::Min(RecoilDecCostTime + DeltaSeconds, RecoilDecTime);
+	const float Alpha = RecoilDecCostTime / RecoilDecTime;
 
 	// 1. 恢复总后坐力（子弹偏移与准星扩散）
 	const float RecoilVertRecoverCurTick = FMath::InterpEaseInOut(0.f, RecoilVertRecoverTotal, Alpha, 2.f);
@@ -337,7 +337,7 @@ void URecoilComponent::PollRecoverRecoil(float DeltaSeconds)
 	CameraRecoilVertRecoverLastTick = CameraVertRecoverCurTick;
 	CameraRecoilHorRecoverLastTick  = CameraHorRecoverCurTick;
 
-	if (RecoilDecCostTime >= SafeDecTime)
+	if (RecoilDecCostTime >= RecoilDecTime)
 	{
 		bIsRecoveringRecoil = false;
 		RecoilVertTotal = 0.f;
@@ -369,8 +369,7 @@ void URecoilComponent::PollDecayShotCount(float DeltaSeconds)
 	if (RecoilShotDecayRate <= 0.f)
 	{
 		const float RefDecTime = RecoilDecTime > KINDA_SMALL_NUMBER ? RecoilDecTime : Weapon->FragWeapon->RecoilMinDecTime;
-		const float SafeDecTime = FMath::Max(0.1f, RefDecTime);
-		RecoilShotDecayRate = (RecoilShotIndex - 1.f) / SafeDecTime;
+		RecoilShotDecayRate = (RecoilShotIndex - 1.f) / RefDecTime;
 	}
 
 	RecoilShotIndex = FMath::Max(1.f, RecoilShotIndex - RecoilShotDecayRate * DeltaSeconds);

@@ -42,15 +42,15 @@ namespace
 		const int32 SubSteps = FMath::Max(1, FMath::CeilToInt(ClampedDT / MaxSubStep));
 		const double SubDT = static_cast<double>(ClampedDT) / SubSteps;
 
-		const double BaseFreq = static_cast<double>(FMath::Max(0.1f, Frequency));
-		const double SafeKickMul = static_cast<double>(FMath::Max(0.1f, KickSpeedMul));
-		const double SafeRecovMul = static_cast<double>(FMath::Max(0.1f, RecoverySpeedMul));
-		const double EffDamping = static_cast<double>(FMath::Clamp(DampingRatio * DampingMul, 0.1f, 2.0f));
+		const double BaseFreq = static_cast<double>(Frequency);
+		const double KickMul = static_cast<double>(KickSpeedMul);
+		const double RecovMul = static_cast<double>(RecoverySpeedMul);
+		const double EffDamping = static_cast<double>(DampingRatio * DampingMul);
 
 		for (int32 Step = 0; Step < SubSteps; ++Step)
 		{
 			const bool bIsKicking = (Current * Velocity > 0.0) || (FMath::Abs(Current) < 1e-4 && FMath::Abs(Velocity) > 1e-4);
-			const double Omega = 2.0 * PI * BaseFreq * (bIsKicking ? SafeKickMul : SafeRecovMul);
+			const double Omega = 2.0 * PI * BaseFreq * (bIsKicking ? KickMul : RecovMul);
 			const double Accel = -(Omega * Omega) * Current - (2.0 * EffDamping * Omega) * Velocity;
 
 			Velocity += Accel * SubDT;
@@ -171,23 +171,15 @@ void UAnimInstHumanBase::NativeUpdateAnimation(float DeltaSeconds)
 	if (bHasWeapon)
 	{
 		const UFragWeapon* FragWeapon = CurWeapon->FragWeapon;
-		CachedADSTime = FMath::Max(0.01f, FragWeapon->ADSTime);
+		CachedADSTime = FragWeapon->ADSTime;
 
 		// 缓存武器程序化后坐力参数供动画工作线程安全读取
-		CachedRecoilMaxLoc = FVector(
-			FMath::Max(0.0, FragWeapon->RecoilMaxLocation.X),
-			FMath::Max(0.0, FragWeapon->RecoilMaxLocation.Y),
-			FMath::Max(0.0, FragWeapon->RecoilMaxLocation.Z)
-		);
-		CachedRecoilMaxRot = FRotator(
-			FMath::Max(0.0, FragWeapon->RecoilMaxRotation.Pitch),
-			FMath::Max(0.0, FragWeapon->RecoilMaxRotation.Yaw),
-			FMath::Max(0.0, FragWeapon->RecoilMaxRotation.Roll)
-		);
-		CachedRecoilKickSpeedMul = FMath::Max(0.1f, FragWeapon->RecoilKickSpeedMul);
-		CachedRecoilRecoverySpeedMul = FMath::Max(0.1f, FragWeapon->RecoilRecoverySpeedMul);
-		CachedRecoilDampingMul = FMath::Max(0.05f, FragWeapon->RecoilDampingMul);
-		CachedADSRecoilScale = FMath::Max(0.f, FragWeapon->ADSRecoilScale);
+		CachedRecoilMaxLoc = FragWeapon->RecoilMaxLocation;
+		CachedRecoilMaxRot = FragWeapon->RecoilMaxRotation;
+		CachedRecoilKickSpeedMul = FragWeapon->RecoilKickSpeedMul;
+		CachedRecoilRecoverySpeedMul = FragWeapon->RecoilRecoverySpeedMul;
+		CachedRecoilDampingMul = FragWeapon->RecoilDampingMul;
+		CachedADSRecoilScale = FragWeapon->ADSRecoilScale;
 
 		// 缓存泵动武器拉泵运动配置，并将武器局部空间护木向后行程 (+Y) 直接映射至 Ctrl_WeaponPivot 局部空间
 		if (const FWeaponFirePartMotion* PumpMotion = FragWeapon->FindFirePartMotion(EWeaponMechBone::Pump);
@@ -239,7 +231,7 @@ void UAnimInstHumanBase::NativeThreadSafeUpdateAnimation(float DeltaSeconds)
 
 	// 2. 程序化瞄准偏移（播放动作蒙太奇时自动平滑退出瞄准偏移，采用单一对称缓动确保半途打断反转零跳变）
 	bIsAiming = bRawIsAiming && !bIsPlayingActionMontage;
-	const float AimStep = DeltaSeconds / FMath::Max(0.01f, CachedADSTime);
+	const float AimStep = DeltaSeconds / CachedADSTime;
 	AimAlpha = FMath::Clamp(AimAlpha + (bIsAiming ? AimStep : -AimStep), 0.f, 1.f);
 	SmoothAimAlpha = FMath::InterpEaseInOut(0.f, 1.f, AimAlpha, 2.f);
 
@@ -306,8 +298,8 @@ void UAnimInstHumanBase::NativeThreadSafeUpdateAnimation(float DeltaSeconds)
 		PumpElapsedTime += DeltaSeconds;
 		if (PumpElapsedTime <= CachedPumpMotion.GetTotalDuration())
 		{
-			const float Delay = CachedPumpMotion.GetSafeStartDelay();
-			const float PushStartTime = Delay + CachedPumpMotion.GetSafeDuration() * CachedPumpMotion.GetHoldEndRatio();
+			const float Delay = CachedPumpMotion.StartDelay;
+			const float PushStartTime = Delay + CachedPumpMotion.CycleDuration * CachedPumpMotion.GetHoldEndRatio();
 			const float VelMul = CachedRecoilKickSpeedMul * RecoilImpulseVelScale * PumpImpulseScale;
 
 			if (PumpImpulseStage == 0 && PumpElapsedTime >= Delay)
@@ -373,8 +365,8 @@ void UAnimInstHumanBase::AddRecoilImpulse(const UFragWeapon* FragWeapon)
 	if (!FragWeapon) return;
 
 	// 瞄准状态下按武器配置的 ADSRecoilScale 收紧后坐力，并乘以一/三人称各自的幅度系数
-	const float AimScale = GetProceduralMotionScale() * FMath::Lerp(1.f, FMath::Max(0.f, FragWeapon->ADSRecoilScale), AimAlpha);
-	const float NoiseScale = AimScale * FMath::Max(0.f, FragWeapon->RecoilNoiseScale);
+	const float AimScale = GetProceduralMotionScale() * FMath::Lerp(1.f, FragWeapon->ADSRecoilScale, AimAlpha);
+	const float NoiseScale = AimScale * FragWeapon->RecoilNoiseScale;
 
 	FVector KickLoc = FragWeapon->RecoilKickLocation * AimScale;
 	FRotator KickRot = FragWeapon->RecoilKickRotation * AimScale;
@@ -385,7 +377,7 @@ void UAnimInstHumanBase::AddRecoilImpulse(const UFragWeapon* FragWeapon)
 	KickRot.Yaw += (AltSign * 0.12f + FMath::FRandRange(-0.25f, 0.25f)) * NoiseScale;
 	KickRot.Roll += (AltSign * 0.40f + FMath::FRandRange(-0.20f, 0.20f)) * NoiseScale;
 
-	const float VelMul = FMath::Max(0.1f, FragWeapon->RecoilKickSpeedMul) * RecoilImpulseVelScale;
+	const float VelMul = FragWeapon->RecoilKickSpeedMul * RecoilImpulseVelScale;
 	RecoilLocVelocity.X += KickLoc.X * FreqLocX * VelMul;
 	RecoilLocVelocity.Y += KickLoc.Y * FreqLocY * VelMul;
 	RecoilLocVelocity.Z += KickLoc.Z * FreqLocZ * VelMul;

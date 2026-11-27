@@ -106,27 +106,22 @@ struct FWeaponFirePartMotion
 	UPROPERTY(EditAnywhere)
 	float StartDelay = 0.0f;
 
-	float GetSafeStartDelay() const { return FMath::Max(0.f, StartDelay); }
-	float GetSafeDuration() const { return FMath::Max(0.01f, CycleDuration); }
-	float GetTotalDuration() const { return GetSafeStartDelay() + GetSafeDuration(); }
-	float GetClampedKickRatio() const { return FMath::Clamp(KickTimeRatio, 0.05f, 0.85f); }
-	float GetHoldEndRatio() const { return FMath::Min(GetClampedKickRatio() + FMath::Clamp(HoldTimeRatio, 0.f, 0.6f), 0.99f); }
+	float GetTotalDuration() const { return StartDelay + CycleDuration; }
+	float GetHoldEndRatio() const { return KickTimeRatio + HoldTimeRatio; }
 
 	// 单一数据源求值：武器骨骼与角色左手 IK 共用此相位曲线 (0 -> 1 -> 0)，确保严格同步
 	float EvaluatePhase(float ElapsedTime) const
 	{
-		const float ActiveElapsed = ElapsedTime - GetSafeStartDelay();
-		const float Duration = GetSafeDuration();
-		if (ActiveElapsed <= 0.f || ActiveElapsed > Duration)
+		const float ActiveElapsed = ElapsedTime - StartDelay;
+		if (ActiveElapsed <= 0.f || ActiveElapsed > CycleDuration)
 		{
 			return 0.f;
 		}
 
-		const float NormalizedTime = ActiveElapsed / Duration;
-		const float KickRatio = GetClampedKickRatio();
-		if (NormalizedTime < KickRatio)
+		const float NormalizedTime = ActiveElapsed / CycleDuration;
+		if (NormalizedTime < KickTimeRatio)
 		{
-			return FMath::InterpEaseOut(0.f, 1.f, NormalizedTime / KickRatio, 2.5f);
+			return FMath::InterpEaseOut(0.f, 1.f, NormalizedTime / KickTimeRatio, 2.5f);
 		}
 
 		const float HoldEnd = GetHoldEndRatio();
@@ -135,7 +130,7 @@ struct FWeaponFirePartMotion
 			return 1.f;
 		}
 
-		const float ReturnAlpha = (NormalizedTime - HoldEnd) / FMath::Max(KINDA_SMALL_NUMBER, 1.f - HoldEnd);
+		const float ReturnAlpha = (NormalizedTime - HoldEnd) / (1.f - HoldEnd);
 		return 1.f - FMath::InterpEaseInOut(0.f, 1.f, ReturnAlpha, 1.8f);
 	}
 };

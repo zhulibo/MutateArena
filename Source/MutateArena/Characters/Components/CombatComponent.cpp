@@ -497,13 +497,13 @@ void UCombatComponent::UpdateLocalAiming(float DeltaSeconds)
 	if (bEffectiveAiming)
 	{
 		CachedAimFOVMul = CurWeapon->FragWeapon->AimingFOVMul;
-		CachedADSTime = FMath::Max(0.01f, CurWeapon->FragWeapon->ADSTime);
+		CachedADSTime = CurWeapon->FragWeapon->ADSTime;
 	}
 
 	const float TargetProgress = bEffectiveAiming ? 1.f : 0.f;
 	if (AimingProgress != TargetProgress)
 	{
-		const float AimStep = DeltaSeconds / FMath::Max(0.01f, CachedADSTime);
+		const float AimStep = DeltaSeconds / CachedADSTime;
 		AimingProgress = FMath::Clamp(AimingProgress + (bEffectiveAiming ? AimStep : -AimStep), 0.f, 1.f);
 
 		if (HumanChar->Camera && DefaultFOV > 0.f)

@@ -66,7 +66,7 @@ void UAnimInstEquipment::StopFireMotion(bool bImmediate)
 		const int32 BoneIdx = static_cast<int32>(Motion.TargetBone);
 		if (BoneIdx >= 0 && BoneIdx < MechBoneCount && ElapsedTime[BoneIdx] >= 0.f)
 		{
-			if (ElapsedTime[BoneIdx] <= Motion.GetSafeStartDelay())
+			if (ElapsedTime[BoneIdx] <= Motion.StartDelay)
 			{
 				ElapsedTime[BoneIdx] = -1.f;
 			}

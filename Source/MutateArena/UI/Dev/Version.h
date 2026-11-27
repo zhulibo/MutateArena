@@ -17,8 +17,10 @@ protected:
 
 public:
 	UPROPERTY(meta = (BindWidget))
-	UCommonTextBlock* ProjectVersion;
+	UCommonTextBlock* Project;
 	UPROPERTY(meta = (BindWidget))
-	UCommonTextBlock* EngineVersion;
+	UCommonTextBlock* Engine;
+	UPROPERTY(meta = (BindWidget))
+	UCommonTextBlock* EOSSDK;
 	
 };

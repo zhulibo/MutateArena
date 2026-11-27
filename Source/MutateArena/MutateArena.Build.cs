@@ -50,6 +50,8 @@ public class MutateArena : ModuleRules
 				"UMG",
 				"CommonUI",
 				"RHI",
+				"EOSSDK",
+				"EOSShared",
 			}
 		);
 

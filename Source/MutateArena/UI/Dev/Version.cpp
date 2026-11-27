@@ -1,8 +1,8 @@
 #include "Version.h"
 
 #include "CommonTextBlock.h"
+#include "IEOSSDKManager.h"
 #include "Misc/EngineVersion.h"
-#include "Misc/CommandLine.h"
 #include "Misc/ConfigCacheIni.h"
 #include "MutateArena/Utils/LibraryCommon.h"
 
@@ -29,46 +29,57 @@ void UVersion::NativeConstruct()
 	BuildConfiguration = TEXT("Unknown");
 #endif
 
-	// 获取当前使用的 SandboxId 逻辑同FOnlineServicesEpicCommonPlatformFactory::LoadEOSPlatformConfig
-	FString CurrentSandboxId;
+	// 格式示例：Shipping - 1.0.0
+	FString FullProjectVersion = FString::Printf(TEXT("%s - %s"), *BuildConfiguration, *ULibraryCommon::GetProjectVersion());
+	Project->SetText(FText::FromString(FullProjectVersion));
 
-	if (GConfig)
-	{
-		// 1. 先读取默认 SandboxId
-		GConfig->GetString(TEXT("OnlineServices.EOS"), TEXT("SandboxId"), CurrentSandboxId, GEngineIni);
-
-#if UE_BUILD_SHIPPING
-		// 2. 如果是 SHIPPING 包，读取 Live 环境的 ID 覆盖
-		GConfig->GetString(TEXT("OnlineServices.EOS"), TEXT("SandboxId_Live"), CurrentSandboxId, GEngineIni);
-#endif
-	}
-
-	// 3. 命令行参数具有最高优先级，如果游戏是从 Epic Games Launcher 启动的，用命令行参数覆盖
-	FParse::Value(FCommandLine::Get(), TEXT("EpicSandboxId="), CurrentSandboxId);
-
-	// 将 SandboxId 映射为环境名称
-	FString EOSEnvironment = TEXT("Unknown");
-	if (CurrentSandboxId.Contains(TEXT("p-9hdddp2tmrprnmnbt2gbur4m6dqs6d")))
-	{
-		EOSEnvironment = TEXT("Dev");
-	}
-	else if (CurrentSandboxId.Contains(TEXT("p-juzhxm7jefpr8xgvygjlfvk6ayx7yq")))
-	{
-		EOSEnvironment = TEXT("Stage");
-	}
-	else if (CurrentSandboxId.Contains(TEXT("89f212c83ee24545b54c54a268018166")))
-	{
-		EOSEnvironment = TEXT("Live");
-	}
-
-	// 将构建类型、项目版本与环境拼接，格式示例："Shipping - 1.0.0 - Live"
-	FString FullProjectVersion = FString::Printf(TEXT("%s - %s - %s"), *BuildConfiguration, *ULibraryCommon::GetProjectVersion(), *EOSEnvironment);
-	ProjectVersion->SetText(FText::FromString(FullProjectVersion));
-
-	// UE 5.8.0
+	// 格式示例：UE 5.8.0
 	const FEngineVersion& CurVersion = FEngineVersion::Current();
 	int32 Major = CurVersion.GetMajor();
 	int32 Minor = CurVersion.GetMinor();
 	int32 Patch = CurVersion.GetPatch();
-	EngineVersion->SetText(FText::FromString(FString::Printf(TEXT("UE %d.%d.%d"), Major, Minor, Patch)));
+	Engine->SetText(FText::FromString(FString::Printf(TEXT("UE %d.%d.%d"), Major, Minor, Patch)));
+
+	// 从 EOS 获取当前生效的 SandboxId 和 SDK 版本
+	FString CurrentSandboxId;
+	FString SDKVersion;
+	if (IEOSSDKManager* SDKManager = IEOSSDKManager::Get())
+	{
+		SDKVersion = SDKManager->GetSDKVersion();
+		TArray<IEOSPlatformHandlePtr> ActivePlatforms = SDKManager->GetActivePlatforms();
+		if (!ActivePlatforms.IsEmpty())
+		{
+			if (const FEOSSDKPlatformConfig* PlatformConfig = SDKManager->GetPlatformConfig(ActivePlatforms[0]->GetConfigName()))
+			{
+				CurrentSandboxId = PlatformConfig->SandboxId;
+			}
+		}
+	}
+
+	// 与 ini 配置中的 SandboxId 对比，映射为环境名称
+	FString EOSEnvironment = TEXT("Unknown");
+	if (GConfig && !CurrentSandboxId.IsEmpty())
+	{
+		FString SandboxIdDev, SandboxIdStage, SandboxIdLive;
+		GConfig->GetString(TEXT("OnlineServices.EOS"), TEXT("SandboxId"), SandboxIdDev, GEngineIni);
+		GConfig->GetString(TEXT("OnlineServices.EOS"), TEXT("SandboxId_Stage"), SandboxIdStage, GEngineIni);
+		GConfig->GetString(TEXT("OnlineServices.EOS"), TEXT("SandboxId_Live"), SandboxIdLive, GEngineIni);
+
+		if (CurrentSandboxId == SandboxIdDev)
+		{
+			EOSEnvironment = TEXT("Dev");
+		}
+		else if (CurrentSandboxId == SandboxIdStage)
+		{
+			EOSEnvironment = TEXT("Stage");
+		}
+		else if (CurrentSandboxId == SandboxIdLive)
+		{
+			EOSEnvironment = TEXT("Live");
+		}
+	}
+
+	// 格式示例：Live - 1.19.1.2-53289219
+	FString FullEOSSDKVersion = FString::Printf(TEXT("EOSSDK %s - %s"), *EOSEnvironment, *SDKVersion);
+	EOSSDK->SetText(FText::FromString(FullEOSSDKVersion));
 }

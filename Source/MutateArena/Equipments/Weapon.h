@@ -33,7 +33,7 @@ public:
 
 	FORCEINLINE bool IsEmpty() const { return Ammo <= 0; }
 	FORCEINLINE bool IsFull() const { return Ammo == FragWeapon->MagCapacity; }
-	FORCEINLINE float GetFireDelay() const { return (FragWeapon && FragWeapon->FireRate > 0.f) ? (60.f / FragWeapon->FireRate) : 0.1f; }
+	FORCEINLINE float GetFireDelay() const { return 60.f / FragWeapon->FireRate; }
 
 protected:
 	UFUNCTION()
